@@ -5,6 +5,7 @@ import { uploadImage } from '../lib/storage'
 import { getIntakeUrl, getPublicSiteUrl, getProjectBaseUrl, navigateToSubdomain } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from './IntakeQuestionEditor'
+import ImageCropper from './ImageCropper'
 
 export default function ProjectDashboardCard({ project, onSaved }) {
   const navigate = useNavigate()
@@ -119,39 +120,115 @@ function ProjectEditForm({ project, onClose, onSaved }) {
   const [publicContactEmail, setPublicContactEmail] = useState(project.public_contact_email || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [teamMembers, setTeamMembers] = useState([])
+  const [teamLoading, setTeamLoading] = useState(false)
+  const [addEmail, setAddEmail] = useState('')
+  const [addingMember, setAddingMember] = useState(false)
   const logoRef = useRef(null)
   const coverRef = useRef(null)
-  const { questions, addQuestion, updateQuestion, deleteQuestion, reorderQuestions } = useIntakeQuestions(project.project_id)
 
-  async function handleLogoSelect(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setLogoPreview(URL.createObjectURL(file))
-    setUploadingLogo(true)
-    try {
-      const url = await uploadImage(file)
-      setLogoUrl(url)
-    } catch (err) {
-      console.error('Logo upload failed:', err)
-      setLogoPreview(logoUrl || '')
-    } finally {
-      setUploadingLogo(false)
+  // Load team members (admins + moderators)
+  useState(() => {
+    async function loadTeam() {
+      setTeamLoading(true)
+      const { data } = await supabase
+        .from('memberships')
+        .select('id, role, profile:profiles(id, full_name, avatar_url, email)')
+        .eq('project_id', project.project_id)
+        .in('role', ['admin', 'moderator'])
+      setTeamMembers(data || [])
+      setTeamLoading(false)
+    }
+    loadTeam()
+  })
+
+  async function handleRoleChange(membershipId, newRole) {
+    const { error } = await supabase.from('memberships').update({ role: newRole }).eq('id', membershipId)
+    if (!error) {
+      setTeamMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: newRole } : m))
     }
   }
 
-  async function handleCoverSelect(e) {
+  async function handleAddAdmin() {
+    if (!addEmail.trim()) return
+    setAddingMember(true)
+    // Find profile by email
+    const { data: profile } = await supabase.from('profiles').select('id').eq('email', addEmail.trim().toLowerCase()).single()
+    if (!profile) {
+      alert('Geen gebruiker gevonden met dit e-mailadres')
+      setAddingMember(false)
+      return
+    }
+    // Check existing membership
+    const { data: existing } = await supabase.from('memberships').select('id, role').eq('project_id', project.project_id).eq('profile_id', profile.id).single()
+    if (existing) {
+      // Upgrade to admin
+      await supabase.from('memberships').update({ role: 'admin' }).eq('id', existing.id)
+    } else {
+      // Create admin membership
+      await supabase.from('memberships').insert({ profile_id: profile.id, project_id: project.project_id, role: 'admin' })
+    }
+    // Reload team
+    const { data } = await supabase.from('memberships').select('id, role, profile:profiles(id, full_name, avatar_url, email)').eq('project_id', project.project_id).in('role', ['admin', 'moderator'])
+    setTeamMembers(data || [])
+    setAddEmail('')
+    setAddingMember(false)
+  }
+  const { questions, addQuestion, updateQuestion, deleteQuestion, reorderQuestions } = useIntakeQuestions(project.project_id)
+
+  const [cropSrc, setCropSrc] = useState(null)
+  const [cropAspect, setCropAspect] = useState(1)
+  const [cropRound, setCropRound] = useState(false)
+  const [cropTarget, setCropTarget] = useState(null)
+
+  function handleLogoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setCoverPreview(URL.createObjectURL(file))
-    setUploadingCover(true)
-    try {
-      const url = await uploadImage(file)
-      setCoverImageUrl(url)
-    } catch (err) {
-      console.error('Cover upload failed:', err)
-      setCoverPreview(coverImageUrl || '')
-    } finally {
-      setUploadingCover(false)
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(1)
+    setCropRound(false)
+    setCropTarget('logo')
+    e.target.value = ''
+  }
+
+  function handleCoverSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(16 / 9)
+    setCropRound(false)
+    setCropTarget('cover')
+    e.target.value = ''
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+
+    if (cropTarget === 'logo') {
+      setLogoPreview(URL.createObjectURL(blob))
+      setUploadingLogo(true)
+      try {
+        const url = await uploadImage(file)
+        setLogoUrl(url)
+      } catch (err) {
+        console.error('Logo upload failed:', err)
+        setLogoPreview(logoUrl || '')
+      } finally {
+        setUploadingLogo(false)
+      }
+    } else if (cropTarget === 'cover') {
+      setCoverPreview(URL.createObjectURL(blob))
+      setUploadingCover(true)
+      try {
+        const url = await uploadImage(file)
+        setCoverImageUrl(url)
+      } catch (err) {
+        console.error('Cover upload failed:', err)
+        setCoverPreview(coverImageUrl || '')
+      } finally {
+        setUploadingCover(false)
+      }
     }
   }
 
@@ -351,13 +428,70 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         )}
       </div>
 
+      {/* Team beheer */}
+      <div className="org-edit__section">
+        <h4 className="org-edit__title"><i className="fa-solid fa-user-shield" style={{ color: 'var(--accent-purple)' }} /> Projectbeheerders</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          {teamMembers.map(m => (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg-hover)', borderRadius: 'var(--radius-sm)' }}>
+              {m.profile?.avatar_url ? (
+                <img src={m.profile.avatar_url} alt={m.profile.full_name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-active)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  {(m.profile?.full_name || '?')[0]}
+                </div>
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>{m.profile?.full_name}</div>
+                {m.profile?.email && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{m.profile.email}</div>}
+              </div>
+              <select
+                value={m.role}
+                onChange={e => handleRoleChange(m.id, e.target.value)}
+                style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}
+              >
+                <option value="admin">Admin</option>
+                <option value="moderator">Moderator</option>
+                <option value="member">Lid</option>
+              </select>
+            </div>
+          ))}
+          {teamMembers.length === 0 && !teamLoading && (
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Geen beheerders gevonden</p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="email"
+            value={addEmail}
+            onChange={e => setAddEmail(e.target.value)}
+            placeholder="E-mailadres van nieuwe admin"
+            style={{ flex: 1, fontSize: 13, padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}
+            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddAdmin())}
+          />
+          <button type="button" className="btn-primary btn-sm" onClick={handleAddAdmin} disabled={addingMember || !addEmail.trim()}>
+            {addingMember ? 'Toevoegen...' : 'Toevoegen'}
+          </button>
+        </div>
+      </div>
+
       {/* Actions */}
       <div className="org-edit__footer">
         <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
-        <button type="submit" className="btn-primary" disabled={saving || uploadingCover}>
+        <button type="submit" className="btn-primary" disabled={saving || uploadingCover || uploadingLogo}>
           {saving ? 'Opslaan...' : saved ? '✓ Opgeslagen' : 'Wijzigingen opslaan'}
         </button>
       </div>
+
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={cropAspect}
+          round={cropRound}
+          onComplete={handleCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </form>
   )
 }
