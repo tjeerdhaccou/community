@@ -5,6 +5,7 @@ import { uploadImage } from '../lib/storage'
 import { getIntakeUrl, getPublicSiteUrl } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
+import ImageCropper from '../components/ImageCropper'
 
 export default function Settings() {
   const { project, milestones, loading: projectLoading } = useProject()
@@ -49,19 +50,37 @@ export default function Settings() {
     }
   }, [project])
 
-  async function handleCoverSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+  const [cropAspect, setCropAspect] = useState(16 / 9)
+  const [cropRound, setCropRound] = useState(false)
+  const [cropTarget, setCropTarget] = useState(null) // 'cover'
+
+  function handleCoverSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setCoverPreview(URL.createObjectURL(file))
-    setUploadingCover(true)
-    try {
-      const url = await uploadImage(file)
-      setCoverImageUrl(url)
-    } catch (err) {
-      console.error('Cover upload failed:', err)
-      setCoverPreview(coverImageUrl || '')
-    } finally {
-      setUploadingCover(false)
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(16 / 9)
+    setCropRound(false)
+    setCropTarget('cover')
+    e.target.value = '' // reset file input
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+
+    if (cropTarget === 'cover') {
+      setCoverPreview(URL.createObjectURL(blob))
+      setUploadingCover(true)
+      try {
+        const url = await uploadImage(file)
+        setCoverImageUrl(url)
+      } catch (err) {
+        console.error('Cover upload failed:', err)
+        setCoverPreview(coverImageUrl || '')
+      } finally {
+        setUploadingCover(false)
+      }
     }
   }
 
@@ -317,6 +336,16 @@ export default function Settings() {
           </button>
         </div>
       </form>
+
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={cropAspect}
+          round={cropRound}
+          onComplete={handleCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </div>
   )
 }
