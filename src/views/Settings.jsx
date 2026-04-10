@@ -279,16 +279,19 @@ export default function Settings() {
             <>
               <div className="form-group">
                 <label htmlFor="set-slug">URL-slug</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 14, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>/project/</span>
-                  <input
-                    id="set-slug"
-                    type="text"
-                    value={slug}
-                    onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                    placeholder="vlinderhaven"
-                  />
-                </div>
+                <input
+                  id="set-slug"
+                  type="text"
+                  value={slug}
+                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                  placeholder="vlinderhaven"
+                />
+                {slug && (
+                  <span className="form-hint" style={{ marginTop: 6 }}>
+                    <i className="fa-solid fa-link" style={{ marginRight: 4 }} />
+                    {getPublicSiteUrl({ ...project, slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                  </span>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="set-pub-desc">Publieke beschrijving</label>
@@ -311,12 +314,6 @@ export default function Settings() {
                   placeholder="info@project.nl"
                 />
               </div>
-              {slug && (
-                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8 }}>
-                  <i className="fa-solid fa-link" style={{ marginRight: 6 }} />
-                  Pagina zichtbaar op: <strong>{getPublicSiteUrl({ ...project, slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') })}</strong>
-                </p>
-              )}
             </>
           )}
 
