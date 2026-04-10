@@ -28,7 +28,7 @@ async function getTransIPToken(): Promise<string> {
     false, ['sign']
   )
 
-  const nonce = crypto.randomUUID()
+  const nonce = crypto.randomUUID().replace(/-/g, '').slice(0, 32)
   const body = JSON.stringify({
     login: TRANSIP_LOGIN,
     nonce,
