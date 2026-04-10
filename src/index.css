@@ -3663,6 +3663,87 @@ select.input {
   color: var(--accent-red, #e53e3e);
   margin: 8px 0 0;
 }
+/* Lobby route cards */
+.join-card__routes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+.join-card__route {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-surface, #fff);
+  box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  color: var(--text-primary);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  width: 100%;
+  transition: transform 150ms var(--ease-default), box-shadow 150ms var(--ease-default);
+}
+.join-card__route:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.join-card__route-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm, 6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.join-card__route div:nth-child(2) { flex: 1; }
+.join-card__route strong { display: block; font-size: 15px; font-weight: 600; }
+.join-card__route p { font-size: 13px; color: var(--text-secondary); margin: 2px 0 0; }
+.join-card__route > i:last-child { color: var(--text-tertiary); font-size: 13px; }
+
+/* Contact admins */
+.join-card__contact {
+  width: 100%;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-default, #F0F1F4);
+}
+.join-card__contact-label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+.join-card__admin {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.join-card__admin-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.join-card__admin-avatar--placeholder {
+  background: var(--bg-hover);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.join-card__admin strong { display: block; font-size: 14px; }
+.join-card__admin a { font-size: 13px; color: var(--accent-primary); text-decoration: none; }
+.join-card__admin a:hover { text-decoration: underline; }
+
 .join-card__icon { font-size: 36px; margin-bottom: 12px; }
 .join-card__icon--error { color: var(--accent-red, #e53e3e); }
 
