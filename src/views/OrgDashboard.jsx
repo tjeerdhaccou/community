@@ -206,7 +206,10 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
                     <div
                       key={p.project_id}
                       className="org-actions__item"
-                      onClick={() => navigate(`/p/${p.slug || p.project_id}/members`)}
+                      onClick={() => {
+                        const base = p.custom_domain ? `https://${p.custom_domain}` : `${window.location.origin}/p/${p.slug || p.project_id}`
+                        window.location.href = `${base}/members`
+                      }}
                     >
                       <div className="org-actions__icon">
                         <i className="fa-solid fa-user-clock" />
