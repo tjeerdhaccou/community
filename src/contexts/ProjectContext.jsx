@@ -44,10 +44,28 @@ export function ProjectProvider({ children, slugOverride }) {
       }
       setProject(projectRes.data)
 
+      // Auto-create admin membership for org admins who don't have one yet
+      const proj = projectRes.data
+      const hasMembership = memberships.some(m => m.project_id === proj.id)
+      if (!hasMembership && proj.organization_id && isOrgAdmin) {
+        const isAdminOfOrg = orgMemberships.some(om =>
+          om.organization_id === proj.organization_id && om.role === 'admin'
+        )
+        if (isAdminOfOrg) {
+          await supabase.from('memberships').insert({
+            profile_id: user.id,
+            project_id: proj.id,
+            role: 'admin',
+          })
+          // Refresh auth context so membership is picked up
+          reloadAuth()
+        }
+      }
+
       const milestonesRes = await supabase
         .from('milestones')
         .select('*')
-        .eq('project_id', projectRes.data.id)
+        .eq('project_id', proj.id)
         .order('sort_order')
       setMilestones(milestonesRes.data || [])
       setLoading(false)
