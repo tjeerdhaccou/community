@@ -82,7 +82,7 @@ function HomeRedirect() {
 }
 
 function MemberGate() {
-  const { membership, loading, error } = useProject()
+  const { membership, role, loading, error } = useProject()
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
   if (error) return (
     <div className="error-boundary">
@@ -96,7 +96,8 @@ function MemberGate() {
       </div>
     </div>
   )
-  if (!membership) return <JoinProject />
+  // Allow access if user has physical membership OR org-admin role
+  if (!membership && role === 'guest') return <JoinProject />
   return <Layout />
 }
 
