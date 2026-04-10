@@ -21,7 +21,7 @@ export default function AuthCallback() {
           const url = new URL(returnUrl)
           url.pathname = '/auth/callback'
           url.hash = `access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=recovery`
-          window.location.href = url.toString()
+          window.location.replace(url.toString())
           return
         }
       }
