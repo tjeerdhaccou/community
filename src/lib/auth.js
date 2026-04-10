@@ -1,17 +1,31 @@
 import { supabase } from './supabase'
 
+// Cookie helpers scoped to root domain (shared across subdomains)
+function setReturnCookie(url) {
+  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN
+  const domain = mainDomain ? `.${mainDomain}` : ''
+  document.cookie = `returnAfterLogin=${encodeURIComponent(url)};domain=${domain};path=/;max-age=600;SameSite=Lax;Secure`
+}
+
+export function getReturnCookie() {
+  const match = document.cookie.match(/returnAfterLogin=([^;]+)/)
+  if (!match) return null
+  // Clear it
+  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN
+  const domain = mainDomain ? `.${mainDomain}` : ''
+  document.cookie = `returnAfterLogin=;domain=${domain};path=/;max-age=0`
+  return decodeURIComponent(match[1])
+}
+
 export async function signInWithGoogle() {
   // Always redirect to main domain for OAuth callback, then bounce back to subdomain
   const mainDomain = import.meta.env.VITE_MAIN_DOMAIN
   const isSubdomain = mainDomain && window.location.hostname !== mainDomain && window.location.hostname !== `www.${mainDomain}`
   const callbackOrigin = isSubdomain ? `https://${mainDomain}` : window.location.origin
 
-  // Save current origin so callback can redirect back to subdomain
+  // Save full return URL in cookie shared across subdomains
   if (isSubdomain) {
-    try {
-      localStorage.setItem('redirectAfterLoginUrl', window.location.origin)
-      localStorage.setItem('redirectAfterLogin', window.location.pathname || '/')
-    } catch {}
+    setReturnCookie(window.location.href)
   }
 
   const { data, error } = await supabase.auth.signInWithOAuth({

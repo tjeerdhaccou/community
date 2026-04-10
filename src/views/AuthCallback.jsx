@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { getReturnCookie } from '../lib/auth'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -11,19 +12,16 @@ export default function AuthCallback() {
     handled.current = true
 
     function redirectAfterLogin() {
-      let savedUrl, savedPath
-      try {
-        savedUrl = localStorage.getItem('redirectAfterLoginUrl')
-        savedPath = localStorage.getItem('redirectAfterLogin')
-        localStorage.removeItem('redirectAfterLoginUrl')
-        localStorage.removeItem('redirectAfterLogin')
-      } catch {}
-
-      // If we have a full URL (from a subdomain), do a hard redirect
-      if (savedUrl && savedUrl !== window.location.origin) {
-        window.location.href = savedUrl + (savedPath || '/')
+      // Check cookie first (set by subdomain before OAuth redirect)
+      const returnUrl = getReturnCookie()
+      if (returnUrl) {
+        window.location.href = returnUrl
         return
       }
+
+      // Fallback to localStorage (same-domain redirects)
+      let savedPath
+      try { savedPath = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
       navigate(savedPath || '/', { replace: true })
     }
 
