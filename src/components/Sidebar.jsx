@@ -112,7 +112,15 @@ export default function Sidebar() {
   return (
     <nav className="cl-sidebar" role="navigation" aria-label="Hoofdnavigatie">
       {isOrgAdmin && (primaryOrgSlug || primaryOrgId) && (
-        <div className="sidebar-back" onClick={() => navigate(`/org/${primaryOrgSlug || primaryOrgId}`)} role="button" tabIndex={0}>
+        <div className="sidebar-back" onClick={() => {
+          const mainDomain = import.meta.env.VITE_MAIN_DOMAIN
+          const isSubdomain = mainDomain && window.location.hostname !== mainDomain && window.location.hostname !== `www.${mainDomain}` && window.location.hostname !== 'localhost'
+          if (isSubdomain) {
+            window.location.href = `https://${mainDomain}/org/${primaryOrgSlug || primaryOrgId}`
+          } else {
+            navigate(`/org/${primaryOrgSlug || primaryOrgId}`)
+          }
+        }} role="button" tabIndex={0}>
           <i className="fa-solid fa-arrow-left" />
           <span>Alle projecten</span>
         </div>
