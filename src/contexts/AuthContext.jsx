@@ -57,11 +57,12 @@ export function AuthProvider({ children }) {
   // Primary org (first org membership)
   const primaryOrg = orgMemberships[0]?.organization || null
   const primaryOrgId = orgMemberships[0]?.organization_id || null
+  const primaryOrgSlug = primaryOrg?.slug || primaryOrgId
 
   return (
     <AuthContext.Provider value={{
       user, profile, memberships, orgMemberships,
-      isPlatformAdmin, isOrgAdmin, primaryOrg, primaryOrgId,
+      isPlatformAdmin, isOrgAdmin, primaryOrg, primaryOrgId, primaryOrgSlug,
       loading, reload: () => user && loadProfile(user.id)
     }}>
       {children}

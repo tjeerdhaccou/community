@@ -63,11 +63,11 @@ function AuthGuard({ children }) {
 }
 
 function HomeRedirect() {
-  const { memberships, isOrgAdmin, primaryOrgId, loading } = useAuth()
+  const { memberships, isOrgAdmin, primaryOrgSlug, loading } = useAuth()
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
 
   // Org admin → org dashboard
-  if (isOrgAdmin && primaryOrgId) return <Navigate to={`/org/${primaryOrgId}`} replace />
+  if (isOrgAdmin && primaryOrgSlug) return <Navigate to={`/org/${primaryOrgSlug}`} replace />
   // Single project member → project
   if (memberships.length === 1) return <Navigate to={`/p/${memberships[0].projects?.slug || memberships[0].project_id}`} replace />
   // Multi-project member → first project (TODO: project selector)
@@ -144,7 +144,7 @@ function NormalRoutes() {
       <Route path="/" element={<AuthGuard><HomeRedirect /></AuthGuard>} />
 
       {/* Org-level routes */}
-      <Route path="/org/:orgId" element={<AuthGuard><OrgThemeWrapper><OrgDashboard /></OrgThemeWrapper></AuthGuard>} />
+      <Route path="/org/:orgSlug" element={<AuthGuard><OrgThemeWrapper><OrgDashboard /></OrgThemeWrapper></AuthGuard>} />
       <Route path="/org/:orgId/settings" element={<AuthGuard><OrgThemeWrapper><OrgSettings /></OrgThemeWrapper></AuthGuard>} />
       <Route path="/org/:orgId/new-project" element={<AuthGuard><OrgThemeWrapper><NewProject /></OrgThemeWrapper></AuthGuard>} />
 

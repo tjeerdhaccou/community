@@ -45,7 +45,7 @@ const NAV_SECTIONS = [
 ]
 
 export default function Sidebar() {
-  const { profile, isOrgAdmin, primaryOrgId } = useAuth()
+  const { profile, isOrgAdmin, primaryOrgId, primaryOrgSlug } = useAuth()
   const { project, role, basePath } = useProject()
   const navigate = useNavigate()
   const location = useLocation()
@@ -111,8 +111,8 @@ export default function Sidebar() {
 
   return (
     <nav className="cl-sidebar" role="navigation" aria-label="Hoofdnavigatie">
-      {isOrgAdmin && primaryOrgId && (
-        <div className="sidebar-back" onClick={() => navigate(`/org/${primaryOrgId}`)} role="button" tabIndex={0}>
+      {isOrgAdmin && (primaryOrgSlug || primaryOrgId) && (
+        <div className="sidebar-back" onClick={() => navigate(`/org/${primaryOrgSlug || primaryOrgId}`)} role="button" tabIndex={0}>
           <i className="fa-solid fa-arrow-left" />
           <span>Alle projecten</span>
         </div>

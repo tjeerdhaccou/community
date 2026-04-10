@@ -6,9 +6,10 @@ import { isProjectDomain, isOrgDomain } from '../lib/subdomain'
 
 export default function NewProject({ orgId: orgIdProp }) {
   const params = useParams()
-  const orgId = orgIdProp || params.orgId
+  const orgSlug = params.orgSlug
+  const orgId = orgIdProp
   const navigate = useNavigate()
-  const backPath = isOrgDomain() ? '/' : `/org/${orgId}`
+  const backPath = isOrgDomain() ? '/' : `/org/${orgSlug || orgId}`
 
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')

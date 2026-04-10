@@ -26,12 +26,13 @@ function ThemeToggle({ mode, setMode }) {
 
 export default function OrgDashboard({ orgId: orgIdProp }) {
   const params = useParams()
-  const orgId = orgIdProp || params.orgId
-  const { isOrgAdmin, primaryOrg } = useAuth()
+  const orgSlug = params.orgSlug
+  const { isOrgAdmin, primaryOrg, primaryOrgId } = useAuth()
+  const orgId = orgIdProp || primaryOrgId
   const { mode, setMode } = useTheme()
   const navigate = useNavigate()
-  const settingsPath = isOrgDomain() ? '/settings' : `/org/${orgId}/settings`
-  const newProjectPath = isOrgDomain() ? '/new-project' : `/org/${orgId}/new-project`
+  const settingsPath = isOrgDomain() ? '/settings' : `/org/${orgSlug || orgId}/settings`
+  const newProjectPath = isOrgDomain() ? '/new-project' : `/org/${orgSlug || orgId}/new-project`
   const [org, setOrg] = useState(null)
   const [projects, setProjects] = useState([])
   const [pendingByProject, setPendingByProject] = useState([])
@@ -40,22 +41,27 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
 
   async function load() {
     setLoading(true)
-    const { data: orgData } = await supabase
-      .from('organizations')
-      .select('*')
-      .eq('id', orgId)
-      .single()
+    // Lookup org by slug (from URL) or by id (from prop/context)
+    let orgData
+    if (orgSlug) {
+      const res = await supabase.from('organizations').select('*').eq('slug', orgSlug).single()
+      orgData = res.data
+    } else if (orgId) {
+      const res = await supabase.from('organizations').select('*').eq('id', orgId).single()
+      orgData = res.data
+    }
     setOrg(orgData)
+    const resolvedOrgId = orgData?.id || orgId
 
     const { data: stats, error } = await supabase
-      .rpc('get_org_project_stats', { p_org_id: orgId })
+      .rpc('get_org_project_stats', { p_org_id: resolvedOrgId })
 
     if (error) {
       console.error('Error loading stats:', error)
       const { data: fallback } = await supabase
         .from('projects')
         .select('*')
-        .eq('organization_id', orgId)
+        .eq('organization_id', resolvedOrgId)
         .order('created_at', { ascending: false })
       setProjects((fallback || []).map(p => ({
         project_id: p.id, project_name: p.name, project_location: p.location,
@@ -111,7 +117,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [orgId])
+  useEffect(() => { load() }, [orgSlug, orgId])
 
   // Aggregate stats
   const totals = projects.reduce((acc, p) => ({

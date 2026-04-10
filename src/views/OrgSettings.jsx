@@ -6,9 +6,10 @@ import { isOrgDomain } from '../lib/subdomain'
 
 export default function OrgSettings({ orgId: orgIdProp }) {
   const params = useParams()
-  const orgId = orgIdProp || params.orgId
+  const orgSlug = params.orgSlug
+  const orgId = orgIdProp
   const navigate = useNavigate()
-  const backPath = isOrgDomain() ? '/' : `/org/${orgId}`
+  const backPath = isOrgDomain() ? '/' : `/org/${orgSlug || orgId}`
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
   const [logoUrl, setLogoUrl] = useState(null)
@@ -24,10 +25,16 @@ export default function OrgSettings({ orgId: orgIdProp }) {
 
   useEffect(() => {
     async function load() {
-      const [orgRes, adminsRes] = await Promise.all([
-        supabase.from('organizations').select('*').eq('id', orgId).single(),
-        supabase.from('org_members').select('*, profile:profiles(id, full_name, avatar_url)').eq('organization_id', orgId),
-      ])
+      // Resolve org by slug or id
+      const orgQuery = orgSlug
+        ? supabase.from('organizations').select('*').eq('slug', orgSlug).single()
+        : supabase.from('organizations').select('*').eq('id', orgId).single()
+      const orgRes = await orgQuery
+      const resolvedId = orgRes.data?.id
+      if (!resolvedId) return
+      const adminsRes = await supabase.from('org_members')
+        .select('*, profile:profiles(id, full_name, avatar_url)')
+        .eq('organization_id', resolvedId)
       if (orgRes.data) {
         setOrg(orgRes.data)
         setName(orgRes.data.name)
@@ -110,7 +117,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
       const { error } = await supabase
         .from('organizations')
         .update({ name: name.trim(), logo_url: logoUrl })
-        .eq('id', orgId)
+        .eq('id', org?.id || orgId)
       if (error) throw error
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
