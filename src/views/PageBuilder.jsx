@@ -57,6 +57,7 @@ export default function PageBuilder() {
   const [loading, setLoading] = useState(true)
   const [projectMembers, setProjectMembers] = useState([])
   const [fontTheme, setFontTheme] = useState('clean')
+  const [isPublic, setIsPublic] = useState(project?.is_public || false)
   const [ctaText, setCtaText] = useState('')
   const [ctaBtnColor, setCtaBtnColor] = useState(null)
   const [colorTheme, setColorTheme] = useState('clean')
@@ -405,22 +406,24 @@ export default function PageBuilder() {
           <p className="view-header__sub">Bouw de publieke pagina voor je project</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <label className="pb-toggle" title={project?.is_public ? 'Pagina is zichtbaar voor bezoekers' : 'Pagina is niet zichtbaar'}>
+          <label className="pb-toggle" title={isPublic ? 'Pagina is zichtbaar voor bezoekers' : 'Pagina is niet zichtbaar'}>
             <input
               type="checkbox"
-              checked={project?.is_public || false}
+              checked={isPublic}
               onChange={async (e) => {
                 const newValue = e.target.checked
+                setIsPublic(newValue)
                 const { error } = await supabase.from('projects').update({ is_public: newValue }).eq('id', project.id)
-                if (!error) {
-                  // Update local project state
-                  project.is_public = newValue
+                if (error) {
+                  setIsPublic(!newValue)
+                  toast.error('Kon status niet wijzigen')
+                } else {
                   toast.success(newValue ? 'Pagina gepubliceerd' : 'Pagina op concept gezet')
                 }
               }}
             />
             <span className="pb-toggle__slider" />
-            <span className="pb-toggle__label">{project?.is_public ? 'Live' : 'Concept'}</span>
+            <span className="pb-toggle__label">{isPublic ? 'Live' : 'Concept'}</span>
           </label>
           {publicUrl && (
             <button type="button" className="btn-secondary" onClick={openPreview} disabled={publishing || conceptSaving} title="Bekijk concept zonder te publiceren">
