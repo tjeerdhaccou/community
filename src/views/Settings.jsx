@@ -205,7 +205,7 @@ export default function Settings() {
 
         {/* Public project page */}
         <section className="settings-section">
-          <h2><i className="fa-solid fa-globe" /> Publieke projectpagina</h2>
+          <h2>Publieke projectpagina</h2>
           <p className="form-hint" style={{ marginBottom: 16 }}>
             Een openbare pagina voor omwonenden en geïnteresseerden. Toont projectinfo, tijdlijn, publieke updates en events.
           </p>
@@ -327,20 +327,6 @@ export default function Settings() {
           )}
         </section>
 
-        {/* Milestones overview */}
-        <section className="settings-section">
-          <h2>Fases</h2>
-          <div className="settings-milestones">
-            {milestones.map(m => (
-              <div key={m.id} className="settings-milestone">
-                <span className={`settings-milestone__dot settings-milestone__dot--${m.status}`} />
-                <span>{m.label}</span>
-                <span className="settings-milestone__status">{m.status}</span>
-              </div>
-            ))}
-          </div>
-          <p className="form-hint">Fase beheer wordt later uitgebreid.</p>
-        </section>
 
         <div className="settings-save">
           <button type="submit" className="btn-primary" disabled={saving}>
