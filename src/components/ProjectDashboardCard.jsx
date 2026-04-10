@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { getIntakeUrl, getPublicSiteUrl } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from './IntakeQuestionEditor'
 
@@ -181,7 +182,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
     setSaving(false)
   }
 
-  const intakeUrl = `${window.location.origin}/intake/${project.project_id}`
+  const intakeUrl = getIntakeUrl({ ...project, id: project.project_id })
 
   return (
     <form className="org-project-card__edit" onSubmit={handleSave}>
@@ -343,7 +344,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             {slug && (
               <p style={{ gridColumn: '1 / -1', fontSize: 13, color: 'var(--text-tertiary)' }}>
                 <i className="fa-solid fa-link" style={{ marginRight: 6 }} />
-                Pagina zichtbaar op: <strong>{window.location.origin}/project/{slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')}</strong>
+                Pagina zichtbaar op: <strong>{getPublicSiteUrl({ ...project, slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') })}</strong>
               </p>
             )}
           </div>

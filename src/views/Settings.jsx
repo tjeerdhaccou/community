@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { getIntakeUrl, getPublicSiteUrl } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
 
@@ -256,11 +257,12 @@ export default function Settings() {
               {slug && (
                 <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8 }}>
                   <i className="fa-solid fa-link" style={{ marginRight: 6 }} />
-                  Pagina zichtbaar op: <strong>{window.location.origin}/project/{slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')}</strong>
+                  Pagina zichtbaar op: <strong>{getPublicSiteUrl({ ...project, slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') })}</strong>
                 </p>
               )}
             </>
           )}
+
         </section>
 
         {/* Intake form */}
@@ -287,13 +289,13 @@ export default function Settings() {
                   <input
                     type="text"
                     readOnly
-                    value={`${window.location.origin}/intake/${project.id}`}
+                    value={getIntakeUrl(project)}
                     className="intake-url-input"
                   />
                   <button
                     type="button"
                     className="btn-secondary btn-sm"
-                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/intake/${project.id}`)}
+                    onClick={() => navigator.clipboard.writeText(getIntakeUrl(project))}
                   >
                     <i className="fa-solid fa-copy" /> Kopieer
                   </button>

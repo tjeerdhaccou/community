@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { getIntakeUrl } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
@@ -23,7 +24,7 @@ export default function Ledenwerving() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const intakeUrl = `${window.location.origin}/intake/${project?.id}`
+  const intakeUrl = getIntakeUrl(project)
 
   async function handleSaveSettings() {
     setSaving(true)

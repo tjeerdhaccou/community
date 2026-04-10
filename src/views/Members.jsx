@@ -185,7 +185,7 @@ export default function Members() {
       )}
 
       {showInvite && (
-        <InviteModal projectName={project?.name} projectId={project?.slug || project?.id} onClose={() => setShowInvite(false)} />
+        <InviteModal projectName={project?.name} projectId={project?.slug || project?.id} project={project} onClose={() => setShowInvite(false)} />
       )}
 
       {selectedIntake && (
@@ -210,9 +210,11 @@ export default function Members() {
   )
 }
 
-function InviteModal({ projectName, projectId, onClose }) {
+function InviteModal({ projectName, projectId, project, onClose }) {
   const [copied, setCopied] = useState(false)
-  const inviteUrl = `${window.location.origin}/p/${projectId}`
+  const inviteUrl = project?.custom_domain
+    ? `https://${project.custom_domain}`
+    : `${window.location.origin}/p/${project?.slug || projectId}`
 
   function copyLink() {
     navigator.clipboard.writeText(inviteUrl)

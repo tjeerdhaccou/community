@@ -3,6 +3,7 @@ import { useProject } from '../contexts/ProjectContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
 import { useToast } from '../components/Toast'
+import { getPublicSiteUrl } from '../lib/subdomain'
 
 const SECTION_TYPES = [
   { value: 'text-image-left', label: 'Tekst links, beeld rechts', icon: 'fa-solid fa-table-columns' },
@@ -388,7 +389,7 @@ export default function PageBuilder() {
     window.open(`${publicUrl}?preview=1`, '_blank')
   }
 
-  const publicUrl = project?.slug ? `${window.location.origin}/project/${project.slug}` : null
+  const publicUrl = project ? getPublicSiteUrl(project) : null
   const heroSection = sections.find(s => s.section_type === 'hero')
   const ctaSection = sections.find(s => s.section_type === 'cta')
   const contentSections = sections.filter(s => s.section_type !== 'hero' && s.section_type !== 'cta')
