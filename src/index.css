@@ -1,5 +1,10 @@
 /* ===== App-specific styles (uses Clean Design System tokens) ===== */
 
+/* Prevent layout shift when scrollbar appears/disappears */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* Skip to content link (WCAG 2.1 AA) */
 .skip-link {
   position: absolute;
