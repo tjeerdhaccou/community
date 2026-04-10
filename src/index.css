@@ -6234,6 +6234,103 @@ select.input {
   gap: 8px;
 }
 
+/* ===== Platform Admin ===== */
+.platform-admin {
+  min-height: 100vh;
+  padding: 32px 48px;
+  background: var(--bg-page);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.platform-admin__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+.platform-admin__stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.platform-admin__stat {
+  flex: 1;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+}
+.platform-admin__stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.platform-admin__stat-label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.platform-admin__create {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+.platform-admin__create h3 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+.platform-admin__create-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+.platform-admin__orgs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.platform-admin__org-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  transition: transform 150ms var(--ease-default), box-shadow 150ms var(--ease-default);
+}
+.platform-admin__org-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.platform-admin__org-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.platform-admin__org-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.platform-admin__org-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-default);
+}
+@media (max-width: 768px) {
+  .platform-admin { padding: 16px; }
+  .platform-admin__stats { flex-wrap: wrap; }
+  .platform-admin__stat { min-width: calc(50% - 8px); }
+  .platform-admin__create-grid { grid-template-columns: 1fr; }
+}
+
 /* ===== Org Dashboard ===== */
 .org-dashboard {
   min-height: 100vh;

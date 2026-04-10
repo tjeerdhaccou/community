@@ -33,6 +33,7 @@ import PrivacyPolicy from './views/PrivacyPolicy'
 import CookieConsent from './components/CookieConsent'
 import PublicProject from './views/PublicProject'
 import PageBuilder from './views/PageBuilder'
+import PlatformAdmin from './views/PlatformAdmin'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
 
 function NotFound() {
@@ -174,6 +175,9 @@ function NormalRoutes() {
       <Route path="/intake/:projectId" element={<IntakeForm />} />
 
       <Route path="/" element={<AuthGuard><HomeRedirect /></AuthGuard>} />
+
+      {/* Platform admin */}
+      <Route path="/platform" element={<AuthGuard><PlatformAdmin /></AuthGuard>} />
 
       {/* Org-level routes */}
       <Route path="/org/:orgSlug" element={<AuthGuard><OrgThemeWrapper><OrgDashboard /></OrgThemeWrapper></AuthGuard>} />
