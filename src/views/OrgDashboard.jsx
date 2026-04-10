@@ -68,7 +68,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
         project_tagline: p.tagline, project_logo_url: p.logo_url,
         project_cover_image_url: p.cover_image_url,
         project_description: p.description,
-        is_public: p.is_public, slug: p.slug,
+        is_public: p.is_public, slug: p.slug, custom_domain: p.custom_domain,
         public_description: p.public_description,
         public_contact_email: p.public_contact_email,
         intake_enabled: p.intake_enabled,
@@ -79,8 +79,17 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
     } else {
       const projectIds = (stats || []).map(s => s.project_id)
 
-      // Load admins per project
+      // Load custom domains + admins per project
       if (projectIds.length > 0) {
+        const { data: domainData } = await supabase
+          .from('projects')
+          .select('id, custom_domain')
+          .in('id', projectIds)
+        const domainMap = {}
+        for (const d of (domainData || [])) { domainMap[d.id] = d.custom_domain }
+        // Merge custom_domain into stats
+        for (const s of (stats || [])) { s.custom_domain = domainMap[s.project_id] || null }
+
         const { data: adminData } = await supabase
           .from('memberships')
           .select('project_id, role, profile:profiles(full_name, avatar_url)')

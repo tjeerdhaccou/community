@@ -31,7 +31,10 @@ export function getProjectBaseUrl(project) {
   const domain = project.custom_domain
   if (domain) return `https://${domain}`
   const slug = project.slug || project.id
-  return `${window.location.origin}/p/${slug}`
+  // On a subdomain, link to the main domain for /p/ routes
+  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN
+  const origin = mainDomain ? `https://${mainDomain}` : window.location.origin
+  return `${origin}/p/${slug}`
 }
 
 /**
