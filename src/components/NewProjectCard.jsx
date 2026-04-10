@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function NewProjectCard({ orgId, onCreated, onCancel }) {
+  const { user } = useAuth()
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
   const [tagline, setTagline] = useState('')
@@ -58,6 +60,13 @@ export default function NewProjectCard({ orgId, onCreated, onCancel }) {
         .select()
         .single()
       if (error) throw error
+
+      // Auto-add creator as admin member
+      await supabase.from('memberships').insert({
+        profile_id: user.id,
+        project_id: project.id,
+        role: 'admin',
+      })
 
       // Setup subdomain in background (non-blocking)
       supabase.functions.invoke('setup-project-domain', {

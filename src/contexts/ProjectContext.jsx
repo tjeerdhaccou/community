@@ -31,8 +31,11 @@ export function ProjectProvider({ children, slugOverride }) {
       setLoading(true)
       setError(null)
 
-      // Fetch project by slug first, then fetch milestones using the UUID
-      const projectRes = await supabase.from('projects').select('*').eq('slug', slug).single()
+      // Fetch project by slug or by UUID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+      const projectRes = isUUID
+        ? await supabase.from('projects').select('*').eq('id', slug).single()
+        : await supabase.from('projects').select('*').eq('slug', slug).single()
       if (projectRes.error || !projectRes.data) {
         console.error('ProjectContext: failed to load project', projectRes.error)
         setError(projectRes.error || new Error('Project niet gevonden'))
