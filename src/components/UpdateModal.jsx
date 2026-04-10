@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { UPDATE_TAGS } from '../lib/constants'
 import { uploadImage } from '../lib/storage'
+import ImageCropper from './ImageCropper'
 
 export default function UpdateModal({ update, onSave, onClose }) {
   const isEdit = !!update?.id
@@ -12,6 +13,7 @@ export default function UpdateModal({ update, onSave, onClose }) {
   const [imagePreview, setImagePreview] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [cropSrc, setCropSrc] = useState(null)
   const fileRef = useRef(null)
 
   useEffect(() => {
@@ -25,11 +27,17 @@ export default function UpdateModal({ update, onSave, onClose }) {
     }
   }, [update])
 
-  async function handleImageSelect(e) {
+  function handleImageSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
 
-    setImagePreview(URL.createObjectURL(file))
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setImagePreview(URL.createObjectURL(blob))
     setUploading(true)
     try {
       const url = await uploadImage(file)
@@ -168,6 +176,16 @@ export default function UpdateModal({ update, onSave, onClose }) {
             </div>
           </div>
         </form>
+
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={16 / 9}
+            round={false}
+            onComplete={handleCropComplete}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </div>
     </div>
   )

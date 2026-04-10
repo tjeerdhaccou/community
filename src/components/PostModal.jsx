@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
 import { POST_TAGS } from '../lib/constants'
+import ImageCropper from './ImageCropper'
 
 export default function PostModal({ onSave, onClose, editPost }) {
   const isEdit = !!editPost
@@ -11,13 +12,21 @@ export default function PostModal({ onSave, onClose, editPost }) {
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [cropSrc, setCropSrc] = useState(null)
   const fileRef = useRef(null)
 
   function handleImageSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
     setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
+    setImagePreview(URL.createObjectURL(blob))
   }
 
   function removeImage() {
@@ -185,6 +194,16 @@ export default function PostModal({ onSave, onClose, editPost }) {
             </div>
           </div>
         </form>
+
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={16 / 9}
+            round={false}
+            onComplete={handleCropComplete}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </div>
     </div>
   )

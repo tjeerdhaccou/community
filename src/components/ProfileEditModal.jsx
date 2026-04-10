@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import ImageCropper from './ImageCropper'
 
 export default function ProfileEditModal({ profile, onSave, onClose }) {
   const [company, setCompany] = useState(profile.company || '')
@@ -19,10 +20,19 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
   const fileRef = useRef(null)
   const photoRef = useRef(null)
 
-  async function handlePhotoSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+
+  function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setAvatarPreview(URL.createObjectURL(file))
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setAvatarPreview(URL.createObjectURL(blob))
     setUploading(true)
     try {
       const url = await uploadImage(file)
@@ -180,6 +190,16 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
             </button>
           </div>
         </form>
+
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={1}
+            round={true}
+            onComplete={handleCropComplete}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </div>
     </div>
   )

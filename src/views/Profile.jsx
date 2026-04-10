@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { uploadImage } from '../lib/storage'
 import { logAudit } from '../lib/audit'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import ImageCropper from '../components/ImageCropper'
 
 export default function Profile() {
   const { profile: authProfile, reload } = useAuth()
@@ -81,10 +82,19 @@ export default function Profile() {
     }
   }, [authProfile])
 
-  async function handleAvatarSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+
+  function handleAvatarSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setAvatarPreview(URL.createObjectURL(file))
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  async function handleAvatarCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setAvatarPreview(URL.createObjectURL(blob))
     setUploading(true)
     try {
       const url = await uploadImage(file)
@@ -494,6 +504,16 @@ export default function Profile() {
           </button>
         </div>
       </form>
+
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={1}
+          round={true}
+          onComplete={handleAvatarCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </div>
   )
 }
