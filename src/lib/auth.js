@@ -1,10 +1,23 @@
 import { supabase } from './supabase'
 
 export async function signInWithGoogle() {
+  // Always redirect to main domain for OAuth callback, then bounce back to subdomain
+  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN
+  const isSubdomain = mainDomain && window.location.hostname !== mainDomain && window.location.hostname !== `www.${mainDomain}`
+  const callbackOrigin = isSubdomain ? `https://${mainDomain}` : window.location.origin
+
+  // Save current origin so callback can redirect back to subdomain
+  if (isSubdomain) {
+    try {
+      localStorage.setItem('redirectAfterLoginUrl', window.location.origin)
+      localStorage.setItem('redirectAfterLogin', window.location.pathname || '/')
+    } catch {}
+  }
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${callbackOrigin}/auth/callback`,
     },
   })
   if (error) throw error

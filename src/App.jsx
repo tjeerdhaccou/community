@@ -52,10 +52,13 @@ function AuthGuard({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
   if (!user) {
-    // Remember where the user wanted to go
+    // Remember where the user wanted to go (including subdomain origin)
     const path = window.location.pathname
     if (path && path !== '/' && path !== '/login') {
-      try { localStorage.setItem('redirectAfterLogin', path) } catch {}
+      try {
+        localStorage.setItem('redirectAfterLogin', path)
+        localStorage.setItem('redirectAfterLoginUrl', window.location.origin)
+      } catch {}
     }
     return <Navigate to="/login" replace />
   }

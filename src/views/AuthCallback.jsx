@@ -11,9 +11,20 @@ export default function AuthCallback() {
     handled.current = true
 
     function redirectAfterLogin() {
-      let saved
-      try { saved = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
-      navigate(saved || '/', { replace: true })
+      let savedUrl, savedPath
+      try {
+        savedUrl = localStorage.getItem('redirectAfterLoginUrl')
+        savedPath = localStorage.getItem('redirectAfterLogin')
+        localStorage.removeItem('redirectAfterLoginUrl')
+        localStorage.removeItem('redirectAfterLogin')
+      } catch {}
+
+      // If we have a full URL (from a subdomain), do a hard redirect
+      if (savedUrl && savedUrl !== window.location.origin) {
+        window.location.href = savedUrl + (savedPath || '/')
+        return
+      }
+      navigate(savedPath || '/', { replace: true })
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
