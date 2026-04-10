@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { useProject } from './contexts/ProjectContext'
+import { supabase } from './lib/supabase'
 import Layout from './components/Layout'
 import { ConfirmProvider } from './components/ConfirmDialog'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -31,7 +33,7 @@ import PrivacyPolicy from './views/PrivacyPolicy'
 import CookieConsent from './components/CookieConsent'
 import PublicProject from './views/PublicProject'
 import PageBuilder from './views/PageBuilder'
-import { isOrgDomain, isProjectDomain, getProjectSlugFromSubdomain } from './lib/subdomain'
+import { getProjectSlugFromSubdomain } from './lib/subdomain'
 
 function NotFound() {
   return (
@@ -130,9 +132,35 @@ function ProjectThemeWrapper({ children }) {
 // ==================== Subdomain routing ====================
 
 function SubdomainRouter() {
-  if (isOrgDomain()) return <OrgSubdomainApp />
-  if (isProjectDomain()) return <ProjectSubdomainApp slug={getProjectSlugFromSubdomain()} />
-  return <NormalRoutes />
+  const sub = getProjectSlugFromSubdomain()
+  if (!sub) return <NormalRoutes />
+  return <SubdomainLookup slug={sub} />
+}
+
+function SubdomainLookup({ slug }) {
+  const [type, setType] = useState(null) // 'project' | 'org' | null
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function lookup() {
+      // Check if it's a project slug first
+      const { data: project } = await supabase.from('projects').select('id').eq('slug', slug).maybeSingle()
+      if (project) { setType('project'); setLoading(false); return }
+
+      // Check if it's an org slug
+      const { data: org } = await supabase.from('organizations').select('id').eq('slug', slug).maybeSingle()
+      if (org) { setType('org'); setLoading(false); return }
+
+      setType(null)
+      setLoading(false)
+    }
+    lookup()
+  }, [slug])
+
+  if (loading) return <div className="loading-page"><p>Laden...</p></div>
+  if (type === 'project') return <ProjectSubdomainApp slug={slug} />
+  if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
+  return <NormalRoutes /> // fallback — 404 will handle it
 }
 
 function NormalRoutes() {
@@ -173,9 +201,18 @@ function NormalRoutes() {
   )
 }
 
-function OrgSubdomainApp() {
-  const { isOrgAdmin, primaryOrgId, loading, user } = useAuth()
-  if (loading) return <div className="loading-page"><p>Laden...</p></div>
+function OrgSubdomainApp({ orgSlug }) {
+  const { isOrgAdmin, loading, user, orgMemberships } = useAuth()
+  const [orgId, setOrgId] = useState(null)
+  const [orgLoading, setOrgLoading] = useState(true)
+
+  useEffect(() => {
+    if (!orgSlug) return
+    supabase.from('organizations').select('id').eq('slug', orgSlug).single()
+      .then(({ data }) => { setOrgId(data?.id || null); setOrgLoading(false) })
+  }, [orgSlug])
+
+  if (loading || orgLoading) return <div className="loading-page"><p>Laden...</p></div>
   if (!user) return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -183,25 +220,31 @@ function OrgSubdomainApp() {
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   )
-  if (!isOrgAdmin || !primaryOrgId) return (
-    <div className="error-boundary">
-      <div className="error-boundary__card">
-        <i className="fa-solid fa-lock error-boundary__icon" style={{ color: 'var(--accent-red)' }} />
-        <h2>Geen toegang</h2>
-        <p>Je hebt geen beheerderstoegang tot een organisatie.</p>
-        <a href="https://commoncity.nl" className="btn-primary" style={{ display: 'inline-block', marginTop: 16 }}>Terug</a>
+
+  // Check if user is admin of THIS org
+  const isAdminOfOrg = orgId && orgMemberships.some(om => om.organization_id === orgId && om.role === 'admin')
+  if (!isAdminOfOrg) {
+    // Redirect root to /admin info page, but non-admins can't access
+    return (
+      <div className="error-boundary">
+        <div className="error-boundary__card">
+          <i className="fa-solid fa-lock error-boundary__icon" style={{ color: 'var(--accent-red)' }} />
+          <h2>Geen toegang</h2>
+          <p>Je hebt geen beheerderstoegang tot deze organisatie.</p>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
   return (
-    <ThemeProvider scope={`org-${primaryOrgId}`}>
+    <ThemeProvider scope={`org-${orgId}`}>
       <Routes>
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/" element={<OrgDashboard orgId={primaryOrgId} />} />
-        <Route path="/settings" element={<OrgSettings orgId={primaryOrgId} />} />
-        <Route path="/new-project" element={<NewProject orgId={primaryOrgId} />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin" element={<OrgDashboard orgId={orgId} />} />
+        <Route path="/settings" element={<OrgSettings orgId={orgId} />} />
+        <Route path="/new-project" element={<NewProject orgId={orgId} />} />
+        <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     </ThemeProvider>
   )
