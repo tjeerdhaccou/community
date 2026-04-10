@@ -6745,7 +6745,8 @@ select.input {
 }
 .theme-select__btn--active {
   border-color: var(--accent-primary);
-  background: var(--bg-selected, #E8EDF5);
+  background: var(--accent-primary);
+  color: #fff;
 }
 
 /* ===== Enhanced Event Detail with Tabs ===== */

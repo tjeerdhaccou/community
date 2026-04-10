@@ -140,24 +140,7 @@ export default function Settings() {
         <section className="settings-section">
           <h2>Branding</h2>
 
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label>Primaire kleur</label>
-              <div className="color-input">
-                <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} />
-                <input type="text" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="color-hex" />
-              </div>
-            </div>
-            <div className="form-group form-group--half">
-              <label>Accent kleur</label>
-              <div className="color-input">
-                <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} />
-                <input type="text" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="color-hex" />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: 24 }}>
             <label>Standaard thema</label>
             <div className="theme-select">
               {[
