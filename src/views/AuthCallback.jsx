@@ -49,10 +49,10 @@ export default function AuthCallback() {
         if (accessToken && refreshToken) {
           const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
           if (data?.session) {
-            // Clear hash from URL
+            const returnPath = hashParams.get('returnPath')
             window.history.replaceState(null, '', window.location.pathname)
             subscription.unsubscribe()
-            navigate('/', { replace: true })
+            navigate(returnPath ? decodeURIComponent(returnPath) : '/', { replace: true })
             return
           }
         }

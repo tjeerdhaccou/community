@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
-import { getIntakeUrl, getPublicSiteUrl, getProjectBaseUrl } from '../lib/subdomain'
+import { getIntakeUrl, getPublicSiteUrl, getProjectBaseUrl, navigateToSubdomain } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from './IntakeQuestionEditor'
 
@@ -14,7 +14,7 @@ export default function ProjectDashboardCard({ project, onSaved }) {
 
   return (
     <div className="org-project-card">
-      <div className="org-project-card__body" onClick={() => window.location.href = getProjectBaseUrl({ ...project, id: project.project_id })}>
+      <div className="org-project-card__body" onClick={() => navigateToSubdomain(getProjectBaseUrl({ ...project, id: project.project_id }))}>
         {/* Section 1: Header — logo, naam, locatie + actions rechtsboven */}
         <div className="org-project-card__top">
           <div className="org-project-card__header">
@@ -43,7 +43,7 @@ export default function ProjectDashboardCard({ project, onSaved }) {
             <button className="org-project-card__action-btn" onClick={() => setEditing(!editing)} title="Instellingen">
               <i className="fa-solid fa-gear" />
             </button>
-            <button className="org-project-card__action-btn" onClick={() => window.location.href = getProjectBaseUrl({ ...project, id: project.project_id })} title="Naar project">
+            <button className="org-project-card__action-btn" onClick={() => navigateToSubdomain(getProjectBaseUrl({ ...project, id: project.project_id }))} title="Naar project">
               <i className="fa-solid fa-arrow-right" />
             </button>
           </div>

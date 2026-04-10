@@ -116,11 +116,16 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
           if (!grouped[p.project_id]) grouped[p.project_id] = []
           grouped[p.project_id].push(p.profile)
         }
-        setPendingByProject(Object.entries(grouped).map(([pid, members]) => ({
-          project_id: pid,
-          project_name: (stats || []).find(s => s.project_id === pid)?.project_name,
-          members,
-        })))
+        setPendingByProject(Object.entries(grouped).map(([pid, members]) => {
+          const s = (stats || []).find(s => s.project_id === pid)
+          return {
+            project_id: pid,
+            project_name: s?.project_name,
+            slug: s?.slug,
+            custom_domain: s?.custom_domain,
+            members,
+          }
+        }))
       }
     }
     setLoading(false)
@@ -215,9 +220,9 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
                     <div
                       key={p.project_id}
                       className="org-actions__item"
-                      onClick={() => {
-                        const base = p.custom_domain ? `https://${p.custom_domain}` : `${window.location.origin}/p/${p.slug || p.project_id}`
-                        window.location.href = `${base}/members`
+                      onClick={async () => {
+                        const { navigateToSubdomain, getProjectBaseUrl } = await import('../lib/subdomain')
+                        navigateToSubdomain(`${getProjectBaseUrl(p)}/members`)
                       }}
                     >
                       <div className="org-actions__icon">

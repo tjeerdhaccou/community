@@ -23,6 +23,26 @@ export function getProjectSlugFromSubdomain() {
 }
 
 /**
+ * Navigate to a different subdomain while preserving the auth session.
+ * Passes tokens via /auth/callback#access_token=...&refresh_token=...
+ */
+export async function navigateToSubdomain(targetUrl) {
+  const { supabase } = await import('./supabase')
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    const url = new URL(targetUrl)
+    // If target is a different origin, pass session tokens
+    if (url.origin !== window.location.origin) {
+      const callbackUrl = `${url.origin}/auth/callback`
+      window.location.href = `${callbackUrl}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&returnPath=${encodeURIComponent(url.pathname + url.search)}`
+      return
+    }
+  }
+  window.location.href = targetUrl
+}
+
+/**
  * Get the base URL for a project. Uses subdomain if custom_domain is set,
  * otherwise falls back to main domain with /p/ path.
  */
