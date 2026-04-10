@@ -210,13 +210,14 @@ export default function Settings() {
             Een openbare pagina voor omwonenden en geïnteresseerden. Toont projectinfo, tijdlijn, publieke updates en events.
           </p>
 
-          <div className="toggle-row" style={{ marginBottom: 16 }}>
-            <label className="toggle">
-              <input type="checkbox" checked={isPublic} onChange={e => setIsPublic(e.target.checked)} />
-              <span className="toggle__slider" />
-            </label>
+          <label className="intake-toggle">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={e => setIsPublic(e.target.checked)}
+            />
             <span>Publieke pagina actief</span>
-          </div>
+          </label>
 
           {isPublic && (
             <>
