@@ -2,14 +2,15 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
-import { isOrgDomain } from '../lib/subdomain'
+import { getProjectSlugFromSubdomain } from '../lib/subdomain'
+import ImageCropper from '../components/ImageCropper'
 
 export default function OrgSettings({ orgId: orgIdProp }) {
   const params = useParams()
   const orgSlug = params.orgSlug
   const orgId = orgIdProp
   const navigate = useNavigate()
-  const backPath = isOrgDomain() ? '/' : `/org/${orgSlug || orgId}`
+  const backPath = getProjectSlugFromSubdomain() ? '/admin' : `/org/${orgSlug || orgId}`
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
   const [logoUrl, setLogoUrl] = useState(null)
@@ -46,10 +47,19 @@ export default function OrgSettings({ orgId: orgIdProp }) {
     load()
   }, [orgId])
 
-  async function handleLogoSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+
+  function handleLogoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setLogoPreview(URL.createObjectURL(file))
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  async function handleLogoCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setLogoPreview(URL.createObjectURL(blob))
     setUploading(true)
     try {
       const url = await uploadImage(file)
@@ -211,6 +221,16 @@ export default function OrgSettings({ orgId: orgIdProp }) {
             </button>
           </div>
         </form>
+
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={1}
+            round={false}
+            onComplete={handleLogoCropComplete}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </main>
     </div>
   )

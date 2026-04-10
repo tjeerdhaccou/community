@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { isOrgDomain } from '../lib/subdomain'
+import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 import ProjectDashboardCard from '../components/ProjectDashboardCard'
 import NewProjectCard from '../components/NewProjectCard'
 
@@ -31,8 +31,9 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
   const orgId = orgIdProp || primaryOrgId
   const { mode, setMode } = useTheme()
   const navigate = useNavigate()
-  const settingsPath = isOrgDomain() ? '/settings' : `/org/${orgSlug || orgId}/settings`
-  const newProjectPath = isOrgDomain() ? '/new-project' : `/org/${orgSlug || orgId}/new-project`
+  const isSubdomain = !!getProjectSlugFromSubdomain()
+  const settingsPath = isSubdomain ? '/settings' : `/org/${orgSlug || orgId}/settings`
+  const newProjectPath = isSubdomain ? '/new-project' : `/org/${orgSlug || orgId}/new-project`
   const [org, setOrg] = useState(null)
   const [projects, setProjects] = useState([])
   const [pendingByProject, setPendingByProject] = useState([])
