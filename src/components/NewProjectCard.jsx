@@ -42,18 +42,28 @@ export default function NewProjectCard({ orgId, onCreated, onCancel }) {
     if (!name.trim()) return
     setSaving(true)
     try {
-      const { error } = await supabase
+      const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      const { data: project, error } = await supabase
         .from('projects')
         .insert({
           organization_id: orgId,
           name: name.trim(),
+          slug,
           location: location.trim() || null,
           tagline: tagline.trim() || null,
           description: description.trim() || null,
           logo_url: logoUrl,
           cover_image_url: coverUrl,
         })
+        .select()
+        .single()
       if (error) throw error
+
+      // Setup subdomain in background (non-blocking)
+      supabase.functions.invoke('setup-project-domain', {
+        body: { slug, project_id: project.id },
+      }).catch(err => console.warn('Domain setup deferred:', err))
+
       onCreated()
     } catch (err) {
       console.error('Error creating project:', err)
