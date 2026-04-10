@@ -404,7 +404,24 @@ export default function PageBuilder() {
           <h1><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 10, color: 'var(--accent-primary)' }} />Pagina bouwer</h1>
           <p className="view-header__sub">Bouw de publieke pagina voor je project</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label className="pb-toggle" title={project?.is_public ? 'Pagina is zichtbaar voor bezoekers' : 'Pagina is niet zichtbaar'}>
+            <input
+              type="checkbox"
+              checked={project?.is_public || false}
+              onChange={async (e) => {
+                const newValue = e.target.checked
+                const { error } = await supabase.from('projects').update({ is_public: newValue }).eq('id', project.id)
+                if (!error) {
+                  // Update local project state
+                  project.is_public = newValue
+                  toast.success(newValue ? 'Pagina gepubliceerd' : 'Pagina op concept gezet')
+                }
+              }}
+            />
+            <span className="pb-toggle__slider" />
+            <span className="pb-toggle__label">{project?.is_public ? 'Live' : 'Concept'}</span>
+          </label>
           {publicUrl && (
             <button type="button" className="btn-secondary" onClick={openPreview} disabled={publishing || conceptSaving} title="Bekijk concept zonder te publiceren">
               <i className="fa-solid fa-eye" /> Voorbeeld
@@ -412,16 +429,6 @@ export default function PageBuilder() {
           )}
         </div>
       </div>
-
-      {!project?.is_public && (
-        <div className="page-builder__notice">
-          <i className="fa-solid fa-eye-slash" />
-          <div>
-            <strong>Publieke pagina is niet actief</strong>
-            <p>Zet de publieke pagina aan in <strong>Instellingen</strong> om deze zichtbaar te maken.</p>
-          </div>
-        </div>
-      )}
 
       {/* Publish bar — dirty state */}
       {isDirty && (

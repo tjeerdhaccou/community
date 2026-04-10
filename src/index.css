@@ -4439,6 +4439,50 @@ select.input {
   border: none;
 }
 
+/* Page Builder — Publish toggle */
+.pb-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.pb-toggle input { display: none; }
+.pb-toggle__slider {
+  width: 40px;
+  height: 22px;
+  background: var(--bg-active, #EBEDF2);
+  border-radius: var(--radius-full, 9999px);
+  position: relative;
+  transition: background 150ms var(--ease-default);
+}
+.pb-toggle__slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-xs);
+  transition: transform 150ms var(--ease-default);
+}
+.pb-toggle input:checked + .pb-toggle__slider {
+  background: var(--accent-green, #3BD269);
+}
+.pb-toggle input:checked + .pb-toggle__slider::after {
+  transform: translateX(18px);
+}
+.pb-toggle__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.pb-toggle input:checked ~ .pb-toggle__label {
+  color: var(--accent-green, #27A854);
+}
+
 /* Page Builder */
 .page-builder__notice {
   display: flex;
