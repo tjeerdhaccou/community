@@ -197,6 +197,8 @@ select.input {
 }
 .main-content > *:not(.main-topbar) {
   max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .main-topbar {
