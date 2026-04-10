@@ -66,7 +66,7 @@ export default function Sidebar() {
   }, [project?.id, role])
 
   function isActive(to) {
-    if (to === '') return location.pathname === basePath || location.pathname === basePath + '/'
+    if (to === '') return location.pathname === (basePath || '/') || location.pathname === basePath + '/'
     return location.pathname.startsWith(`${basePath}/${to}`)
   }
 
@@ -97,7 +97,7 @@ export default function Sidebar() {
       <div
         key={item.to}
         className={`cl-nav-item ${isActive(item.to) ? 'cl-nav-item--active' : ''}`}
-        onClick={() => navigate(item.to === '' ? basePath : `${basePath}/${item.to}`)}
+        onClick={() => navigate(item.to === '' ? (basePath || '/') : `${basePath}/${item.to}`)}
         role="button"
         tabIndex={0}
       >
@@ -119,7 +119,7 @@ export default function Sidebar() {
         </div>
       )}
 
-      <div className="sidebar-project-header" onClick={() => navigate(basePath)} role="button" tabIndex={0}>
+      <div className="sidebar-project-header" onClick={() => navigate(basePath || '/')} role="button" tabIndex={0}>
         {project?.logo_url ? (
           <img src={project.logo_url} alt={project.name} className="sidebar-project-logo" />
         ) : (
