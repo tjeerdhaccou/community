@@ -16,6 +16,10 @@ export default function Settings() {
   const [primaryColor, setPrimaryColor] = useState('#4A90D9')
   const [accentColor, setAccentColor] = useState('#3BD269')
   const [defaultTheme, setDefaultTheme] = useState('light')
+  const [logoUrl, setLogoUrl] = useState('')
+  const [logoPreview, setLogoPreview] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const logoRef = useRef(null)
   const [coverImageUrl, setCoverImageUrl] = useState('')
   const [coverPreview, setCoverPreview] = useState('')
   const [uploadingCover, setUploadingCover] = useState(false)
@@ -39,6 +43,8 @@ export default function Settings() {
       setPrimaryColor(project.brand_primary_color || '#4A90D9')
       setAccentColor(project.brand_accent_color || '#3BD269')
       setDefaultTheme(project.default_theme || 'light')
+      setLogoUrl(project.logo_url || '')
+      setLogoPreview(project.logo_url || '')
       setCoverImageUrl(project.cover_image_url || '')
       setCoverPreview(project.cover_image_url || '')
       setIntakeEnabled(project.intake_enabled || false)
@@ -55,6 +61,16 @@ export default function Settings() {
   const [cropRound, setCropRound] = useState(false)
   const [cropTarget, setCropTarget] = useState(null) // 'cover'
 
+  function handleLogoSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(1)
+    setCropRound(false)
+    setCropTarget('logo')
+    e.target.value = ''
+  }
+
   function handleCoverSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -62,14 +78,26 @@ export default function Settings() {
     setCropAspect(16 / 9)
     setCropRound(false)
     setCropTarget('cover')
-    e.target.value = '' // reset file input
+    e.target.value = ''
   }
 
   async function handleCropComplete(blob) {
     const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
     setCropSrc(null)
 
-    if (cropTarget === 'cover') {
+    if (cropTarget === 'logo') {
+      setLogoPreview(URL.createObjectURL(blob))
+      setUploadingLogo(true)
+      try {
+        const url = await uploadImage(file)
+        setLogoUrl(url)
+      } catch (err) {
+        console.error('Logo upload failed:', err)
+        setLogoPreview(logoUrl || '')
+      } finally {
+        setUploadingLogo(false)
+      }
+    } else if (cropTarget === 'cover') {
       setCoverPreview(URL.createObjectURL(blob))
       setUploadingCover(true)
       try {
@@ -101,6 +129,7 @@ export default function Settings() {
         brand_primary_color: primaryColor,
         brand_accent_color: accentColor,
         default_theme: defaultTheme,
+        logo_url: logoUrl || null,
         cover_image_url: coverImageUrl || null,
         intake_enabled: intakeEnabled,
         intake_intro_text: intakeIntro.trim() || null,
@@ -158,6 +187,31 @@ export default function Settings() {
         {/* Branding */}
         <section className="settings-section">
           <h2>Branding</h2>
+
+          <div className="form-group">
+            <label>Project logo</label>
+            <p className="form-hint">Vierkant logo, wordt getoond in de sidebar en op kaarten.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
+              {logoPreview ? (
+                <img src={logoPreview} alt="Logo" style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 24, fontWeight: 700 }}>
+                  {(name || 'P')[0]}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="btn-secondary btn-sm" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
+                  {uploadingLogo ? 'Uploaden...' : logoPreview ? 'Wijzigen' : 'Logo kiezen'}
+                </button>
+                {logoPreview && (
+                  <button type="button" className="btn-secondary btn-sm" onClick={() => { setLogoUrl(''); setLogoPreview('') }} style={{ color: 'var(--accent-red)' }}>
+                    Verwijderen
+                  </button>
+                )}
+              </div>
+              <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoSelect} style={{ display: 'none' }} />
+            </div>
+          </div>
 
           <div className="form-group" style={{ marginBottom: 24 }}>
             <label>Standaard thema</label>

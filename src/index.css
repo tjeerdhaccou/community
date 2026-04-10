@@ -189,6 +189,7 @@ select.input {
 .main-content {
   flex: 1;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   padding: 32px;
   padding-top: 16px;
   background: var(--bg-page);
@@ -6236,6 +6237,7 @@ select.input {
   min-height: 100vh;
   height: 100vh;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   background: var(--bg-page, #F7F8FA);
 }
 
