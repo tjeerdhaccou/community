@@ -1,10 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signInWithGoogle, checkInvitedEmail, sendOtpCode, verifyOtpCode } from '../lib/auth'
 import { supabase } from '../lib/supabase'
+import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [projectInfo, setProjectInfo] = useState(null)
+
+  useEffect(() => {
+    const slug = getProjectSlugFromSubdomain()
+    if (!slug) return
+    supabase.from('projects').select('name, logo_url, tagline').eq('slug', slug).single()
+      .then(({ data }) => { if (data) setProjectInfo(data) })
+  }, [])
   const [mode, setMode] = useState('choice') // choice | email | otp
   const [email, setEmail] = useState('')
   const [otpCode, setOtpCode] = useState('')
@@ -87,8 +96,11 @@ export default function Login() {
     return (
       <div className="login-page">
         <div className="cl-card cl-card--elevated login-card">
-          <h1 className="login-title">Community Platform</h1>
-          <p className="login-subtitle">Log in om verder te gaan</p>
+          {projectInfo?.logo_url && (
+            <img src={projectInfo.logo_url} alt={projectInfo.name + ' logo'} style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', objectFit: 'cover', marginBottom: 12 }} />
+          )}
+          <h1 className="login-title">{projectInfo?.name || 'Community Platform'}</h1>
+          <p className="login-subtitle">{projectInfo?.tagline || 'Log in om verder te gaan'}</p>
 
           <button onClick={signInWithGoogle} className="cl-btn cl-btn--primary login-google-btn">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

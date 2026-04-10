@@ -11,12 +11,19 @@ export default function AuthCallback() {
     if (handled.current) return
     handled.current = true
 
-    function redirectAfterLogin() {
+    async function redirectAfterLogin() {
       // Check cookie first (set by subdomain before OAuth redirect)
       const returnUrl = getReturnCookie()
       if (returnUrl) {
-        window.location.href = returnUrl
-        return
+        // Pass session tokens to subdomain via URL hash so it can restore the session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          const url = new URL(returnUrl)
+          url.pathname = '/auth/callback'
+          url.hash = `access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=recovery`
+          window.location.href = url.toString()
+          return
+        }
       }
 
       // Fallback to localStorage (same-domain redirects)
@@ -34,6 +41,22 @@ export default function AuthCallback() {
 
     const handleAuth = async () => {
       try {
+        // Check for tokens in URL hash (passed from main domain to subdomain)
+        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+
+        if (accessToken && refreshToken) {
+          const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          if (data?.session) {
+            // Clear hash from URL
+            window.history.replaceState(null, '', window.location.pathname)
+            subscription.unsubscribe()
+            navigate('/', { replace: true })
+            return
+          }
+        }
+
         const params = new URLSearchParams(window.location.search)
         const code = params.get('code')
 
