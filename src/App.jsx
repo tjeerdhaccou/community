@@ -141,7 +141,39 @@ function ProjectThemeWrapper({ children }) {
 function SubdomainRouter() {
   const sub = getProjectSlugFromSubdomain()
   if (!sub) return <NormalRoutes />
+  if (sub === 'admin') return <PlatformSubdomainApp />
   return <SubdomainLookup slug={sub} />
+}
+
+function PlatformSubdomainApp() {
+  const { isPlatformAdmin, loading, user } = useAuth()
+  if (loading) return <div className="loading-page"><p>Laden...</p></div>
+  if (!user) return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  )
+  if (!isPlatformAdmin) return (
+    <div className="error-boundary">
+      <div className="error-boundary__card">
+        <i className="fa-solid fa-lock error-boundary__icon" style={{ color: 'var(--accent-red)' }} />
+        <h2>Geen toegang</h2>
+        <p>Je hebt geen platform admin rechten.</p>
+      </div>
+    </div>
+  )
+  return (
+    <ThemeProvider>
+      <Routes>
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/" element={<PlatformAdmin />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ThemeProvider>
+  )
 }
 
 function SubdomainLookup({ slug }) {
