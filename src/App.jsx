@@ -34,6 +34,7 @@ import CookieConsent from './components/CookieConsent'
 import PublicProject from './views/PublicProject'
 import PageBuilder from './views/PageBuilder'
 import PlatformAdmin from './views/PlatformAdmin'
+import OrgOnboarding from './views/OrgOnboarding'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
 
 function NotFound() {
@@ -69,15 +70,19 @@ function AuthGuard({ children }) {
 }
 
 function HomeRedirect() {
-  const { memberships, isOrgAdmin, primaryOrgSlug, loading } = useAuth()
+  const { memberships, orgMemberships, isOrgAdmin, isPlatformAdmin, primaryOrgSlug, loading } = useAuth()
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
 
+  // Platform admin → platform dashboard
+  if (isPlatformAdmin) return <Navigate to="/platform" replace />
   // Org admin → org dashboard
   if (isOrgAdmin && primaryOrgSlug) return <Navigate to={`/org/${primaryOrgSlug}`} replace />
   // Single project member → project
   if (memberships.length === 1) return <Navigate to={`/p/${memberships[0].projects?.slug || memberships[0].project_id}`} replace />
-  // Multi-project member → first project (TODO: project selector)
+  // Multi-project member → first project
   if (memberships.length > 1) return <Navigate to={`/p/${memberships[0].projects?.slug || memberships[0].project_id}`} replace />
+  // No org, no projects → onboarding
+  if (orgMemberships.length === 0 && memberships.length === 0) return <Navigate to="/onboarding" replace />
 
   return <div className="empty-state"><h2>Welkom</h2><p>Je bent nog niet lid van een project.</p></div>
 }
@@ -178,6 +183,7 @@ function NormalRoutes() {
 
       {/* Platform admin */}
       <Route path="/platform" element={<AuthGuard><PlatformAdmin /></AuthGuard>} />
+      <Route path="/onboarding" element={<AuthGuard><OrgOnboarding /></AuthGuard>} />
 
       {/* Org-level routes */}
       <Route path="/org/:orgSlug" element={<AuthGuard><OrgThemeWrapper><OrgDashboard /></OrgThemeWrapper></AuthGuard>} />
