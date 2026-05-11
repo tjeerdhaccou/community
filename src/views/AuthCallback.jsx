@@ -32,6 +32,34 @@ export default function AuthCallback() {
       navigate(savedPath || '/', { replace: true })
     }
 
+    // Cross-subdomain hash-token flow: handle synchronously without a SIGNED_IN
+    // listener — setSession() fires SIGNED_IN, and the listener's redirectAfterLogin
+    // would race our navigate(returnPath) and win, sending the user to '/' (which
+    // then bounces a platform admin to /platform).
+    const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
+    const hashAccessToken = hashParams.get('access_token')
+    const hashRefreshToken = hashParams.get('refresh_token')
+
+    if (hashAccessToken && hashRefreshToken) {
+      const handleHashTokens = async () => {
+        try {
+          const { data } = await supabase.auth.setSession({ access_token: hashAccessToken, refresh_token: hashRefreshToken })
+          if (data?.session) {
+            const returnPath = hashParams.get('returnPath')
+            window.history.replaceState(null, '', window.location.pathname)
+            navigate(returnPath ? decodeURIComponent(returnPath) : '/', { replace: true })
+            return
+          }
+          navigate('/login', { replace: true })
+        } catch {
+          navigate('/login', { replace: true })
+        }
+      }
+      handleHashTokens()
+      return
+    }
+
+    // Normal OAuth flow (?code=) or already-authenticated session
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         subscription.unsubscribe()
@@ -41,22 +69,6 @@ export default function AuthCallback() {
 
     const handleAuth = async () => {
       try {
-        // Check for tokens in URL hash (passed from main domain to subdomain)
-        const hashParams = new URLSearchParams(window.location.hash.replace('#', ''))
-        const accessToken = hashParams.get('access_token')
-        const refreshToken = hashParams.get('refresh_token')
-
-        if (accessToken && refreshToken) {
-          const { data } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-          if (data?.session) {
-            const returnPath = hashParams.get('returnPath')
-            window.history.replaceState(null, '', window.location.pathname)
-            subscription.unsubscribe()
-            navigate(returnPath ? decodeURIComponent(returnPath) : '/', { replace: true })
-            return
-          }
-        }
-
         const params = new URLSearchParams(window.location.search)
         const code = params.get('code')
 
