@@ -119,6 +119,13 @@ function ProjectShell() {
   )
 }
 
+function FeatureRoute({ feature, children }) {
+  const { featureEnabled, basePath, loading } = useProject()
+  if (loading) return <div className="loading-page"><p>Laden...</p></div>
+  if (!featureEnabled(feature)) return <Navigate to={basePath || '/'} replace />
+  return children
+}
+
 function OrgThemeWrapper({ children }) {
   const { orgId } = useParams()
   return (
@@ -227,19 +234,19 @@ function NormalRoutes() {
       {/* Project-level routes */}
       <Route path="/p/:slug" element={<AuthGuard><ProjectShell /></AuthGuard>}>
         <Route index element={<Dashboard />} />
-        <Route path="updates" element={<Updates />} />
-        <Route path="documenten" element={<Documents />} />
+        <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
+        <Route path="documenten" element={<FeatureRoute feature="documents"><Documents /></FeatureRoute>} />
         <Route path="pro-updates" element={<ProfessionalUpdates />} />
-        <Route path="adviseurs" element={<AdviseurTeam />} />
-        <Route path="community" element={<Community />} />
-        <Route path="events" element={<Events />} />
-        <Route path="roadmap" element={<Roadmap />} />
-        <Route path="documents" element={<DocumentArchive />} />
-        <Route path="members" element={<Members />} />
-        <Route path="ledenwerving" element={<Ledenwerving />} />
+        <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
+        <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
+        <Route path="events" element={<FeatureRoute feature="events"><Events /></FeatureRoute>} />
+        <Route path="roadmap" element={<FeatureRoute feature="roadmap"><Roadmap /></FeatureRoute>} />
+        <Route path="documents" element={<FeatureRoute feature="documents"><DocumentArchive /></FeatureRoute>} />
+        <Route path="members" element={<FeatureRoute feature="members"><Members /></FeatureRoute>} />
+        <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
         <Route path="profile" element={<Profile />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="page-builder" element={<PageBuilder />} />
+        <Route path="page-builder" element={<FeatureRoute feature="page_builder"><PageBuilder /></FeatureRoute>} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -306,19 +313,19 @@ function ProjectSubdomainApp({ slug }) {
         {/* Authenticated project — all other paths */}
         <Route path="/*" element={<AuthGuard><ProjectShellSubdomain /></AuthGuard>}>
           <Route index element={<Dashboard />} />
-          <Route path="updates" element={<Updates />} />
-          <Route path="documenten" element={<Documents />} />
+          <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
+          <Route path="documenten" element={<FeatureRoute feature="documents"><Documents /></FeatureRoute>} />
           <Route path="pro-updates" element={<ProfessionalUpdates />} />
-          <Route path="adviseurs" element={<AdviseurTeam />} />
-          <Route path="community" element={<Community />} />
-          <Route path="events" element={<Events />} />
-          <Route path="roadmap" element={<Roadmap />} />
-          <Route path="documents" element={<DocumentArchive />} />
-          <Route path="members" element={<Members />} />
+          <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
+          <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
+          <Route path="events" element={<FeatureRoute feature="events"><Events /></FeatureRoute>} />
+          <Route path="roadmap" element={<FeatureRoute feature="roadmap"><Roadmap /></FeatureRoute>} />
+          <Route path="documents" element={<FeatureRoute feature="documents"><DocumentArchive /></FeatureRoute>} />
+          <Route path="members" element={<FeatureRoute feature="members"><Members /></FeatureRoute>} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="ledenwerving" element={<Ledenwerving />} />
-          <Route path="page-builder" element={<PageBuilder />} />
+          <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
+          <Route path="page-builder" element={<FeatureRoute feature="page_builder"><PageBuilder /></FeatureRoute>} />
         </Route>
       </Routes>
     </ProjectProvider>

@@ -83,8 +83,15 @@ export function ProjectProvider({ children, slugOverride }) {
   const isSubdomain = isProjectDomain()
   const basePath = isSubdomain ? '' : `/p/${project?.slug || ''}`
 
+  // Feature is enabled unless explicitly set to false (so new features added later default to on)
+  function featureEnabled(key) {
+    if (!project) return true
+    const features = project.features || {}
+    return features[key] !== false
+  }
+
   return (
-    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain }}>
+    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain, featureEnabled }}>
       {children}
     </ProjectContext.Provider>
   )

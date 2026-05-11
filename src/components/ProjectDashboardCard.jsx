@@ -114,6 +114,12 @@ function ProjectEditForm({ project, onClose, onSaved }) {
   const [uploadingCover, setUploadingCover] = useState(false)
   const [intakeEnabled, setIntakeEnabled] = useState(project.intake_enabled || false)
   const [intakeIntro, setIntakeIntro] = useState(project.intake_intro_text || '')
+  const [features, setFeatures] = useState(() => ({
+    updates: true, board: true, events: true, roadmap: true,
+    members: true, documents: true, team: true,
+    page_builder: true, ledenwerving: true,
+    ...(project.features || {}),
+  }))
   const [isPublic, setIsPublic] = useState(project.is_public || false)
   const [slug, setSlug] = useState(project.slug || '')
   const [publicDescription, setPublicDescription] = useState(project.public_description || '')
@@ -247,6 +253,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null,
         public_description: publicDescription.trim() || null,
         public_contact_email: publicContactEmail.trim() || null,
+        features,
       })
       .eq('id', project.project_id)
 
@@ -283,6 +290,44 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             <label>Beschrijving</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Uitgebreide beschrijving" />
           </div>
+        </div>
+      </div>
+
+      {/* Features (modules) */}
+      <div className="org-edit__section">
+        <h4 className="org-edit__title"><i className="fa-solid fa-toggle-on" style={{ color: 'var(--accent-primary)' }} /> Modules</h4>
+        <p className="form-hint" style={{ marginBottom: 12 }}>
+          Bepaal welke onderdelen voor dit project zichtbaar zijn. Dashboard en Instellingen staan altijd aan.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+          {[
+            { key: 'updates', label: 'Updates', icon: 'fa-solid fa-bullhorn' },
+            { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-comments' },
+            { key: 'events', label: 'Events', icon: 'fa-solid fa-calendar-check' },
+            { key: 'roadmap', label: 'Roadmap', icon: 'fa-solid fa-road' },
+            { key: 'members', label: 'Leden', icon: 'fa-solid fa-users' },
+            { key: 'ledenwerving', label: 'Ledenwerving', icon: 'fa-solid fa-clipboard-list' },
+            { key: 'documents', label: 'Documenten', icon: 'fa-solid fa-folder-open' },
+            { key: 'team', label: 'Team', icon: 'fa-solid fa-helmet-safety' },
+            { key: 'page_builder', label: 'Pagina bouwer', icon: 'fa-solid fa-wand-magic-sparkles' },
+          ].map(f => (
+            <label
+              key={f.key}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 12px', borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-hover)', cursor: 'pointer',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={features[f.key] !== false}
+                onChange={e => setFeatures(prev => ({ ...prev, [f.key]: e.target.checked }))}
+              />
+              <i className={f.icon} style={{ color: 'var(--text-tertiary)', width: 16 }} />
+              <span style={{ fontSize: 14 }}>{f.label}</span>
+            </label>
+          ))}
         </div>
       </div>
 

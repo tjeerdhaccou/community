@@ -74,22 +74,30 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
         public_contact_email: p.public_contact_email,
         intake_enabled: p.intake_enabled,
         intake_intro_text: p.intake_intro_text,
+        features: p.features || {},
         member_count: 0, update_count: 0, post_count: 0, advisor_count: 0,
         new_updates_week: 0, new_posts_week: 0, new_members_week: 0,
       })))
     } else {
       const projectIds = (stats || []).map(s => s.project_id)
 
-      // Load custom domains + admins per project
+      // Load custom domains + features + admins per project
       if (projectIds.length > 0) {
-        const { data: domainData } = await supabase
+        const { data: extraData } = await supabase
           .from('projects')
-          .select('id, custom_domain')
+          .select('id, custom_domain, features')
           .in('id', projectIds)
         const domainMap = {}
-        for (const d of (domainData || [])) { domainMap[d.id] = d.custom_domain }
-        // Merge custom_domain into stats
-        for (const s of (stats || [])) { s.custom_domain = domainMap[s.project_id] || null }
+        const featureMap = {}
+        for (const d of (extraData || [])) {
+          domainMap[d.id] = d.custom_domain
+          featureMap[d.id] = d.features || {}
+        }
+        // Merge custom_domain + features into stats
+        for (const s of (stats || [])) {
+          s.custom_domain = domainMap[s.project_id] || null
+          s.features = featureMap[s.project_id] || {}
+        }
 
         const { data: adminData } = await supabase
           .from('memberships')
