@@ -241,20 +241,37 @@ function ProjectEditForm({ project, onClose, onSaved }) {
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
+
+    // Only write fields whose value actually changed — prevents stale state from
+    // silently overwriting things the user never touched (e.g. is_public flipping
+    // to false when only the Modules toggles were changed).
+    const update = {}
+    const cleanedSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null
+
+    if (name !== (project.project_name || '')) update.name = name
+    if (tagline !== (project.project_tagline || '')) update.tagline = tagline
+    if (location !== (project.project_location || '')) update.location = location
+    if (description !== (project.project_description || '')) update.description = description
+    if ((logoUrl || null) !== (project.project_logo_url || null)) update.logo_url = logoUrl || null
+    if ((coverImageUrl || null) !== (project.project_cover_image_url || null)) update.cover_image_url = coverImageUrl || null
+    if (intakeEnabled !== !!project.intake_enabled) update.intake_enabled = intakeEnabled
+    if ((intakeIntro.trim() || null) !== (project.intake_intro_text || null)) update.intake_intro_text = intakeIntro.trim() || null
+    if (isPublic !== !!project.is_public) update.is_public = isPublic
+    if (cleanedSlug !== (project.slug || null)) update.slug = cleanedSlug
+    if ((publicDescription.trim() || null) !== (project.public_description || null)) update.public_description = publicDescription.trim() || null
+    if ((publicContactEmail.trim() || null) !== (project.public_contact_email || null)) update.public_contact_email = publicContactEmail.trim() || null
+    if (JSON.stringify(features) !== JSON.stringify(project.features || {})) update.features = features
+
+    if (Object.keys(update).length === 0) {
+      setSaved(true)
+      setTimeout(() => { setSaved(false); onSaved?.() }, 1500)
+      setSaving(false)
+      return
+    }
+
     const { error } = await supabase
       .from('projects')
-      .update({
-        name, tagline, location, description,
-        logo_url: logoUrl || null,
-        cover_image_url: coverImageUrl || null,
-        intake_enabled: intakeEnabled,
-        intake_intro_text: intakeIntro.trim() || null,
-        is_public: isPublic,
-        slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null,
-        public_description: publicDescription.trim() || null,
-        public_contact_email: publicContactEmail.trim() || null,
-        features,
-      })
+      .update(update)
       .eq('id', project.project_id)
 
     if (error) {
