@@ -90,10 +90,14 @@ export default function Sidebar() {
 
   const initials = (profile?.full_name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2)
 
+  const isAdmin = role === 'admin'
+
   function renderNavItem(item) {
     if (item.membersOnly && isProfessional) return null
     if (item.action && !canDo(role, item.action)) return null
-    if (item.feature && !featureEnabled(item.feature)) return null
+    const featureHidden = item.feature && !featureEnabled(item.feature)
+    // Non-admins don't see hidden features; admins see them with a marker
+    if (featureHidden && !isAdmin) return null
     return (
       <div
         key={item.to}
@@ -101,9 +105,14 @@ export default function Sidebar() {
         onClick={() => navigate(item.to === '' ? (basePath || '/') : `${basePath}/${item.to}`)}
         role="button"
         tabIndex={0}
+        style={featureHidden ? { opacity: 0.6 } : undefined}
+        title={featureHidden ? 'Verborgen voor leden' : undefined}
       >
         <i className={`cl-nav-item__icon ${item.icon}`} style={{ color: item.color }} />
         <span>{item.label}</span>
+        {featureHidden && (
+          <i className="fa-solid fa-eye-slash" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }} title="Verborgen voor leden" />
+        )}
         {item.to === 'ledenwerving' && intakePendingCount > 0 && (
           <span className="sidebar-badge">{intakePendingCount}</span>
         )}
@@ -140,7 +149,8 @@ export default function Sidebar() {
             if (item.membersOnly && isProfessional) return false
             if (item.adminOnly && role !== 'admin') return false
             if (item.action && !canDo(role, item.action)) return false
-            if (item.feature && !featureEnabled(item.feature)) return false
+            // Hidden features: admins still see them (with a badge); members don't
+            if (item.feature && !featureEnabled(item.feature) && !isAdmin) return false
             return true
           })
           if (visibleItems.length === 0) return null
