@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { UPDATE_TAGS } from '../lib/constants'
 import { uploadImage } from '../lib/storage'
+import AudienceSelector from './AudienceSelector'
 import ImageCropper from './ImageCropper'
 
 export default function UpdateModal({ update, onSave, onClose }) {
@@ -127,29 +128,20 @@ export default function UpdateModal({ update, onSave, onClose }) {
             </div>
           ) : null}
 
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label htmlFor="update-tag">Tag</label>
-              <select id="update-tag" value={tag} onChange={e => setTag(e.target.value)}>
-                <option value="">Geen tag</option>
-                {UPDATE_TAGS.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group form-group--half">
-              <label>Zichtbaarheid</label>
-              <button
-                type="button"
-                className={`toggle-btn ${isPublic ? 'toggle-btn--active' : ''}`}
-                onClick={() => setIsPublic(!isPublic)}
-              >
-                <i className={`fa-solid ${isPublic ? 'fa-eye' : 'fa-lock'}`} />
-                {isPublic ? 'Openbaar' : 'Alleen leden'}
-              </button>
-            </div>
+          <div className="form-group">
+            <label htmlFor="update-tag">Tag</label>
+            <select id="update-tag" value={tag} onChange={e => setTag(e.target.value)}>
+              <option value="">Geen tag</option>
+              {UPDATE_TAGS.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
           </div>
+
+          <AudienceSelector
+            value={isPublic ? 'public' : 'members'}
+            onChange={v => setIsPublic(v === 'public')}
+          />
 
           <div className="modal-actions modal-actions--spread">
             <button

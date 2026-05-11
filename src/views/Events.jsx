@@ -80,22 +80,18 @@ export default function Events() {
     }
   }, [searchParams, allEvents, selectedEvent, setSearchParams])
 
-  // Filter by role visibility
+  // Filter by visibility — public is voor iedereen, members vereist aspirant+
   const visibleUpcoming = useMemo(() => {
     return upcoming.filter(e => {
       if (!e.visibility || e.visibility === 'public') return true
-      if (e.visibility === 'aspirant') return canDo(role, 'view_events')
-      if (e.visibility === 'members') return canDo(role, 'view_events') && role !== 'aspirant'
-      return true
+      return canDo(role, 'view_events')
     })
   }, [upcoming, role])
 
   const visiblePast = useMemo(() => {
     return past.filter(e => {
       if (!e.visibility || e.visibility === 'public') return true
-      if (e.visibility === 'aspirant') return canDo(role, 'view_events')
-      if (e.visibility === 'members') return canDo(role, 'view_events') && role !== 'aspirant'
-      return true
+      return canDo(role, 'view_events')
     })
   }, [past, role])
 

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
 import { POST_TAGS } from '../lib/constants'
 import { useProject } from '../contexts/ProjectContext'
+import AudienceSelector from './AudienceSelector'
 import ImageCropper from './ImageCropper'
 
 const GUEST_TAG = 'Even voorstellen'
@@ -135,30 +136,8 @@ export default function PostModal({ onSave, onClose, editPost }) {
             </div>
           )}
 
-          {/* Audience selector (alleen voor aspirant+; guests posten verplicht 'public') */}
-          {!isGuest && (
-            <div className="form-group">
-              <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '6px', display: 'block' }}>
-                Zichtbaar voor
-              </label>
-              <div className="post-tag-select">
-                <button
-                  type="button"
-                  className={`post-tag-option ${audience === 'members' ? 'post-tag-option--active' : ''}`}
-                  onClick={() => setAudience('members')}
-                >
-                  <i className="fa-solid fa-user-check" /> Leden
-                </button>
-                <button
-                  type="button"
-                  className={`post-tag-option ${audience === 'public' ? 'post-tag-option--active' : ''}`}
-                  onClick={() => setAudience('public')}
-                >
-                  <i className="fa-solid fa-globe" /> Iedereen (ook gasten)
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Audience (alleen voor aspirant+; guests posten verplicht 'public') */}
+          {!isGuest && <AudienceSelector value={audience} onChange={setAudience} />}
 
           {/* Text */}
           <div className="form-group">

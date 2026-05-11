@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
-import { EVENT_TYPES, EVENT_VISIBILITY } from '../lib/constants'
+import { EVENT_TYPES } from '../lib/constants'
+import AudienceSelector from './AudienceSelector'
 import { useToast } from './Toast'
 
 const DRAFT_KEY = 'ev-draft-new'
@@ -157,14 +158,8 @@ export default function EventModal({ event, onSave, onClose }) {
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Zichtbaarheid</label>
-            <select value={visibility} onChange={e => setVisibility(e.target.value)}>
-              {EVENT_VISIBILITY.map(v => (
-                <option key={v.key} value={v.key}>{v.label}</option>
-              ))}
-            </select>
-          </div>
+          <AudienceSelector value={visibility} onChange={setVisibility} />
+
 
           <div className="form-group">
             <label>Beschrijving</label>
