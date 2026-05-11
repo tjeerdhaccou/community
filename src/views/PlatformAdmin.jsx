@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { openSubdomainInNewTab } from '../lib/subdomain'
+import { signOut } from '../lib/auth'
 
 const STATUS_COLORS = {
   active: { bg: 'rgba(59,210,105,0.14)', color: '#27A854' },
@@ -13,9 +15,14 @@ const STATUS_COLORS = {
 const TIER_LABELS = { free: 'Free', pro: 'Pro', enterprise: 'Enterprise' }
 
 export default function PlatformAdmin() {
-  const { isPlatformAdmin } = useAuth()
+  const { isPlatformAdmin, profile } = useAuth()
   const { mode, setMode } = useTheme()
   const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await signOut()
+    window.location.href = '/login'
+  }
   const [orgs, setOrgs] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -139,6 +146,9 @@ export default function PlatformAdmin() {
           <button className="btn-primary" onClick={() => setShowCreate(!showCreate)}>
             <i className="fa-solid fa-plus" /> Nieuwe organisatie
           </button>
+          <button className="btn-secondary" onClick={handleSignOut} title={profile?.email ? `Uitloggen (${profile.email})` : 'Uitloggen'}>
+            <i className="fa-solid fa-right-from-bracket" /> Uitloggen
+          </button>
         </div>
       </div>
 
@@ -241,7 +251,7 @@ export default function PlatformAdmin() {
                 </div>
 
                 <div className="platform-admin__org-actions">
-                  <button className="btn-secondary btn-sm" onClick={() => window.open(`https://${org.slug}.buuur.nl/admin`, '_blank')}>
+                  <button className="btn-secondary btn-sm" onClick={() => openSubdomainInNewTab(`https://${org.slug}.buuur.nl/admin`)}>
                     <i className="fa-solid fa-arrow-up-right-from-square" /> Dashboard
                   </button>
                   <button

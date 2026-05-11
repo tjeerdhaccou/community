@@ -70,8 +70,10 @@ function AuthGuard({ children }) {
 }
 
 function HomeRedirect() {
-  const { memberships, orgMemberships, isOrgAdmin, isPlatformAdmin, primaryOrgSlug, loading } = useAuth()
-  if (loading) return <div className="loading-page"><p>Laden...</p></div>
+  const { user, profile, memberships, orgMemberships, isOrgAdmin, isPlatformAdmin, primaryOrgSlug, loading } = useAuth()
+  // Wait for profile to load before deciding where to send the user — otherwise
+  // a platform admin can briefly look like a no-org user and get sent to /onboarding.
+  if (loading || (user && !profile)) return <div className="loading-page"><p>Laden...</p></div>
 
   // Platform admin → platform dashboard
   if (isPlatformAdmin) return <Navigate to="/platform" replace />

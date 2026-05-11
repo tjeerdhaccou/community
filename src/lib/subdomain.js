@@ -43,6 +43,26 @@ export async function navigateToSubdomain(targetUrl) {
 }
 
 /**
+ * Open a different subdomain in a new tab while preserving the auth session.
+ * Must be called from inside a user-gesture handler (the blank window is opened
+ * synchronously so the popup blocker permits it; tokens are written after).
+ */
+export function openSubdomainInNewTab(targetUrl) {
+  const newWindow = window.open('about:blank', '_blank')
+  if (!newWindow) return // popup blocked
+  ;(async () => {
+    const { supabase } = await import('./supabase')
+    const { data: { session } } = await supabase.auth.getSession()
+    const url = new URL(targetUrl)
+    if (session && url.origin !== window.location.origin) {
+      newWindow.location.href = `${url.origin}/auth/callback#access_token=${session.access_token}&refresh_token=${session.refresh_token}&returnPath=${encodeURIComponent(url.pathname + url.search)}`
+    } else {
+      newWindow.location.href = targetUrl
+    }
+  })()
+}
+
+/**
  * Get the base URL for a project. Uses subdomain if custom_domain is set,
  * otherwise falls back to main domain with /p/ path.
  */
