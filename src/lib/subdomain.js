@@ -1,4 +1,4 @@
-const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'commoncity.nl'
+const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
 
 export function getSubdomain() {
   const hostname = window.location.hostname

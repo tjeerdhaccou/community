@@ -15,12 +15,16 @@ export default function AuthCallback() {
       // Check cookie first (set by subdomain before OAuth redirect)
       const returnUrl = getReturnCookie()
       if (returnUrl) {
-        // Pass session tokens to subdomain via URL hash so it can restore the session
+        // Pass session tokens to subdomain via URL hash so it can restore the session.
+        // Preserve the original path+search as returnPath so the subdomain auth-callback
+        // sends the user to where they actually wanted to go, not just to '/'.
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
           const url = new URL(returnUrl)
+          const returnPath = (url.pathname + url.search) || '/'
           url.pathname = '/auth/callback'
-          url.hash = `access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=recovery`
+          url.search = ''
+          url.hash = `access_token=${session.access_token}&refresh_token=${session.refresh_token}&type=recovery&returnPath=${encodeURIComponent(returnPath)}`
           window.location.replace(url.toString())
           return
         }

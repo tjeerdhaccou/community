@@ -23,9 +23,16 @@ export async function signInWithGoogle() {
   const isSubdomain = mainDomain && window.location.hostname !== mainDomain && window.location.hostname !== `www.${mainDomain}`
   const callbackOrigin = isSubdomain ? `https://${mainDomain}` : window.location.origin
 
-  // Save full return URL in cookie shared across subdomains
+  // Save full return URL in cookie shared across subdomains. Prefer the path
+  // AuthGuard saved when redirecting to /login so the user lands on the page
+  // they originally wanted, not /login.
   if (isSubdomain) {
-    setReturnCookie(window.location.href)
+    let savedPath
+    try { savedPath = localStorage.getItem('redirectAfterLogin') } catch {}
+    const returnUrl = savedPath
+      ? `${window.location.origin}${savedPath}`
+      : window.location.href
+    setReturnCookie(returnUrl)
   }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
