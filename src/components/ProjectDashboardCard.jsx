@@ -15,7 +15,7 @@ export default function ProjectDashboardCard({ project, onSaved }) {
 
   return (
     <div className="org-project-card">
-      <div className="org-project-card__body" onClick={() => navigateToSubdomain(getProjectBaseUrl({ ...project, id: project.project_id }))}>
+      <div className="org-project-card__body" onClick={() => setEditing(!editing)}>
         {/* Section 1: Header — logo, naam, locatie + actions rechtsboven */}
         <div className="org-project-card__top">
           <div className="org-project-card__header">
@@ -299,7 +299,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         <p className="form-hint" style={{ marginBottom: 12 }}>
           Bepaal welke onderdelen voor dit project zichtbaar zijn. Dashboard en Instellingen staan altijd aan.
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 200px)', gap: 8, justifyContent: 'start' }}>
           {[
             { key: 'updates', label: 'Updates', icon: 'fa-solid fa-bullhorn' },
             { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-comments' },
@@ -314,19 +314,21 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             <label
               key={f.key}
               style={{
-                flex: '0 0 200px',
-                display: 'flex', alignItems: 'center', gap: 10,
+                width: 200,
+                boxSizing: 'border-box',
+                display: 'flex', alignItems: 'center', gap: 8,
                 padding: '10px 12px', borderRadius: 'var(--radius-sm)',
                 background: 'var(--bg-hover)', cursor: 'pointer',
               }}
             >
               <input
                 type="checkbox"
+                style={{ flexShrink: 0, margin: 0 }}
                 checked={features[f.key] !== false}
                 onChange={e => setFeatures(prev => ({ ...prev, [f.key]: e.target.checked }))}
               />
-              <i className={f.icon} style={{ color: 'var(--text-tertiary)', width: 16, flexShrink: 0 }} />
-              <span style={{ fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.label}</span>
+              <i className={f.icon} style={{ color: 'var(--text-tertiary)', flexShrink: 0, width: 14, textAlign: 'center' }} />
+              <span style={{ fontSize: 14, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.label}</span>
             </label>
           ))}
         </div>
