@@ -122,7 +122,7 @@ export default function PageBuilder() {
 
     Promise.all([
       supabase.from('public_sections').select('*').eq('project_id', project.id).order('sort_order'),
-      supabase.from('memberships').select('profile_id, role, profile:profiles(full_name, avatar_url)').eq('project_id', project.id).not('role', 'in', '(interested,guest)'),
+      supabase.from('memberships').select('profile_id, role, profile:profiles(full_name, avatar_url)').eq('project_id', project.id).neq('role', 'guest'),
     ]).then(([sectionsRes, membersRes]) => {
       const rows = sectionsRes.data || []
       setProjectMembers(membersRes.data || [])

@@ -1,8 +1,11 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@crowdbuilding.com'
-const FROM_NAME = Deno.env.get('FROM_NAME') || 'CrowdBuilding'
+const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
+const FROM_NAME = Deno.env.get('FROM_NAME') || 'Buuur'
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, memberName, memberEmail, projectName, reason } = await req.json()
+    const { type, memberName, memberEmail, projectName, reason, projectUrl } = await req.json()
 
     if (!memberEmail) {
       return new Response(JSON.stringify({ error: 'No email address' }), {
@@ -59,6 +62,58 @@ serve(async (req) => {
           </p>
           <p style="font-size: 14px; color: #9ba1b0; margin-top: 32px;">
             Dit is een automatisch bericht van ${projectName}.
+          </p>
+        </div>
+      `
+    } else if (type === 'invite') {
+      if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+        console.error('[send-member-email] Missing SUPABASE_URL or SERVICE_ROLE_KEY')
+        return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+
+      const redirectTo = projectUrl ? `${projectUrl.replace(/\/$/, '')}/auth/callback` : undefined
+
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: memberEmail,
+        options: redirectTo ? { redirectTo } : undefined,
+      })
+
+      if (linkErr || !linkData?.properties?.action_link) {
+        console.error('generateLink error:', linkErr)
+        return new Response(JSON.stringify({ error: 'Magic link generation failed', details: linkErr?.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const actionLink = linkData.properties.action_link
+      const greeting = memberName ? `Hoi ${memberName}` : 'Hoi'
+
+      subject = `Je bent uitgenodigd voor ${projectName}`
+      html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+          <h1 style="font-size: 24px; color: #1a1a2e; margin-bottom: 16px;">${greeting},</h1>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            Je bent uitgenodigd om kennis te maken met <strong>${projectName}</strong>.
+          </p>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            Klik op de knop hieronder om je account aan te maken en in te loggen — geen wachtwoord nodig.
+          </p>
+          <p style="margin: 28px 0;">
+            <a href="${actionLink}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+              Open je uitnodiging
+            </a>
+          </p>
+          <p style="font-size: 14px; color: #9ba1b0;">
+            De link werkt eenmalig en is een uur geldig. Als je deze mail niet verwachtte kun je hem negeren.
           </p>
         </div>
       `

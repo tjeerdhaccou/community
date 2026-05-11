@@ -1,12 +1,18 @@
 import { useState, useRef } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
 import { POST_TAGS } from '../lib/constants'
+import { useProject } from '../contexts/ProjectContext'
 import ImageCropper from './ImageCropper'
 
+const GUEST_TAG = 'Even voorstellen'
+
 export default function PostModal({ onSave, onClose, editPost }) {
+  const { role } = useProject()
+  const isGuest = role === 'guest'
   const isEdit = !!editPost
   const [text, setText] = useState(editPost?.text || '')
-  const [tag, setTag] = useState(editPost?.tag || '')
+  const [tag, setTag] = useState(editPost?.tag || (isGuest ? GUEST_TAG : ''))
+  const [audience, setAudience] = useState(editPost?.audience || (isGuest ? 'public' : 'members'))
   const [postType, setPostType] = useState(editPost?.post_type || 'post')
   const [pollOptions, setPollOptions] = useState(['', ''])
   const [imageFile, setImageFile] = useState(null)
@@ -61,6 +67,7 @@ export default function PostModal({ onSave, onClose, editPost }) {
       await onSave({
         text: text.trim(),
         tag: tag || null,
+        audience,
         image_url,
         post_type: postType,
         poll_options: postType === 'poll' ? pollOptions.filter(o => o.trim()) : null,
@@ -78,15 +85,22 @@ export default function PostModal({ onSave, onClose, editPost }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card modal-card--composer" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{isEdit ? 'Bericht bewerken' : 'Nieuw bericht'}</h2>
+          <h2>{isEdit ? 'Bericht bewerken' : (isGuest ? 'Stel jezelf voor' : 'Nieuw bericht')}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Sluiten">
             <i className="fa-solid fa-xmark" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {/* Post type toggle (not for edit) */}
-          {!isEdit && (
+          {/* Guests: helper-tekst */}
+          {isGuest && !isEdit && (
+            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: 0 }}>
+              Vertel de community kort iets over jezelf. Iedereen kan dit bericht lezen.
+            </p>
+          )}
+
+          {/* Post type toggle (not for edit, not for guests) */}
+          {!isEdit && !isGuest && (
             <div className="composer-type-toggle">
               <button
                 type="button"
@@ -105,19 +119,46 @@ export default function PostModal({ onSave, onClose, editPost }) {
             </div>
           )}
 
-          {/* Tag chips */}
-          <div className="post-tag-select">
-            {POST_TAGS.map(t => (
-              <button
-                key={t}
-                type="button"
-                className={`post-tag-option ${tag === t ? 'post-tag-option--active' : ''}`}
-                onClick={() => setTag(tag === t ? '' : t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          {/* Tag chips (alleen voor aspirant+; guests posten verplicht onder 'Even voorstellen') */}
+          {!isGuest && (
+            <div className="post-tag-select">
+              {POST_TAGS.map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`post-tag-option ${tag === t ? 'post-tag-option--active' : ''}`}
+                  onClick={() => setTag(tag === t ? '' : t)}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Audience selector (alleen voor aspirant+; guests posten verplicht 'public') */}
+          {!isGuest && (
+            <div className="form-group">
+              <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginBottom: '6px', display: 'block' }}>
+                Zichtbaar voor
+              </label>
+              <div className="post-tag-select">
+                <button
+                  type="button"
+                  className={`post-tag-option ${audience === 'members' ? 'post-tag-option--active' : ''}`}
+                  onClick={() => setAudience('members')}
+                >
+                  <i className="fa-solid fa-user-check" /> Leden
+                </button>
+                <button
+                  type="button"
+                  className={`post-tag-option ${audience === 'public' ? 'post-tag-option--active' : ''}`}
+                  onClick={() => setAudience('public')}
+                >
+                  <i className="fa-solid fa-globe" /> Iedereen (ook gasten)
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Text */}
           <div className="form-group">

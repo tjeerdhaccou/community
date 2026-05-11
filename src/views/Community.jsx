@@ -58,7 +58,7 @@ export default function Community() {
 
   async function handleSave(data) {
     if (editPost) {
-      await updatePost(editPost.id, { text: data.text, tag: data.tag, image_url: data.image_url })
+      await updatePost(editPost.id, { text: data.text, tag: data.tag, audience: data.audience, image_url: data.image_url })
     } else {
       await createPost(data)
     }

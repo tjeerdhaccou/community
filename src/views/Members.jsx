@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useMembers } from '../hooks/useMembers'
+import { useMemberInvites } from '../hooks/useMemberInvites'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import { canDo } from '../lib/permissions'
 import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { getIntakeUrl, getProjectBaseUrl } from '../lib/subdomain'
 import MemberProfile from '../components/MemberProfile'
 import RejectModal from '../components/RejectModal'
 import IntakeResponseDetail from '../components/IntakeResponseDetail'
@@ -16,7 +18,7 @@ export default function Members() {
   const { project, role } = useProject()
   const { user } = useAuth()
   const { members, loading, updateRole, removeMember, approveMember, rejectMember } = useMembers()
-  const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name)
+  const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -46,7 +48,7 @@ export default function Members() {
         <div className="view-header__row">
           <div>
             <h1>Leden</h1>
-            <p className="view-header__subtitle">{active.length} leden{guests.length > 0 && canDo(role, 'invite_members') ? ` · ${guests.length} wachtend` : ''}</p>
+            <p className="view-header__subtitle">{active.length} leden{guests.length > 0 && canDo(role, 'invite_members') ? ` · ${guests.length} geïnteresseerd` : ''}</p>
           </div>
           {canDo(role, 'invite_members') && (
             <button className="btn-primary" onClick={() => setShowInvite(true)}>
@@ -78,7 +80,7 @@ export default function Members() {
       <div className="tag-filter">
         {[
           { key: 'all', label: `Alle (${active.length})` },
-          ...(guests.length > 0 && canDo(role, 'invite_members') ? [{ key: 'pending', label: `Wachtend (${guests.length})` }] : []),
+          ...(guests.length > 0 && canDo(role, 'invite_members') ? [{ key: 'pending', label: `Geïnteresseerden (${guests.length})` }] : []),
           { key: 'admin', label: 'Admins' },
           { key: 'moderator', label: 'Moderators' },
           { key: 'member', label: 'Leden' },
@@ -95,11 +97,11 @@ export default function Members() {
         ))}
       </div>
 
-      {/* Pending approvals banner */}
+      {/* Geïnteresseerden banner */}
       {filter !== 'pending' && guests.length > 0 && canDo(role, 'invite_members') && (
         <div className="members-pending-banner">
           <i className="fa-solid fa-user-clock" />
-          <span>{guests.length} {guests.length === 1 ? 'persoon wacht' : 'personen wachten'} op goedkeuring</span>
+          <span>{guests.length} {guests.length === 1 ? 'geïnteresseerde' : 'geïnteresseerden'} in dit project</span>
           <button className="members-pending-banner__btn" onClick={() => setFilter('pending')}>
             Bekijk <i className="fa-solid fa-arrow-right" />
           </button>
@@ -185,16 +187,15 @@ export default function Members() {
       )}
 
       {showInvite && (
-        <InviteModal projectName={project?.name} projectId={project?.slug || project?.id} project={project} onClose={() => setShowInvite(false)} />
+        <InviteModal projectName={project?.name} project={project} onClose={() => setShowInvite(false)} />
       )}
 
       {selectedIntake && (
         <IntakeResponseDetail
           response={selectedIntake}
           questions={intakeQuestions}
-          projectId={project?.slug || project?.id}
           onClose={() => setSelectedIntake(null)}
-          onInvite={async () => { await updateIntakeStatus(selectedIntake.id, 'invited'); setSelectedIntake(null) }}
+          onInvite={async () => { await updateIntakeStatus(selectedIntake.id, 'invited') }}
           onReject={async () => { await updateIntakeStatus(selectedIntake.id, 'rejected'); setSelectedIntake(null) }}
         />
       )}
@@ -210,17 +211,9 @@ export default function Members() {
   )
 }
 
-function InviteModal({ projectName, projectId, project, onClose }) {
-  const [copied, setCopied] = useState(false)
-  const inviteUrl = project?.custom_domain
-    ? `https://${project.custom_domain}`
-    : `${window.location.origin}/p/${project?.slug || projectId}`
-
-  function copyLink() {
-    navigator.clipboard.writeText(inviteUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+function InviteModal({ projectName, project, onClose }) {
+  const [tab, setTab] = useState('personal')
+  const { invites, createInvite, revokeInvite, resendInvite } = useMemberInvites()
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -232,36 +225,195 @@ function InviteModal({ projectName, projectId, project, onClose }) {
           </button>
         </div>
 
-        <div className="invite-modal__content">
-          <p className="invite-modal__desc">
-            Deel deze link om mensen uit te nodigen voor <strong>{projectName}</strong>. Na registratie verschijnen ze als wachtend op goedkeuring.
-          </p>
-
-          <div className="invite-modal__link-row">
-            <input type="text" value={inviteUrl} readOnly className="invite-modal__link-input" />
-            <button className="btn-primary" onClick={copyLink}>
-              <i className={`fa-solid ${copied ? 'fa-check' : 'fa-copy'}`} />
-              {copied ? 'Gekopieerd' : 'Kopieer'}
-            </button>
-          </div>
-
-          <div className="invite-modal__share-row">
-            <a
-              href={`mailto:?subject=Uitnodiging voor ${projectName}&body=Je bent uitgenodigd om lid te worden van ${projectName}. Meld je aan via: ${inviteUrl}`}
-              className="btn-secondary invite-modal__share-btn"
-            >
-              <i className="fa-solid fa-envelope" /> Via e-mail
-            </a>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Je bent uitgenodigd voor ${projectName}! Meld je aan: ${inviteUrl}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary invite-modal__share-btn"
-            >
-              <i className="fa-brands fa-whatsapp" /> WhatsApp
-            </a>
-          </div>
+        <div className="tag-filter" style={{ marginBottom: '20px' }}>
+          <button
+            className={`tag-filter__pill ${tab === 'personal' ? 'tag-filter__pill--active' : ''}`}
+            onClick={() => setTab('personal')}
+          >
+            Persoonlijk
+          </button>
+          <button
+            className={`tag-filter__pill ${tab === 'link' ? 'tag-filter__pill--active' : ''}`}
+            onClick={() => setTab('link')}
+          >
+            Open link
+          </button>
         </div>
+
+        {tab === 'personal' ? (
+          <PersonalInvite
+            projectName={projectName}
+            invites={invites}
+            onInvite={createInvite}
+            onRevoke={revokeInvite}
+            onResend={resendInvite}
+          />
+        ) : (
+          <OpenLinkInvite projectName={projectName} project={project} />
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) {
+  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [resending, setResending] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!email.trim()) return
+    setError(null)
+    setSaving(true)
+    try {
+      await onInvite({ email: email.trim(), name: name.trim() })
+      setEmail('')
+      setName('')
+    } catch (err) {
+      setError(err.message || 'Uitnodiging versturen mislukt.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleResend(invite) {
+    setResending(invite.id)
+    try {
+      await onResend(invite)
+    } catch (err) {
+      setError(err.message || 'Opnieuw versturen mislukt.')
+    } finally {
+      setResending(null)
+    }
+  }
+
+  const visibleInvites = invites.filter(i => i.status !== 'revoked')
+
+  return (
+    <div className="invite-modal__content">
+      <p className="invite-modal__desc">
+        Stuur een persoonlijke uitnodiging naar iemand die je wil toevoegen aan <strong>{projectName}</strong>. Ze krijgen een e-mail met een directe inloglink.
+      </p>
+
+      <form onSubmit={handleSubmit} className="modal-form">
+        <div className="form-group">
+          <label htmlFor="invite-email">E-mailadres</label>
+          <input
+            id="invite-email"
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="naam@voorbeeld.nl"
+            required
+            autoFocus
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="invite-name">Naam <span style={{ color: 'var(--color-text-muted)', fontWeight: 'normal' }}>(optioneel)</span></label>
+          <input
+            id="invite-name"
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Volledige naam"
+          />
+        </div>
+
+        {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
+
+        <div className="modal-actions" style={{ justifyContent: 'flex-end' }}>
+          <button type="submit" className="btn-primary" disabled={saving || !email.trim()}>
+            <i className="fa-solid fa-paper-plane" /> {saving ? 'Versturen...' : 'Uitnodiging versturen'}
+          </button>
+        </div>
+      </form>
+
+      {visibleInvites.length > 0 && (
+        <div className="invite-list">
+          <h3 className="invite-list__title">Uitgenodigd</h3>
+          {visibleInvites.map(inv => (
+            <div key={inv.id} className="invite-row">
+              <div className="invite-row__avatar" style={{ background: 'var(--accent-blue)' }}>
+                {(inv.name || inv.email)[0].toUpperCase()}
+              </div>
+              <div className="invite-row__info">
+                <span className="invite-row__name">{inv.name || inv.email}</span>
+                {inv.name && <span className="invite-row__email">{inv.email}</span>}
+              </div>
+              {inv.status === 'accepted' ? (
+                <span className="invite-status invite-status--accepted">Aangemeld</span>
+              ) : (
+                <>
+                  <button
+                    className="btn-icon-sm"
+                    onClick={() => handleResend(inv)}
+                    disabled={resending === inv.id}
+                    title="Opnieuw versturen"
+                    aria-label="Opnieuw versturen"
+                  >
+                    <i className={`fa-solid ${resending === inv.id ? 'fa-spinner fa-spin' : 'fa-rotate-right'}`} />
+                  </button>
+                  <button
+                    className="btn-icon-sm"
+                    onClick={() => onRevoke(inv.id)}
+                    title="Intrekken"
+                    aria-label="Intrekken"
+                  >
+                    <i className="fa-solid fa-xmark" />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function OpenLinkInvite({ projectName, project }) {
+  const [copied, setCopied] = useState(false)
+  const intakeUrl = getIntakeUrl(project)
+
+  function copyLink() {
+    navigator.clipboard.writeText(intakeUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="invite-modal__content">
+      <p className="invite-modal__desc">
+        Deel deze link met geïnteresseerden voor <strong>{projectName}</strong>. Ze vullen eerst het intake-formulier in — jij bepaalt daarna wie je uitnodigt.
+      </p>
+
+      <div className="invite-modal__link-row">
+        <input type="text" value={intakeUrl} readOnly className="invite-modal__link-input" />
+        <button className="btn-primary" onClick={copyLink}>
+          <i className={`fa-solid ${copied ? 'fa-check' : 'fa-copy'}`} />
+          {copied ? 'Gekopieerd' : 'Kopieer'}
+        </button>
+      </div>
+
+      <div className="invite-modal__share-row">
+        <a
+          href={`mailto:?subject=${encodeURIComponent(`Aanmelden voor ${projectName}`)}&body=${encodeURIComponent(`Wil je meer weten over ${projectName}? Meld je aan via: ${intakeUrl}`)}`}
+          className="btn-secondary invite-modal__share-btn"
+        >
+          <i className="fa-solid fa-envelope" /> Via e-mail
+        </a>
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(`Wil je meer weten over ${projectName}? Meld je aan via: ${intakeUrl}`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-secondary invite-modal__share-btn"
+        >
+          <i className="fa-brands fa-whatsapp" /> WhatsApp
+        </a>
       </div>
     </div>
   )

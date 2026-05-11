@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
 
-export default function useIntakeResponses(projectId, projectName) {
+export default function useIntakeResponses(projectId, projectName, projectUrl) {
   const [responses, setResponses] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -30,20 +30,36 @@ export default function useIntakeResponses(projectId, projectName) {
     const { error } = await supabase.from('intake_responses').update(updates).eq('id', id)
     if (error) { logger.error('useIntakeResponses.updateStatus', error); throw new Error(friendlyError(error)) }
 
-    // Send rejection email (best-effort, non-blocking)
-    if (status === 'rejected') {
-      const response = responses.find(r => r.id === id)
-      if (response?.email) {
-        supabase.functions.invoke('send-member-email', {
-          body: {
-            type: 'rejection',
-            memberName: response.name,
-            memberEmail: response.email,
-            projectName: projectName || 'het project',
-            reason: reason || null,
-          },
-        }).catch(err => logger.error('useIntakeResponses.rejectEmail', err))
+    const response = responses.find(r => r.id === id)
+
+    // Send invite email — must succeed, throw if it fails so caller can roll back UI state
+    if (status === 'invited' && response?.email) {
+      const { error: emailErr } = await supabase.functions.invoke('send-member-email', {
+        body: {
+          type: 'invite',
+          memberName: response.name,
+          memberEmail: response.email,
+          projectName: projectName || 'het project',
+          projectUrl: projectUrl || null,
+        },
+      })
+      if (emailErr) {
+        logger.error('useIntakeResponses.inviteEmail', emailErr)
+        throw new Error('Status is opgeslagen maar de uitnodigings-e-mail kon niet worden verstuurd.')
       }
+    }
+
+    // Send rejection email (best-effort, non-blocking)
+    if (status === 'rejected' && response?.email) {
+      supabase.functions.invoke('send-member-email', {
+        body: {
+          type: 'rejection',
+          memberName: response.name,
+          memberEmail: response.email,
+          projectName: projectName || 'het project',
+          reason: reason || null,
+        },
+      }).catch(err => logger.error('useIntakeResponses.rejectEmail', err))
     }
 
     setResponses(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r))

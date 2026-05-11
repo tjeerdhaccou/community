@@ -97,7 +97,7 @@ export function usePosts() {
     return () => { supabase.removeChannel(channel); clearTimeout(debounceRef.current) }
   }, [projectId, fetchPosts])
 
-  async function createPost({ text, tag, image_url, post_type, poll_options }) {
+  async function createPost({ text, tag, audience, image_url, post_type, poll_options }) {
     const { data, error } = await supabase
       .from('posts')
       .insert({
@@ -105,6 +105,7 @@ export function usePosts() {
         author_id: user.id,
         text,
         tag: tag || null,
+        audience: audience || 'members',
         image_url: image_url || null,
         post_type: post_type || 'post',
       })

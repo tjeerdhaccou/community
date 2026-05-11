@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
-import { getIntakeUrl } from '../lib/subdomain'
+import { getIntakeUrl, getProjectBaseUrl } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
@@ -11,7 +11,7 @@ import IntakeResponseDetail from '../components/IntakeResponseDetail'
 export default function Ledenwerving() {
   const { project } = useProject()
   const { questions, addQuestion, updateQuestion, deleteQuestion, reorderQuestions } = useIntakeQuestions(project?.id)
-  const { responses, pending, invited, joined, rejected, updateStatus } = useIntakeResponses(project?.id, project?.name)
+  const { responses, pending, invited, joined, rejected, updateStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
 
   const [tab, setTab] = useState('responses') // responses | form
   const [selectedResponse, setSelectedResponse] = useState(null)
@@ -254,7 +254,6 @@ export default function Ledenwerving() {
         <IntakeResponseDetail
           response={selectedResponse}
           questions={questions}
-          projectId={project?.slug || project?.id}
           onClose={() => setSelectedResponse(null)}
           onInvite={async () => { await updateStatus(selectedResponse.id, 'invited') }}
           onReject={async () => { await updateStatus(selectedResponse.id, 'rejected') }}

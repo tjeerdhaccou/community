@@ -290,7 +290,7 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                       const r = roleBtnRef.current?.getBoundingClientRect()
                       return r ? { top: r.bottom + 4, left: r.left } : {}
                     })()}>
-                      {ROLES.filter(r => r !== 'guest' && r !== 'interested' && r !== role).map(r => (
+                      {ROLES.filter(r => r !== 'guest' && r !== role).map(r => (
                         <button key={r} onClick={() => handleRoleChange(r)}>
                           <span className="member-profile__role-dot" style={{ background: ROLE_COLORS[r] }} />
                           {ROLE_LABELS[r]}

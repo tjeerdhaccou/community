@@ -1,13 +1,13 @@
 // ===== Tag definitions =====
 
-export const POST_TAGS = ['Vraag', 'Idee', 'Sociaal', 'In de media', 'Nieuw lid']
+export const POST_TAGS = ['Vraag', 'Idee', 'Sociaal', 'In de media', 'Even voorstellen']
 
 export const POST_TAG_COLORS = {
   'Vraag': '#4A90D9',
   'Idee': '#3BD269',
   'Sociaal': '#F09020',
   'In de media': '#F23578',
-  'Nieuw lid': '#7B5EA7',
+  'Even voorstellen': '#7B5EA7',
 }
 
 export const UPDATE_TAGS = ['Mijlpaal', 'Update', 'Besluit', 'Verslag']
@@ -21,10 +21,9 @@ export const UPDATE_TAG_COLORS = {
 
 // ===== Role definitions =====
 
-export const ROLES = ['interested', 'guest', 'professional', 'aspirant', 'member', 'moderator', 'admin']
+export const ROLES = ['guest', 'professional', 'aspirant', 'member', 'moderator', 'admin']
 
 export const ROLE_LABELS = {
-  interested: 'Interesselijst',
   guest: 'Gast',
   professional: 'Adviseur',
   aspirant: 'Aspirant-lid',
@@ -34,7 +33,6 @@ export const ROLE_LABELS = {
 }
 
 export const ROLE_COLORS = {
-  interested: '#7B5EA7',
   guest: '#9ba1b0',
   professional: '#C9A96E',
   aspirant: '#F4B400',

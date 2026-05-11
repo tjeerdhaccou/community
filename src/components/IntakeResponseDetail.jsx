@@ -1,31 +1,36 @@
 import { useState } from 'react'
 
-export default function IntakeResponseDetail({ response: initialResponse, questions, onClose, onInvite, onReject, projectId }) {
-  const joinUrl = `${window.location.origin}/p/${projectId}`
+export default function IntakeResponseDetail({ response: initialResponse, questions, onClose, onInvite, onReject }) {
   const [response, setResponse] = useState(initialResponse)
   const [loading, setLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
+  const [error, setError] = useState(null)
 
   const timeAgo = getTimeAgo(response.created_at)
 
-  function handleCopyLink() {
-    navigator.clipboard.writeText(joinUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   async function handleInvite() {
+    setError(null)
     setLoading(true)
-    await onInvite()
-    setResponse(prev => ({ ...prev, status: 'invited', invited_at: new Date().toISOString() }))
-    setLoading(false)
+    try {
+      await onInvite()
+      setResponse(prev => ({ ...prev, status: 'invited', invited_at: new Date().toISOString() }))
+    } catch (err) {
+      setError(err.message || 'Uitnodigen mislukt.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleReject() {
+    setError(null)
     setLoading(true)
-    await onReject()
-    setResponse(prev => ({ ...prev, status: 'rejected' }))
-    setLoading(false)
+    try {
+      await onReject()
+      setResponse(prev => ({ ...prev, status: 'rejected' }))
+    } catch (err) {
+      setError(err.message || 'Afwijzen mislukt.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -88,17 +93,22 @@ export default function IntakeResponseDetail({ response: initialResponse, questi
 
           {/* Pending: show action buttons */}
           {response.status === 'pending' && (
-            <div className="intake-detail__actions">
-              <button className="btn-secondary" onClick={handleReject} disabled={loading}>
-                <i className="fa-solid fa-xmark" /> Afwijzen
-              </button>
-              <button className="btn-primary" onClick={handleInvite} disabled={loading}>
-                <i className="fa-solid fa-paper-plane" /> {loading ? 'Bezig...' : 'Uitnodigen'}
-              </button>
-            </div>
+            <>
+              {error && (
+                <p style={{ color: 'var(--accent-red)', fontSize: '14px', margin: '12px 0 0' }}>{error}</p>
+              )}
+              <div className="intake-detail__actions">
+                <button className="btn-secondary" onClick={handleReject} disabled={loading}>
+                  <i className="fa-solid fa-xmark" /> Afwijzen
+                </button>
+                <button className="btn-primary" onClick={handleInvite} disabled={loading}>
+                  <i className="fa-solid fa-paper-plane" /> {loading ? 'Bezig...' : 'Uitnodigen'}
+                </button>
+              </div>
+            </>
           )}
 
-          {/* Invited: show success + link */}
+          {/* Invited: confirmation that email was sent */}
           {response.status === 'invited' && (
             <div className="intake-detail__invite-info">
               <p>
@@ -106,14 +116,8 @@ export default function IntakeResponseDetail({ response: initialResponse, questi
                 Uitgenodigd{response.invited_at ? ` op ${new Date(response.invited_at).toLocaleDateString('nl-NL')}` : ''}
               </p>
               <p className="intake-detail__invite-hint">
-                Deel onderstaande link met {response.name.split(' ')[0]} om een account aan te maken:
+                {response.name.split(' ')[0]} heeft een e-mail met inloglink ontvangen op <strong>{response.email}</strong>.
               </p>
-              <div className="intake-detail__link-row">
-                <input type="text" readOnly value={joinUrl} className="intake-detail__link-input" />
-                <button className="btn-secondary btn-sm" onClick={handleCopyLink}>
-                  <i className={`fa-solid ${copied ? 'fa-check' : 'fa-copy'}`} /> {copied ? 'Gekopieerd!' : 'Kopieer'}
-                </button>
-              </div>
             </div>
           )}
 
