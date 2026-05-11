@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { getProjectSlugFromSubdomain } from '../lib/subdomain'
+import { signOut } from '../lib/auth'
 import ProjectDashboardCard from '../components/ProjectDashboardCard'
 import NewProjectCard from '../components/NewProjectCard'
 
@@ -27,7 +28,7 @@ function ThemeToggle({ mode, setMode }) {
 export default function OrgDashboard({ orgId: orgIdProp }) {
   const params = useParams()
   const orgSlug = params.orgSlug
-  const { isOrgAdmin, primaryOrg, primaryOrgId } = useAuth()
+  const { isOrgAdmin, primaryOrg, primaryOrgId, profile } = useAuth()
   const orgId = orgIdProp || primaryOrgId
   const { mode, setMode } = useTheme()
   const navigate = useNavigate()
@@ -166,6 +167,14 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
             <>
               <button className="btn-secondary" onClick={() => navigate(settingsPath)} aria-label="Instellingen">
                 <i className="fa-solid fa-gear" />
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={async () => { await signOut() }}
+                aria-label="Uitloggen"
+                title={profile?.email ? `Uitloggen (${profile.email})` : 'Uitloggen'}
+              >
+                <i className="fa-solid fa-right-from-bracket" />
               </button>
               <button className="btn-primary" onClick={() => setCreatingNew(true)}>
                 <i className="fa-solid fa-plus" /> Nieuw project
