@@ -6885,8 +6885,16 @@ select.input {
   cursor: pointer;
 }
 .modules-tile input[type="checkbox"] {
+  /* Override the global `input { width: 100% }` rule which would stretch the checkbox */
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  appearance: auto;
 }
 .modules-tile__icon {
   flex-shrink: 0;
