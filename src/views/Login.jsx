@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { signInWithGoogle, checkInvitedEmail, sendOtpCode, verifyOtpCode } from '../lib/auth'
+import { checkInvitedEmail, sendOtpCode, verifyOtpCode } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 
@@ -14,7 +14,7 @@ export default function Login() {
     supabase.from('projects').select('name, logo_url, tagline').eq('slug', slug).single()
       .then(({ data }) => { if (data) setProjectInfo(data) })
   }, [])
-  const [mode, setMode] = useState('choice') // choice | email | otp
+  const [mode, setMode] = useState('email') // email | otp
   const [email, setEmail] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [loading, setLoading] = useState(false)
@@ -91,51 +91,15 @@ export default function Login() {
     }
   }
 
-  // Step 1: Choose login method
-  if (mode === 'choice') {
+  // Step 1: Enter email
+  if (mode === 'email') {
     return (
       <div className="login-page">
         <div className="cl-card cl-card--elevated login-card">
           {projectInfo?.logo_url && (
             <img src={projectInfo.logo_url} alt={projectInfo.name + ' logo'} style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', objectFit: 'cover', marginBottom: 12 }} />
           )}
-          <h1 className="login-title">{projectInfo?.name || 'Community Platform'}</h1>
-          <p className="login-subtitle">{projectInfo?.tagline || 'Log in om verder te gaan'}</p>
-
-          <button onClick={signInWithGoogle} className="cl-btn cl-btn--primary login-google-btn">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.26c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
-              <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-            </svg>
-            Inloggen met Google
-          </button>
-
-          <div className="login-divider">
-            <span>of</span>
-          </div>
-
-          <button onClick={() => setMode('email')} className="login-email-btn">
-            <i className="fa-solid fa-envelope" />
-            Inloggen met e-mail
-          </button>
-
-          <p style={{ marginTop: 24, fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-            Door in te loggen ga je akkoord met ons{' '}
-            <a href="/privacy" style={{ color: 'var(--accent-primary)' }}>privacybeleid</a>.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // Step 2: Enter email
-  if (mode === 'email') {
-    return (
-      <div className="login-page">
-        <div className="cl-card cl-card--elevated login-card">
-          <h1 className="login-title">Inloggen met e-mail</h1>
+          <h1 className="login-title">{projectInfo?.name || 'Inloggen'}</h1>
           <p className="login-subtitle">
             Voer het e-mailadres in waarmee je bent uitgenodigd.
           </p>
@@ -159,15 +123,16 @@ export default function Login() {
             </button>
           </form>
 
-          <button className="login-back-btn" onClick={() => { setMode('choice'); setError(null) }}>
-            <i className="fa-solid fa-arrow-left" /> Terug
-          </button>
+          <p style={{ marginTop: 24, fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+            Door in te loggen ga je akkoord met ons{' '}
+            <a href="/privacy" style={{ color: 'var(--accent-primary)' }}>privacybeleid</a>.
+          </p>
         </div>
       </div>
     )
   }
 
-  // Step 3: Enter OTP code
+  // Step 2: Enter OTP code
   return (
     <div className="login-page">
       <div className="cl-card cl-card--elevated login-card">
