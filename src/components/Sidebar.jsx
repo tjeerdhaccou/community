@@ -16,30 +16,30 @@ const NAV_SECTIONS = [
   {
     label: 'Actueel',
     items: [
-      { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', label: 'Updates' },
-      { to: 'community', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', label: 'Prikbord', action: 'read_board', membersOnly: true },
-      { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', label: 'Events' },
+      { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', label: 'Updates', feature: 'updates' },
+      { to: 'community', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
+      { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', label: 'Events', feature: 'events' },
     ]
   },
   {
     label: 'Project',
     items: [
-      { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', label: 'Roadmap', action: 'view_roadmap', membersOnly: true },
-      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', label: 'Documenten' },
-      { to: 'adviseurs', icon: 'fa-solid fa-helmet-safety', color: '#C9A96E', label: 'Team', action: 'view_team' },
+      { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
+      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', label: 'Documenten', feature: 'documents' },
+      { to: 'adviseurs', icon: 'fa-solid fa-helmet-safety', color: '#C9A96E', label: 'Team', action: 'view_team', feature: 'team' },
     ]
   },
   {
     label: 'Community',
     items: [
-      { to: 'members', icon: 'fa-solid fa-users', color: '#F23578', label: 'Leden', action: 'view_members_list' },
-      { to: 'ledenwerving', icon: 'fa-solid fa-clipboard-list', color: 'var(--accent-orange, #F09020)', label: 'Ledenwerving', action: 'manage_intake' },
+      { to: 'members', icon: 'fa-solid fa-users', color: '#F23578', label: 'Leden', action: 'view_members_list', feature: 'members' },
+      { to: 'ledenwerving', icon: 'fa-solid fa-clipboard-list', color: 'var(--accent-orange, #F09020)', label: 'Ledenwerving', action: 'manage_intake', feature: 'ledenwerving' },
     ]
   },
   {
     label: 'Beheer',
     items: [
-      { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', label: 'Pagina bouwer', adminOnly: true },
+      { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
       { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', label: 'Instellingen', adminOnly: true },
     ]
   },
@@ -47,7 +47,7 @@ const NAV_SECTIONS = [
 
 export default function Sidebar() {
   const { profile, isOrgAdmin, primaryOrgId, primaryOrgSlug } = useAuth()
-  const { project, role, basePath } = useProject()
+  const { project, role, basePath, featureEnabled } = useProject()
   const navigate = useNavigate()
   const location = useLocation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -93,6 +93,7 @@ export default function Sidebar() {
   function renderNavItem(item) {
     if (item.membersOnly && isProfessional) return null
     if (item.action && !canDo(role, item.action)) return null
+    if (item.feature && !featureEnabled(item.feature)) return null
     return (
       <div
         key={item.to}
@@ -139,6 +140,7 @@ export default function Sidebar() {
             if (item.membersOnly && isProfessional) return false
             if (item.adminOnly && role !== 'admin') return false
             if (item.action && !canDo(role, item.action)) return false
+            if (item.feature && !featureEnabled(item.feature)) return false
             return true
           })
           if (visibleItems.length === 0) return null
