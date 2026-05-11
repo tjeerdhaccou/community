@@ -316,7 +316,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         <p className="form-hint" style={{ marginBottom: 12 }}>
           Bepaal welke onderdelen voor dit project zichtbaar zijn. Dashboard en Instellingen staan altijd aan.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 200px)', gap: 8, justifyContent: 'start' }}>
+        <div className="modules-grid">
           {[
             { key: 'updates', label: 'Updates', icon: 'fa-solid fa-bullhorn' },
             { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-comments' },
@@ -328,24 +328,14 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             { key: 'team', label: 'Team', icon: 'fa-solid fa-helmet-safety' },
             { key: 'page_builder', label: 'Pagina bouwer', icon: 'fa-solid fa-wand-magic-sparkles' },
           ].map(f => (
-            <label
-              key={f.key}
-              style={{
-                width: 200,
-                boxSizing: 'border-box',
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 12px', borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-hover)', cursor: 'pointer',
-              }}
-            >
+            <label key={f.key} className="modules-tile">
               <input
                 type="checkbox"
-                style={{ flexShrink: 0, margin: 0 }}
                 checked={features[f.key] !== false}
                 onChange={e => setFeatures(prev => ({ ...prev, [f.key]: e.target.checked }))}
               />
-              <i className={f.icon} style={{ color: 'var(--text-tertiary)', flexShrink: 0, width: 14, textAlign: 'center' }} />
-              <span style={{ fontSize: 14, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.label}</span>
+              <i className={`modules-tile__icon ${f.icon}`} />
+              <span className="modules-tile__label">{f.label}</span>
             </label>
           ))}
         </div>

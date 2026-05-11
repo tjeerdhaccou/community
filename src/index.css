@@ -6866,6 +6866,45 @@ select.input {
   border-top: 1px solid var(--border-default);
 }
 
+/* Modules toggle grid */
+.modules-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 200px);
+  gap: 8px;
+  justify-content: start;
+}
+.modules-tile {
+  width: 200px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  cursor: pointer;
+}
+.modules-tile input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0;
+}
+.modules-tile__icon {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
+.modules-tile__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .org-project-card__stats {
