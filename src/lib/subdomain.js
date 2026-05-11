@@ -83,7 +83,7 @@ export function getProjectBaseUrl(project) {
 export function getIntakeUrl(project) {
   if (!project) return ''
   if (project.custom_domain) return `https://${project.custom_domain}/intake`
-  return `${window.location.origin}/intake/${project.id}`
+  return `${getMainOrigin()}/intake/${project.id}`
 }
 
 /**
@@ -92,5 +92,9 @@ export function getIntakeUrl(project) {
 export function getPublicSiteUrl(project) {
   if (!project) return ''
   if (project.custom_domain) return `https://${project.custom_domain}/public`
-  return `${window.location.origin}/project/${project.slug || project.id}`
+  return `${getMainOrigin()}/project/${project.slug || project.id}`
+}
+
+function getMainOrigin() {
+  return MAIN_DOMAIN ? `https://${MAIN_DOMAIN}` : window.location.origin
 }
