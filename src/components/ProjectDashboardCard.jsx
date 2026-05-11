@@ -299,7 +299,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         <p className="form-hint" style={{ marginBottom: 12 }}>
           Bepaal welke onderdelen voor dit project zichtbaar zijn. Dashboard en Instellingen staan altijd aan.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {[
             { key: 'updates', label: 'Updates', icon: 'fa-solid fa-bullhorn' },
             { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-comments' },
@@ -314,6 +314,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             <label
               key={f.key}
               style={{
+                flex: '0 0 200px',
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 12px', borderRadius: 'var(--radius-sm)',
                 background: 'var(--bg-hover)', cursor: 'pointer',
@@ -324,8 +325,8 @@ function ProjectEditForm({ project, onClose, onSaved }) {
                 checked={features[f.key] !== false}
                 onChange={e => setFeatures(prev => ({ ...prev, [f.key]: e.target.checked }))}
               />
-              <i className={f.icon} style={{ color: 'var(--text-tertiary)', width: 16 }} />
-              <span style={{ fontSize: 14 }}>{f.label}</span>
+              <i className={f.icon} style={{ color: 'var(--text-tertiary)', width: 16, flexShrink: 0 }} />
+              <span style={{ fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.label}</span>
             </label>
           ))}
         </div>
