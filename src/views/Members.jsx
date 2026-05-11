@@ -225,7 +225,7 @@ function InviteModal({ projectName, project, onClose }) {
           </button>
         </div>
 
-        <div className="tag-filter" style={{ padding: '12px 24px 0', marginBottom: 0 }}>
+        <div className="tag-filter" style={{ padding: '12px 24px 20px', marginBottom: 0 }}>
           <button
             className={`tag-filter__pill ${tab === 'personal' ? 'tag-filter__pill--active' : ''}`}
             onClick={() => setTab('personal')}
