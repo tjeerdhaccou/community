@@ -120,8 +120,10 @@ function ProjectShell() {
 }
 
 function FeatureRoute({ feature, children }) {
-  const { featureEnabled, basePath, loading } = useProject()
+  const { featureEnabled, basePath, loading, role } = useProject()
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
+  // Admins always have access so they can build out hidden content
+  if (role === 'admin') return children
   if (!featureEnabled(feature)) return <Navigate to={basePath || '/'} replace />
   return children
 }
