@@ -216,7 +216,7 @@ function InviteModal({ projectName, project, onClose }) {
   const { invites, createInvite, revokeInvite, resendInvite } = useMemberInvites()
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={onClose} style={{ alignItems: 'flex-start', paddingTop: '10vh' }}>
       <div className="modal-card modal-card--invite" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Lid uitnodigen</h2>
@@ -225,7 +225,7 @@ function InviteModal({ projectName, project, onClose }) {
           </button>
         </div>
 
-        <div className="tag-filter" style={{ marginBottom: '20px' }}>
+        <div className="tag-filter" style={{ padding: '12px 24px 0', marginBottom: 0 }}>
           <button
             className={`tag-filter__pill ${tab === 'personal' ? 'tag-filter__pill--active' : ''}`}
             onClick={() => setTab('personal')}
