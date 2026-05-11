@@ -210,7 +210,23 @@ function SubdomainLookup({ slug }) {
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
   if (type === 'project') return <ProjectSubdomainApp slug={slug} />
   if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
-  return <NormalRoutes /> // fallback — 404 will handle it
+  return <SubdomainNotFound slug={slug} />
+}
+
+function SubdomainNotFound({ slug }) {
+  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
+  return (
+    <div className="error-boundary">
+      <div className="error-boundary__card">
+        <i className="fa-solid fa-compass error-boundary__icon" style={{ color: 'var(--text-tertiary)' }} />
+        <h2>Deze pagina bestaat niet</h2>
+        <p>Er is geen project of organisatie met de naam <strong>{slug}</strong>.</p>
+        <button className="btn-primary" onClick={() => { window.location.href = `https://${mainDomain}` }}>
+          <i className="fa-solid fa-house" /> Naar {mainDomain}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function NormalRoutes() {
