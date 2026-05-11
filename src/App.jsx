@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
 import { ThemeProvider } from './contexts/ThemeContext'
@@ -188,26 +188,44 @@ function PlatformSubdomainApp() {
 }
 
 function SubdomainLookup({ slug }) {
+  const location = useLocation()
+  const { user, loading: authLoading } = useAuth()
   const [type, setType] = useState(null) // 'project' | 'org' | null
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (authLoading) return // wait for auth — RLS hides orgs from anonymous users
+    let cancelled = false
     async function lookup() {
-      // Check if it's a project slug first
+      setLoading(true)
       const { data: project } = await supabase.from('projects').select('id').eq('slug', slug).maybeSingle()
+      if (cancelled) return
       if (project) { setType('project'); setLoading(false); return }
 
-      // Check if it's an org slug
       const { data: org } = await supabase.from('organizations').select('id').eq('slug', slug).maybeSingle()
+      if (cancelled) return
       if (org) { setType('org'); setLoading(false); return }
 
       setType(null)
       setLoading(false)
     }
     lookup()
-  }, [slug])
+    return () => { cancelled = true }
+  }, [slug, authLoading, user?.id])
 
-  if (loading) return <div className="loading-page"><p>Laden...</p></div>
+  // Auth callback must work before the DB lookup resolves — session tokens
+  // arrive via URL hash and need to be set before the org becomes readable
+  // under RLS. After AuthCallback navigates to returnPath, location changes,
+  // user updates, and the lookup re-runs successfully.
+  if (location.pathname === '/auth/callback') {
+    return (
+      <Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
+      </Routes>
+    )
+  }
+
+  if (loading || authLoading) return <div className="loading-page"><p>Laden...</p></div>
   if (type === 'project') return <ProjectSubdomainApp slug={slug} />
   if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
   return <SubdomainNotFound slug={slug} />
