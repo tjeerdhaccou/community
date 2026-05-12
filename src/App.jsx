@@ -228,6 +228,9 @@ function SubdomainLookup({ slug }) {
   if (loading || authLoading) return <div className="loading-page"><p>Laden...</p></div>
   if (type === 'project') return <ProjectSubdomainApp slug={slug} />
   if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
+  // Anonieme bezoekers kunnen de org niet zien door RLS — stuur naar login
+  // ipv 404, zodat ze na inloggen op het juiste subdomain landen
+  if (!user) return <Login />
   return <SubdomainNotFound slug={slug} />
 }
 
