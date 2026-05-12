@@ -45,9 +45,10 @@ export async function signInWithGoogle() {
   return data
 }
 
-export async function checkInvitedEmail(email) {
+export async function checkInvitedEmail(email, subdomainSlug = null) {
   const { data, error } = await supabase.rpc('check_invited_email', {
     p_email: email.toLowerCase().trim(),
+    p_subdomain_slug: subdomainSlug || null,
   })
   if (error) throw error
   return data ? { invited: true } : null

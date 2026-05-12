@@ -27,10 +27,11 @@ export default function Login() {
     setError(null)
 
     try {
-      // Check if email is invited
-      const invite = await checkInvitedEmail(email)
+      // Check if email is invited — scoped op subdomain als we daar zijn
+      const subdomainSlug = getProjectSlugFromSubdomain()
+      const invite = await checkInvitedEmail(email, subdomainSlug)
       if (!invite) {
-        setError('Dit e-mailadres is niet uitgenodigd. Neem contact op met de beheerder.')
+        setError('Dit e-mailadres heeft geen toegang. Neem contact op met de beheerder.')
         setLoading(false)
         return
       }
