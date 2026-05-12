@@ -6176,6 +6176,37 @@ select.input {
   color: var(--accent-red);
   margin-top: 8px;
 }
+.org-invite-admin__success {
+  font-size: 13px;
+  color: var(--accent-green, #2D8C5A);
+  margin-top: 8px;
+}
+.org-invite-admin__hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.org-pending-invites {
+  margin-top: 20px;
+}
+.org-pending-invites__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.org-pending-invites + .org-invite-admin {
+  margin-top: 20px;
+}
+.org-admin-row--pending .org-admin-row__avatar--placeholder {
+  background: var(--bg-elevated, #fff);
+  color: var(--text-tertiary);
+}
+.org-admin-row--pending .org-admin-row__info {
+  flex: 1;
+}
 
 .profile-avatar-row {
   display: flex;

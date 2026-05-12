@@ -3,25 +3,31 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
 import { getProjectSlugFromSubdomain } from '../lib/subdomain'
+import { useAuth } from '../contexts/AuthContext'
 import ImageCropper from '../components/ImageCropper'
+
+const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
 
 export default function OrgSettings({ orgId: orgIdProp }) {
   const params = useParams()
   const orgSlug = params.orgSlug
   const orgId = orgIdProp
   const navigate = useNavigate()
+  const { user, profile } = useAuth()
   const backPath = getProjectSlugFromSubdomain() ? '/admin' : `/org/${orgSlug || orgId}`
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
   const [logoUrl, setLogoUrl] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
   const [admins, setAdmins] = useState([])
+  const [pendingInvites, setPendingInvites] = useState([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState(null)
+  const [inviteSuccess, setInviteSuccess] = useState(null)
   const logoRef = useRef(null)
 
   useEffect(() => {
@@ -36,6 +42,11 @@ export default function OrgSettings({ orgId: orgIdProp }) {
       const adminsRes = await supabase.from('org_members')
         .select('*, profile:profiles(id, full_name, avatar_url)')
         .eq('organization_id', resolvedId)
+      const invitesRes = await supabase.from('org_admin_invites')
+        .select('id, email, status, created_at')
+        .eq('organization_id', resolvedId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
       if (orgRes.data) {
         setOrg(orgRes.data)
         setName(orgRes.data.name)
@@ -43,9 +54,10 @@ export default function OrgSettings({ orgId: orgIdProp }) {
         setLogoPreview(orgRes.data.logo_url)
       }
       setAdmins(adminsRes.data || [])
+      setPendingInvites(invitesRes.data || [])
     }
     load()
-  }, [orgId])
+  }, [orgId, orgSlug])
 
   const [cropSrc, setCropSrc] = useState(null)
 
@@ -75,48 +87,91 @@ export default function OrgSettings({ orgId: orgIdProp }) {
   async function handleInviteAdmin() {
     const email = inviteEmail.trim().toLowerCase()
     if (!email) return
+    const resolvedOrgId = org?.id || orgId
+    if (!resolvedOrgId) return
     setInviting(true)
     setInviteError(null)
+    setInviteSuccess(null)
 
     try {
-      // Find user by email
-      const { data: profile, error: profileError } = await supabase
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
-        .eq('email', email)
-        .single()
+        .select('id, full_name, avatar_url, email')
+        .ilike('email', email)
+        .maybeSingle()
 
-      if (profileError || !profile) {
-        setInviteError('Geen gebruiker gevonden met dit e-mailadres.')
+      if (existingProfile) {
+        if (admins.find(a => a.profile_id === existingProfile.id)) {
+          setInviteError('Deze gebruiker is al beheerder.')
+          setInviting(false)
+          return
+        }
+
+        const { data, error } = await supabase
+          .from('org_members')
+          .insert({ organization_id: resolvedOrgId, profile_id: existingProfile.id, role: 'admin' })
+          .select('*, profile:profiles(id, full_name, avatar_url)')
+          .single()
+
+        if (error) throw error
+
+        setAdmins(prev => [...prev, data])
+        setInviteEmail('')
+        setInviteSuccess(`${existingProfile.full_name || email} is toegevoegd als beheerder.`)
+        return
+      }
+
+      if (pendingInvites.find(i => i.email.toLowerCase() === email)) {
+        setInviteError('Er staat al een uitnodiging open voor dit e-mailadres.')
         setInviting(false)
         return
       }
 
-      // Check if already a member
-      const existing = admins.find(a => a.profile_id === profile.id)
-      if (existing) {
-        setInviteError('Deze gebruiker is al beheerder.')
-        setInviting(false)
-        return
-      }
-
-      // Add as org admin
-      const { data, error } = await supabase
-        .from('org_members')
-        .insert({ organization_id: orgId, profile_id: profile.id, role: 'admin' })
-        .select('*, profile:profiles(id, full_name, avatar_url)')
+      const { data: invite, error: inviteErr } = await supabase
+        .from('org_admin_invites')
+        .insert({ organization_id: resolvedOrgId, email, invited_by: user?.id })
+        .select('id, email, status, created_at')
         .single()
 
-      if (error) throw error
+      if (inviteErr) throw inviteErr
 
-      setAdmins(prev => [...prev, data])
+      const orgUrl = org?.slug ? `https://${org.slug}.${MAIN_DOMAIN}` : `https://${MAIN_DOMAIN}`
+      const { error: mailErr } = await supabase.functions.invoke('send-member-email', {
+        body: {
+          type: 'org_admin_invite',
+          memberEmail: email,
+          orgName: org?.name || name,
+          orgUrl,
+          inviterName: profile?.full_name || null,
+        },
+      })
+
+      if (mailErr) {
+        await supabase.from('org_admin_invites').delete().eq('id', invite.id)
+        throw mailErr
+      }
+
+      setPendingInvites(prev => [invite, ...prev])
       setInviteEmail('')
+      setInviteSuccess(`Uitnodiging verstuurd naar ${email}.`)
     } catch (err) {
-      console.error('Error adding admin:', err)
-      setInviteError('Er ging iets mis bij het toevoegen.')
+      console.error('Error inviting admin:', err)
+      setInviteError('Er ging iets mis bij het versturen van de uitnodiging.')
     } finally {
       setInviting(false)
     }
+  }
+
+  async function handleRevokeInvite(inviteId) {
+    const { error } = await supabase
+      .from('org_admin_invites')
+      .update({ status: 'revoked' })
+      .eq('id', inviteId)
+    if (error) {
+      console.error('Error revoking invite:', error)
+      return
+    }
+    setPendingInvites(prev => prev.filter(i => i.id !== inviteId))
   }
 
   async function handleSave(e) {
@@ -193,6 +248,33 @@ export default function OrgSettings({ orgId: orgIdProp }) {
               ))}
             </div>
 
+            {pendingInvites.length > 0 && (
+              <div className="org-pending-invites">
+                <h4 className="org-pending-invites__title">Openstaande uitnodigingen</h4>
+                <div className="org-admin-list">
+                  {pendingInvites.map(inv => (
+                    <div key={inv.id} className="org-admin-row org-admin-row--pending">
+                      <div className="org-admin-row__avatar org-admin-row__avatar--placeholder">
+                        <i className="fa-solid fa-envelope" />
+                      </div>
+                      <div className="org-admin-row__info">
+                        <span className="org-admin-row__name">{inv.email}</span>
+                        <span className="org-admin-row__role">Uitgenodigd — wacht op aanmelding</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-icon"
+                        title="Uitnodiging intrekken"
+                        onClick={() => handleRevokeInvite(inv.id)}
+                      >
+                        <i className="fa-solid fa-xmark" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="org-invite-admin">
               <h4 className="org-invite-admin__title">Beheerder toevoegen</h4>
               <div className="org-invite-admin__form">
@@ -200,7 +282,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
                   type="email"
                   placeholder="E-mailadres..."
                   value={inviteEmail}
-                  onChange={e => { setInviteEmail(e.target.value); setInviteError(null) }}
+                  onChange={e => { setInviteEmail(e.target.value); setInviteError(null); setInviteSuccess(null) }}
                 />
                 <button
                   type="button"
@@ -208,10 +290,14 @@ export default function OrgSettings({ orgId: orgIdProp }) {
                   disabled={inviting || !inviteEmail.trim()}
                   onClick={handleInviteAdmin}
                 >
-                  {inviting ? 'Toevoegen...' : <><i className="fa-solid fa-plus" /> Toevoegen</>}
+                  {inviting ? 'Bezig...' : <><i className="fa-solid fa-paper-plane" /> Uitnodigen</>}
                 </button>
               </div>
+              <p className="org-invite-admin__hint">
+                Heeft de persoon al een account, dan wordt hij direct toegevoegd. Zo niet, dan ontvangt hij een uitnodiging per mail.
+              </p>
               {inviteError && <p className="org-invite-admin__error">{inviteError}</p>}
+              {inviteSuccess && <p className="org-invite-admin__success">{inviteSuccess}</p>}
             </div>
           </div>
 

@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, memberName, memberEmail, projectName, reason, projectUrl } = await req.json()
+    const { type, memberName, memberEmail, projectName, reason, projectUrl, orgName, orgUrl, inviterName } = await req.json()
 
     if (!memberEmail) {
       return new Response(JSON.stringify({ error: 'No email address' }), {
@@ -106,6 +106,61 @@ serve(async (req) => {
           </p>
           <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
             Klik op de knop hieronder om je account aan te maken en in te loggen — geen wachtwoord nodig.
+          </p>
+          <p style="margin: 28px 0;">
+            <a href="${actionLink}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+              Open je uitnodiging
+            </a>
+          </p>
+          <p style="font-size: 14px; color: #9ba1b0;">
+            De link werkt eenmalig en is een uur geldig. Als je deze mail niet verwachtte kun je hem negeren.
+          </p>
+        </div>
+      `
+    } else if (type === 'org_admin_invite') {
+      if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+        console.error('[send-member-email] Missing SUPABASE_URL or SERVICE_ROLE_KEY')
+        return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+
+      const redirectTo = orgUrl ? `${orgUrl.replace(/\/$/, '')}/auth/callback` : undefined
+
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'magiclink',
+        email: memberEmail,
+        options: redirectTo ? { redirectTo } : undefined,
+      })
+
+      if (linkErr || !linkData?.properties?.action_link) {
+        console.error('generateLink error:', linkErr)
+        return new Response(JSON.stringify({ error: 'Magic link generation failed', details: linkErr?.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const actionLink = linkData.properties.action_link
+      const greeting = memberName ? `Hoi ${memberName}` : 'Hoi'
+      const inviterLine = inviterName
+        ? `${inviterName} heeft je uitgenodigd als beheerder van <strong>${orgName}</strong>.`
+        : `Je bent uitgenodigd als beheerder van <strong>${orgName}</strong>.`
+
+      subject = `Je bent uitgenodigd als beheerder van ${orgName}`
+      html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+          <h1 style="font-size: 24px; color: #1a1a2e; margin-bottom: 16px;">${greeting},</h1>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            ${inviterLine}
+          </p>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            Klik op de knop hieronder om je account aan te maken en in te loggen — geen wachtwoord nodig. Daarna ben je direct beheerder.
           </p>
           <p style="margin: 28px 0;">
             <a href="${actionLink}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
