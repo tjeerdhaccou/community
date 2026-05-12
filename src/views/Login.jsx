@@ -30,7 +30,7 @@ export default function Login() {
       // Check if email is invited
       const invite = await checkInvitedEmail(email)
       if (!invite) {
-        setError('Dit e-mailadres is niet uitgenodigd. Neem contact op met de beheerders van het project.')
+        setError('Dit e-mailadres is niet uitgenodigd. Neem contact op met de beheerder.')
         setLoading(false)
         return
       }
