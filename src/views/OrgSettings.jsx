@@ -251,7 +251,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
             <div className="org-admin-list">
               {admins.map(a => {
                 const isSelf = a.profile_id === user?.id
-                const canRemove = !isSelf && (isPlatformAdmin || admins.some(x => x.profile_id === user?.id && x.role === 'admin'))
+                const canRemove = !isSelf && isPlatformAdmin
                 return (
                   <div
                     key={a.id}
