@@ -126,6 +126,9 @@ function ProjectEditForm({ project, onClose, onSaved }) {
   const [publicContactEmail, setPublicContactEmail] = useState(project.public_contact_email || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleteError, setDeleteError] = useState(null)
   const [teamMembers, setTeamMembers] = useState([])
   const [teamLoading, setTeamLoading] = useState(false)
   const [addEmail, setAddEmail] = useState('')
@@ -236,6 +239,20 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         setUploadingCover(false)
       }
     }
+  }
+
+  async function handleDelete() {
+    if (deleteConfirm.trim() !== project.project_name) return
+    setDeleting(true)
+    setDeleteError(null)
+    const { error } = await supabase.from('projects').delete().eq('id', project.project_id)
+    if (error) {
+      setDeleteError(error.message || 'Verwijderen mislukt.')
+      setDeleting(false)
+      return
+    }
+    onSaved?.()
+    onClose?.()
   }
 
   async function handleSave(e) {
@@ -528,6 +545,45 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             {addingMember ? 'Toevoegen...' : 'Toevoegen'}
           </button>
         </div>
+      </div>
+
+      {/* Danger zone */}
+      <div
+        className="org-edit__section"
+        style={{
+          marginTop: 24,
+          padding: 16,
+          borderRadius: 'var(--radius-md)',
+          background: 'rgba(220, 38, 38, 0.06)',
+        }}
+      >
+        <h4 style={{ margin: 0, marginBottom: 8, color: 'var(--accent-red)', fontSize: 14 }}>
+          <i className="fa-solid fa-triangle-exclamation" /> Gevarenzone
+        </h4>
+        <p style={{ margin: 0, marginBottom: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
+          Verwijdert dit project en alle bijbehorende data (posts, updates, events, leden, comments).
+          Deze actie kan niet ongedaan gemaakt worden. Typ <strong>{project.project_name}</strong> ter bevestiging.
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            value={deleteConfirm}
+            onChange={e => setDeleteConfirm(e.target.value)}
+            placeholder={project.project_name}
+            style={{ flex: 1, fontSize: 13, padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}
+          />
+          <button
+            type="button"
+            className="btn-primary btn-primary--danger"
+            onClick={handleDelete}
+            disabled={deleting || deleteConfirm.trim() !== project.project_name}
+          >
+            {deleting ? 'Verwijderen...' : 'Verwijder project'}
+          </button>
+        </div>
+        {deleteError && (
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: 13, color: 'var(--accent-red)' }}>{deleteError}</p>
+        )}
       </div>
 
       {/* Actions */}
