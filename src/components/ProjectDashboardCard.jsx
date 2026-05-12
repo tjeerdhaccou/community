@@ -245,9 +245,18 @@ function ProjectEditForm({ project, onClose, onSaved }) {
     if (deleteConfirm.trim() !== project.project_name) return
     setDeleting(true)
     setDeleteError(null)
-    const { error } = await supabase.from('projects').delete().eq('id', project.project_id)
+    const { data, error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', project.project_id)
+      .select('id')
     if (error) {
       setDeleteError(error.message || 'Verwijderen mislukt.')
+      setDeleting(false)
+      return
+    }
+    if (!data || data.length === 0) {
+      setDeleteError('Geen rechten om dit project te verwijderen. Check of dit project onder jouw organisatie valt.')
       setDeleting(false)
       return
     }
