@@ -6174,6 +6174,17 @@ select.input {
   color: var(--text-tertiary);
   font-size: 13px;
 }
+.org-admin-row__remove {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+.org-admin-row__remove:hover {
+  color: var(--accent-red);
+}
+.org-admin-row__edit-icon + .org-admin-row__remove {
+  margin-left: 8px;
+}
 
 /* Invite admin form */
 .org-invite-admin__title {

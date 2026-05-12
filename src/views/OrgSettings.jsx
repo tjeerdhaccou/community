@@ -6,6 +6,7 @@ import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 import { useAuth } from '../contexts/AuthContext'
 import ImageCropper from '../components/ImageCropper'
 import ProfileEditModal from '../components/ProfileEditModal'
+import ConfirmModal from '../components/ConfirmModal'
 
 const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
 
@@ -14,8 +15,9 @@ export default function OrgSettings({ orgId: orgIdProp }) {
   const orgSlug = params.orgSlug
   const orgId = orgIdProp
   const navigate = useNavigate()
-  const { user, profile, reload: reloadAuth } = useAuth()
+  const { user, profile, isPlatformAdmin, reload: reloadAuth } = useAuth()
   const [editingProfile, setEditingProfile] = useState(false)
+  const [adminToRemove, setAdminToRemove] = useState(null)
   const backPath = getProjectSlugFromSubdomain() ? '/admin' : `/org/${orgSlug || orgId}`
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
@@ -176,6 +178,20 @@ export default function OrgSettings({ orgId: orgIdProp }) {
     setPendingInvites(prev => prev.filter(i => i.id !== inviteId))
   }
 
+  async function handleRemoveAdmin(adminRow) {
+    const { error } = await supabase
+      .from('org_members')
+      .delete()
+      .eq('id', adminRow.id)
+    if (error) {
+      console.error('Error removing admin:', error)
+      alert('Verwijderen mislukt.')
+      return
+    }
+    setAdmins(prev => prev.filter(a => a.id !== adminRow.id))
+    setAdminToRemove(null)
+  }
+
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
@@ -235,6 +251,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
             <div className="org-admin-list">
               {admins.map(a => {
                 const isSelf = a.profile_id === user?.id
+                const canRemove = !isSelf && (isPlatformAdmin || admins.some(x => x.profile_id === user?.id && x.role === 'admin'))
                 return (
                   <div
                     key={a.id}
@@ -259,6 +276,16 @@ export default function OrgSettings({ orgId: orgIdProp }) {
                     </div>
                     {isSelf && (
                       <i className="fa-solid fa-pen org-admin-row__edit-icon" />
+                    )}
+                    {canRemove && (
+                      <button
+                        type="button"
+                        className="btn-icon org-admin-row__remove"
+                        title="Beheerder verwijderen"
+                        onClick={(e) => { e.stopPropagation(); setAdminToRemove(a) }}
+                      >
+                        <i className="fa-solid fa-xmark" />
+                      </button>
                     )}
                   </div>
                 )
@@ -346,6 +373,16 @@ export default function OrgSettings({ orgId: orgIdProp }) {
               if (reloadAuth) reloadAuth()
             }}
             onClose={() => setEditingProfile(false)}
+          />
+        )}
+
+        {adminToRemove && (
+          <ConfirmModal
+            message={`Weet je zeker dat je ${adminToRemove.profile?.full_name || adminToRemove.profile?.email || 'deze beheerder'} wilt verwijderen als beheerder van ${org?.name || 'deze organisatie'}?`}
+            confirmLabel="Verwijderen"
+            danger
+            onConfirm={() => handleRemoveAdmin(adminToRemove)}
+            onCancel={() => setAdminToRemove(null)}
           />
         )}
       </main>
