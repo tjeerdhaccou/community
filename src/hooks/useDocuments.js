@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
+import { dispatchNotification } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 
@@ -34,7 +35,7 @@ export function useDocuments() {
 
     const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(path)
 
-    const { error } = await supabase.from('documents').insert({
+    const { data: inserted, error } = await supabase.from('documents').insert({
       project_id: projectId,
       title,
       description: description || null,
@@ -44,8 +45,11 @@ export function useDocuments() {
       file_size: file.size,
       file_type: file.type,
       uploaded_by: user?.id,
-    })
+    }).select('id').single()
     if (error) { logger.error('useDocuments.upload', error); throw new Error(friendlyError(error)) }
+    if (inserted?.id) {
+      dispatchNotification({ projectId, type: 'new_document', referenceId: inserted.id, actorId: user?.id })
+    }
     fetch()
   }
 

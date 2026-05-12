@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
+import { dispatchNotification } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 
@@ -70,6 +71,7 @@ export function useEvents() {
       .single()
     if (error) { logger.error('useEvents.createEvent', error); throw new Error(friendlyError(error)) }
     // Realtime subscription will trigger fetchEvents automatically
+    if (data?.id) dispatchNotification({ projectId, type: 'new_event', referenceId: data.id, actorId: user.id })
     return data
   }
 

@@ -31,6 +31,8 @@ import IntakeForm from './views/IntakeForm'
 import Ledenwerving from './views/Ledenwerving'
 import PrivacyPolicy from './views/PrivacyPolicy'
 import CookieConsent from './components/CookieConsent'
+import NotificationOnboardingModal from './components/NotificationOnboardingModal'
+import Unsubscribe from './views/Unsubscribe'
 import PublicProject from './views/PublicProject'
 import PageBuilder from './views/PageBuilder'
 import PlatformAdmin from './views/PlatformAdmin'
@@ -274,6 +276,7 @@ function NormalRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/project/:slug" element={<PublicProject />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/intake/:projectId" element={<IntakeForm />} />
@@ -418,6 +421,7 @@ export default function App() {
           <ToastProvider>
           <ConfirmProvider>
             <SubdomainRouter />
+            <NotificationOnboardingModal />
           </ConfirmProvider>
           </ToastProvider>
         </ThemeProvider>

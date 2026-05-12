@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
 import { logAudit } from '../lib/audit'
+import { dispatchNotification } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 
@@ -107,6 +108,7 @@ export function useUpdates() {
     logAudit('update.created', 'update', { resourceId: data?.id, projectId, metadata: { is_public: is_public || false } })
     // Optimistic: add to local state immediately
     if (data) setUpdates(prev => [data, ...prev])
+    if (data?.id) dispatchNotification({ projectId, type: 'new_update', referenceId: data.id, actorId: user.id })
     return data
   }
 
@@ -193,10 +195,14 @@ export function useUpdateComments(updateId) {
         reply_to_id: replyToId || null,
         reply_to_name: replyToName || null,
       })
-      .select('*, author:profiles(id, full_name, avatar_url)')
+      .select('*, author:profiles(id, full_name, avatar_url), update:updates(project_id)')
       .single()
     if (error) { logger.error('useUpdateComments.addComment', error); throw new Error(friendlyError(error)) }
     setComments(prev => [...prev, data])
+    const projectId = data?.update?.project_id
+    if (data?.id && projectId) {
+      dispatchNotification({ projectId, type: 'new_update_comment', referenceId: data.id, actorId: user.id })
+    }
     return data
   }
 
