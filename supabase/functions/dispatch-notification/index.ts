@@ -325,6 +325,7 @@ interface NotificationContext {
   project: { id: string; name: string; slug: string; custom_domain: string | null; logo_url: string | null }
   actorName: string | null
   emailSubject: string
+  emailIntro: string // korte intro-zin onder de begroeting, bv. "Er is een nieuwe update geplaatst in X."
   emailHeading: string
   emailBody: string // korte preview, escaped
   emailLinkPath: string // bv. /updates#123
@@ -369,6 +370,7 @@ async function loadContext(
     return {
       project, actorName,
       emailSubject: `Nieuwe update in ${project.name}: ${u.title}`,
+      emailIntro: `Er is een nieuwe update geplaatst in ${project.name}.`,
       emailHeading: u.title,
       emailBody: truncate(stripMd(u.body || ''), 200),
       emailLinkPath: '/updates',
@@ -389,6 +391,7 @@ async function loadContext(
     return {
       project, actorName,
       emailSubject: `Nieuw event in ${project.name}: ${e.title}`,
+      emailIntro: `Er is een nieuw event aangemaakt in ${project.name}.`,
       emailHeading: e.title,
       emailBody: `${when}${e.location ? ' · ' + e.location : ''}${e.description ? '\n\n' + truncate(e.description, 180) : ''}`,
       emailLinkPath: '/events',
@@ -408,6 +411,7 @@ async function loadContext(
     return {
       project, actorName,
       emailSubject: `Nieuw document in ${project.name}: ${d.title}`,
+      emailIntro: `Er is een nieuw document toegevoegd aan ${project.name}.`,
       emailHeading: d.title,
       emailBody: d.description ? truncate(d.description, 200) : 'Een nieuw document is toegevoegd.',
       emailLinkPath: '/documenten',
@@ -427,6 +431,7 @@ async function loadContext(
     return {
       project, actorName,
       emailSubject: `Nieuw prikbord-bericht in ${project.name}`,
+      emailIntro: `Er is een nieuw bericht op het prikbord van ${project.name}.`,
       emailHeading: `${actor} plaatste iets op het prikbord`,
       emailBody: truncate(p.text || '', 220),
       emailLinkPath: '/community',
@@ -449,6 +454,9 @@ async function loadContext(
       emailSubject: type === 'new_reply'
         ? `${actor} reageerde op je reactie`
         : `${actor} reageerde op een prikbord-bericht`,
+      emailIntro: type === 'new_reply'
+        ? `${actor} reageerde op jouw reactie in ${project.name}.`
+        : `${actor} reageerde op een prikbord-bericht in ${project.name}.`,
       emailHeading: type === 'new_reply'
         ? `${actor} reageerde op jouw reactie`
         : `${actor} reageerde op het prikbord`,
@@ -473,6 +481,7 @@ async function loadContext(
     return {
       project, actorName,
       emailSubject: `${actor} reageerde op update "${c.update?.title || ''}"`,
+      emailIntro: `${actor} reageerde op een update in ${project.name}.`,
       emailHeading: `${actor} reageerde op een update`,
       emailBody: truncate(c.text || '', 220),
       emailLinkPath: '/updates',
@@ -603,7 +612,10 @@ function renderEmail(args: {
   const linkUrl = `${baseUrl}${ctx.emailLinkPath}`
   const projectColor = '#4A90D9'
   const greeting = recipientName ? `Hoi ${esc(recipientName.split(' ')[0])}` : 'Hoi'
-  const settingsUrl = `${baseUrl}/profiel#notif-section`
+  // Settings altijd op main domain: localStorage-sessie is per-subdomain,
+  // dus de gebruiker is op het main domain vaker al ingelogd dan op een
+  // project-subdomain. Voorkomt onnodige re-login flow vanuit mail-links.
+  const settingsUrl = `https://${MAIN_DOMAIN}/profile#notif-section`
   const unsubUrl = unsubToken
     ? `https://${MAIN_DOMAIN}/unsubscribe?token=${encodeURIComponent(unsubToken)}`
     : settingsUrl
@@ -633,7 +645,8 @@ function renderEmail(args: {
           </tr>
           <tr>
             <td style="padding:32px;">
-              <p style="margin:0 0 16px;font-size:15px;color:#4a4a6a;">${greeting},</p>
+              <p style="margin:0 0 8px;font-size:15px;color:#4a4a6a;">${greeting},</p>
+              ${ctx.emailIntro ? `<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;">${esc(ctx.emailIntro)}</p>` : ''}
               <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#1a1a2e;font-weight:600;">${esc(ctx.emailHeading)}</h1>
               ${ctx.emailBody ? `<div style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;white-space:pre-wrap;">${esc(ctx.emailBody)}</div>` : ''}
               <p style="margin:32px 0 0;">
