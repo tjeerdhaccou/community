@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { logger } from '../lib/logger'
+import {
+  isSupported as browserNotifSupported,
+  requestPermission as requestBrowserNotif,
+  setUserPreference as setBrowserNotifPref,
+} from '../lib/browserNotifications'
 
 // Eenmalige modal die nieuwe users hun email-notificatie-voorkeuren laat kiezen.
 // Toont zich pas zodra:
@@ -19,6 +24,7 @@ export default function NotificationOnboardingModal() {
     pref_events: 'all',
     pref_documents: 'all',
   })
+  const [desktopNotif, setDesktopNotif] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const shouldShow =
@@ -57,6 +63,14 @@ export default function NotificationOnboardingModal() {
       )
     if (prefErr) {
       logger.error('NotificationOnboarding.savePrefs', prefErr)
+    }
+
+    // Desktop-meldingen: alleen permission vragen als user heeft aangevinkt
+    if (!skipAll && desktopNotif && browserNotifSupported()) {
+      const result = await requestBrowserNotif()
+      setBrowserNotifPref(result === 'granted')
+    } else {
+      setBrowserNotifPref(false)
     }
 
     const { error: profErr } = await supabase
@@ -109,6 +123,30 @@ export default function NotificationOnboardingModal() {
               />
             </label>
           ))}
+
+          {browserNotifSupported() && (
+            <label
+              className="notif-pref-row"
+              style={{
+                cursor: 'pointer', padding: '12px 12px', borderRadius: 12,
+                marginTop: 8, borderTop: '1px solid var(--border-subtle, #f0f0f4)', paddingTop: 16,
+              }}
+            >
+              <div className="notif-pref-row__info">
+                <i className="fa-solid fa-desktop" />
+                <div>
+                  <span className="notif-pref-row__label">Desktop-meldingen</span>
+                  <span className="notif-pref-row__desc">Pop-up in je browser bij nieuwe activiteit (tab moet open zijn)</span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={desktopNotif}
+                onChange={e => setDesktopNotif(e.target.checked)}
+                style={{ width: 20, height: 20, cursor: 'pointer' }}
+              />
+            </label>
+          )}
         </div>
 
         <div style={{

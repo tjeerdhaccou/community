@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { showNotification as showBrowserNotification } from '../lib/browserNotifications'
 import { useAuth } from '../contexts/AuthContext'
 
 export function useNotifications() {
@@ -48,6 +49,13 @@ export function useNotifications() {
           .then(({ data }) => {
             if (data) {
               setNotifications(prev => [data, ...prev])
+              // Toon browser notification (helper checkt zelf permission + tab-visibility)
+              showBrowserNotification({
+                title: data.title || 'Nieuwe melding',
+                body: data.body || '',
+                tag: data.id,
+                onClick: () => { window.location.href = '/' },
+              })
             }
           })
       })

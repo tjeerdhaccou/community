@@ -5,6 +5,13 @@ import { uploadImage } from '../lib/storage'
 import { logAudit } from '../lib/audit'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
 import ImageCropper from '../components/ImageCropper'
+import {
+  isSupported as browserNotifSupported,
+  getPermission as getBrowserNotifPermission,
+  requestPermission as requestBrowserNotif,
+  getUserPreference as getBrowserNotifPref,
+  setUserPreference as setBrowserNotifPref,
+} from '../lib/browserNotifications'
 
 export default function Profile() {
   const { profile: authProfile, reload } = useAuth()
@@ -37,6 +44,29 @@ export default function Profile() {
     pref_updates: 'all', pref_prikbord: 'all', pref_events: 'all', pref_documents: 'all', mute_until: null,
   })
   const [prefsLoaded, setPrefsLoaded] = useState(false)
+
+  // Desktop notifications: gecombineerde state (user-pref AAN + browser-permission GRANTED)
+  const [desktopNotif, setDesktopNotif] = useState(false)
+  useEffect(() => {
+    if (!browserNotifSupported()) return
+    setDesktopNotif(getBrowserNotifPref() && getBrowserNotifPermission() === 'granted')
+  }, [])
+
+  async function toggleDesktopNotif(enabled) {
+    if (!enabled) {
+      setBrowserNotifPref(false)
+      setDesktopNotif(false)
+      return
+    }
+    const result = await requestBrowserNotif()
+    if (result === 'granted') {
+      setBrowserNotifPref(true)
+      setDesktopNotif(true)
+    } else {
+      setBrowserNotifPref(false)
+      setDesktopNotif(false)
+    }
+  }
 
   const isProfessional = !!authProfile?.professional_type
 
@@ -407,6 +437,29 @@ export default function Profile() {
               </select>
             </div>
           ))}
+
+          {browserNotifSupported() && (
+            <div className="notif-pref-row">
+              <div className="notif-pref-row__info">
+                <i className="fa-solid fa-desktop" />
+                <div>
+                  <span className="notif-pref-row__label">Desktop-meldingen</span>
+                  <span className="notif-pref-row__desc">
+                    {getBrowserNotifPermission() === 'denied'
+                      ? 'Geblokkeerd in browser — pas dit aan via je browser-instellingen'
+                      : 'Pop-up in je browser bij nieuwe activiteit (tab moet open zijn)'}
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={desktopNotif}
+                disabled={getBrowserNotifPermission() === 'denied'}
+                onChange={e => toggleDesktopNotif(e.target.checked)}
+                style={{ width: 20, height: 20, cursor: 'pointer' }}
+              />
+            </div>
+          )}
 
           <div className="notif-pref-row notif-pref-row--mute">
             <div className="notif-pref-row__info">

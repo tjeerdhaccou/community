@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useSessionTimeout } from '../hooks/useSessionTimeout'
 
 const AuthContext = createContext(null)
 
@@ -51,7 +50,6 @@ export function AuthProvider({ children }) {
   }
 
   const user = session?.user ?? null
-  useSessionTimeout(!!user)
   const isPlatformAdmin = profile?.is_platform_admin ?? false
   // Org admin if user has any org_members record with role 'admin'
   const isOrgAdmin = orgMemberships.some(om => om.role === 'admin')
