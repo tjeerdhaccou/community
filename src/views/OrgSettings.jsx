@@ -5,6 +5,7 @@ import { uploadImage } from '../lib/storage'
 import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 import { useAuth } from '../contexts/AuthContext'
 import ImageCropper from '../components/ImageCropper'
+import ProfileEditModal from '../components/ProfileEditModal'
 
 const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
 
@@ -13,7 +14,8 @@ export default function OrgSettings({ orgId: orgIdProp }) {
   const orgSlug = params.orgSlug
   const orgId = orgIdProp
   const navigate = useNavigate()
-  const { user, profile } = useAuth()
+  const { user, profile, reload: reloadAuth } = useAuth()
+  const [editingProfile, setEditingProfile] = useState(false)
   const backPath = getProjectSlugFromSubdomain() ? '/admin' : `/org/${orgSlug || orgId}`
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
@@ -231,21 +233,36 @@ export default function OrgSettings({ orgId: orgIdProp }) {
           <div className="profile-section">
             <h3 className="profile-section__title">Beheerders</h3>
             <div className="org-admin-list">
-              {admins.map(a => (
-                <div key={a.id} className="org-admin-row">
-                  {a.profile?.avatar_url ? (
-                    <img src={a.profile.avatar_url} alt={a.profile.full_name || ''} className="org-admin-row__avatar" />
-                  ) : (
-                    <div className="org-admin-row__avatar org-admin-row__avatar--placeholder">
-                      {(a.profile?.full_name || 'A')[0]}
+              {admins.map(a => {
+                const isSelf = a.profile_id === user?.id
+                return (
+                  <div
+                    key={a.id}
+                    className={`org-admin-row${isSelf ? ' org-admin-row--clickable' : ''}`}
+                    onClick={isSelf ? () => setEditingProfile(true) : undefined}
+                    role={isSelf ? 'button' : undefined}
+                    tabIndex={isSelf ? 0 : undefined}
+                  >
+                    {a.profile?.avatar_url ? (
+                      <img src={a.profile.avatar_url} alt={a.profile.full_name || ''} className="org-admin-row__avatar" />
+                    ) : (
+                      <div className="org-admin-row__avatar org-admin-row__avatar--placeholder">
+                        {(a.profile?.full_name || 'A')[0]}
+                      </div>
+                    )}
+                    <div className="org-admin-row__info">
+                      <span className="org-admin-row__name">
+                        {a.profile?.full_name || 'Onbekend'}
+                        {isSelf && <span className="org-admin-row__you"> (jij)</span>}
+                      </span>
+                      <span className="org-admin-row__role">{a.role === 'admin' ? 'Admin' : a.role}</span>
                     </div>
-                  )}
-                  <div className="org-admin-row__info">
-                    <span className="org-admin-row__name">{a.profile?.full_name || 'Onbekend'}</span>
-                    <span className="org-admin-row__role">{a.role === 'admin' ? 'Admin' : a.role}</span>
+                    {isSelf && (
+                      <i className="fa-solid fa-pen org-admin-row__edit-icon" />
+                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {pendingInvites.length > 0 && (
@@ -315,6 +332,20 @@ export default function OrgSettings({ orgId: orgIdProp }) {
             round={false}
             onComplete={handleLogoCropComplete}
             onCancel={() => setCropSrc(null)}
+          />
+        )}
+
+        {editingProfile && profile && (
+          <ProfileEditModal
+            profile={profile}
+            onSave={(updated) => {
+              setEditingProfile(false)
+              setAdmins(prev => prev.map(a => a.profile_id === updated.id
+                ? { ...a, profile: { id: updated.id, full_name: updated.full_name, avatar_url: updated.avatar_url } }
+                : a))
+              if (reloadAuth) reloadAuth()
+            }}
+            onClose={() => setEditingProfile(false)}
           />
         )}
       </main>

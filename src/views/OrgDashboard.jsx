@@ -7,6 +7,7 @@ import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 import { signOut } from '../lib/auth'
 import ProjectDashboardCard from '../components/ProjectDashboardCard'
 import NewProjectCard from '../components/NewProjectCard'
+import ProfileEditModal from '../components/ProfileEditModal'
 
 const THEME_MODES = [
   { value: 'light', icon: 'fa-solid fa-sun' },
@@ -28,7 +29,8 @@ function ThemeToggle({ mode, setMode }) {
 export default function OrgDashboard({ orgId: orgIdProp }) {
   const params = useParams()
   const orgSlug = params.orgSlug
-  const { isOrgAdmin, primaryOrg, primaryOrgId, profile } = useAuth()
+  const { isOrgAdmin, primaryOrg, primaryOrgId, profile, reload: reloadAuth } = useAuth()
+  const profileIncomplete = isOrgAdmin && profile && (!profile.full_name?.trim() || !profile.avatar_url)
   const orgId = orgIdProp || primaryOrgId
   const { mode, setMode } = useTheme()
   const navigate = useNavigate()
@@ -284,6 +286,15 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
           </>
         )}
       </main>
+
+      {profileIncomplete && (
+        <ProfileEditModal
+          profile={profile}
+          mandatory
+          onSave={() => { if (reloadAuth) reloadAuth() }}
+          onClose={() => { /* niet sluitbaar zonder save in mandatory mode */ }}
+        />
+      )}
     </div>
   )
 }

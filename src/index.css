@@ -6076,6 +6076,17 @@ select.input {
   color: var(--text-tertiary);
   font-size: 13px;
 }
+.form-required {
+  color: var(--accent-red);
+  font-weight: 600;
+}
+.modal-form__intro {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding: 0 24px;
+  margin: 0 0 12px;
+}
 
 /* ===== Profile Page ===== */
 .view-profile {
@@ -6145,6 +6156,23 @@ select.input {
   font-size: 12px;
   color: var(--text-tertiary);
   font-weight: 500;
+}
+.org-admin-row__you {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+.org-admin-row--clickable {
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.org-admin-row--clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.org-admin-row__edit-icon {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: 13px;
 }
 
 /* Invite admin form */
