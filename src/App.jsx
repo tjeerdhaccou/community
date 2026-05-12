@@ -231,7 +231,26 @@ function SubdomainLookup({ slug }) {
   // Anonieme bezoekers kunnen de org niet zien door RLS — stuur naar login
   // ipv 404, zodat ze na inloggen op het juiste subdomain landen
   if (!user) return <Login />
-  return <SubdomainNotFound slug={slug} />
+  // Ingelogde user die niks ziet heeft vrijwel zeker geen toegang (RLS
+  // verbergt orgs/projects waar 'ie geen lid van is). Een echte typo in
+  // de subdomain-URL is veel zeldzamer dan een verwijderd lidmaatschap.
+  return <SubdomainNoAccess slug={slug} />
+}
+
+function SubdomainNoAccess({ slug }) {
+  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
+  return (
+    <div className="error-boundary">
+      <div className="error-boundary__card">
+        <i className="fa-solid fa-lock error-boundary__icon" style={{ color: 'var(--text-tertiary)' }} />
+        <h2>Geen toegang</h2>
+        <p>Je hebt geen toegang tot <strong>{slug}</strong>. Vraag de beheerder om je uit te nodigen.</p>
+        <button className="btn-primary" onClick={() => { window.location.href = `https://${mainDomain}` }}>
+          <i className="fa-solid fa-house" /> Naar {mainDomain}
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function SubdomainNotFound({ slug }) {
