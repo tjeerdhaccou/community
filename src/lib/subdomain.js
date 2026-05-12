@@ -83,7 +83,7 @@ export function getProjectBaseUrl(project) {
 export function getIntakeUrl(project) {
   if (!project) return ''
   if (project.custom_domain) return `https://${project.custom_domain}/intake`
-  return `${getMainOrigin()}/intake/${project.id}`
+  return `${getMainOrigin()}/intake/${project.slug || project.id}`
 }
 
 /**

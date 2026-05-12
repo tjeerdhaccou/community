@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default function IntakeForm() {
-  const { projectId } = useParams()
+  const { projectId: projectIdent } = useParams()
   const [project, setProject] = useState(null)
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -20,15 +22,17 @@ export default function IntakeForm() {
 
   useEffect(() => {
     loadForm()
-  }, [projectId])
+  }, [projectIdent])
 
   async function loadForm() {
     setLoading(true)
     try {
-      const [projectRes, questionsRes] = await Promise.all([
-        supabase.from('projects').select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, intake_enabled, intake_intro_text').eq('id', projectId).single(),
-        supabase.from('intake_questions').select('*').eq('project_id', projectId).eq('active', true).order('sort_order'),
-      ])
+      const projectColumn = UUID_REGEX.test(projectIdent) ? 'id' : 'slug'
+      const projectRes = await supabase
+        .from('projects')
+        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, intake_enabled, intake_intro_text')
+        .eq(projectColumn, projectIdent)
+        .single()
 
       if (projectRes.error) throw projectRes.error
       if (!projectRes.data.intake_enabled) {
@@ -36,6 +40,13 @@ export default function IntakeForm() {
         setLoading(false)
         return
       }
+
+      const questionsRes = await supabase
+        .from('intake_questions')
+        .select('*')
+        .eq('project_id', projectRes.data.id)
+        .eq('active', true)
+        .order('sort_order')
 
       setProject(projectRes.data)
       setQuestions(questionsRes.data || [])
@@ -58,7 +69,7 @@ export default function IntakeForm() {
 
     try {
       const { error: insertError } = await supabase.from('intake_responses').insert({
-        project_id: projectId,
+        project_id: project.id,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
