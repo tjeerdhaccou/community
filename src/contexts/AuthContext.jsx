@@ -25,13 +25,12 @@ export function AuthProvider({ children }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       const newUserId = newSession?.user?.id ?? null
-      // Skip events (TOKEN_REFRESHED on tab refocus, USER_UPDATED) where the user
-      // didn't change. Otherwise `loading` flips to true and AuthGuard unmounts the
-      // active subtree, destroying open modals and their form state.
-      if (newUserId === currentUserId) {
-        setSession(newSession)
-        return
-      }
+      // Skip entirely when the user didn't change (TOKEN_REFRESHED on tab refocus,
+      // USER_UPDATED). Otherwise `setSession` produces a new `user` object reference,
+      // which retriggers `ProjectContext`'s effect ([slug, user]) → setLoading(true) →
+      // MemberGate renders the loading page and unmounts open modals + their form state.
+      // Supabase's internal client still tracks the refreshed token.
+      if (newUserId === currentUserId) return
       currentUserId = newUserId
       setSession(newSession)
       if (newSession?.user) {

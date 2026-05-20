@@ -72,7 +72,10 @@ export function ProjectProvider({ children, slugOverride }) {
     }
 
     load()
-  }, [slug, user])
+    // Depend on `user?.id` rather than `user` so a refreshed session (new user
+    // object reference, same id) doesn't retrigger the full project reload and
+    // unmount open modals.
+  }, [slug, user?.id])
 
   const branding = project ? {
     brand_primary_color: project.brand_primary_color,
