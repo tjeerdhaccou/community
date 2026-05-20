@@ -11,8 +11,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let currentUserId = null
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      currentUserId = session?.user?.id ?? null
       if (session?.user) {
         loadProfile(session.user.id)
       } else {
@@ -20,11 +23,20 @@ export function AuthProvider({ children }) {
       }
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (session?.user) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      const newUserId = newSession?.user?.id ?? null
+      // Skip events (TOKEN_REFRESHED on tab refocus, USER_UPDATED) where the user
+      // didn't change. Otherwise `loading` flips to true and AuthGuard unmounts the
+      // active subtree, destroying open modals and their form state.
+      if (newUserId === currentUserId) {
+        setSession(newSession)
+        return
+      }
+      currentUserId = newUserId
+      setSession(newSession)
+      if (newSession?.user) {
         setLoading(true)
-        loadProfile(session.user.id)
+        loadProfile(newSession.user.id)
       } else {
         setProfile(null)
         setMemberships([])
