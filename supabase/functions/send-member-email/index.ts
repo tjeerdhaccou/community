@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, orgName, orgUrl, inviterName } = await req.json()
+    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, personalMessage, orgName, orgUrl, inviterName } = await req.json()
 
     if (!memberEmail) {
       return new Response(JSON.stringify({ error: 'No email address' }), {
@@ -126,10 +126,25 @@ serve(async (req) => {
         .map(p => `<p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">${p.replace(/\n/g, '<br>')}</p>`)
         .join('')
 
+      // Optioneel persoonlijk bericht (citaat-blok boven de generieke intro)
+      let personalHtml = ''
+      if (personalMessage && typeof personalMessage === 'string' && personalMessage.trim()) {
+        const escapedMessage = escapeHtml(personalMessage.trim())
+          .split(/\n\s*\n/)
+          .map(p => p.replace(/\n/g, '<br>'))
+          .join('</p><p style="font-size: 15px; color: #1a1a2e; margin: 8px 0 0; line-height: 1.6;">')
+        personalHtml = `
+          <div style="background:#f4f5f7; border-left:3px solid #4A90D9; border-radius:8px; padding:16px 20px; margin:0 0 24px;">
+            <p style="font-size: 15px; color: #1a1a2e; margin: 0; line-height: 1.6;">${escapedMessage}</p>
+          </div>
+        `
+      }
+
       subject = `Je bent uitgenodigd voor ${projectName}`
       html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
           <h1 style="font-size: 24px; color: #1a1a2e; margin-bottom: 16px;">${greeting},</h1>
+          ${personalHtml}
           ${introHtml}
           <p style="margin: 28px 0;">
             <a href="${actionLink}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">

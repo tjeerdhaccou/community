@@ -259,6 +259,7 @@ function InviteModal({ projectName, project, onClose }) {
 function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [personalMessage, setPersonalMessage] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [resending, setResending] = useState(null)
@@ -269,9 +270,10 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
     setError(null)
     setSaving(true)
     try {
-      await onInvite({ email: email.trim(), name: name.trim() })
+      await onInvite({ email: email.trim(), name: name.trim(), personalMessage: personalMessage.trim() })
       setEmail('')
       setName('')
+      setPersonalMessage('')
     } catch (err) {
       setError(err.message || 'Uitnodiging versturen mislukt.')
     } finally {
@@ -320,6 +322,19 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Volledige naam"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="invite-personal-message">
+            Persoonlijk bericht <span style={{ color: 'var(--color-text-muted)', fontWeight: 'normal' }}>(optioneel)</span>
+          </label>
+          <textarea
+            id="invite-personal-message"
+            value={personalMessage}
+            onChange={e => setPersonalMessage(e.target.value)}
+            placeholder="Bijvoorbeeld: 'Hoi Jan, leuk je te ontmoeten gisteren. Hier de uitnodiging voor onze community.'"
+            rows={3}
           />
         </div>
 

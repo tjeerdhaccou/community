@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { getProjectBaseUrl } from '../lib/subdomain'
 
-async function sendInviteEmail({ email, name, projectId, projectName, projectUrl }) {
+async function sendInviteEmail({ email, name, projectId, projectName, projectUrl, personalMessage }) {
   const { error } = await supabase.functions.invoke('send-member-email', {
     body: {
       type: 'invite',
@@ -14,6 +14,7 @@ async function sendInviteEmail({ email, name, projectId, projectName, projectUrl
       projectId,
       projectName,
       projectUrl,
+      personalMessage: personalMessage || null,
     },
   })
   if (error) throw error
@@ -47,8 +48,9 @@ export function useMemberInvites() {
 
   useEffect(() => { fetchInvites() }, [fetchInvites])
 
-  async function createInvite({ email, name }) {
+  async function createInvite({ email, name, personalMessage }) {
     const cleanEmail = email.toLowerCase().trim()
+    const cleanMessage = personalMessage?.trim() || null
     const { data, error } = await supabase
       .from('member_invites')
       .insert({
@@ -56,6 +58,7 @@ export function useMemberInvites() {
         email: cleanEmail,
         name: name?.trim() || null,
         invited_by: user.id,
+        personal_message: cleanMessage,
       })
       .select('*, inviter:profiles!invited_by(full_name)')
       .single()
@@ -69,6 +72,7 @@ export function useMemberInvites() {
         projectId,
         projectName: project?.name,
         projectUrl: getProjectBaseUrl(project),
+        personalMessage: cleanMessage,
       })
     } catch (err) {
       logger.error('useMemberInvites.sendInviteEmail', err)
@@ -97,6 +101,7 @@ export function useMemberInvites() {
         projectId,
         projectName: project?.name,
         projectUrl: getProjectBaseUrl(project),
+        personalMessage: invite.personal_message,
       })
     } catch (err) {
       logger.error('useMemberInvites.resendInvite', err)
