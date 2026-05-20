@@ -8,6 +8,8 @@ import { EVENT_TYPES } from '../lib/constants'
 import EventCard from '../components/EventCard'
 import EventModal from '../components/EventModal'
 import EventDetail from '../components/EventDetail'
+import ConfirmModal from '../components/ConfirmModal'
+import { useToast } from '../components/Toast'
 
 const FILTER_TYPES = [{ key: 'alles', label: 'Alles' }, ...EVENT_TYPES]
 
@@ -57,13 +59,15 @@ function groupByDate(events) {
 export default function Events() {
   const { role } = useProject()
   const { user } = useAuth()
-  const { upcoming, past, loading, createEvent, updateEvent, rsvp } = useEvents()
+  const { upcoming, past, loading, createEvent, updateEvent, deleteEvent, rsvp } = useEvents()
   const [searchParams, setSearchParams] = useSearchParams()
   const [modalOpen, setModalOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null) // event being deleted
   const [typeFilter, setTypeFilter] = useState('alles')
   const [tab, setTab] = useState('upcoming') // upcoming | past
+  const toast = useToast()
 
   const allEvents = [...upcoming, ...past]
   const activeSelected = selectedEvent ? allEvents.find(e => e.id === selectedEvent.id) || selectedEvent : null
@@ -113,6 +117,25 @@ export default function Events() {
   async function handleSaveEdit(data) {
     await updateEvent(editingEvent.id, data)
     setEditingEvent(null)
+  }
+
+  function handleDelete(event) {
+    // Close edit modal first so the confirm dialog isn't stacked on top
+    setEditingEvent(null)
+    setConfirmDelete(event)
+  }
+
+  async function confirmDeleteEvent() {
+    if (!confirmDelete) return
+    try {
+      await deleteEvent(confirmDelete.id)
+      if (selectedEvent?.id === confirmDelete.id) setSelectedEvent(null)
+      toast.success('Event verwijderd')
+    } catch (err) {
+      toast.error(err.message || 'Verwijderen mislukt')
+    } finally {
+      setConfirmDelete(null)
+    }
   }
 
   return (
@@ -202,7 +225,12 @@ export default function Events() {
       )}
 
       {editingEvent && (
-        <EventModal event={editingEvent} onSave={handleSaveEdit} onClose={() => setEditingEvent(null)} />
+        <EventModal
+          event={editingEvent}
+          onSave={handleSaveEdit}
+          onClose={() => setEditingEvent(null)}
+          onDelete={canDo(role, 'delete_meeting') ? handleDelete : undefined}
+        />
       )}
 
       {activeSelected && (
@@ -211,6 +239,16 @@ export default function Events() {
           onClose={() => setSelectedEvent(null)}
           onRsvp={rsvp}
           onEdit={canDo(role, 'create_meeting') ? handleEdit : undefined}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          message={`Weet je zeker dat je het event "${confirmDelete.title}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.`}
+          confirmLabel="Verwijderen"
+          danger
+          onConfirm={confirmDeleteEvent}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>

@@ -43,6 +43,7 @@ const ACTION_REQUIREMENTS = {
   edit_phases: 'admin',
   set_branding: 'admin',
   remove_members: 'admin',
+  delete_meeting: 'admin',  // RLS-policy 'Admins can delete meetings' staat alleen admin toe
 }
 
 export function canDo(userRole, action) {

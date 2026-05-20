@@ -6,7 +6,7 @@ import { useToast } from './Toast'
 
 const DRAFT_KEY = 'ev-draft-new'
 
-export default function EventModal({ event, onSave, onClose }) {
+export default function EventModal({ event, onSave, onClose, onDelete }) {
   const isEdit = !!event
 
   // Parse existing event data for edit mode
@@ -230,6 +230,16 @@ export default function EventModal({ event, onSave, onClose }) {
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImageSelect} style={{ display: 'none' }} />
 
           <div className="modal-actions">
+            {isEdit && onDelete && (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => onDelete(event)}
+                style={{ marginRight: 'auto' }}
+              >
+                <i className="fa-solid fa-trash" /> Verwijderen
+              </button>
+            )}
             <button type="button" className="btn-secondary" onClick={handleCancel}>Annuleren</button>
             <button type="submit" className="btn-primary" disabled={saving || !title.trim() || !date}>
               {saving ? 'Opslaan...' : isEdit ? 'Opslaan' : 'Aanmaken'}

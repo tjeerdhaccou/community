@@ -99,6 +99,16 @@ export function useEvents() {
     // Realtime subscription will trigger fetchEvents automatically
   }
 
+  async function deleteEvent(eventId) {
+    const { error } = await supabase
+      .from('meetings')
+      .delete()
+      .eq('id', eventId)
+    if (error) { logger.error('useEvents.deleteEvent', error); throw new Error(friendlyError(error)) }
+    // Optimistic remove — don't wait for realtime
+    setEvents(prev => prev.filter(e => e.id !== eventId))
+  }
+
   async function rsvp(meetingId, status) {
     if (status === null) {
       const { error } = await supabase.from('event_rsvps').delete().eq('meeting_id', meetingId).eq('profile_id', user.id)
@@ -126,5 +136,5 @@ export function useEvents() {
     }))
   }
 
-  return { events, upcoming, past, loading, createEvent, updateEvent, rsvp, refetch: fetchEvents }
+  return { events, upcoming, past, loading, createEvent, updateEvent, deleteEvent, rsvp, refetch: fetchEvents }
 }
