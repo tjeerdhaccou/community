@@ -48,14 +48,22 @@ export function useMembers() {
   async function updateRole(membershipId, newRole) {
     const member = members.find(m => m.id === membershipId)
     const oldRole = member?.role
+    if (oldRole === newRole) return
+
+    // Optimistische update: UI verandert direct, DB-call op de achtergrond
+    setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: newRole } : m))
 
     const { error } = await supabase
       .from('memberships')
       .update({ role: newRole })
       .eq('id', membershipId)
 
-    if (error) { logger.error('useMembers.updateRole', error); throw new Error(friendlyError(error)) }
-    setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: newRole } : m))
+    if (error) {
+      // Rollback bij fout
+      setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: oldRole } : m))
+      logger.error('useMembers.updateRole', error)
+      throw new Error(friendlyError(error))
+    }
 
     // Welkomstmail bij promotie uit guest naar een echte lid-rol
     if (oldRole === 'guest' && WELCOME_TARGET_ROLES.includes(newRole) && member?.profile) {

@@ -22,7 +22,10 @@ export default function Members() {
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
-  const [selectedMember, setSelectedMember] = useState(null)
+  const [selectedMemberId, setSelectedMemberId] = useState(null)
+  // Derive selectedMember from members list, zo blijft 'ie in sync na role-updates
+  const selectedMember = selectedMemberId ? members.find(m => m.id === selectedMemberId) : null
+  const setSelectedMember = (m) => setSelectedMemberId(m?.id ?? null)
   const [showInvite, setShowInvite] = useState(false)
   const [rejectTarget, setRejectTarget] = useState(null)
   const [selectedIntake, setSelectedIntake] = useState(null)
