@@ -16,7 +16,12 @@ const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
 
 export default function Members() {
   const { project, role } = useProject()
-  const { user } = useAuth()
+  const { user, isPlatformAdmin, isOrgAdmin, orgMemberships } = useAuth()
+  // Alleen org/platform admins mogen project-admins promoveren/demoteren of verwijderen
+  const isAdminOfProjectOrg = isOrgAdmin && project?.organization_id && orgMemberships.some(om =>
+    om.organization_id === project.organization_id && om.role === 'admin'
+  )
+  const canManageAdmins = isPlatformAdmin || isAdminOfProjectOrg
   const { members, loading, updateRole, removeMember, approveMember, rejectMember } = useMembers()
   const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
@@ -179,8 +184,11 @@ export default function Members() {
           membership={selectedMember}
           onClose={() => setSelectedMember(null)}
           isMe={selectedMember.profile_id === user?.id}
-          canManage={canDo(role, 'assign_roles') && selectedMember.profile_id !== user?.id}
-          canRemove={canDo(role, 'remove_members') && selectedMember.profile_id !== user?.id}
+          canManage={canDo(role, 'assign_roles') && selectedMember.profile_id !== user?.id
+            && (selectedMember.role !== 'admin' || canManageAdmins)}
+          canRemove={canDo(role, 'remove_members') && selectedMember.profile_id !== user?.id
+            && (selectedMember.role !== 'admin' || canManageAdmins)}
+          canAssignAdminRole={canManageAdmins}
           canApprove={canDo(role, 'invite_members') && selectedMember.role === 'guest'}
           onRoleChange={updateRole}
           onRemove={removeMember}

@@ -8,7 +8,7 @@ import ConfirmModal from './ConfirmModal'
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
 
-export default function MemberProfile({ profileId, membership, onClose, canManage, canRemove, canApprove, onRoleChange, onRemove, onApprove, onReject, isMe }) {
+export default function MemberProfile({ profileId, membership, onClose, canManage, canRemove, canApprove, canAssignAdminRole = false, onRoleChange, onRemove, onApprove, onReject, isMe }) {
   const [profile, setProfile] = useState(null)
   const [postCount, setPostCount] = useState(0)
   const [intakeData, setIntakeData] = useState(null)
@@ -290,7 +290,7 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                       const r = roleBtnRef.current?.getBoundingClientRect()
                       return r ? { top: r.bottom + 4, left: r.left } : {}
                     })()}>
-                      {ROLES.filter(r => r !== 'guest' && r !== role).map(r => (
+                      {ROLES.filter(r => r !== 'guest' && r !== role && (r !== 'admin' || canAssignAdminRole)).map(r => (
                         <button key={r} onClick={() => handleRoleChange(r)}>
                           <span className="member-profile__role-dot" style={{ background: ROLE_COLORS[r] }} />
                           {ROLE_LABELS[r]}

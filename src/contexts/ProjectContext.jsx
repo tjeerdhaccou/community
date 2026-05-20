@@ -9,7 +9,7 @@ const ProjectContext = createContext(null)
 export function ProjectProvider({ children, slugOverride }) {
   const params = useParams()
   const slug = slugOverride || params.slug
-  const { user, memberships, orgMemberships, isOrgAdmin, reload: reloadAuth } = useAuth()
+  const { user, memberships, orgMemberships, isOrgAdmin, isPlatformAdmin, reload: reloadAuth } = useAuth()
   const [project, setProject] = useState(null)
   const [milestones, setMilestones] = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,7 +22,7 @@ export function ProjectProvider({ children, slugOverride }) {
   const isOrgAdminOfProject = isOrgAdmin && project?.organization_id &&
     orgMemberships.some(om => om.organization_id === project.organization_id && om.role === 'admin')
 
-  const role = membership?.role || (isOrgAdminOfProject ? 'admin' : 'guest')
+  const role = membership?.role || (isOrgAdminOfProject || isPlatformAdmin ? 'admin' : 'guest')
 
   useEffect(() => {
     if (!slug || !user) return
@@ -44,22 +44,20 @@ export function ProjectProvider({ children, slugOverride }) {
       }
       setProject(projectRes.data)
 
-      // Auto-create admin membership for org admins who don't have one yet
+      // Auto-create admin membership for org admins / platform admins zonder fysieke membership
       const proj = projectRes.data
       const hasMembership = memberships.some(m => m.project_id === proj.id)
-      if (!hasMembership && proj.organization_id && isOrgAdmin) {
-        const isAdminOfOrg = orgMemberships.some(om =>
-          om.organization_id === proj.organization_id && om.role === 'admin'
-        )
-        if (isAdminOfOrg) {
-          await supabase.from('memberships').insert({
-            profile_id: user.id,
-            project_id: proj.id,
-            role: 'admin',
-          })
-          // Refresh auth context so membership is picked up
-          reloadAuth()
-        }
+      const isAdminOfOrg = isOrgAdmin && proj.organization_id && orgMemberships.some(om =>
+        om.organization_id === proj.organization_id && om.role === 'admin'
+      )
+      if (!hasMembership && (isAdminOfOrg || isPlatformAdmin)) {
+        await supabase.from('memberships').insert({
+          profile_id: user.id,
+          project_id: proj.id,
+          role: 'admin',
+        })
+        // Refresh auth context so membership is picked up
+        reloadAuth()
       }
 
       const milestonesRes = await supabase
