@@ -219,7 +219,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
               <div className="org-stats-strip__item">
                 <i className="fa-solid fa-bullhorn org-stats-strip__icon" style={{ color: 'var(--accent-yellow)' }} />
                 <span className="org-stats-strip__value">{totals.updates}</span>
-                <span className="org-stats-strip__label">Updates</span>
+                <span className="org-stats-strip__label">Nieuws</span>
                 {totals.newUpdates > 0 && <span className="org-stats-strip__trend"><i className="fa-solid fa-arrow-trend-up" /> +{totals.newUpdates} deze week</span>}
               </div>
               <div className="org-stats-strip__item">

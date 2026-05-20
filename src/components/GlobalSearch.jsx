@@ -102,7 +102,7 @@ export default function GlobalSearch() {
               ) : (
                 <>
                   {results.updates.length > 0 && (
-                    <SearchSection title="Updates" icon="fa-solid fa-bullhorn">
+                    <SearchSection title="Projectnieuws" icon="fa-solid fa-bullhorn">
                       {results.updates.map(u => (
                         <SearchItem key={u.id} title={u.title} subtitle={u.body?.slice(0, 100)} time={u.created_at} tag={u.tag} />
                       ))}

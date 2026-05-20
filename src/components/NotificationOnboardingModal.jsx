@@ -84,7 +84,7 @@ export default function NotificationOnboardingModal() {
   }
 
   const rows = [
-    { key: 'pref_updates', icon: 'fa-solid fa-bullhorn', label: 'Updates', desc: 'Belangrijke aankondigingen vanuit het project' },
+    { key: 'pref_updates', icon: 'fa-solid fa-bullhorn', label: 'Projectnieuws', desc: 'Belangrijke aankondigingen vanuit het projectteam' },
     { key: 'pref_events', icon: 'fa-solid fa-calendar-check', label: 'Events', desc: 'Nieuwe events en bijeenkomsten' },
     { key: 'pref_prikbord', icon: 'fa-solid fa-comments', label: 'Prikbord', desc: 'Reacties op je eigen berichten + nieuwe berichten' },
     { key: 'pref_documents', icon: 'fa-solid fa-folder-open', label: 'Documenten', desc: 'Nieuwe documenten in het archief' },

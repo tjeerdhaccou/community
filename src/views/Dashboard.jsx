@@ -137,7 +137,7 @@ export default function Dashboard() {
         <div className="dash-stat" onClick={() => navigate(`${basePath}/updates`)} role="button" tabIndex={0}>
           <i className="fa-solid fa-bullhorn dash-stat__icon" style={{ color: '#F23578' }} />
           <span className="dash-stat__value">{feed.stats.updates}</span>
-          <span className="dash-stat__label">Updates</span>
+          <span className="dash-stat__label">Nieuws</span>
         </div>
         <div className="dash-stat" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
           <i className="fa-solid fa-road dash-stat__icon" style={{ color: '#7B5EA7' }} />

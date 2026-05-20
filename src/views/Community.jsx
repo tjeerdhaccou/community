@@ -75,6 +75,9 @@ export default function Community() {
         <div className="view-header__row">
           <h1>Prikbord</h1>
         </div>
+        <p className="view-header__subtitle">
+          Praat met je medeleden — stel een vraag, deel een idee of begin een gesprek.
+        </p>
       </div>
 
       {/* Inline composer prompt */}

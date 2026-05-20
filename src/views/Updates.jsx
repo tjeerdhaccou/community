@@ -50,13 +50,16 @@ export default function Updates() {
     <div className="view-updates">
       <div className="view-header">
         <div className="view-header__row">
-          <h1>Updates</h1>
+          <h1>Projectnieuws</h1>
           {canDo(role, 'publish_update') && (
             <button className="btn-primary" onClick={handleNew}>
               <i className="fa-solid fa-plus" /> Nieuwe update
             </button>
           )}
         </div>
+        <p className="view-header__subtitle">
+          Belangrijk nieuws vanuit het projectteam — mijlpalen, besluiten en verslagen.
+        </p>
       </div>
 
       <div className="tag-filter">
@@ -72,11 +75,11 @@ export default function Updates() {
       </div>
 
       {loading ? (
-        <div className="loading-inline"><p>Updates laden...</p></div>
+        <div className="loading-inline"><p>Projectnieuws laden...</p></div>
       ) : filtered.length === 0 ? (
         <div className="empty-inline">
           <i className="fa-solid fa-bullhorn" />
-          <p>Nog geen updates{activeTag !== 'Alles' ? ` met tag "${activeTag}"` : ''}</p>
+          <p>Nog geen projectnieuws{activeTag !== 'Alles' ? ` met tag "${activeTag}"` : ''}</p>
           {canDo(role, 'publish_update') && (
             <button className="btn-secondary" onClick={handleNew}>Eerste update plaatsen</button>
           )}

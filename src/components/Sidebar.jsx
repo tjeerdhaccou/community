@@ -16,7 +16,7 @@ const NAV_SECTIONS = [
   {
     label: 'Actueel',
     items: [
-      { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', label: 'Updates', feature: 'updates' },
+      { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', label: 'Projectnieuws', feature: 'updates' },
       { to: 'community', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
       { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', label: 'Events', feature: 'events' },
     ]

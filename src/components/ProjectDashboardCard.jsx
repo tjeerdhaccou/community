@@ -71,7 +71,7 @@ export default function ProjectDashboardCard({ project, onSaved }) {
           )}
           <div className="org-project-card__stats">
             <Stat icon="fa-solid fa-users" color="var(--accent-primary)" value={project.member_count} trend={project.new_members_week} label="Leden" />
-            <Stat icon="fa-solid fa-bullhorn" color="var(--accent-yellow)" value={project.update_count} trend={project.new_updates_week} label="Updates" />
+            <Stat icon="fa-solid fa-bullhorn" color="var(--accent-yellow)" value={project.update_count} trend={project.new_updates_week} label="Nieuws" />
             <Stat icon="fa-solid fa-comments" color="var(--accent-green)" value={project.post_count} trend={project.new_posts_week} label="Posts" />
             <Stat icon="fa-solid fa-helmet-safety" color="var(--accent-orange)" value={project.advisor_count} label="Adviseurs" />
           </div>
@@ -344,7 +344,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         </p>
         <div className="modules-grid">
           {[
-            { key: 'updates', label: 'Updates', icon: 'fa-solid fa-bullhorn' },
+            { key: 'updates', label: 'Projectnieuws', icon: 'fa-solid fa-bullhorn' },
             { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-comments' },
             { key: 'events', label: 'Events', icon: 'fa-solid fa-calendar-check' },
             { key: 'roadmap', label: 'Roadmap', icon: 'fa-solid fa-road' },

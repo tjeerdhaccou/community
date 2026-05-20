@@ -414,7 +414,7 @@ export default function Profile() {
           </h3>
 
           {[
-            { key: 'pref_updates', label: 'Updates', icon: 'fa-solid fa-bullhorn', desc: 'Nieuwe project updates' },
+            { key: 'pref_updates', label: 'Projectnieuws', icon: 'fa-solid fa-bullhorn', desc: 'Nieuwe aankondigingen vanuit het projectteam' },
             { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-comments', desc: 'Reacties en likes op je berichten' },
             { key: 'pref_events', label: 'Events', icon: 'fa-solid fa-calendar-check', desc: 'Nieuwe events en herinneringen' },
             { key: 'pref_documents', label: 'Documenten', icon: 'fa-solid fa-folder-open', desc: 'Nieuwe documenten' },
