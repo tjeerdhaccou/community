@@ -70,7 +70,22 @@ export function useEvents() {
       .select('*')
       .single()
     if (error) { logger.error('useEvents.createEvent', error); throw new Error(friendlyError(error)) }
-    // Realtime subscription will trigger fetchEvents automatically
+    // Optimistic insert — don't wait for realtime to confirm the new row, otherwise
+    // the user sees a stale list after closing the modal.
+    if (data) {
+      setEvents(prev => {
+        if (prev.some(e => e.id === data.id)) return prev
+        return [...prev, {
+          ...data,
+          event_rsvps: [],
+          meeting_files: [],
+          going_count: 0,
+          maybe_count: 0,
+          my_rsvp: null,
+          file_count: 0,
+        }]
+      })
+    }
     if (data?.id) dispatchNotification({ projectId, type: 'new_event', referenceId: data.id, actorId: user.id })
     return data
   }

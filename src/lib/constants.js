@@ -110,7 +110,7 @@ export const EVENT_TYPE_MAP = Object.fromEntries(
 )
 
 export const EVENT_VISIBILITY = [
-  { key: 'public', label: 'Iedereen (ook gasten)', icon: 'fa-solid fa-globe' },
+  { key: 'public', label: 'Iedereen', icon: 'fa-solid fa-globe' },
   { key: 'members', label: 'Alleen leden', icon: 'fa-solid fa-user-check' },
 ]
 

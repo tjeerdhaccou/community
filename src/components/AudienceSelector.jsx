@@ -25,7 +25,7 @@ export default function AudienceSelector({ value, onChange, label = 'Zichtbaar v
           className={`post-tag-option ${value === 'public' ? 'post-tag-option--active' : ''}`}
           onClick={() => onChange('public')}
         >
-          <i className="fa-solid fa-globe" /> Iedereen (ook gasten)
+          <i className="fa-solid fa-globe" /> Iedereen
         </button>
       </div>
     </div>
