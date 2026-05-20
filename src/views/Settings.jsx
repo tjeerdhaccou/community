@@ -26,6 +26,7 @@ export default function Settings() {
   const coverRef = useRef(null)
   const [intakeEnabled, setIntakeEnabled] = useState(false)
   const [intakeIntro, setIntakeIntro] = useState('')
+  const [inviteIntro, setInviteIntro] = useState('')
   const [isPublic, setIsPublic] = useState(false)
   const [slug, setSlug] = useState('')
   const [publicDescription, setPublicDescription] = useState('')
@@ -49,6 +50,7 @@ export default function Settings() {
       setCoverPreview(project.cover_image_url || '')
       setIntakeEnabled(project.intake_enabled || false)
       setIntakeIntro(project.intake_intro_text || '')
+      setInviteIntro(project.invite_intro_text || '')
       setIsPublic(project.is_public || false)
       setSlug(project.slug || '')
       setPublicDescription(project.public_description || '')
@@ -133,6 +135,7 @@ export default function Settings() {
         cover_image_url: coverImageUrl || null,
         intake_enabled: intakeEnabled,
         intake_intro_text: intakeIntro.trim() || null,
+        invite_intro_text: inviteIntro.trim() || null,
         is_public: isPublic,
         slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null,
         public_description: publicDescription.trim() || null,
@@ -378,6 +381,28 @@ export default function Settings() {
               </div>
             </>
           )}
+        </section>
+
+        <section className="settings-section">
+          <h2>Uitnodigingsmail</h2>
+          <p className="form-hint" style={{ marginBottom: 16 }}>
+            De tekst die nieuwe leden in hun uitnodigingsmail zien, vóór de inlogknop.
+            Laat leeg om de standaardtekst van je organisatie te gebruiken.
+          </p>
+
+          <div className="form-group">
+            <label>Persoonlijke uitnodigingstekst</label>
+            <textarea
+              value={inviteIntro}
+              onChange={e => setInviteIntro(e.target.value)}
+              rows={5}
+              placeholder={'Bijvoorbeeld:\n\nWelkom bij {projectnaam}! We zijn een collectief dat samen werkt aan duurzame woningen. Leuk dat je interesse hebt.'}
+            />
+            <p className="form-hint" style={{ marginTop: 8 }}>
+              Variabelen: <code>{'{naam}'}</code> = naam van de uitgenodigde, <code>{'{projectnaam}'}</code> = naam van het project.
+              Lege regel tussen alinea&apos;s.
+            </p>
+          </div>
         </section>
 
 

@@ -18,7 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, memberName, memberEmail, projectName, reason, projectUrl, orgName, orgUrl, inviterName } = await req.json()
+    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, orgName, orgUrl, inviterName } = await req.json()
 
     if (!memberEmail) {
       return new Response(JSON.stringify({ error: 'No email address' }), {
@@ -97,16 +97,40 @@ serve(async (req) => {
       const actionLink = linkData.properties.action_link
       const greeting = memberName ? `Hoi ${memberName}` : 'Hoi'
 
+      // Cascade: project.invite_intro_text > organization.invite_intro_text > default
+      let introText: string | null = null
+      if (projectId) {
+        const { data: projectData } = await admin
+          .from('projects')
+          .select('invite_intro_text, organization_id, organizations(invite_intro_text)')
+          .eq('id', projectId)
+          .single()
+
+        const orgIntro = (projectData?.organizations as { invite_intro_text?: string | null } | null)?.invite_intro_text || null
+        introText = projectData?.invite_intro_text || orgIntro || null
+      }
+
+      if (!introText) {
+        introText = `Je bent uitgenodigd om kennis te maken met {projectnaam}.\n\nKlik op de knop hieronder om je account aan te maken en in te loggen — geen wachtwoord nodig.`
+      }
+
+      // Placeholder substitution (na escape; placeholders zijn geen user input maar de waardes wel)
+      const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+      introText = escapeHtml(introText)
+        .replace(/\{naam\}/g, escapeHtml(memberName || ''))
+        .replace(/\{projectnaam\}/g, `<strong>${escapeHtml(projectName || 'het project')}</strong>`)
+
+      // Render: lege regels worden paragraaf-breaks, enkele newlines worden <br>
+      const introHtml = introText
+        .split(/\n\s*\n/)
+        .map(p => `<p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">${p.replace(/\n/g, '<br>')}</p>`)
+        .join('')
+
       subject = `Je bent uitgenodigd voor ${projectName}`
       html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
           <h1 style="font-size: 24px; color: #1a1a2e; margin-bottom: 16px;">${greeting},</h1>
-          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
-            Je bent uitgenodigd om kennis te maken met <strong>${projectName}</strong>.
-          </p>
-          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
-            Klik op de knop hieronder om je account aan te maken en in te loggen — geen wachtwoord nodig.
-          </p>
+          ${introHtml}
           <p style="margin: 28px 0;">
             <a href="${actionLink}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
               Open je uitnodiging

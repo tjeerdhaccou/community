@@ -5,12 +5,13 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { getProjectBaseUrl } from '../lib/subdomain'
 
-async function sendInviteEmail({ email, name, projectName, projectUrl }) {
+async function sendInviteEmail({ email, name, projectId, projectName, projectUrl }) {
   const { error } = await supabase.functions.invoke('send-member-email', {
     body: {
       type: 'invite',
       memberEmail: email,
       memberName: name || null,
+      projectId,
       projectName,
       projectUrl,
     },
@@ -65,6 +66,7 @@ export function useMemberInvites() {
       await sendInviteEmail({
         email: cleanEmail,
         name: name?.trim(),
+        projectId,
         projectName: project?.name,
         projectUrl: getProjectBaseUrl(project),
       })
@@ -92,6 +94,7 @@ export function useMemberInvites() {
       await sendInviteEmail({
         email: invite.email,
         name: invite.name,
+        projectId,
         projectName: project?.name,
         projectUrl: getProjectBaseUrl(project),
       })

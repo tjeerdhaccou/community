@@ -21,6 +21,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
   const backPath = getProjectSlugFromSubdomain() ? '/admin' : `/org/${orgSlug || orgId}`
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
+  const [inviteIntro, setInviteIntro] = useState('')
   const [logoUrl, setLogoUrl] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
   const [admins, setAdmins] = useState([])
@@ -56,6 +57,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
         setName(orgRes.data.name)
         setLogoUrl(orgRes.data.logo_url)
         setLogoPreview(orgRes.data.logo_url)
+        setInviteIntro(orgRes.data.invite_intro_text || '')
       }
       setAdmins(adminsRes.data || [])
       setPendingInvites(invitesRes.data || [])
@@ -199,7 +201,11 @@ export default function OrgSettings({ orgId: orgIdProp }) {
     try {
       const { error } = await supabase
         .from('organizations')
-        .update({ name: name.trim(), logo_url: logoUrl })
+        .update({
+          name: name.trim(),
+          logo_url: logoUrl,
+          invite_intro_text: inviteIntro.trim() || null,
+        })
         .eq('id', org?.id || orgId)
       if (error) throw error
       setSaved(true)
@@ -243,6 +249,28 @@ export default function OrgSettings({ orgId: orgIdProp }) {
             <div className="form-group">
               <label htmlFor="org-name">Naam</label>
               <input id="org-name" type="text" value={name} onChange={e => setName(e.target.value)} required />
+            </div>
+          </div>
+
+          <div className="profile-section">
+            <h3 className="profile-section__title">Uitnodigingsmail</h3>
+            <p className="form-hint" style={{ marginBottom: 16 }}>
+              Standaardtekst voor uitnodigingsmails van alle projecten in deze organisatie.
+              Projecten kunnen deze overschrijven met hun eigen tekst.
+            </p>
+            <div className="form-group">
+              <label htmlFor="org-invite-intro">Uitnodigingstekst</label>
+              <textarea
+                id="org-invite-intro"
+                value={inviteIntro}
+                onChange={e => setInviteIntro(e.target.value)}
+                rows={5}
+                placeholder={'Bijvoorbeeld:\n\nWelkom bij {projectnaam}! We helpen woongroepen om samen te bouwen aan een fijne plek.'}
+              />
+              <p className="form-hint" style={{ marginTop: 8 }}>
+                Variabelen: <code>{'{naam}'}</code> = naam van de uitgenodigde, <code>{'{projectnaam}'}</code> = naam van het project.
+                Lege regel tussen alinea&apos;s.
+              </p>
             </div>
           </div>
 

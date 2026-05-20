@@ -39,6 +39,7 @@ export default function useIntakeResponses(projectId, projectName, projectUrl) {
           type: 'invite',
           memberName: response.name,
           memberEmail: response.email,
+          projectId,
           projectName: projectName || 'het project',
           projectUrl: projectUrl || null,
         },
