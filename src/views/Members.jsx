@@ -22,7 +22,12 @@ export default function Members() {
     om.organization_id === project.organization_id && om.role === 'admin'
   )
   const canManageAdmins = isPlatformAdmin || isAdminOfProjectOrg
-  const { members, loading, updateRole, removeMember, approveMember, rejectMember } = useMembers()
+  const { members: allMembers, loading, updateRole, removeMember, approveMember, rejectMember } = useMembers()
+  // Stealth mode: platform admins zijn onzichtbaar voor andere project-leden.
+  // Alleen platform admins zelf zien medeplatform-admins in de ledenlijst.
+  const members = isPlatformAdmin
+    ? allMembers
+    : allMembers.filter(m => !m.profile?.is_platform_admin)
   const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
   const [filter, setFilter] = useState('all')
