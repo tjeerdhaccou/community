@@ -53,6 +53,13 @@ export default function UpdateCard({ update, onEdit, onReaction, onClick }) {
               <i className={`${update.comment_count > 0 ? 'fa-solid' : 'fa-regular'} fa-comment`} />
               {update.comment_count > 0 && <span>{update.comment_count}</span>}
             </span>
+            {/* Attachment count */}
+            {update.attachment_count > 0 && (
+              <span className="feed-card__action-btn" onClick={onClick} title={`${update.attachment_count} bijlage${update.attachment_count !== 1 ? 'n' : ''}`}>
+                <i className="fa-solid fa-paperclip" />
+                <span>{update.attachment_count}</span>
+              </span>
+            )}
           </div>
 
           <div className="update-card__actions-right">

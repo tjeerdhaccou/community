@@ -8559,7 +8559,7 @@ select.input {
   padding: var(--space-12) var(--space-6);
   color: var(--text-tertiary);
 }
-.ledenwerving-empty i {
+.ledenwerving-empty > i {
   font-size: 40px;
   margin-bottom: var(--space-4);
   color: var(--text-faint);
@@ -9828,4 +9828,89 @@ select.input {
   .pb-font-picker__options { flex-direction: column; }
   .pb-cta-editor__body { flex-direction: column; }
   .pb-add-section__menu { grid-template-columns: 1fr; }
+}
+
+/* ============================================================================
+ * Update attachments (project-news file attachments)
+ * ============================================================================ */
+.update-attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.update-attachment-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 150ms ease;
+}
+.update-attachment-row--link:hover {
+  background: var(--bg-active);
+  transform: translateY(-1px);
+}
+.update-attachment-row--pending {
+  border: 1px dashed var(--border-default);
+  background: transparent;
+}
+.update-attachment-row--uploading {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.update-attachment-row__icon {
+  font-size: 18px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.update-attachment-row__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+a.update-attachment-row__name:hover { text-decoration: underline; }
+.update-attachment-row__size {
+  font-size: var(--text-caption);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.update-attachment-row__download {
+  font-size: 14px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.update-attachment-row__remove {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-sm);
+  transition: background 150ms, color 150ms;
+}
+.update-attachment-row__remove:hover {
+  background: var(--bg-active);
+  color: var(--accent-red);
+}
+.update-detail__attachments {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+}
+.update-detail__attachments-title {
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }

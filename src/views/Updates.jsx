@@ -1,21 +1,27 @@
 import { useState } from 'react'
 import { useProject } from '../contexts/ProjectContext'
+import { useAuth } from '../contexts/AuthContext'
 import { useUpdates } from '../hooks/useUpdates'
 import { canDo } from '../lib/permissions'
 import UpdateCard from '../components/UpdateCard'
 import UpdateModal from '../components/UpdateModal'
 import UpdateDetail from '../components/UpdateDetail'
+import ConfirmModal from '../components/ConfirmModal'
+import { useToast } from '../components/Toast'
 
 import { UPDATE_TAGS } from '../lib/constants'
 const FILTER_TAGS = ['Alles', ...UPDATE_TAGS]
 
 export default function Updates() {
   const { role } = useProject()
-  const { updates, loading, createUpdate, editUpdate, toggleReaction } = useUpdates()
+  const { user } = useAuth()
+  const { updates, loading, createUpdate, editUpdate, deleteUpdate, toggleReaction, addAttachment, removeAttachment } = useUpdates()
   const [activeTag, setActiveTag] = useState('Alles')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUpdate, setEditingUpdate] = useState(null)
   const [selectedUpdate, setSelectedUpdate] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const toast = useToast()
 
   // Professional role only sees public updates
   const visibleUpdates = role === 'professional' ? updates.filter(u => u.is_public) : updates
@@ -40,9 +46,34 @@ export default function Updates() {
 
   async function handleSave(data) {
     if (data.id) {
-      await editUpdate(data.id, data)
+      return await editUpdate(data.id, data)
     } else {
-      await createUpdate(data)
+      return await createUpdate(data)
+    }
+  }
+
+  // Admin verwijdert alles, andere rollen (moderator) alleen eigen.
+  function canDeleteUpdate(update) {
+    if (!update) return false
+    if (role === 'admin') return true
+    return update.author_id === user?.id
+  }
+
+  function handleDeleteRequest(update) {
+    setEditingUpdate(null)
+    setConfirmDelete(update)
+  }
+
+  async function confirmDeleteUpdate() {
+    if (!confirmDelete) return
+    try {
+      await deleteUpdate(confirmDelete.id)
+      if (selectedUpdate?.id === confirmDelete.id) setSelectedUpdate(null)
+      toast.success('Update verwijderd')
+    } catch (err) {
+      toast.error(err.message || 'Verwijderen mislukt')
+    } finally {
+      setConfirmDelete(null)
     }
   }
 
@@ -103,6 +134,9 @@ export default function Updates() {
           update={editingUpdate}
           onSave={handleSave}
           onClose={() => setModalOpen(false)}
+          onDelete={canDeleteUpdate(editingUpdate) ? handleDeleteRequest : undefined}
+          onAddAttachment={addAttachment}
+          onRemoveAttachment={removeAttachment}
         />
       )}
 
@@ -113,6 +147,16 @@ export default function Updates() {
           onEdit={handleEdit}
           onReaction={toggleReaction}
           canEdit={canDo(role, 'publish_update')}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          message={`Weet je zeker dat je de update "${confirmDelete.title}" wilt verwijderen? Bijlagen en reacties worden ook verwijderd. Deze actie kan niet ongedaan worden gemaakt.`}
+          confirmLabel="Verwijderen"
+          danger
+          onConfirm={confirmDeleteUpdate}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>
