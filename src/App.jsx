@@ -241,15 +241,27 @@ function SubdomainLookup({ slug }) {
 
 function SubdomainNoAccess({ slug }) {
   const mainDomain = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
+  const { user } = useAuth()
+  async function handleLogoutAndLogin() {
+    try { await supabase.auth.signOut() } catch {}
+    window.location.reload()
+  }
   return (
     <div className="error-boundary">
       <div className="error-boundary__card">
         <i className="fa-solid fa-lock error-boundary__icon" style={{ color: 'var(--text-tertiary)' }} />
         <h2>Geen toegang</h2>
-        <p>Je hebt geen toegang tot <strong>{slug}</strong>. Vraag de beheerder om je uit te nodigen.</p>
-        <button className="btn-primary" onClick={() => { window.location.href = `https://${mainDomain}` }}>
-          <i className="fa-solid fa-house" /> Naar {mainDomain}
-        </button>
+        <p>
+          Je bent ingelogd als <strong>{user?.email}</strong> en hebt geen toegang tot <strong>{slug}</strong>.
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button className="btn-primary" onClick={handleLogoutAndLogin}>
+            <i className="fa-solid fa-right-from-bracket" /> Inloggen met ander account
+          </button>
+          <button className="btn-secondary" onClick={() => { window.location.href = `https://${mainDomain}` }}>
+            <i className="fa-solid fa-house" /> Naar {mainDomain}
+          </button>
+        </div>
       </div>
     </div>
   )

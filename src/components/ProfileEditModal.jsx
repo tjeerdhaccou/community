@@ -99,7 +99,7 @@ export default function ProfileEditModal({ profile, onSave, onClose, mandatory =
   }
 
   const initials = (fullName || profile.full_name || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)
-  const canClose = !mandatory || (fullName.trim() && avatarUrl)
+  const canClose = !mandatory || fullName.trim()
   const handleOverlayClick = canClose ? onClose : undefined
   const handleCloseClick = canClose ? onClose : undefined
 
@@ -117,7 +117,7 @@ export default function ProfileEditModal({ profile, onSave, onClose, mandatory =
 
         {mandatory && (
           <p className="modal-form__intro">
-            Voordat je verder kunt, vragen we je naam en een profielfoto. Deze worden zichtbaar voor de leden van je organisatie.
+            Voordat je verder kunt, vragen we je naam. Een profielfoto is optioneel maar maakt je herkenbaar voor de leden van je organisatie.
           </p>
         )}
 
@@ -218,7 +218,7 @@ export default function ProfileEditModal({ profile, onSave, onClose, mandatory =
             <button
               type="submit"
               className="btn-primary"
-              disabled={saving || uploading || uploadingPhoto || !fullName.trim() || (mandatory && !avatarUrl)}
+              disabled={saving || uploading || uploadingPhoto || !fullName.trim()}
             >
               {saving ? 'Opslaan...' : mandatory ? 'Profiel opslaan' : 'Opslaan'}
             </button>

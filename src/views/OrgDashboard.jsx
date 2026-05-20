@@ -30,7 +30,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
   const params = useParams()
   const orgSlug = params.orgSlug
   const { isOrgAdmin, primaryOrg, primaryOrgId, profile, reload: reloadAuth } = useAuth()
-  const profileIncomplete = isOrgAdmin && profile && (!profile.full_name?.trim() || !profile.avatar_url)
+  const profileIncomplete = isOrgAdmin && profile && !profile.full_name?.trim()
   const orgId = orgIdProp || primaryOrgId
   const { mode, setMode } = useTheme()
   const navigate = useNavigate()
