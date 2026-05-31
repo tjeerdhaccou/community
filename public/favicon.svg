@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Rounded square background in --accent-primary -->
+  <rect width="64" height="64" rx="14" fill="#4A90D9"/>
+  <!-- Bowl of the 'b' (white filled circle) -->
+  <circle cx="36" cy="40" r="13" fill="#ffffff"/>
+  <!-- Inner cutout (same blue as background) — turns the bowl into a ring -->
+  <circle cx="36" cy="40" r="6" fill="#4A90D9"/>
+  <!-- Stem of the 'b' — touches the left edge of the bowl -->
+  <rect x="16" y="10" width="7" height="44" rx="2" fill="#ffffff"/>
+</svg>
