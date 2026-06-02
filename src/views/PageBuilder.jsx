@@ -274,69 +274,76 @@ export default function PageBuilder() {
   }
 
   // --- Publish: batch write everything to DB ---
+  // Persist all section + project-level changes to the DB.
+  // Shared by publishAll() and saveConceptToDB() — the only difference between the
+  // two buttons is which toast is shown. Public visibility (Live/Concept) is a
+  // separate concern controlled by the is_public toggle in the header.
+  async function persistSections() {
+    // Save project-level fields
+    const { error: projectErr } = await supabase
+      .from('projects')
+      .update({ font_theme: fontTheme, cta_text: ctaText, cta_btn_color: ctaBtnColor, color_theme: colorTheme })
+      .eq('id', project.id)
+    if (projectErr) throw projectErr
+
+    // Delete removed sections
+    if (pendingDeletes.length) {
+      const { error: delErr } = await supabase.from('public_sections').delete().in('id', pendingDeletes)
+      if (delErr) throw delErr
+    }
+
+    // Separate new (temp) sections from existing ones
+    const toInsert = []
+    const toUpdate = []
+    sections.forEach((section, idx) => {
+      // eslint-disable-next-line no-unused-vars
+      const { id, btn_color: _btn, ...data } = section
+      data.sort_order = idx
+      if (id.startsWith('temp-')) {
+        toInsert.push({ tempId: id, data })
+      } else {
+        toUpdate.push({ id, data })
+      }
+    })
+
+    // Batch insert all new sections in one round-trip
+    let insertedRows = []
+    if (toInsert.length > 0) {
+      const { data: rows, error: insertError } = await supabase
+        .from('public_sections')
+        .insert(toInsert.map(s => s.data))
+        .select()
+      if (insertError) throw insertError
+      insertedRows = rows || []
+    }
+
+    // Batch update existing sections
+    await Promise.all(
+      toUpdate.map(({ id, data }) =>
+        supabase.from('public_sections').update(data).eq('id', id).then(({ error }) => {
+          if (error) throw error
+        })
+      )
+    )
+
+    // Map temp IDs to real IDs returned from insert
+    const tempIdMap = {}
+    toInsert.forEach((item, idx) => {
+      if (insertedRows[idx]) tempIdMap[item.tempId] = insertedRows[idx]
+    })
+
+    setSections(prev => prev.map(s => tempIdMap[s.id] ?? s))
+    setPendingDeletes([])
+    setIsDirty(false)
+    setIsConceptSaved(false)
+    if (draftKey) localStorage.removeItem(draftKey)
+    if (previewKey) localStorage.removeItem(previewKey)
+  }
+
   async function publishAll() {
     setPublishing(true)
     try {
-      // Save project-level fields
-      await supabase.from('projects').update({ font_theme: fontTheme, cta_text: ctaText, cta_btn_color: ctaBtnColor, color_theme: colorTheme }).eq('id', project.id)
-
-      // Delete removed sections
-      if (pendingDeletes.length) {
-        await supabase.from('public_sections').delete().in('id', pendingDeletes)
-      }
-
-      // Separate new (temp) sections from existing ones
-      const toInsert = []
-      const toUpdate = []
-      sections.forEach((section, idx) => {
-        // eslint-disable-next-line no-unused-vars
-        const { id, btn_color: _btn, ...data } = section
-        data.sort_order = idx
-        if (id.startsWith('temp-')) {
-          toInsert.push({ tempId: id, data })
-        } else {
-          toUpdate.push({ id, data })
-        }
-      })
-
-      // Batch insert all new sections in one round-trip
-      let insertedRows = []
-      if (toInsert.length > 0) {
-        const { data: rows, error: insertError } = await supabase
-          .from('public_sections')
-          .insert(toInsert.map(s => s.data))
-          .select()
-        if (insertError) throw insertError
-        insertedRows = rows || []
-      }
-
-      // Batch update existing sections (still individual calls — Supabase doesn't support multi-row update)
-      await Promise.all(
-        toUpdate.map(({ id, data }) =>
-          supabase.from('public_sections').update(data).eq('id', id).then(({ error }) => {
-            if (error) throw error
-          })
-        )
-      )
-
-      // Map temp IDs to real IDs returned from insert
-      const tempIdMap = {}
-      toInsert.forEach((item, idx) => {
-        if (insertedRows[idx]) tempIdMap[item.tempId] = insertedRows[idx]
-      })
-
-      setSections(prev => prev.map(s => tempIdMap[s.id] ?? s))
-
-      // Save project-level fields
-      await supabase.from('projects')
-        .update({ font_theme: fontTheme, cta_text: ctaText, cta_btn_color: ctaBtnColor, color_theme: colorTheme })
-        .eq('id', project.id)
-
-      setPendingDeletes([])
-      setIsDirty(false)
-      setIsConceptSaved(false)
-      if (draftKey) localStorage.removeItem(draftKey)
-      if (previewKey) localStorage.removeItem(previewKey)
+      await persistSections()
       toast.success('Pagina gepubliceerd')
     } catch (err) {
       console.error('Publish failed:', err)
@@ -362,18 +369,16 @@ export default function PageBuilder() {
     setLoading(false)
   }
 
-  // --- Save concept to localStorage (not live for visitors, no DB column needed) ---
+  // localStorage preview key — used by openPreview() for unsaved drafts only.
   const previewKey = project?.id ? `pb-preview-${project.id}` : null
 
-  function saveConceptToDB() {
-    if (!previewKey) return
+  // "Concept opslaan" — persist to DB so changes survive refresh and devices.
+  // Differs from "Publiceren" only in toast and that it does not toggle is_public.
+  // Visibility is controlled by the Live/Concept switch in the header.
+  async function saveConceptToDB() {
     setConceptSaving(true)
     try {
-      const previewData = { sections, fontTheme, ctaText, ctaBtnColor, colorTheme }
-      localStorage.setItem(previewKey, JSON.stringify(previewData))
-      setIsDirty(false)
-      setIsConceptSaved(true)
-      if (draftKey) localStorage.removeItem(draftKey)
+      await persistSections()
       toast.success('Concept opgeslagen')
     } catch (err) {
       console.error('Concept save failed:', err)
