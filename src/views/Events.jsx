@@ -61,7 +61,10 @@ export default function Events() {
   const { user } = useAuth()
   const { upcoming, past, loading, createEvent, updateEvent, deleteEvent, rsvp } = useEvents()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [modalOpen, setModalOpen] = useState(false)
+  // Re-open modal automatically if there's a saved draft (user navigated away mid-edit)
+  const [modalOpen, setModalOpen] = useState(() => {
+    try { return !!localStorage.getItem('ev-draft-new') } catch { return false }
+  })
   const [editingEvent, setEditingEvent] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null) // event being deleted

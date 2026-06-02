@@ -7,6 +7,7 @@ import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
 import IntakeResponseDetail from '../components/IntakeResponseDetail'
+import ImageCropper from '../components/ImageCropper'
 
 export default function Ledenwerving() {
   const { project } = useProject()
@@ -21,10 +22,27 @@ export default function Ledenwerving() {
   const [coverPreview, setCoverPreview] = useState(project?.cover_image_url || '')
   const [uploadingCover, setUploadingCover] = useState(false)
   const coverRef = useRef(null)
+  const [cropSrc, setCropSrc] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   const intakeUrl = getIntakeUrl(project)
+
+  async function handleCoverCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setCoverPreview(URL.createObjectURL(blob))
+    setUploadingCover(true)
+    try {
+      const url = await uploadImage(file)
+      setCoverUrl(url)
+    } catch (err) {
+      console.error('Cover upload failed:', err)
+      setCoverPreview(coverUrl || '')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
 
   async function handleSaveSettings() {
     setSaving(true)
@@ -202,20 +220,11 @@ export default function Ledenwerving() {
               ref={coverRef}
               type="file"
               accept="image/*"
-              onChange={async (e) => {
+              onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (!file) return
-                setCoverPreview(URL.createObjectURL(file))
-                setUploadingCover(true)
-                try {
-                  const url = await uploadImage(file)
-                  setCoverUrl(url)
-                } catch (err) {
-                  console.error('Cover upload failed:', err)
-                  setCoverPreview(coverUrl || '')
-                } finally {
-                  setUploadingCover(false)
-                }
+                setCropSrc(URL.createObjectURL(file))
+                e.target.value = ''
               }}
               style={{ display: 'none' }}
             />
@@ -248,6 +257,16 @@ export default function Ledenwerving() {
             {saving ? 'Opslaan...' : saved ? '✓ Opgeslagen' : 'Instellingen opslaan'}
           </button>
         </div>
+      )}
+
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={16 / 9}
+          round={false}
+          onComplete={handleCoverCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
       )}
 
       {selectedResponse && (

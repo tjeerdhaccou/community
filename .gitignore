@@ -5,3 +5,6 @@ dist
 .env.local
 *.local
 supabase/.temp/
+.vercel
+.claude/worktrees/
+*.DS_Store
