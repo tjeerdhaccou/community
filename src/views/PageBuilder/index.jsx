@@ -99,6 +99,8 @@ export default function PageBuilder() {
           body: project.tagline || '',
           image_url: project.cover_image_url || null,
           images: [], bg_color: null, text_color: 'dark', text_align: 'left',
+          card_columns: 3, // NOT NULL in DB; default 3 — must be present or insert fails
+          text_size: 'normal',
         }, ...rows])
       }
     })
@@ -191,6 +193,8 @@ export default function PageBuilder() {
         title: 'Word lid van ons project',
         body: '', image_url: null, images: [],
         bg_color: null, text_color: 'dark', text_align: 'left',
+        card_columns: 3, // NOT NULL in DB; default 3
+        text_size: 'normal',
       }, ...rest]
     })
     setIsDirty(true)
@@ -252,7 +256,10 @@ export default function PageBuilder() {
       if (delErr) throw delErr
     }
 
-    // Separate new (temp) sections from existing ones
+    // Separate new (temp) sections from existing ones.
+    // Strip keys with null/undefined values for inserts — that way PG defaults
+    // (e.g. card_columns DEFAULT 3 NOT NULL) actually kick in instead of failing
+    // with a NOT-NULL violation.
     const toInsert = []
     const toUpdate = []
     sections.forEach((section, idx) => {
@@ -260,7 +267,10 @@ export default function PageBuilder() {
       const { id, btn_color: _btn, ...data } = section
       data.sort_order = idx
       if (id.startsWith('temp-')) {
-        toInsert.push({ tempId: id, data })
+        const clean = Object.fromEntries(
+          Object.entries(data).filter(([, v]) => v !== null && v !== undefined)
+        )
+        toInsert.push({ tempId: id, data: clean })
       } else {
         toUpdate.push({ id, data })
       }
