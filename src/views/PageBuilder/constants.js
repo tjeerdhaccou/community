@@ -42,3 +42,27 @@ export function getThemeSwatches(themeKey) {
 export function tempId() {
   return `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
+
+// DB-defaults voor NOT-NULL kolommen op public_sections.
+// Wanneer secties uit DB/localStorage/templates komen, kunnen ze sommige van
+// deze velden missen of op null hebben staan. PG's DEFAULT-clause werkt alleen
+// als de kolom uit de INSERT/UPDATE wordt weggelaten — niet als je expliciet
+// null meestuurt. Daarom dwingen we hier veilige waarden af.
+export const SECTION_NOT_NULL_DEFAULTS = {
+  card_columns: 3,
+  text_color: 'dark',
+  text_align: 'left',
+  text_size: 'normal',
+  images: [],
+}
+
+// Vult ontbrekende of null-waarde keys met defaults, zonder bestaande waarden
+// te overschrijven.
+export function withSectionDefaults(section) {
+  if (!section) return section
+  const out = { ...section }
+  for (const [k, v] of Object.entries(SECTION_NOT_NULL_DEFAULTS)) {
+    if (out[k] === null || out[k] === undefined) out[k] = v
+  }
+  return out
+}

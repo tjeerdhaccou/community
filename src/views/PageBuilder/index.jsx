@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { uploadImage } from '../../lib/storage'
 import { useToast } from '../../components/Toast'
 import { getPublicSiteUrl } from '../../lib/subdomain'
-import { SECTION_TYPES, FONT_THEMES, COLOR_THEMES, getThemeSwatches, tempId } from './constants'
+import { SECTION_TYPES, FONT_THEMES, COLOR_THEMES, getThemeSwatches, tempId, withSectionDefaults } from './constants'
 import SectionEditor from './SectionEditor'
 import AddSectionButton from './AddSectionButton'
 
@@ -63,7 +63,7 @@ export default function PageBuilder() {
     if (savedDraft) {
       try {
         const draft = JSON.parse(savedDraft)
-        setSections(draft.sections || [])
+        setSections((draft.sections || []).map(withSectionDefaults))
         setFontTheme(draft.fontTheme || 'clean')
         setCtaText(draft.ctaText || '')
         setCtaBtnColor(draft.ctaBtnColor || null)
@@ -84,13 +84,13 @@ export default function PageBuilder() {
       supabase.from('public_sections').select('*').eq('project_id', project.id).order('sort_order'),
       supabase.from('memberships').select('profile_id, role, profile:profiles(full_name, avatar_url)').eq('project_id', project.id).neq('role', 'guest'),
     ]).then(([sectionsRes, membersRes]) => {
-      const rows = sectionsRes.data || []
+      const rows = (sectionsRes.data || []).map(withSectionDefaults)
       setProjectMembers(membersRes.data || [])
       setSections(rows)
       setLoading(false)
       // Auto-create hero in local state if missing
       if (!rows.find(s => s.section_type === 'hero')) {
-        setSections([{
+        setSections([withSectionDefaults({
           id: tempId(),
           project_id: project.id,
           sort_order: -2,
@@ -98,10 +98,8 @@ export default function PageBuilder() {
           title: project.name || '',
           body: project.tagline || '',
           image_url: project.cover_image_url || null,
-          images: [], bg_color: null, text_color: 'dark', text_align: 'left',
-          card_columns: 3, // NOT NULL in DB; default 3 — must be present or insert fails
-          text_size: 'normal',
-        }, ...rows])
+          bg_color: null,
+        }), ...rows])
       }
     })
   }, [project?.id])
@@ -151,16 +149,15 @@ export default function PageBuilder() {
   }
 
   function addSection(type = 'text-image-left') {
-    setSections(prev => [...prev, {
+    setSections(prev => [...prev, withSectionDefaults({
       id: tempId(),
       project_id: project.id,
       sort_order: prev.length,
       section_type: type,
       title: '', body: '', image_url: null,
-      images: type === 'cards' ? [{ title: '', body: '' }] : [],
-      card_columns: 3,
-      bg_color: null, text_color: 'dark', text_align: 'left', text_size: 'normal',
-    }])
+      images: type === 'cards' ? [{ title: '', body: '' }] : undefined,
+      bg_color: null,
+    })])
     setIsDirty(true)
   }
 
@@ -185,17 +182,15 @@ export default function PageBuilder() {
       if (prev.find(s => s.section_type === 'cta')) return prev
       const hero = prev.filter(s => s.section_type === 'hero')
       const rest = prev.filter(s => s.section_type !== 'hero')
-      return [...hero, {
+      return [...hero, withSectionDefaults({
         id: tempId(),
         project_id: project.id,
         sort_order: -1,
         section_type: 'cta',
         title: 'Word lid van ons project',
-        body: '', image_url: null, images: [],
-        bg_color: null, text_color: 'dark', text_align: 'left',
-        card_columns: 3, // NOT NULL in DB; default 3
-        text_size: 'normal',
-      }, ...rest]
+        body: '', image_url: null,
+        bg_color: null,
+      }), ...rest]
     })
     setIsDirty(true)
   }
@@ -334,7 +329,7 @@ export default function PageBuilder() {
     setColorTheme(project.color_theme || 'clean')
     if (draftKey) localStorage.removeItem(draftKey)
     const { data } = await supabase.from('public_sections').select('*').eq('project_id', project.id).order('sort_order')
-    setSections(data || [])
+    setSections((data || []).map(withSectionDefaults))
     setIsDirty(false)
     setLoading(false)
   }
