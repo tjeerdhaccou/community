@@ -299,6 +299,12 @@ export default function Profile() {
             )}
             <div className="profile-avatar-info">
               <h3>{fullName || 'Naam instellen'}</h3>
+              {authProfile?.email && (
+                <p className="profile-avatar-info__email" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body-sm)', margin: '2px 0 8px' }}>
+                  <i className="fa-regular fa-envelope" style={{ marginRight: 6 }} />
+                  {authProfile.email}
+                </p>
+              )}
               {isProfessional && proLabel && (
                 <span className="pro-badge" style={{ background: `${proColor}14`, color: proColor }}>{proLabel}</span>
               )}

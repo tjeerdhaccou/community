@@ -171,6 +171,15 @@ export default function Sidebar() {
       <div className="sidebar-footer" ref={menuRef}>
         {userMenuOpen && (
           <div className="sidebar-user-menu">
+            {profile?.email && (
+              <>
+                <div className="sidebar-user-menu-item sidebar-user-menu-item--email" style={{ fontSize: 'var(--text-caption)', color: 'var(--text-tertiary)', cursor: 'default', pointerEvents: 'none' }}>
+                  <i className="fa-regular fa-envelope" />
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{profile.email}</span>
+                </div>
+                <div className="sidebar-user-menu-divider" />
+              </>
+            )}
             <div
               className="sidebar-user-menu-item"
               onClick={() => { setUserMenuOpen(false); navigate(`${basePath}/profile`) }}
