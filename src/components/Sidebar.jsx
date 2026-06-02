@@ -26,6 +26,7 @@ const NAV_SECTIONS = [
     items: [
       { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
       { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', label: 'Documenten', feature: 'documents' },
+      { to: 'mijn-documenten', icon: 'fa-solid fa-file-shield', color: '#2D8CFF', label: 'Mijn documenten', membersOnly: true },
       { to: 'adviseurs', icon: 'fa-solid fa-helmet-safety', color: '#C9A96E', label: 'Team', action: 'view_team', feature: 'team' },
     ]
   },

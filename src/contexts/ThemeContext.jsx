@@ -3,16 +3,28 @@ import { safeStorage } from '../lib/safeStorage'
 
 const ThemeContext = createContext(null)
 
-export function ThemeProvider({ children, projectBranding }) {
-  const [mode, setMode] = useState(() => {
-    return safeStorage.getItem('theme-mode') || projectBranding?.default_theme || 'light'
+/**
+ * ThemeProvider with optional scope for independent theme storage.
+ * - scope="project-{id}" or "org-{id}" → stores theme per scope, user can toggle
+ * - scope=null/undefined → forces 'light', no storage, no toggle
+ */
+export function ThemeProvider({ children, projectBranding, scope }) {
+  const storageKey = scope ? `theme-mode-${scope}` : null
+
+  const [mode, setModeState] = useState(() => {
+    if (!storageKey) return 'light'
+    return safeStorage.getItem(storageKey) || projectBranding?.default_theme || 'light'
   })
 
+  // If no scope, mode is always light
+  const setMode = storageKey ? setModeState : () => {}
+
   useEffect(() => {
-    safeStorage.setItem('theme-mode', mode)
-    // Clean Design System uses data-theme for dark mode
+    if (storageKey) {
+      safeStorage.setItem(storageKey, mode)
+    }
     document.documentElement.setAttribute('data-theme', mode)
-  }, [mode])
+  }, [mode, storageKey])
 
   useEffect(() => {
     // In contrast mode, don't apply project branding — use theme's own colors
@@ -40,8 +52,15 @@ export function ThemeProvider({ children, projectBranding }) {
     }
   }, [projectBranding, mode])
 
+  // Reset to light when entering an unscoped context
+  useEffect(() => {
+    if (!storageKey) {
+      document.documentElement.setAttribute('data-theme', 'light')
+    }
+  }, [storageKey])
+
   return (
-    <ThemeContext.Provider value={{ mode, setMode }}>
+    <ThemeContext.Provider value={{ mode, setMode, scoped: !!storageKey }}>
       {children}
     </ThemeContext.Provider>
   )

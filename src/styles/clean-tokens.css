@@ -488,10 +488,18 @@
   border-top: none;
 }
 
-/* Active phase dot: red fill */
+/* Active phase dot: red fill with black stroke */
 [data-theme="contrast"] .dash-stepper__dot--active {
   background: var(--accent-cta);
-  border-color: var(--accent-cta);
+  border-color: var(--text-primary);
+}
+
+/* Pending dots and lines: lighter in contrast theme */
+[data-theme="contrast"] .dash-stepper__dot--pending {
+  border-color: #C0C0C0;
+}
+[data-theme="contrast"] .dash-stepper__line:not(.dash-stepper__line--filled) {
+  background: #C0C0C0;
 }
 
 /* Tags: subtle border, keep original shape */

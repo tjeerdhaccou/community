@@ -35,6 +35,7 @@ import NotificationOnboardingModal from './components/NotificationOnboardingModa
 import Unsubscribe from './views/Unsubscribe'
 import PublicProject from './views/PublicProject'
 import PageBuilder from './views/PageBuilder'
+import MyDocuments from './views/MyDocuments'
 import PlatformAdmin from './views/PlatformAdmin'
 import OrgOnboarding from './views/OrgOnboarding'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
@@ -309,6 +310,7 @@ function NormalRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
         <Route path="documenten" element={<FeatureRoute feature="documents"><Documents /></FeatureRoute>} />
+        <Route path="mijn-documenten" element={<MyDocuments />} />
         <Route path="pro-updates" element={<ProfessionalUpdates />} />
         <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
         <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
@@ -388,6 +390,7 @@ function ProjectSubdomainApp({ slug }) {
           <Route index element={<Dashboard />} />
           <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
           <Route path="documenten" element={<FeatureRoute feature="documents"><Documents /></FeatureRoute>} />
+          <Route path="mijn-documenten" element={<MyDocuments />} />
           <Route path="pro-updates" element={<ProfessionalUpdates />} />
           <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
           <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
