@@ -48,7 +48,7 @@ export function useMemberInvites() {
 
   useEffect(() => { fetchInvites() }, [fetchInvites])
 
-  async function createInvite({ email, name, personalMessage }) {
+  async function createInvite({ email, name, personalMessage, assignedRole }) {
     const cleanEmail = email.toLowerCase().trim()
     const cleanMessage = personalMessage?.trim() || null
     const { data, error } = await supabase
@@ -59,6 +59,7 @@ export function useMemberInvites() {
         name: name?.trim() || null,
         invited_by: user.id,
         personal_message: cleanMessage,
+        assigned_role: assignedRole || 'guest',
       })
       .select('*, inviter:profiles!invited_by(full_name)')
       .single()

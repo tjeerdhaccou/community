@@ -4336,6 +4336,271 @@ select.input {
   .member-card__badge { font-size: 11px; }
 }
 
+/* ===== Funnel select ===== */
+
+.member-profile__funnel-select {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.member-profile__funnel-select:hover { border-color: var(--accent-primary); }
+
+/* ===== Invite role badge ===== */
+
+.invite-role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.form-select:hover, .form-select:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  display: block;
+}
+
+/* ===== Member Dossier ===== */
+
+.member-dossier {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.member-dossier__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.member-dossier__section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.member-dossier__section h4 i {
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+.member-dossier__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.member-dossier__empty {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 12px 0;
+}
+
+/* Files */
+.member-dossier__files {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.member-dossier__file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--bg-base);
+  transition: background 0.1s;
+}
+.member-dossier__file:hover {
+  background: var(--bg-hover);
+}
+
+.member-dossier__file-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.member-dossier__file-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.member-dossier__file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-dossier__file-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.member-dossier__visible-badge {
+  color: var(--accent-blue, #4A90D9);
+  font-weight: 500;
+}
+
+.member-dossier__file-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* Notes form */
+.member-dossier__note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.member-dossier__note-type-row {
+  display: flex;
+  gap: 4px;
+}
+
+.member-dossier__note-type {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-default);
+  background: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  transition: all 0.12s;
+}
+.member-dossier__note-type:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+.member-dossier__note-type--active {
+  background: var(--accent-primary);
+  color: #fff;
+  border-color: var(--accent-primary);
+}
+
+.member-dossier__note-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.member-dossier__note-form .btn-sm {
+  align-self: flex-end;
+}
+
+/* Notes timeline */
+.member-dossier__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 2px solid var(--border-default);
+  margin-left: 10px;
+  padding-left: 16px;
+}
+
+.member-dossier__note {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  position: relative;
+}
+
+.member-dossier__note-dot {
+  position: absolute;
+  left: -24px;
+  top: 12px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.member-dossier__note-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.member-dossier__note-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.member-dossier__note-author {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.member-dossier__note-date {
+  color: var(--text-tertiary);
+}
+
+.member-dossier__note-subject {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.member-dossier__note-body {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
 /* ===== Settings ===== */
 
 .settings-form {

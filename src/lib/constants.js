@@ -66,6 +66,34 @@ export const PROFESSIONAL_COLORS = {
   anders: '#9ba1b0',
 }
 
+// ===== Funnel stage definitions =====
+
+export const FUNNEL_STAGES = ['nieuw', 'orienterend', 'aspirant_koper', 'koper', 'bewoner']
+
+export const FUNNEL_LABELS = {
+  nieuw: 'Nieuw',
+  orienterend: 'Oriënterend',
+  aspirant_koper: 'Aspirant-koper',
+  koper: 'Koper',
+  bewoner: 'Bewoner',
+}
+
+export const FUNNEL_COLORS = {
+  nieuw: '#9ba1b0',
+  orienterend: '#4A90D9',
+  aspirant_koper: '#F4B400',
+  koper: '#F09020',
+  bewoner: '#3BD269',
+}
+
+export const FUNNEL_ICONS = {
+  nieuw: 'fa-solid fa-circle',
+  orienterend: 'fa-solid fa-magnifying-glass',
+  aspirant_koper: 'fa-solid fa-file-signature',
+  koper: 'fa-solid fa-handshake',
+  bewoner: 'fa-solid fa-house-chimney',
+}
+
 // ===== Reaction definitions =====
 
 export const REACTIONS = [

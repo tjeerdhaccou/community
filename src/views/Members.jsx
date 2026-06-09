@@ -6,7 +6,7 @@ import { useMemberInvites } from '../hooks/useMemberInvites'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import { canDo } from '../lib/permissions'
-import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_LABELS, FUNNEL_COLORS } from '../lib/constants'
 import { getIntakeUrl, getProjectBaseUrl } from '../lib/subdomain'
 import MemberProfile from '../components/MemberProfile'
 import RejectModal from '../components/RejectModal'
@@ -22,7 +22,7 @@ export default function Members() {
     om.organization_id === project.organization_id && om.role === 'admin'
   )
   const canManageAdmins = isPlatformAdmin || isAdminOfProjectOrg
-  const { members: allMembers, loading, updateRole, removeMember, approveMember, rejectMember } = useMembers()
+  const { members: allMembers, loading, updateRole, updateFunnelStage, removeMember, approveMember, rejectMember } = useMembers()
   // Stealth mode: platform admins zijn onzichtbaar voor andere project-leden.
   // Alleen platform admins zelf zien medeplatform-admins in de ledenlijst.
   const members = isPlatformAdmin
@@ -177,6 +177,7 @@ export default function Members() {
                 membership={m}
                 isMe={m.profile_id === user?.id}
                 onClick={canViewProfile ? () => setSelectedMember(m) : undefined}
+                showFunnel={canDo(role, 'assign_roles')}
               />
             )
           })}
@@ -196,6 +197,7 @@ export default function Members() {
           canAssignAdminRole={canManageAdmins}
           canApprove={canDo(role, 'invite_members') && selectedMember.role === 'guest'}
           onRoleChange={updateRole}
+          onFunnelChange={updateFunnelStage}
           onRemove={removeMember}
           onApprove={approveMember}
           onReject={() => { setSelectedMember(null); setRejectTarget(selectedMember) }}
@@ -276,6 +278,7 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [personalMessage, setPersonalMessage] = useState('')
+  const [assignedRole, setAssignedRole] = useState('guest')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [resending, setResending] = useState(null)
@@ -286,10 +289,11 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
     setError(null)
     setSaving(true)
     try {
-      await onInvite({ email: email.trim(), name: name.trim(), personalMessage: personalMessage.trim() })
+      await onInvite({ email: email.trim(), name: name.trim(), personalMessage: personalMessage.trim(), assignedRole })
       setEmail('')
       setName('')
       setPersonalMessage('')
+      setAssignedRole('guest')
     } catch (err) {
       setError(err.message || 'Uitnodiging versturen mislukt.')
     } finally {
@@ -354,6 +358,22 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
           />
         </div>
 
+        <div className="form-group">
+          <label htmlFor="invite-role">Rol na registratie</label>
+          <select
+            id="invite-role"
+            value={assignedRole}
+            onChange={e => setAssignedRole(e.target.value)}
+            className="form-select"
+          >
+            <option value="guest">Gast (wacht op goedkeuring)</option>
+            <option value="aspirant">Aspirant-lid</option>
+            <option value="member">Lid</option>
+            <option value="moderator">Moderator</option>
+          </select>
+          <span className="form-hint">De uitgenodigde kan deze rol zelf niet aanpassen.</span>
+        </div>
+
         {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
 
         <div className="modal-actions" style={{ justifyContent: 'flex-end' }}>
@@ -375,6 +395,11 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
                 <span className="invite-row__name">{inv.name || inv.email}</span>
                 {inv.name && <span className="invite-row__email">{inv.email}</span>}
               </div>
+              {inv.assigned_role && inv.assigned_role !== 'guest' && (
+                <span className="invite-role-badge" style={{ background: `${ROLE_COLORS[inv.assigned_role]}14`, color: ROLE_COLORS[inv.assigned_role] }}>
+                  {ROLE_LABELS[inv.assigned_role]}
+                </span>
+              )}
               {inv.status === 'accepted' ? (
                 <span className="invite-status invite-status--accepted">Aangemeld</span>
               ) : (
@@ -450,12 +475,14 @@ function OpenLinkInvite({ projectName, project }) {
   )
 }
 
-function MemberCard({ membership, isMe, onClick }) {
+function MemberCard({ membership, isMe, onClick, showFunnel }) {
   const p = membership.profile
   const roleColor = ROLE_COLORS[membership.role] || '#9ba1b0'
   const proLabel = PROFESSIONAL_LABELS[p?.professional_type]
   const proColor = PROFESSIONAL_COLORS[p?.professional_type]
   const isNew = Date.now() - new Date(membership.joined_at).getTime() < FOURTEEN_DAYS
+  const funnelColor = FUNNEL_COLORS[membership.funnel_stage]
+  const funnelLabel = FUNNEL_LABELS[membership.funnel_stage]
 
   return (
     <div className={`member-card ${onClick ? '' : 'member-card--no-click'}`} onClick={onClick}>
@@ -488,6 +515,11 @@ function MemberCard({ membership, isMe, onClick }) {
         {proLabel && (
           <span className="member-card__badge" style={{ background: `${proColor}14`, color: proColor }}>
             {proLabel}
+          </span>
+        )}
+        {showFunnel && funnelLabel && membership.funnel_stage !== 'nieuw' && (
+          <span className="member-card__badge" style={{ background: `${funnelColor}14`, color: funnelColor }}>
+            {funnelLabel}
           </span>
         )}
         {isNew && <span className="member-card__badge member-card__badge--new">Nieuw</span>}

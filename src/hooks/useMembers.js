@@ -32,6 +32,7 @@ export function useMembers() {
       .select('*, profile:profiles(id, full_name, avatar_url, email, is_platform_admin, company, bio, phone, website, professional_type)')
       .eq('project_id', projectId)
       .order('joined_at', { ascending: true })
+    // funnel_stage is on memberships table directly
 
     if (error) {
       logger.error('useMembers.fetch', error)
@@ -105,5 +106,23 @@ export function useMembers() {
     await removeMember(membershipId)
   }
 
-  return { members, loading, updateRole, removeMember, approveMember, rejectMember, refetch: fetchMembers }
+  async function updateFunnelStage(membershipId, newStage) {
+    const member = members.find(m => m.id === membershipId)
+    const oldStage = member?.funnel_stage
+
+    setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, funnel_stage: newStage } : m))
+
+    const { error } = await supabase
+      .from('memberships')
+      .update({ funnel_stage: newStage })
+      .eq('id', membershipId)
+
+    if (error) {
+      setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, funnel_stage: oldStage } : m))
+      logger.error('useMembers.updateFunnelStage', error)
+      throw new Error(friendlyError(error))
+    }
+  }
+
+  return { members, loading, updateRole, updateFunnelStage, removeMember, approveMember, rejectMember, refetch: fetchMembers }
 }

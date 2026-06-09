@@ -38,6 +38,7 @@ import PageBuilder from './views/PageBuilder'
 import MyDocuments from './views/MyDocuments'
 import PlatformAdmin from './views/PlatformAdmin'
 import OrgOnboarding from './views/OrgOnboarding'
+import ProfileCompletionGuard from './components/ProfileCompletionGuard'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
 
 function NotFound() {
@@ -109,7 +110,11 @@ function MemberGate() {
   )
   // Allow access if user has physical membership OR org-admin role
   if (!membership && role === 'guest') return <JoinProject />
-  return <Layout />
+  return (
+    <ProfileCompletionGuard>
+      <Layout />
+    </ProfileCompletionGuard>
+  )
 }
 
 function ProjectShell() {
