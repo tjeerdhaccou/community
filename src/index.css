@@ -3910,7 +3910,13 @@ select.input {
 
 /* Invite modal */
 .modal-card--invite { max-width: 480px; }
-.invite-modal__content { padding: 0 24px 24px; }
+.invite-modal__content {
+  padding: 0 24px 24px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-faint, #B0B5C3) transparent;
+}
 .invite-modal__desc {
   font-size: 14px;
   color: var(--text-secondary);

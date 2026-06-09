@@ -234,7 +234,7 @@ function InviteModal({ projectName, project, onClose }) {
   const { invites, createInvite, revokeInvite, resendInvite } = useMemberInvites()
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ alignItems: 'flex-start', paddingTop: '10vh' }}>
+    <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card modal-card--invite" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Lid uitnodigen</h2>
