@@ -71,7 +71,11 @@ export default function Login() {
         let saved
         try { saved = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
 
-        navigate(saved || '/dashboard', { replace: true })
+        // Only use saved redirect for project-specific pages — role-based
+        // routing (org admin → CMS, platform admin → /platform) goes
+        // through PostLoginRedirect at /dashboard.
+        const useSaved = saved && saved.startsWith('/p/')
+        navigate(useSaved ? saved : '/dashboard', { replace: true })
       }
     } catch (err) {
       console.error('OTP verify error:', err)

@@ -33,7 +33,8 @@ export default function AuthCallback() {
       // Fallback to localStorage (same-domain redirects)
       let savedPath
       try { savedPath = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
-      navigate(savedPath || '/dashboard', { replace: true })
+      const useSaved = savedPath && savedPath.startsWith('/p/')
+      navigate(useSaved ? savedPath : '/dashboard', { replace: true })
     }
 
     // Cross-subdomain hash-token flow: handle synchronously without a SIGNED_IN
