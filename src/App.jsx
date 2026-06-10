@@ -30,6 +30,12 @@ import JoinProject from './views/JoinProject'
 import IntakeForm from './views/IntakeForm'
 import Ledenwerving from './views/Ledenwerving'
 import PrivacyPolicy from './views/PrivacyPolicy'
+import AlgemeneVoorwaarden from './views/AlgemeneVoorwaarden'
+import LegalOverview from './views/legal/LegalOverview'
+import Verwerkersovereenkomst from './views/legal/Verwerkersovereenkomst'
+import Datalekprotocol from './views/legal/Datalekprotocol'
+import Verwerkingsregister from './views/legal/Verwerkingsregister'
+import DPIADocument from './views/legal/DPIADocument'
 import CookieConsent from './components/CookieConsent'
 import NotificationOnboardingModal from './components/NotificationOnboardingModal'
 import Unsubscribe from './views/Unsubscribe'
@@ -38,6 +44,8 @@ import PageBuilder from './views/PageBuilder'
 import MyDocuments from './views/MyDocuments'
 import PlatformAdmin from './views/PlatformAdmin'
 import OrgOnboarding from './views/OrgOnboarding'
+import Landing from './views/Landing'
+import PostLoginRedirect from './views/PostLoginRedirect'
 import ProfileCompletionGuard from './components/ProfileCompletionGuard'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
 
@@ -294,12 +302,19 @@ function NormalRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/voorwaarden" element={<AlgemeneVoorwaarden />} />
+      <Route path="/legal" element={<LegalOverview />} />
+      <Route path="/legal/verwerkersovereenkomst" element={<Verwerkersovereenkomst />} />
+      <Route path="/legal/datalekprotocol" element={<Datalekprotocol />} />
+      <Route path="/legal/verwerkingsregister" element={<Verwerkingsregister />} />
+      <Route path="/legal/dpia" element={<DPIADocument />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
       <Route path="/project/:slug" element={<PublicProject />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/intake/:projectId" element={<IntakeForm />} />
 
-      <Route path="/" element={<AuthGuard><HomeRedirect /></AuthGuard>} />
+      <Route path="/" element={<Landing />} />
+      <Route path="/dashboard" element={<AuthGuard><PostLoginRedirect /></AuthGuard>} />
 
       {/* Platform admin */}
       <Route path="/platform" element={<AuthGuard><PlatformAdmin /></AuthGuard>} />

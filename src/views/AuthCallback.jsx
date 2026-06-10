@@ -33,7 +33,7 @@ export default function AuthCallback() {
       // Fallback to localStorage (same-domain redirects)
       let savedPath
       try { savedPath = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
-      navigate(savedPath || '/', { replace: true })
+      navigate(savedPath || '/dashboard', { replace: true })
     }
 
     // Cross-subdomain hash-token flow: handle synchronously without a SIGNED_IN
@@ -51,7 +51,7 @@ export default function AuthCallback() {
           if (data?.session) {
             const returnPath = hashParams.get('returnPath')
             window.history.replaceState(null, '', window.location.pathname)
-            navigate(returnPath ? decodeURIComponent(returnPath) : '/', { replace: true })
+            navigate(returnPath ? decodeURIComponent(returnPath) : '/dashboard', { replace: true })
             return
           }
           navigate('/login', { replace: true })

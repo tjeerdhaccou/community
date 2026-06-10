@@ -71,7 +71,7 @@ export default function Login() {
         let saved
         try { saved = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
 
-        navigate(saved || '/', { replace: true })
+        navigate(saved || '/dashboard', { replace: true })
       }
     } catch (err) {
       console.error('OTP verify error:', err)
@@ -125,8 +125,9 @@ export default function Login() {
           </form>
 
           <p style={{ marginTop: 24, fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
-            Door in te loggen ga je akkoord met ons{' '}
-            <a href="/privacy" style={{ color: 'var(--accent-primary)' }}>privacybeleid</a>.
+            Door in te loggen ga je akkoord met onze{' '}
+            <a href="/voorwaarden" style={{ color: 'var(--accent-primary)' }}>algemene voorwaarden</a>{' '}
+            en ons <a href="/privacy" style={{ color: 'var(--accent-primary)' }}>privacybeleid</a>.
           </p>
         </div>
       </div>
