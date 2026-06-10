@@ -21,8 +21,8 @@ export default function PostLoginRedirect() {
       return
     }
 
-    if (isOrgAdmin) {
-      navigateToSubdomain(`https://admin.${MAIN_DOMAIN}/`)
+    if (isOrgAdmin && primaryOrgSlug) {
+      navigateToSubdomain(`https://admin.${MAIN_DOMAIN}/org/${primaryOrgSlug}`)
       return
     }
 
