@@ -12,16 +12,19 @@ export async function redirectByRole(session, navigate) {
     supabase.from('memberships').select('project_id, projects(slug, custom_domain)').eq('profile_id', userId).limit(1),
   ])
 
+  const cmsBase = `https://admin.${MAIN_DOMAIN}`
+  const tokenHash = `access_token=${session.access_token}&refresh_token=${session.refresh_token}`
+
   if (profileRes.data?.is_platform_admin) {
-    navigate('/platform', { replace: true })
+    const returnPath = encodeURIComponent('/platform')
+    window.location.href = `${cmsBase}/auth/session#${tokenHash}&returnPath=${returnPath}`
     return
   }
 
   const orgMembership = orgRes.data?.[0]
   if (orgMembership?.organization?.slug) {
-    const slug = orgMembership.organization.slug
-    const returnPath = encodeURIComponent(`/org/${slug}`)
-    window.location.href = `https://admin.${MAIN_DOMAIN}/auth/session#access_token=${session.access_token}&refresh_token=${session.refresh_token}&returnPath=${returnPath}`
+    const returnPath = encodeURIComponent(`/org/${orgMembership.organization.slug}`)
+    window.location.href = `${cmsBase}/auth/session#${tokenHash}&returnPath=${returnPath}`
     return
   }
 
