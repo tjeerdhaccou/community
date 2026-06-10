@@ -3,6 +3,7 @@ import { useProject } from '../contexts/ProjectContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
 import { getIntakeUrl, getPublicSiteUrl } from '../lib/subdomain'
+import { exportProjectData, exportMembersCSV } from '../lib/dataExport'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
 import ImageCropper from '../components/ImageCropper'
@@ -413,6 +414,8 @@ export default function Settings() {
         </div>
       </form>
 
+      <DataExportSection projectId={project?.id} projectSlug={project?.slug} />
+
       {cropSrc && (
         <ImageCropper
           imageSrc={cropSrc}
@@ -423,5 +426,81 @@ export default function Settings() {
         />
       )}
     </div>
+  )
+}
+
+function DataExportSection({ projectId, projectSlug }) {
+  const [exporting, setExporting] = useState(null) // 'full' | 'csv' | null
+  const [result, setResult] = useState(null)
+
+  async function handleExportFull() {
+    setExporting('full')
+    setResult(null)
+    try {
+      const res = await exportProjectData(projectId, projectSlug)
+      setResult(res.counts)
+    } catch {
+      setResult('error')
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  async function handleExportCSV() {
+    setExporting('csv')
+    setResult(null)
+    try {
+      const res = await exportMembersCSV(projectId, projectSlug)
+      setResult({ csv: res.count })
+    } catch {
+      setResult('error')
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  return (
+    <section className="settings-section" style={{ marginTop: 32 }}>
+      <h2><i className="fa-solid fa-download" style={{ marginRight: 8 }} />Data-export</h2>
+      <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 16 }}>
+        Exporteer alle projectdata conform de AVG (Art. 20 dataportabiliteit).
+        De organisatie is eigenaar van alle data in dit project.
+      </p>
+
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <button
+          className="btn-secondary"
+          onClick={handleExportFull}
+          disabled={exporting}
+        >
+          <i className={exporting === 'full' ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-file-arrow-down'} />{' '}
+          {exporting === 'full' ? 'Exporteren...' : 'Volledige export (JSON)'}
+        </button>
+        <button
+          className="btn-secondary"
+          onClick={handleExportCSV}
+          disabled={exporting}
+        >
+          <i className={exporting === 'csv' ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-table'} />{' '}
+          {exporting === 'csv' ? 'Exporteren...' : 'Ledenlijst (CSV)'}
+        </button>
+      </div>
+
+      {result && result !== 'error' && !result.csv && (
+        <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-green)' }}>
+          <i className="fa-solid fa-check" /> Export gedownload: {result.leden} leden, {result.prikbord} berichten, {result.updates} updates, {result.evenementen} evenementen, {result.documenten} documenten, {result.intake_reacties} intake-reacties
+        </p>
+      )}
+      {result?.csv && (
+        <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-green)' }}>
+          <i className="fa-solid fa-check" /> CSV gedownload met {result.csv} leden
+        </p>
+      )}
+      {result === 'error' && (
+        <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-red)' }}>
+          <i className="fa-solid fa-triangle-exclamation" /> Export mislukt. Probeer het opnieuw.
+        </p>
+      )}
+    </section>
   )
 }

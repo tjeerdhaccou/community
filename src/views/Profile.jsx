@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { uploadImage } from '../lib/storage'
 import { logAudit } from '../lib/audit'
+import { exportUserData } from '../lib/dataExport'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
 import ImageCropper from '../components/ImageCropper'
 import {
@@ -175,37 +176,8 @@ export default function Profile() {
   async function handleExportData() {
     setExporting(true)
     try {
-      const userId = authProfile.id
-      const [profileRes, membershipsRes, postsRes, commentsRes, updatesRes] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, email, bio, company, phone, website, birth_year, household, housing_dream, created_at').eq('id', userId).single(),
-        supabase.from('memberships').select('role, joined_at, projects(name)').eq('profile_id', userId),
-        supabase.from('posts').select('text, tag, post_type, created_at').eq('author_id', userId).order('created_at', { ascending: false }),
-        supabase.from('comments').select('text, created_at').eq('author_id', userId).order('created_at', { ascending: false }),
-        supabase.from('updates').select('title, body, tag, is_public, created_at').eq('author_id', userId).order('created_at', { ascending: false }),
-      ])
-
-      const exportData = {
-        exported_at: new Date().toISOString(),
-        profile: profileRes.data,
-        memberships: (membershipsRes.data || []).map(m => ({
-          project: m.projects?.name,
-          role: m.role,
-          joined_at: m.joined_at,
-        })),
-        posts: postsRes.data || [],
-        comments: commentsRes.data || [],
-        updates: updatesRes.data || [],
-      }
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `mijn-gegevens-${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-
-      logAudit('user.data_exported', 'profile', { resourceId: userId })
+      await exportUserData(authProfile.id)
+      logAudit('user.data_exported', 'profile', { resourceId: authProfile.id })
     } catch (err) {
       console.error('Export failed:', err)
       alert('Data exporteren mislukt. Probeer het opnieuw.')
