@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { navigateToSubdomain } from '../lib/subdomain'
+import { supabase } from '../lib/supabase'
 
 const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
 
@@ -22,7 +23,12 @@ export default function PostLoginRedirect() {
     }
 
     if (isOrgAdmin && primaryOrgSlug) {
-      navigateToSubdomain(`https://admin.${MAIN_DOMAIN}/org/${primaryOrgSlug}`)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          const returnPath = encodeURIComponent(`/org/${primaryOrgSlug}`)
+          window.location.href = `https://admin.${MAIN_DOMAIN}/auth/session#access_token=${session.access_token}&refresh_token=${session.refresh_token}&returnPath=${returnPath}`
+        }
+      })
       return
     }
 
