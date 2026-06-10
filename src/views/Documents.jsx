@@ -1,29 +1,22 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { canDo } from '../lib/permissions'
-import { useConfirm } from '../components/ConfirmDialog'
 import { useAllDocuments } from '../hooks/useAllDocuments'
+import { useWorkgroups } from '../hooks/useWorkgroups'
 import {
-  PROJECT_PHASES, PROFESSIONAL_TYPES, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS,
-  formatFileSize, fileIcon, fileIconColor, linkInfo, timeAgo,
+  PROJECT_PHASES, formatFileSize, fileIcon, fileIconColor, linkInfo, timeAgo,
 } from '../lib/constants'
 
-const TABS = [
-  { key: 'alles', label: 'Alles' },
-  { key: 'adviseur', label: 'Adviseurs' },
-  { key: 'vergadering', label: 'Vergaderingen' },
-  { key: 'dossier', label: 'Dossier' },
-]
-
-const DOSSIER_CATEGORIES = [
-  { key: 'all', label: 'Alles' },
-  { key: 'contract', label: 'Contract' },
-  { key: 'reglement', label: 'Reglement' },
-  { key: 'presentatie', label: 'Presentatie' },
-  { key: 'handleiding', label: 'Handleiding' },
-  { key: 'overig', label: 'Overig' },
-]
+const CATEGORY_LABELS = {
+  ontwerp_visualisatie: 'Ontwerp & Visualisatie',
+  juridisch: 'Juridisch',
+  vergunning_technisch: 'Vergunning & Technisch',
+  financieel: 'Financieel',
+  verkoop_informatie: 'Verkoop & Informatie',
+  vergadering: 'Vergadering',
+  overig: 'Overig',
+}
 
 const MEETING_FILE_CATS = [
   { key: 'all', label: 'Alles' },
@@ -36,66 +29,91 @@ const MEETING_FILE_CATS = [
 export default function Documents() {
   const { role } = useProject()
   const { profile } = useAuth()
-  const confirm = useConfirm()
-  const { allDocuments, adviseurDocs, vergaderingDocs, dossierDocs, loading, uploadArchiveDoc, saveLink, removeDoc } = useAllDocuments()
+  const {
+    gebouwDocs, infoDocs, otherPublicDocs, memberDocs,
+    getDocsForWorkgroup, vergaderingDocs, loading,
+  } = useAllDocuments()
+  const { myWorkgroups, loading: wgLoading } = useWorkgroups()
 
-  async function handleRemove(id, source, filePath) {
-    if (await confirm('Dit document verwijderen?', { danger: true })) {
-      removeDoc(id, source, filePath)
-    }
-  }
-
-  const [tab, setTab] = useState(role === 'professional' ? 'adviseur' : 'alles')
   const [search, setSearch] = useState('')
-  const [phaseFilter, setPhaseFilter] = useState('all')
-  const [sourceFilter, setSourceFilter] = useState('all')
-  const [proTypeFilter, setProTypeFilter] = useState('all')
-  const [dossierCat, setDossierCat] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [meetingCat, setMeetingCat] = useState('all')
-  const [uploadOpen, setUploadOpen] = useState(false)
-  const [linkOpen, setLinkOpen] = useState(false)
 
-  const isProfessional = !!profile?.professional_type
-  const isProfessionalRole = role === 'professional'
-  const canUpload = canDo(role, 'moderate_board') || isProfessional
+  const isProfessional = role === 'professional'
 
-  // Professional role only sees Adviseurs tab
-  const visibleTabs = isProfessionalRole ? TABS.filter(t => t.key === 'adviseur') : TABS
+  // Build tabs dynamically based on role and workgroup membership
+  const tabs = useMemo(() => {
+    const t = []
 
-  // Get the right source based on tab
-  const sourceList = useMemo(() => {
-    switch (tab) {
-      case 'adviseur': return adviseurDocs
-      case 'vergadering': return vergaderingDocs
-      case 'dossier': return dossierDocs
-      default: return allDocuments
+    // Public tabs — visible to everyone
+    t.push({ key: 'gebouw', label: 'Het gebouw', icon: 'fa-solid fa-building' })
+    t.push({ key: 'info', label: 'Praktische info', icon: 'fa-solid fa-circle-info' })
+
+    // Vergaderingen — aspirant+
+    if (canDo(role, 'view_meetings')) {
+      t.push({ key: 'vergaderingen', label: 'Vergaderingen', icon: 'fa-solid fa-users' })
     }
-  }, [tab, allDocuments, adviseurDocs, vergaderingDocs, dossierDocs])
 
-  // Apply sub-filters
+    // Projectdossier — aspirant+ (all member-visibility docs)
+    if (canDo(role, 'view_all_docs')) {
+      t.push({ key: 'dossier', label: 'Projectdossier', icon: 'fa-solid fa-folder-open' })
+    }
+
+    // Dynamic workgroup tabs — for groups the user belongs to
+    if (canDo(role, 'join_workgroup')) {
+      for (const wg of myWorkgroups) {
+        t.push({
+          key: `wg-${wg.id}`,
+          label: wg.name,
+          icon: wg.type === 'commissie' ? 'fa-solid fa-people-group' : 'fa-solid fa-users-rectangle',
+          workgroupId: wg.id,
+        })
+      }
+    }
+
+    return t
+  }, [role, myWorkgroups])
+
+  // Default to first available tab
+  const [tab, setTab] = useState(tabs[0]?.key || 'gebouw')
+
+  // Ensure selected tab is valid
+  const activeTab = tabs.find(t => t.key === tab) ? tab : (tabs[0]?.key || 'gebouw')
+
+  // Get docs for current tab
+  const tabDocs = useMemo(() => {
+    switch (activeTab) {
+      case 'gebouw':
+        return gebouwDocs
+      case 'info':
+        return [...infoDocs, ...otherPublicDocs]
+      case 'vergaderingen':
+        return vergaderingDocs
+      case 'dossier':
+        return memberDocs
+      default:
+        if (activeTab.startsWith('wg-')) {
+          const wgId = activeTab.replace('wg-', '')
+          return getDocsForWorkgroup(wgId)
+        }
+        return []
+    }
+  }, [activeTab, gebouwDocs, infoDocs, otherPublicDocs, vergaderingDocs, memberDocs, getDocsForWorkgroup])
+
+  // Apply filters
   const filtered = useMemo(() => {
-    let result = sourceList
+    let result = tabDocs
 
-    // Source filter (alles tab)
-    if (tab === 'alles' && sourceFilter !== 'all') {
-      result = result.filter(d => d.source === sourceFilter)
+    // Category filter (dossier tab)
+    if (activeTab === 'dossier' && categoryFilter !== 'all') {
+      result = result.filter(d => d.category === categoryFilter)
     }
-    // Phase filter (alles + adviseur tab)
-    if ((tab === 'alles' || tab === 'adviseur') && phaseFilter !== 'all') {
-      result = result.filter(d => d.phase === phaseFilter)
-    }
-    // Professional type filter (adviseur tab)
-    if (tab === 'adviseur' && proTypeFilter !== 'all') {
-      result = result.filter(d => d.professional_type === proTypeFilter)
-    }
-    // Dossier category
-    if (tab === 'dossier' && dossierCat !== 'all') {
-      result = result.filter(d => d.subcategory === dossierCat)
-    }
-    // Meeting file category
-    if (tab === 'vergadering' && meetingCat !== 'all') {
+
+    // Meeting category filter
+    if (activeTab === 'vergaderingen' && meetingCat !== 'all') {
       result = result.filter(d => d.subcategory === meetingCat)
     }
+
     // Search
     if (search.trim()) {
       const q = search.toLowerCase()
@@ -109,44 +127,40 @@ export default function Documents() {
     }
 
     return result
-  }, [sourceList, tab, phaseFilter, proTypeFilter, dossierCat, meetingCat, search])
+  }, [tabDocs, activeTab, categoryFilter, meetingCat, search])
 
   // Count per tab
-  const counts = useMemo(() => ({
-    alles: allDocuments.length,
-    adviseur: adviseurDocs.length,
-    vergadering: vergaderingDocs.length,
-    dossier: dossierDocs.length,
-  }), [allDocuments, adviseurDocs, vergaderingDocs, dossierDocs])
+  const counts = useMemo(() => {
+    const c = {
+      gebouw: gebouwDocs.length,
+      info: infoDocs.length + otherPublicDocs.length,
+      vergaderingen: vergaderingDocs.length,
+      dossier: memberDocs.length,
+    }
+    for (const wg of myWorkgroups) {
+      c[`wg-${wg.id}`] = getDocsForWorkgroup(wg.id).length
+    }
+    return c
+  }, [gebouwDocs, infoDocs, otherPublicDocs, vergaderingDocs, memberDocs, myWorkgroups, getDocsForWorkgroup])
 
   return (
     <div className="view-documents-unified">
       <div className="view-header">
         <div className="view-header__row">
           <h1>Documenten</h1>
-          {canDo(role, 'moderate_board') && (
-            <div className="view-header__actions">
-              <button className="btn-secondary" onClick={() => setLinkOpen(true)}>
-                <i className="fa-solid fa-link" /> Link
-              </button>
-              <button className="btn-primary" onClick={() => setUploadOpen(true)}>
-                <i className="fa-solid fa-plus" /> Bestand
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
       {/* Tabs */}
       <div className="doc-tabs">
-        {visibleTabs.map(t => (
+        {tabs.map(t => (
           <button
             key={t.key}
-            className={`doc-tab ${tab === t.key ? 'doc-tab--active' : ''}`}
-            onClick={() => { setTab(t.key); setPhaseFilter('all'); setSourceFilter('all'); setProTypeFilter('all'); setDossierCat('all'); setMeetingCat('all') }}
+            className={`doc-tab ${activeTab === t.key ? 'doc-tab--active' : ''}`}
+            onClick={() => { setTab(t.key); setCategoryFilter('all'); setMeetingCat('all') }}
           >
             {t.label}
-            {counts[t.key] > 0 && <span className="doc-tab__count">{counts[t.key]}</span>}
+            {(counts[t.key] || 0) > 0 && <span className="doc-tab__count">{counts[t.key]}</span>}
           </button>
         ))}
       </div>
@@ -154,40 +168,17 @@ export default function Documents() {
       {/* Filters + search row */}
       <div className="doc-filters-row">
         <div className="doc-filters">
-          {(tab === 'alles' || tab === 'adviseur') && (
-            <select value={phaseFilter} onChange={e => setPhaseFilter(e.target.value)}>
-              <option value="all">Alle fasen</option>
-              {PROJECT_PHASES.map(p => (
-                <option key={p.key} value={p.key}>{p.label}</option>
+          {activeTab === 'dossier' && (
+            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
+              <option value="all">Alle categorieën</option>
+              {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
               ))}
             </select>
           )}
-          {tab === 'alles' && (
-            <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
-              <option value="all">Alle types</option>
-              <option value="adviseur">Adviseur</option>
-              <option value="vergadering">Vergadering</option>
-              <option value="dossier">Dossier</option>
-            </select>
-          )}
-          {tab === 'adviseur' && (
-            <select value={proTypeFilter} onChange={e => setProTypeFilter(e.target.value)}>
-              <option value="all">Alle rollen</option>
-              {PROFESSIONAL_TYPES.map(t => (
-                <option key={t} value={t}>{PROFESSIONAL_LABELS[t]}</option>
-              ))}
-            </select>
-          )}
-          {tab === 'vergadering' && (
+          {activeTab === 'vergaderingen' && (
             <select value={meetingCat} onChange={e => setMeetingCat(e.target.value)}>
               {MEETING_FILE_CATS.map(c => (
-                <option key={c.key} value={c.key}>{c.label}</option>
-              ))}
-            </select>
-          )}
-          {tab === 'dossier' && (
-            <select value={dossierCat} onChange={e => setDossierCat(e.target.value)}>
-              {DOSSIER_CATEGORIES.map(c => (
                 <option key={c.key} value={c.key}>{c.label}</option>
               ))}
             </select>
@@ -206,12 +197,12 @@ export default function Documents() {
       </div>
 
       {/* Document list */}
-      {loading ? (
+      {loading || wgLoading ? (
         <div className="loading-inline"><p>Documenten laden...</p></div>
       ) : filtered.length === 0 ? (
         <div className="empty-inline">
           <i className="fa-solid fa-folder-open" />
-          <p>{search ? `Geen resultaten voor "${search}"` : 'Nog geen documenten'}</p>
+          <p>{search ? `Geen resultaten voor "${search}"` : emptyMessage(activeTab)}</p>
         </div>
       ) : (
         <div className="doc-list">
@@ -219,27 +210,27 @@ export default function Documents() {
             <DocumentRow
               key={`${doc.source}-${doc.id}`}
               doc={doc}
-              canDelete={canDo(role, 'moderate_board')}
-              onRemove={handleRemove}
+              showCategory={activeTab === 'dossier'}
             />
           ))}
         </div>
-      )}
-
-      {uploadOpen && (
-        <UploadModal onSave={uploadArchiveDoc} onClose={() => setUploadOpen(false)} />
-      )}
-      {linkOpen && (
-        <LinkModal onSave={saveLink} onClose={() => setLinkOpen(false)} />
       )}
     </div>
   )
 }
 
+function emptyMessage(tab) {
+  switch (tab) {
+    case 'gebouw': return 'Nog geen gebouwtekeningen of visualisaties'
+    case 'info': return 'Nog geen praktische informatie'
+    case 'vergaderingen': return 'Nog geen vergaderdocumenten'
+    case 'dossier': return 'Nog geen projectdocumenten'
+    default: return 'Nog geen documenten in deze groep'
+  }
+}
+
 // ===== Document Row =====
-function DocumentRow({ doc, canDelete, onRemove }) {
-  const sourceLabels = { adviseur: 'Adviseur', vergadering: 'Vergadering', dossier: 'Dossier' }
-  const sourceColors = { adviseur: '#4A90D9', vergadering: '#F09020', dossier: '#7B5EA7' }
+function DocumentRow({ doc, showCategory }) {
   const isLink = doc.doc_type === 'link'
   const link = isLink ? linkInfo(doc.url) : null
   const href = isLink ? doc.url : doc.file_path
@@ -258,12 +249,14 @@ function DocumentRow({ doc, canDelete, onRemove }) {
           {isLink && <i className="fa-solid fa-arrow-up-right-from-square doc-row__external" />}
         </a>
         <div className="doc-row__meta">
-          <span className="doc-row__source" style={{ background: `${sourceColors[doc.source]}14`, color: sourceColors[doc.source] }}>
-            {sourceLabels[doc.source]}
-          </span>
+          {showCategory && doc.category && (
+            <span className="doc-row__source" style={{ background: 'var(--surface-raised)', color: 'var(--text-secondary)' }}>
+              {CATEGORY_LABELS[doc.category] || doc.category}
+            </span>
+          )}
           {isLink && <span className="doc-row__badge">{link.label}</span>}
           {doc.phase && <span className="doc-row__badge">{doc.phase}</span>}
-          {doc.subcategory && doc.source !== 'dossier' && (
+          {doc.subcategory && doc.source === 'vergadering' && (
             <span className="doc-row__badge">{doc.subcategory}</span>
           )}
           {doc.meeting_title && <span>{doc.meeting_title}</span>}
@@ -282,162 +275,6 @@ function DocumentRow({ doc, canDelete, onRemove }) {
             <i className="fa-solid fa-download" />
           </a>
         )}
-        {canDelete && (
-          <button className="doc-row__btn doc-row__btn--danger" onClick={() => onRemove(doc.id, doc.source, doc.file_path)} title="Verwijder" aria-label="Verwijderen">
-            <i className="fa-solid fa-trash" />
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ===== Upload Modal (for Dossier/Archive docs) =====
-function UploadModal({ onSave, onClose }) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('overig')
-  const [file, setFile] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const fileRef = useRef(null)
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!title.trim() || !file) return
-    setSaving(true)
-    try {
-      await onSave({ title: title.trim(), description: description.trim(), category, file })
-      onClose()
-    } catch {
-      alert('Er ging iets mis bij het uploaden.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Document toevoegen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Sluiten"><i className="fa-solid fa-xmark" /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group">
-            <label>Titel</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het document" required autoFocus />
-          </div>
-          <div className="form-group">
-            <label>Beschrijving</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Optionele toelichting" rows={2} />
-          </div>
-          <div className="form-group">
-            <label>Categorie</label>
-            <select value={category} onChange={e => setCategory(e.target.value)}>
-              <option value="contract">Contract</option>
-              <option value="reglement">Reglement</option>
-              <option value="presentatie">Presentatie</option>
-              <option value="handleiding">Handleiding</option>
-              <option value="overig">Overig</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Bestand</label>
-            {file ? (
-              <div className="file-selected">
-                <i className={fileIcon(file.type)} style={{ color: fileIconColor(file.type) }} />
-                <span>{file.name}</span>
-                <span className="file-selected__size">{formatFileSize(file.size)}</span>
-                <button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = '' }} aria-label="Verwijderen">
-                  <i className="fa-solid fa-xmark" />
-                </button>
-              </div>
-            ) : (
-              <button type="button" className="btn-secondary" onClick={() => fileRef.current?.click()}>
-                <i className="fa-solid fa-cloud-arrow-up" /> Bestand kiezen
-              </button>
-            )}
-            <input ref={fileRef} type="file" onChange={e => setFile(e.target.files?.[0] || null)} style={{ display: 'none' }} />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
-            <button type="submit" className="btn-primary" disabled={saving || !title.trim() || !file}>
-              {saving ? 'Uploaden...' : 'Toevoegen'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// ===== Link Modal =====
-function LinkModal({ onSave, onClose }) {
-  const [title, setTitle] = useState('')
-  const [url, setUrl] = useState('')
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState('overig')
-  const [saving, setSaving] = useState(false)
-
-  const detectedService = url ? linkInfo(url) : null
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!title.trim() || !url.trim()) return
-    setSaving(true)
-    try {
-      await onSave({ title: title.trim(), description: description.trim(), category, url: url.trim() })
-      onClose()
-    } catch {
-      alert('Er ging iets mis bij het opslaan.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>Link toevoegen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Sluiten"><i className="fa-solid fa-xmark" /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group">
-            <label>URL</label>
-            <input type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://docs.google.com/..." required autoFocus />
-            {url && detectedService && (
-              <div className="link-detected">
-                <i className={detectedService.icon} style={{ color: detectedService.color }} />
-                <span>{detectedService.label}</span>
-              </div>
-            )}
-          </div>
-          <div className="form-group">
-            <label>Titel</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het document" required />
-          </div>
-          <div className="form-group">
-            <label>Beschrijving</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Optionele toelichting" rows={2} />
-          </div>
-          <div className="form-group">
-            <label>Categorie</label>
-            <select value={category} onChange={e => setCategory(e.target.value)}>
-              <option value="contract">Contract</option>
-              <option value="reglement">Reglement</option>
-              <option value="presentatie">Presentatie</option>
-              <option value="handleiding">Handleiding</option>
-              <option value="overig">Overig</option>
-            </select>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
-            <button type="submit" className="btn-primary" disabled={saving || !title.trim() || !url.trim()}>
-              {saving ? 'Opslaan...' : 'Link toevoegen'}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   )

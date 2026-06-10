@@ -5,16 +5,17 @@ import { useProject } from '../contexts/ProjectContext'
 
 /**
  * Unified document hook that combines:
- * - Professional updates (advisor docs with files)
+ * - Project documents (with visibility + category + group links)
  * - Meeting files (agendas, minutes, presentations from events)
- * - Archive documents (contracts, regulations, manuals)
+ *
+ * Adviseur-documenten are no longer included in the frontend;
+ * they are managed via the CMS and promoted to the project dossier.
  */
 export function useAllDocuments() {
   const { user } = useAuth()
   const { project } = useProject()
-  const [proUpdates, setProUpdates] = useState([])
+  const [projectDocs, setProjectDocs] = useState([])
   const [meetingFiles, setMeetingFiles] = useState([])
-  const [archiveDocs, setArchiveDocs] = useState([])
   const [loading, setLoading] = useState(true)
 
   const projectId = project?.id
@@ -23,17 +24,12 @@ export function useAllDocuments() {
     if (!projectId) return
     setLoading(true)
 
-    const [proRes, meetingRes, archiveRes] = await Promise.all([
-      // Professional update files (joined with update + author)
+    const [docRes, meetingRes] = await Promise.all([
+      // Project documents (RLS handles visibility filtering)
       supabase
-        .from('update_files')
-        .select(`
-          id, file_name, file_path, file_size, file_type, created_at,
-          update:professional_updates(
-            id, title, phase, author_id, created_at,
-            author:profiles(id, full_name, avatar_url, professional_type, professional_label)
-          )
-        `)
+        .from('documents')
+        .select('*, uploader:profiles!uploaded_by(id, full_name, avatar_url)')
+        .eq('project_id', projectId)
         .order('created_at', { ascending: false }),
 
       // Meeting files (joined with meeting)
@@ -45,30 +41,44 @@ export function useAllDocuments() {
           uploader:profiles(id, full_name, avatar_url)
         `)
         .order('created_at', { ascending: false }),
-
-      // Archive documents
-      supabase
-        .from('documents')
-        .select('*, uploader:profiles(id, full_name, avatar_url)')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: false }),
     ])
 
-    // Filter pro files to this project
-    const proFiles = (proRes.data || []).filter(f =>
-      f.update?.author_id && f.update
-    ).map(f => ({
-      id: f.id,
-      source: 'adviseur',
-      file_name: f.file_name,
-      file_path: f.file_path,
-      file_size: f.file_size,
-      file_type: f.file_type,
-      title: f.update?.title || f.file_name,
-      phase: f.update?.phase,
-      author: f.update?.author,
-      professional_type: f.update?.author?.professional_type,
-      created_at: f.created_at,
+    // Get document_groups for the fetched docs
+    const docIds = (docRes.data || []).map(d => d.id)
+    let groupLinks = []
+    if (docIds.length > 0) {
+      const { data: links } = await supabase
+        .from('document_groups')
+        .select('document_id, workgroup_id')
+        .in('document_id', docIds)
+      groupLinks = links || []
+    }
+
+    // Build group map: document_id → [workgroup_id, ...]
+    const groupMap = {}
+    for (const link of groupLinks) {
+      if (!groupMap[link.document_id]) groupMap[link.document_id] = []
+      groupMap[link.document_id].push(link.workgroup_id)
+    }
+
+    // Map project documents
+    const docs = (docRes.data || []).map(d => ({
+      id: d.id,
+      source: 'document',
+      doc_type: d.doc_type || 'file',
+      url: d.url,
+      file_name: d.file_name,
+      file_path: d.file_path,
+      file_size: d.file_size,
+      file_type: d.file_type,
+      title: d.title,
+      description: d.description,
+      category: d.category,
+      visibility: d.visibility,
+      phase: d.phase,
+      author: d.uploader,
+      created_at: d.created_at,
+      workgroup_ids: groupMap[d.id] || [],
     }))
 
     // Filter meeting files to this project
@@ -82,97 +92,138 @@ export function useAllDocuments() {
       file_size: f.file_size,
       file_type: f.file_type,
       title: f.file_name,
-      subcategory: f.category, // agenda, minutes, presentation, attachment
+      subcategory: f.category,
       meeting_title: f.meeting?.title,
       meeting_date: f.meeting?.date,
       author: f.uploader,
       created_at: f.created_at,
     }))
 
-    // Archive docs (files + links)
-    const aDocs = (archiveRes.data || []).map(d => ({
-      id: d.id,
-      source: 'dossier',
-      doc_type: d.doc_type || 'file',
-      url: d.url,
-      file_name: d.file_name,
-      file_path: d.file_path,
-      file_size: d.file_size,
-      file_type: d.file_type,
-      title: d.title,
-      description: d.description,
-      subcategory: d.category,
-      author: d.uploader,
-      created_at: d.created_at,
-    }))
-
-    setProUpdates(proFiles)
+    setProjectDocs(docs)
     setMeetingFiles(mFiles)
-    setArchiveDocs(aDocs)
     setLoading(false)
   }, [projectId])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  // All combined, sorted newest first
-  const allDocuments = useMemo(() => {
-    return [...proUpdates, ...meetingFiles, ...archiveDocs]
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-  }, [proUpdates, meetingFiles, archiveDocs])
+  // Public docs (for "Het gebouw" and "Praktische info" tabs)
+  const publicDocs = useMemo(() =>
+    projectDocs.filter(d => d.visibility === 'public'),
+    [projectDocs]
+  )
 
-  // Upload a new archive document
-  async function uploadArchiveDoc({ title, description, category, file }) {
+  const gebouwDocs = useMemo(() =>
+    publicDocs.filter(d => d.category === 'ontwerp_visualisatie'),
+    [publicDocs]
+  )
+
+  const infoDocs = useMemo(() =>
+    publicDocs.filter(d => d.category === 'verkoop_informatie'),
+    [publicDocs]
+  )
+
+  // Other public docs that don't fit gebouw or info
+  const otherPublicDocs = useMemo(() =>
+    publicDocs.filter(d => d.category !== 'ontwerp_visualisatie' && d.category !== 'verkoop_informatie'),
+    [publicDocs]
+  )
+
+  // Members-only docs (for "Projectdossier" tab)
+  const memberDocs = useMemo(() =>
+    projectDocs.filter(d => d.visibility === 'members'),
+    [projectDocs]
+  )
+
+  // Group docs: filtered by workgroup_ids the user belongs to
+  // (RLS already filters, but this helps group per workgroup tab)
+  const groupDocs = useMemo(() =>
+    projectDocs.filter(d => d.visibility === 'groups'),
+    [projectDocs]
+  )
+
+  // Get docs for a specific workgroup
+  function getDocsForWorkgroup(workgroupId) {
+    return groupDocs.filter(d => d.workgroup_ids.includes(workgroupId))
+  }
+
+  // All combined (for search)
+  const allDocuments = useMemo(() => {
+    return [...projectDocs, ...meetingFiles]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  }, [projectDocs, meetingFiles])
+
+  // Upload a new document (from frontend — moderators only)
+  async function uploadDocument({ title, description, category, visibility, groupIds, file }) {
     const path = `documents/${projectId}/${Date.now()}-${file.name}`
     const { error: upErr } = await supabase.storage.from('project-files').upload(path, file)
     if (upErr) throw upErr
 
     const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(path)
 
-    const { error } = await supabase.from('documents').insert({
+    const { data: doc, error } = await supabase.from('documents').insert({
       project_id: projectId, title, description: description || null,
-      category, file_name: file.name, file_path: publicUrl,
+      category: category || 'overig',
+      visibility: visibility || 'members',
+      file_name: file.name, file_path: publicUrl,
       file_size: file.size, file_type: file.type, uploaded_by: user?.id,
-    })
+    }).select('id').single()
     if (error) throw error
+
+    // Insert group links
+    if (visibility === 'groups' && groupIds?.length > 0) {
+      await supabase.from('document_groups')
+        .insert(groupIds.map(gid => ({ document_id: doc.id, workgroup_id: gid })))
+    }
+
     fetchAll()
   }
 
   // Save a link
-  async function saveLink({ title, description, category, url }) {
-    const { error } = await supabase.from('documents').insert({
+  async function saveLink({ title, description, category, visibility, groupIds, url }) {
+    const { data: doc, error } = await supabase.from('documents').insert({
       project_id: projectId, title, description: description || null,
-      category, doc_type: 'link', url,
+      category: category || 'overig',
+      visibility: visibility || 'members',
+      doc_type: 'link', url,
       file_name: title, file_path: url,
       uploaded_by: user?.id,
-    })
+    }).select('id').single()
     if (error) throw error
+
+    if (visibility === 'groups' && groupIds?.length > 0) {
+      await supabase.from('document_groups')
+        .insert(groupIds.map(gid => ({ document_id: doc.id, workgroup_id: gid })))
+    }
+
     fetchAll()
   }
 
   async function removeDoc(id, source, filePath) {
-
     const storagePath = filePath?.split('/project-files/')[1]
     if (storagePath) {
       await supabase.storage.from('project-files').remove([storagePath])
     }
 
-    if (source === 'dossier') {
+    if (source === 'document') {
+      await supabase.from('document_groups').delete().eq('document_id', id)
       await supabase.from('documents').delete().eq('id', id)
     } else if (source === 'vergadering') {
       await supabase.from('meeting_files').delete().eq('id', id)
-    } else if (source === 'adviseur') {
-      await supabase.from('update_files').delete().eq('id', id)
     }
     fetchAll()
   }
 
   return {
     allDocuments,
-    adviseurDocs: proUpdates,
+    gebouwDocs,
+    infoDocs,
+    otherPublicDocs,
+    memberDocs,
+    groupDocs,
+    getDocsForWorkgroup,
     vergaderingDocs: meetingFiles,
-    dossierDocs: archiveDocs,
     loading,
-    uploadArchiveDoc,
+    uploadDocument,
     saveLink,
     removeDoc,
     refetch: fetchAll,

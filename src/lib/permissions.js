@@ -16,6 +16,7 @@ const ACTION_REQUIREMENTS = {
   // Aspirant level — geïnterviewd en betalend, krijgt interne toegang
   view_internal_updates: 'aspirant',
   view_all_docs: 'aspirant',
+  view_workgroup_docs: 'aspirant',
   view_member_profiles: 'aspirant',
   view_members_list: 'aspirant',
   view_meetings: 'aspirant',
