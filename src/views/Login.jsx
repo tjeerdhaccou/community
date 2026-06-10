@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { checkInvitedEmail, sendOtpCode, verifyOtpCode } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { getProjectSlugFromSubdomain } from '../lib/subdomain'
+import { redirectByRole } from '../lib/loginRedirect'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -68,14 +69,17 @@ export default function Login() {
           console.warn('Could not link intake response:', linkErr)
         }
 
-        let saved
-        try { saved = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
+        // On a subdomain, just go to the root (project or org context handles it)
+        if (getProjectSlugFromSubdomain()) {
+          let saved
+          try { saved = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
+          navigate(saved || '/', { replace: true })
+          return
+        }
 
-        // Only use saved redirect for project-specific pages — role-based
-        // routing (org admin → CMS, platform admin → /platform) goes
-        // through PostLoginRedirect at /dashboard.
-        const useSaved = saved && saved.startsWith('/p/')
-        navigate(useSaved ? saved : '/dashboard', { replace: true })
+        // On main domain: determine role and redirect directly
+        try { localStorage.removeItem('redirectAfterLogin') } catch {}
+        await redirectByRole(result.session, navigate)
       }
     } catch (err) {
       console.error('OTP verify error:', err)

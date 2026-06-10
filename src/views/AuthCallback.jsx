@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getReturnCookie } from '../lib/auth'
+import { redirectByRole } from '../lib/loginRedirect'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -30,11 +31,14 @@ export default function AuthCallback() {
         }
       }
 
-      // Fallback to localStorage (same-domain redirects)
-      let savedPath
-      try { savedPath = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
-      const useSaved = savedPath && savedPath.startsWith('/p/')
-      navigate(useSaved ? savedPath : '/dashboard', { replace: true })
+      // Main domain: determine role and redirect directly
+      try { localStorage.removeItem('redirectAfterLogin') } catch {}
+      const { data: { session: currentSession } } = await supabase.auth.getSession()
+      if (currentSession) {
+        await redirectByRole(currentSession, navigate)
+        return
+      }
+      navigate('/dashboard', { replace: true })
     }
 
     // Cross-subdomain hash-token flow: handle synchronously without a SIGNED_IN
