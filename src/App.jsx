@@ -382,16 +382,19 @@ function OrgSubdomainApp({ orgSlug }) {
       </div>
     )
   }
+  // Org subdomain redirects to CMS
+  useEffect(() => {
+    if (isAdminOfOrg && orgSlug) {
+      window.location.href = `https://admin.buuur.nl/org/${orgSlug}`
+    }
+  }, [isAdminOfOrg, orgSlug])
+
   return (
     <ThemeProvider scope={`org-${orgId}`}>
       <Routes>
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/" element={<Navigate to="/admin" replace />} />
-        <Route path="/admin" element={<OrgDashboard orgId={orgId} />} />
-        <Route path="/settings" element={<OrgSettings orgId={orgId} />} />
-        <Route path="/new-project" element={<NewProject orgId={orgId} />} />
-        <Route path="*" element={<Navigate to="/admin" replace />} />
+        <Route path="*" element={<div className="loading-page"><p>Doorsturen naar beheerportaal...</p></div>} />
       </Routes>
     </ThemeProvider>
   )
