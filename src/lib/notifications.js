@@ -6,6 +6,7 @@ import { logger } from './logger'
 //
 // Types: 'new_update' | 'new_event' | 'new_document' | 'new_post'
 //      | 'new_comment' | 'new_reply' | 'new_update_comment'
+//      | 'document_request' | 'document_request_submitted'
 export async function dispatchNotification({ projectId, type, referenceId, actorId }) {
   if (!projectId || !type || !referenceId) {
     logger.warn('dispatchNotification', 'Missing required args')

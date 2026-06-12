@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { logger, friendlyError } from '../lib/logger'
+import { dispatchNotification } from '../lib/notifications'
 
 export function useDocumentRequests() {
   const { user } = useAuth()
@@ -59,6 +60,7 @@ export function useDocumentRequests() {
       .eq('id', requestId)
       .eq('profile_id', user.id)
     if (error) { logger.error('useDocumentRequests.submit', error); throw new Error(friendlyError(error)) }
+    dispatchNotification({ projectId: project.id, type: 'document_request_submitted', referenceId: requestId, actorId: user.id })
     await fetchRequests()
   }
 
@@ -97,7 +99,7 @@ export function useAdminDocumentRequests(profileId) {
   useEffect(() => { fetchRequests() }, [fetchRequests])
 
   async function createRequest({ type, category, title, description, deadline, attachedFileId }) {
-    const { error } = await supabase.from('document_requests').insert({
+    const { data, error } = await supabase.from('document_requests').insert({
       project_id: project.id,
       profile_id: profileId,
       created_by: user.id,
@@ -107,8 +109,11 @@ export function useAdminDocumentRequests(profileId) {
       description,
       deadline: deadline || null,
       attached_file_id: attachedFileId || null,
-    })
+    }).select('id').single()
     if (error) { logger.error('useAdminDocumentRequests.create', error); throw new Error(friendlyError(error)) }
+    if (data?.id) {
+      dispatchNotification({ projectId: project.id, type: 'document_request', referenceId: data.id, actorId: user.id })
+    }
     await fetchRequests()
   }
 

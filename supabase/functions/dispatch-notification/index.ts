@@ -44,6 +44,8 @@ type Type =
   | 'new_comment'
   | 'new_reply'
   | 'new_update_comment'
+  | 'document_request'
+  | 'document_request_submitted'
 
 // Mapping van notificatie-type naar preference-kolom
 const PREF_COLUMN: Record<Type, 'pref_updates' | 'pref_prikbord' | 'pref_events' | 'pref_documents'> = {
@@ -54,6 +56,8 @@ const PREF_COLUMN: Record<Type, 'pref_updates' | 'pref_prikbord' | 'pref_events'
   new_comment: 'pref_prikbord',
   new_reply: 'pref_prikbord',
   new_update_comment: 'pref_updates',
+  document_request: 'pref_documents',
+  document_request_submitted: 'pref_documents',
 }
 
 serve(async (req) => {
@@ -331,7 +335,7 @@ interface NotificationContext {
   emailLinkPath: string // bv. /updates#123
   inAppTitle: string
   inAppBody: string | null
-  relatedType: 'update' | 'event' | 'document' | 'post' | 'comment'
+  relatedType: 'update' | 'event' | 'document' | 'post' | 'comment' | 'document_request'
 }
 
 async function loadContext(
@@ -491,6 +495,48 @@ async function loadContext(
     }
   }
 
+  if (type === 'document_request') {
+    const { data: dr } = await admin
+      .from('document_requests')
+      .select('title, description, type, expires_at')
+      .eq('id', referenceId)
+      .single()
+    if (!dr) return null
+    const deadline = dr.expires_at ? formatNlDate(dr.expires_at) : null
+    return {
+      project, actorName,
+      emailSubject: `Documentverzoek in ${project.name}: ${dr.title}`,
+      emailIntro: `Het team van ${project.name} heeft een documentverzoek voor je aangemaakt.`,
+      emailHeading: dr.title,
+      emailBody: (dr.description ? truncate(dr.description, 200) : 'Er is een document van je gevraagd.') + (deadline ? `\n\nDeadline: ${deadline}` : ''),
+      emailLinkPath: '/mijn-documenten',
+      inAppTitle: `Nieuw documentverzoek: ${dr.title}`,
+      inAppBody: dr.description ? truncate(dr.description, 100) : null,
+      relatedType: 'document_request',
+    }
+  }
+
+  if (type === 'document_request_submitted') {
+    const { data: dr } = await admin
+      .from('document_requests')
+      .select('title, profile_id, profile:profiles!document_requests_profile_id_fkey(full_name)')
+      .eq('id', referenceId)
+      .single()
+    if (!dr) return null
+    const memberName = dr.profile?.full_name || 'Een lid'
+    return {
+      project, actorName: memberName,
+      emailSubject: `${memberName} heeft gereageerd op documentverzoek "${dr.title}"`,
+      emailIntro: `${memberName} heeft een document ingediend voor "${dr.title}" in ${project.name}.`,
+      emailHeading: `Documentverzoek beantwoord`,
+      emailBody: `${memberName} heeft een bestand geüpload voor "${dr.title}". Controleer en keur het goed of wijs het af.`,
+      emailLinkPath: '/members',
+      inAppTitle: `${memberName} heeft een document ingediend`,
+      inAppBody: dr.title,
+      relatedType: 'document_request',
+    }
+  }
+
   return null
 }
 
@@ -571,6 +617,19 @@ async function resolveRecipients(
       .eq('update_id', c.update_id)
     for (const o of others || []) ids.add(o.author_id)
     return [...ids]
+  }
+
+  if (type === 'document_request') {
+    const { data: dr } = await admin
+      .from('document_requests')
+      .select('profile_id')
+      .eq('id', refId)
+      .single()
+    return dr?.profile_id ? [dr.profile_id] : []
+  }
+
+  if (type === 'document_request_submitted') {
+    return await memberIds(admin, projectId, 'moderator')
   }
 
   return []
