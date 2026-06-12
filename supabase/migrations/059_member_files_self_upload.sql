@@ -1,5 +1,30 @@
 -- Fix: alle member_files policies gebruikten has_membership(uuid, integer)
 -- maar de functie verwacht has_membership(uuid, text). Opnieuw aanmaken.
+-- Ook: storage bucket 'member-files' ontbrak volledig.
+
+-- ============================================================================
+-- Storage bucket voor member-files (privé — alleen via signed URLs)
+-- ============================================================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('member-files', 'member-files', false)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Authenticated users can upload member files"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'member-files' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can read member files"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'member-files' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can delete member files"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'member-files' AND auth.role() = 'authenticated');
+
+-- ============================================================================
+-- Tabel RLS fixes
+-- ============================================================================
 
 DROP POLICY IF EXISTS "project_admins_all" ON member_files;
 DROP POLICY IF EXISTS "member_own_files_read" ON member_files;
