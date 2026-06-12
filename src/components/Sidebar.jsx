@@ -70,13 +70,26 @@ export default function Sidebar() {
 
   useEffect(() => {
     if (!project?.id || !user?.id || isProfessional) return
-    supabase
-      .from('document_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('project_id', project.id)
-      .eq('profile_id', user.id)
-      .eq('status', 'pending')
-      .then(({ count }) => setDocRequestCount(count || 0))
+    function fetchCount() {
+      supabase
+        .from('document_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('project_id', project.id)
+        .eq('profile_id', user.id)
+        .eq('status', 'pending')
+        .then(({ count }) => setDocRequestCount(count || 0))
+    }
+    fetchCount()
+    const channel = supabase
+      .channel(`sidebar-doc-req-${project.id}-${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'document_requests',
+        filter: `profile_id=eq.${user.id}`,
+      }, fetchCount)
+      .subscribe()
+    return () => supabase.removeChannel(channel)
   }, [project?.id, user?.id, isProfessional])
 
   function isActive(to) {
