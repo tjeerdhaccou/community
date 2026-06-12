@@ -13,7 +13,7 @@ export default function Dashboard() {
   const { profile } = useAuth()
   const navigate = useNavigate()
   const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
-  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, stats: { members: 0, updates: 0 } })
+  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
 
   useEffect(() => {
@@ -29,9 +29,10 @@ export default function Dashboard() {
         supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('project_id', project.id).neq('role', 'guest'),
         supabase.from('updates').select('id', { count: 'exact', head: true }).eq('project_id', project.id),
         supabase.from('intake_responses').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('status', 'pending'),
+        profile?.id ? supabase.from('document_requests').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'pending') : Promise.resolve({ count: 0 }),
       ]
 
-      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes] = await Promise.all(queries)
+      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes, docReqRes] = await Promise.all(queries)
       if (stale) return
 
       setFeed({
@@ -40,6 +41,7 @@ export default function Dashboard() {
         latestPosts: postsRes.data || [],
         newMembers: membersRes.data || [],
         intakePending: intakeRes.count || 0,
+        docRequests: docReqRes.count || 0,
         stats: { members: memberCount.count || 0, updates: updateCount.count || 0 },
       })
     }
@@ -155,6 +157,20 @@ export default function Dashboard() {
           <div className="dash-intake-alert__text">
             <strong>{feed.intakePending} nieuwe {feed.intakePending === 1 ? 'aanmelding' : 'aanmeldingen'}</strong>
             <span>via het intake formulier</span>
+          </div>
+          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+        </div>
+      )}
+
+      {/* Document request alert for members */}
+      {feed.docRequests > 0 && (
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/mijn-documenten`)} role="button" tabIndex={0} style={{ borderLeft: '4px solid #2D8CFF' }}>
+          <div className="dash-intake-alert__icon" style={{ background: 'rgba(45, 140, 255, 0.1)', color: '#2D8CFF' }}>
+            <i className="fa-solid fa-file-circle-question" />
+          </div>
+          <div className="dash-intake-alert__text">
+            <strong>{feed.docRequests} {feed.docRequests === 1 ? 'documentverzoek' : 'documentverzoeken'}</strong>
+            <span>wacht op jouw actie</span>
           </div>
           <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
         </div>

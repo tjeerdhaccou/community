@@ -120,6 +120,7 @@ export const NOTIFICATION_CONFIG = {
   role_change:          { icon: 'fa-solid fa-user-tag',      color: '#3BD269' },
   membership_approved:  { icon: 'fa-solid fa-circle-check',  color: '#3BD269' },
   new_document:         { icon: 'fa-solid fa-folder-open',   color: '#7B5EA7' },
+  document_request:     { icon: 'fa-solid fa-file-circle-question', color: '#2D8CFF' },
 }
 
 // ===== Event types =====

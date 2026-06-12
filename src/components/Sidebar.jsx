@@ -55,6 +55,8 @@ export default function Sidebar() {
   const menuRef = useRef(null)
   const isProfessional = role === 'professional'
   const [intakePendingCount, setIntakePendingCount] = useState(0)
+  const [docRequestCount, setDocRequestCount] = useState(0)
+  const { user } = useAuth()
 
   useEffect(() => {
     if (!project?.id || !canDo(role, 'manage_intake')) return
@@ -65,6 +67,17 @@ export default function Sidebar() {
       .eq('status', 'pending')
       .then(({ count }) => setIntakePendingCount(count || 0))
   }, [project?.id, role])
+
+  useEffect(() => {
+    if (!project?.id || !user?.id || isProfessional) return
+    supabase
+      .from('document_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('project_id', project.id)
+      .eq('profile_id', user.id)
+      .eq('status', 'pending')
+      .then(({ count }) => setDocRequestCount(count || 0))
+  }, [project?.id, user?.id, isProfessional])
 
   function isActive(to) {
     if (to === '') return location.pathname === (basePath || '/') || location.pathname === basePath + '/'
@@ -116,6 +129,9 @@ export default function Sidebar() {
         )}
         {item.to === 'ledenwerving' && intakePendingCount > 0 && (
           <span className="sidebar-badge">{intakePendingCount}</span>
+        )}
+        {item.to === 'mijn-documenten' && docRequestCount > 0 && (
+          <span className="sidebar-badge">{docRequestCount}</span>
         )}
       </div>
     )
