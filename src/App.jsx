@@ -45,6 +45,7 @@ import MyDocuments from './views/MyDocuments'
 import PlatformAdmin from './views/PlatformAdmin'
 import OrgOnboarding from './views/OrgOnboarding'
 import Landing from './views/Landing'
+import Start from './views/Start'
 import PostLoginRedirect from './views/PostLoginRedirect'
 import ProfileCompletionGuard from './components/ProfileCompletionGuard'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
@@ -314,6 +315,7 @@ function NormalRoutes() {
       <Route path="/intake/:projectId" element={<IntakeForm />} />
 
       <Route path="/" element={<Landing />} />
+      <Route path="/start" element={<Start />} />
       <Route path="/dashboard" element={<AuthGuard><PostLoginRedirect /></AuthGuard>} />
 
       {/* Platform admin */}

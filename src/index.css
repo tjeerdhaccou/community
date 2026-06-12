@@ -27,7 +27,9 @@ html, body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--bg-page);
+  background-color: var(--bg-page);
+  background-image: var(--doodle-pattern, none);
+  background-size: 480px 480px;
   color: var(--text-primary);
   font-family: var(--font-family, 'Inter', -apple-system, sans-serif);
   font-size: 17px;
@@ -192,7 +194,9 @@ select.input {
   scrollbar-gutter: stable;
   padding: 32px;
   padding-top: 16px;
-  background: var(--bg-page);
+  background-color: var(--bg-page);
+  background-image: var(--doodle-pattern, none);
+  background-size: 480px 480px;
   position: relative;
 }
 .main-content > *:not(.main-topbar) {

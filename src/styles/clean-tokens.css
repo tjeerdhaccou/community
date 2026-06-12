@@ -35,11 +35,13 @@
      COLORS — Neutrals (Light Theme)
      Clean uses a warm, barely-there gray background with pure white cards.
      ────────────────────────────────────────────────────────────────────────── */
-  --bg-page:             #F7F8FA;   /* App background — warm gray */
+  --bg-page:             #FBF7EE;   /* App background — warm paper (matcht marketing) */
   --bg-surface:          #FFFFFF;   /* Cards, sidebar, modals, sheets */
-  --bg-hover:            #F2F3F6;   /* Hover state on list items */
-  --bg-active:           #EBEDF2;   /* Active/pressed state */
-  --bg-selected:         #E8EDF5;   /* Selected item background */
+  --bg-hover:            #F3EEE2;   /* Hover state on list items */
+  --bg-active:           #EBE4D5;   /* Active/pressed state */
+  --bg-selected:         #EFE7D6;   /* Selected item background */
+  /* Doodle-achtergrond: zachte scribble-tegel achter de pagina (zie index.css) */
+  --doodle-pattern:      url('/doodle-pattern.svg');
 
   --text-primary:        #1A1A2E;   /* Headings, primary content — near-black with blue hint */
   --text-secondary:      #5A5F72;   /* Body text, descriptions */
@@ -270,6 +272,7 @@
    ============================================================================ */
 
 [data-theme="dark"] {
+  --doodle-pattern:      none;   /* geen scribble-achtergrond in dark mode */
   --bg-page:             #1C1C1E;
   --bg-surface:          #2C2C2E;
   --bg-hover:            #3A3A3C;
@@ -303,6 +306,7 @@
    ============================================================================ */
 
 [data-theme="contrast"] {
+  --doodle-pattern:      none;   /* geen scribble-achtergrond in hoog-contrast modus */
   --bg-page:             #EDF1F5;
   --bg-surface:          #FFFFFF;
   --bg-hover:            #E0E0E0;

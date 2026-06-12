@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <defs>
+    <g id="d-heart"><path d="M20 33 C9 25 5 17 9 12 C13 7 18 10 20 15 C22 10 27 7 31 12 C35 17 31 25 20 33 Z"/></g>
+    <g id="d-sparkle"><path d="M20 3 C21 14 26 19 37 20 C26 21 21 26 20 37 C19 26 14 21 3 20 C14 19 19 14 20 3 Z"/></g>
+    <g id="d-house"><path d="M7 20 L20 8 L33 20 M11 17 L11 32 L29 32 L29 17"/></g>
+    <g id="d-sun"><path d="M20 13 a7 7 0 1 0 0.1 0 M20 3 L20 7 M20 33 L20 37 M3 20 L7 20 M33 20 L37 20 M8 8 L11 11 M29 29 L32 32 M32 8 L29 11 M11 29 L8 32"/></g>
+    <g id="d-smiley"><path d="M20 4 a16 16 0 1 0 0.1 0 M14 17 L14 21 M26 17 L26 21 M13 26 C17 32 23 32 27 26"/></g>
+    <g id="d-asterisk"><path d="M20 5 L20 35 M7 12 L33 28 M33 12 L7 28"/></g>
+    <g id="d-squiggle"><path d="M3 20 Q10 11 17 20 T31 20 T45 20"/></g>
+    <g id="d-star"><path d="M20 4 L24 15 L36 16 L27 24 L30 36 L20 29 L10 36 L13 24 L4 16 L16 15 Z"/></g>
+    <g id="d-leaf"><path d="M9 31 C9 17 20 9 31 9 C31 23 20 31 9 31 Z M15 25 C20 20 25 16 29 13"/></g>
+    <g id="d-cloud"><path d="M11 27 C5 27 5 18 11 18 C11 11 20 11 22 16 C24 10 34 12 33 19 C39 19 39 27 33 27 Z"/></g>
+    <g id="d-bolt"><path d="M23 4 L12 23 L20 23 L17 36 L30 17 L22 17 Z"/></g>
+    <g id="d-plus"><path d="M20 8 L20 32 M8 20 L32 20"/></g>
+    <g id="d-moon"><path d="M27 7 a15 15 0 1 0 5 23 a11 11 0 0 1 -5 -23 Z"/></g>
+    <g id="d-oval"><path d="M30 9 C15 5 5 16 8 25 C11 35 26 37 33 29 C39 22 37 11 22 9"/></g>
+  </defs>
+  <g fill="none" stroke="#CABFA6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.15">
+    <use href="#d-heart"    transform="translate(40 55) rotate(-10 20 20)"/>
+    <use href="#d-sparkle"  transform="translate(150 35) rotate(0 20 20) scale(0.85)"/>
+    <use href="#d-squiggle" transform="translate(238 55) rotate(-6 20 20)"/>
+    <use href="#d-house"    transform="translate(360 45) rotate(6 20 20)"/>
+    <use href="#d-sun"      transform="translate(55 150) rotate(0 20 20)"/>
+    <use href="#d-star"     transform="translate(170 145) rotate(12 20 20) scale(0.9)"/>
+    <use href="#d-smiley"   transform="translate(290 130) rotate(-8 20 20)"/>
+    <use href="#d-cloud"    transform="translate(400 150) rotate(0 20 20)"/>
+    <use href="#d-asterisk" transform="translate(35 250) rotate(0 20 20)"/>
+    <use href="#d-moon"     transform="translate(135 245) rotate(10 20 20)"/>
+    <use href="#d-oval"     transform="translate(255 250) rotate(-12 20 20)"/>
+    <use href="#d-leaf"     transform="translate(360 250) rotate(8 20 20)"/>
+    <use href="#d-bolt"     transform="translate(70 355) rotate(-6 20 20)"/>
+    <use href="#d-plus"     transform="translate(175 350) rotate(0 20 20)"/>
+    <use href="#d-heart"    transform="translate(285 365) rotate(14 20 20)"/>
+    <use href="#d-sparkle"  transform="translate(390 355) rotate(0 20 20) scale(0.8)"/>
+    <use href="#d-squiggle" transform="translate(40 425) rotate(0 20 20) scale(0.9)"/>
+  </g>
+</svg>
