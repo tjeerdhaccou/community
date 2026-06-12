@@ -16,7 +16,7 @@ export function useMyDocuments() {
     setLoading(true)
     const { data, error } = await supabase
       .from('member_files')
-      .select('id, title, description, category, file_name, file_path, file_size, file_type, is_visible_to_member, uploaded_by, created_at')
+      .select('id, title, description, category, file_name, file_path, file_size, file_type, is_visible_to_member, uploaded_by, request_id, expires_at, created_at')
       .eq('profile_id', user.id)
       .eq('project_id', project.id)
       .eq('is_visible_to_member', true)
@@ -32,21 +32,30 @@ export function useMyDocuments() {
 
   useEffect(() => { fetchFiles() }, [fetchFiles])
 
-  async function download(filePath, fileName) {
+  async function download(fileId, filePath, fileName) {
     const { data, error } = await supabase.storage
       .from('member-files')
-      .createSignedUrl(filePath, 120)
+      .createSignedUrl(filePath, 60)
 
     if (error) {
       logger.error('Error creating download URL:', error)
       return
     }
+
+    supabase.from('file_download_log').insert({
+      file_id: fileId,
+      downloaded_by: user.id,
+      project_id: project.id,
+    }).then(({ error: logErr }) => {
+      if (logErr) logger.error('download audit log failed', logErr)
+    })
+
     window.open(data.signedUrl, '_blank')
   }
 
-  async function upload(file) {
+  async function upload(file, requestId = null) {
     const { publicUrl, path } = await uploadFile(file, 'member-files')
-    const { error } = await supabase.from('member_files').insert({
+    const row = {
       profile_id: user.id,
       project_id: project.id,
       title: file.name,
@@ -57,9 +66,13 @@ export function useMyDocuments() {
       uploaded_by: user.id,
       is_visible_to_member: true,
       category: 'overig',
-    })
+    }
+    if (requestId) row.request_id = requestId
+
+    const { data, error } = await supabase.from('member_files').insert(row).select('id').single()
     if (error) { logger.error('useMyDocuments.upload', error); throw new Error(friendlyError(error)) }
     await fetchFiles()
+    return data?.id
   }
 
   async function remove(fileId) {
@@ -68,5 +81,5 @@ export function useMyDocuments() {
     setFiles(prev => prev.filter(f => f.id !== fileId))
   }
 
-  return { files, loading, download, upload, remove }
+  return { files, loading, download, upload, remove, refetch: fetchFiles }
 }

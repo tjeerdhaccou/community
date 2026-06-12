@@ -6,6 +6,7 @@ import { useProject } from '../contexts/ProjectContext'
 import { ROLES, ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_STAGES, FUNNEL_LABELS, FUNNEL_COLORS, FUNNEL_ICONS, formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
 import { uploadFile } from '../lib/storage'
 import { useAuth } from '../contexts/AuthContext'
+import { useAdminDocumentRequests } from '../hooks/useDocumentRequests'
 import ConfirmModal from './ConfirmModal'
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
@@ -495,6 +496,9 @@ function MemberDossier({ profileId, projectId }) {
 
   return (
     <div className="member-dossier">
+      {/* Document requests section */}
+      <DossierRequests profileId={profileId} projectId={projectId} />
+
       {/* Files section */}
       <div className="member-dossier__section">
         <div className="member-dossier__section-header">
@@ -596,6 +600,206 @@ function MemberDossier({ profileId, projectId }) {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+const REQUEST_STATUS_CONFIG = {
+  pending: { label: 'Wacht op lid', color: 'var(--accent-orange, #F5A623)', bg: 'rgba(245, 166, 35, 0.12)' },
+  submitted: { label: 'Ingediend', color: 'var(--accent-blue, #4A90D9)', bg: 'rgba(74, 144, 217, 0.12)' },
+  approved: { label: 'Goedgekeurd', color: 'var(--accent-green, #3BD269)', bg: 'rgba(59, 210, 105, 0.12)' },
+  rejected: { label: 'Afgekeurd', color: 'var(--accent-red, #E53E3E)', bg: 'rgba(229, 62, 62, 0.12)' },
+}
+
+const REQUEST_TYPE_OPTIONS = [
+  { value: 'upload_request', label: 'Upload gevraagd' },
+  { value: 'sign_request', label: 'Ter ondertekening' },
+  { value: 'review_document', label: 'Ter inzage' },
+]
+
+const CATEGORY_OPTIONS = [
+  { value: 'identiteit', label: 'Identiteitsbewijs' },
+  { value: 'financieel', label: 'Financieel' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'formulier', label: 'Formulier' },
+  { value: 'correspondentie', label: 'Correspondentie' },
+  { value: 'overig', label: 'Overig' },
+]
+
+function DossierRequests({ profileId, projectId }) {
+  const { requests, loading, createRequest, reviewRequest, deleteRequest } = useAdminDocumentRequests(profileId)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState({ type: 'upload_request', category: 'overig', title: '', description: '', deadline: '' })
+  const [saving, setSaving] = useState(false)
+  const [reviewingId, setReviewingId] = useState(null)
+  const [reviewNote, setReviewNote] = useState('')
+
+  async function handleCreate(e) {
+    e.preventDefault()
+    if (!form.title.trim()) return
+    setSaving(true)
+    try {
+      await createRequest({
+        type: form.type,
+        category: form.category,
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        deadline: form.deadline || null,
+      })
+      setForm({ type: 'upload_request', category: 'overig', title: '', description: '', deadline: '' })
+      setShowForm(false)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleReview(requestId, approved) {
+    try {
+      await reviewRequest(requestId, approved, reviewNote.trim() || null)
+      setReviewingId(null)
+      setReviewNote('')
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  async function handleDownloadResponse(filePath) {
+    const { data, error } = await supabase.storage.from('member-files').createSignedUrl(filePath, 60)
+    if (error) { console.error(error); return }
+    window.open(data.signedUrl, '_blank')
+  }
+
+  return (
+    <div className="member-dossier__section">
+      <div className="member-dossier__section-header">
+        <h4><i className="fa-solid fa-file-circle-question" /> Documentverzoeken</h4>
+        <button className="btn-secondary btn-sm" onClick={() => setShowForm(s => !s)}>
+          <i className={`fa-solid ${showForm ? 'fa-times' : 'fa-plus'}`} />
+          {showForm ? 'Annuleer' : 'Nieuw verzoek'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form className="doc-request-form" onSubmit={handleCreate}>
+          <div className="doc-request-form__row">
+            <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+              {REQUEST_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+              {CATEGORY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <input
+            type="text"
+            placeholder="Titel, bijv. 'Upload identiteitsbewijs'"
+            value={form.title}
+            onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+            required
+          />
+          <textarea
+            placeholder="Toelichting (optioneel)"
+            value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+            rows={2}
+          />
+          <div className="doc-request-form__row">
+            <input
+              type="date"
+              value={form.deadline}
+              onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
+              placeholder="Deadline (optioneel)"
+            />
+            <button type="submit" className="btn-primary btn-sm" disabled={saving || !form.title.trim()}>
+              {saving ? 'Aanmaken...' : 'Verzoek aanmaken'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {loading ? (
+        <p className="member-dossier__empty">Laden...</p>
+      ) : requests.length === 0 ? (
+        <p className="member-dossier__empty">Geen documentverzoeken.</p>
+      ) : (
+        <div>
+          {requests.map(req => {
+            const sc = REQUEST_STATUS_CONFIG[req.status]
+            const isReviewing = reviewingId === req.id
+            return (
+              <div key={req.id} className="admin-request-row">
+                <div className="admin-request-row__info">
+                  <div className="admin-request-row__title">{req.title}</div>
+                  <div className="admin-request-row__meta">
+                    <span>{CATEGORY_OPTIONS.find(c => c.value === req.category)?.label || req.category}</span>
+                    <span>{new Date(req.created_at).toLocaleDateString('nl-NL')}</span>
+                    {req.deadline && (
+                      <span style={{ color: new Date(req.deadline) < new Date() && req.status === 'pending' ? 'var(--accent-red)' : undefined }}>
+                        Deadline: {new Date(req.deadline).toLocaleDateString('nl-NL')}
+                      </span>
+                    )}
+                  </div>
+                  {req.review_note && (
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                      Notitie: {req.review_note}
+                    </div>
+                  )}
+
+                  {/* Review controls for submitted requests */}
+                  {req.status === 'submitted' && (
+                    <div style={{ marginTop: 8 }}>
+                      {req.response_file && (
+                        <button
+                          className="btn-secondary btn-sm"
+                          onClick={() => handleDownloadResponse(req.response_file.file_path)}
+                          style={{ marginRight: 8 }}
+                        >
+                          <i className="fa-solid fa-download" /> {req.response_file.file_name}
+                        </button>
+                      )}
+                      {isReviewing ? (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            placeholder="Notitie (optioneel)"
+                            value={reviewNote}
+                            onChange={e => setReviewNote(e.target.value)}
+                            style={{ flex: 1, fontSize: 13 }}
+                          />
+                          <button className="btn-primary btn-sm" onClick={() => handleReview(req.id, true)}>
+                            <i className="fa-solid fa-check" /> Goedkeuren
+                          </button>
+                          <button className="btn-secondary btn-sm" onClick={() => handleReview(req.id, false)} style={{ color: 'var(--accent-red)' }}>
+                            <i className="fa-solid fa-times" /> Afkeuren
+                          </button>
+                          <button className="btn-icon-sm" onClick={() => { setReviewingId(null); setReviewNote('') }}>
+                            <i className="fa-solid fa-times" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button className="btn-primary btn-sm" onClick={() => setReviewingId(req.id)} style={{ marginTop: 4 }}>
+                          <i className="fa-solid fa-magnifying-glass" /> Beoordelen
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <span className="admin-request-row__status" style={{ background: sc.bg, color: sc.color }}>
+                  {sc.label}
+                </span>
+
+                <div className="admin-request-row__actions">
+                  <button className="btn-icon-sm" onClick={() => deleteRequest(req.id)} title="Verwijderen" style={{ color: 'var(--accent-red)' }}>
+                    <i className="fa-solid fa-trash" />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
