@@ -4,6 +4,7 @@ import { useDocumentRequests } from '../hooks/useDocumentRequests'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/Toast'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
+import ConfirmModal from '../components/ConfirmModal'
 
 const CATEGORY_LABELS = {
   contract: 'Contract',
@@ -414,6 +415,7 @@ function RequestCard({ request, uploading, onUpload, onMarkReviewed, onDownload,
 }
 
 function FileRow({ file, userId, onDownload, onRemove }) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const icon = fileIcon(file.file_type || file.file_name)
   const iconColor = fileIconColor(file.file_type || file.file_name)
   const isMine = file.uploaded_by === userId
@@ -452,7 +454,7 @@ function FileRow({ file, userId, onDownload, onRemove }) {
         {isMine && (
           <button
             className="btn-icon-sm"
-            onClick={e => { e.stopPropagation(); onRemove(file.id) }}
+            onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
             title="Verwijderen"
             style={{ color: 'var(--accent-red)' }}
           >
@@ -463,6 +465,15 @@ function FileRow({ file, userId, onDownload, onRemove }) {
           <i className="fa-solid fa-download" />
         </div>
       </div>
+      {confirmDelete && (
+        <ConfirmModal
+          message={`Weet je zeker dat je "${file.title}" wilt verwijderen? Dit kan niet ongedaan gemaakt worden.`}
+          confirmLabel="Verwijderen"
+          danger
+          onConfirm={() => { setConfirmDelete(false); onRemove(file.id) }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
     </div>
   )
 }
