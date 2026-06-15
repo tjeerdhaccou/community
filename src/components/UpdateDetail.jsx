@@ -91,13 +91,13 @@ export default function UpdateDetail({ update, onClose, onEdit, onReaction, canE
             </div>
           </div>
 
-          <div className="post-detail-text"><Linkify text={update.body} /></div>
-
           {update.image_url && (
             <div className="post-detail-image">
               <img src={update.image_url} alt={update.title || ''} />
             </div>
           )}
+
+          <div className="post-detail-text"><Linkify text={update.body} /></div>
 
           {update.attachments && update.attachments.length > 0 && (
             <div className="update-detail__attachments">

@@ -3,13 +3,13 @@ import { useProject } from '../contexts/ProjectContext'
 import { canDo } from '../lib/permissions'
 import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
 
-export default function UpdateCard({ update, onEdit, onReaction, onClick }) {
+export default function UpdateCard({ update, onEdit, onReaction, onClick, featured = false }) {
   const { role } = useProject()
   const [showReactions, setShowReactions] = useState(false)
   const tagStyle = UPDATE_TAG_COLORS[update.tag] || { bg: 'var(--bg-hover)', color: 'var(--text-secondary)' }
 
   return (
-    <article className="update-card" onClick={onClick} style={{ cursor: 'pointer' }}>
+    <article className={`update-card${featured ? ' update-card--featured' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
       {update.image_url && (
         <div className="update-card__image">
           <img src={update.image_url} alt={update.title || ''} />

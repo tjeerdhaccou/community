@@ -15,7 +15,7 @@
     <g id="d-moon"><path d="M27 7 a15 15 0 1 0 5 23 a11 11 0 0 1 -5 -23 Z"/></g>
     <g id="d-oval"><path d="M30 9 C15 5 5 16 8 25 C11 35 26 37 33 29 C39 22 37 11 22 9"/></g>
   </defs>
-  <g fill="none" stroke="#CABFA6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.15">
+  <g fill="none" stroke="#CABFA6" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.06">
     <use href="#d-heart"    transform="translate(40 55) rotate(-10 20 20)"/>
     <use href="#d-sparkle"  transform="translate(150 35) rotate(0 20 20) scale(0.85)"/>
     <use href="#d-squiggle" transform="translate(238 55) rotate(-6 20 20)"/>
