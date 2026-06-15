@@ -26,7 +26,13 @@ const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
 const FROM_NAME = Deno.env.get('FROM_NAME') || 'Buuur'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+// Use a new secret key (sb_secret_…), preferring Supabase's auto-managed SUPABASE_SECRET_KEYS,
+// then an explicit SB_SECRET_KEY (only if it's actually a secret key), and finally the legacy service_role.
+const _explicitSecret = Deno.env.get('SB_SECRET_KEY') || ''
+const SERVICE_ROLE_KEY =
+  (Deno.env.get('SUPABASE_SECRET_KEYS') || '').match(/sb_secret_[A-Za-z0-9_-]+/)?.[0] ||
+  (_explicitSecret.startsWith('sb_secret_') ? _explicitSecret : '') ||
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET') || ''
 const MAIN_DOMAIN = Deno.env.get('MAIN_DOMAIN') || 'buuur.nl'
 

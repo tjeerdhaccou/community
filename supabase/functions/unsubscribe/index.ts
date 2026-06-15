@@ -9,7 +9,13 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+// Use a new secret key (sb_secret_…), preferring Supabase's auto-managed SUPABASE_SECRET_KEYS,
+// then an explicit SB_SECRET_KEY (only if it's actually a secret key), and finally the legacy service_role.
+const _explicitSecret = Deno.env.get('SB_SECRET_KEY') || ''
+const SERVICE_ROLE_KEY =
+  (Deno.env.get('SUPABASE_SECRET_KEYS') || '').match(/sb_secret_[A-Za-z0-9_-]+/)?.[0] ||
+  (_explicitSecret.startsWith('sb_secret_') ? _explicitSecret : '') ||
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET') || ''
 
 const VALID_TYPES = new Set(['pref_updates', 'pref_prikbord', 'pref_events', 'pref_documents'])
