@@ -185,6 +185,7 @@ select.input {
 .app-layout {
   display: flex;
   height: 100vh;
+  height: 100dvh; /* volgt de zichtbare viewport op mobiel; Safari-balk klapt netjes in */
   overflow: hidden;
 }
 
@@ -472,6 +473,7 @@ select.input {
 /* ===== Login ===== */
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1434,6 +1436,48 @@ select.input {
   display: flex;
   justify-content: center;
   gap: 8px;
+}
+
+/* ===== Modals als bottom-sheet op mobiel ===== */
+@keyframes modal-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  /* Vol-breed omhoog vanaf de onderkant, ronde bovenhoeken */
+  .modal-overlay > .modal-card,
+  .modal-overlay > .update-detail-card,
+  .modal-overlay > .event-detail-card,
+  .modal-overlay > .post-detail-card {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    border-radius: 16px 16px 0 0;
+    animation: modal-sheet-up 0.22s ease-out;
+  }
+  /* Kleine bevestigingsdialogen blijven een gecentreerde kaart */
+  .modal-overlay:has(.modal-card--confirm) {
+    align-items: center;
+    padding: 24px;
+  }
+  .modal-overlay > .modal-card--confirm {
+    width: auto;
+    max-width: 380px;
+    border-radius: var(--radius-lg, 16px);
+    animation: none;
+  }
+}
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+  .modal-overlay > .modal-card,
+  .modal-overlay > .update-detail-card,
+  .modal-overlay > .event-detail-card,
+  .modal-overlay > .post-detail-card {
+    animation: none;
+  }
 }
 
 /* ===== Member Profile Modal ===== */
@@ -2974,13 +3018,17 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: auto;
   padding-top: 6px;
 }
 .event-card__footer-left {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
 }
 
 .event-card__title {
@@ -3127,6 +3175,12 @@ select.input {
   .event-card__title { font-size: 15px; }
   .event-card { min-height: auto; padding: 12px 14px; gap: 12px; }
   .event-card__avatar { width: 24px; height: 24px; }
+  /* RSVP-knop onder de avatarrij i.p.v. ernaast — voorkomt afkappen */
+  .event-card__rsvp-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+  }
 }
 
 /* Event Detail */
@@ -5189,6 +5243,7 @@ select.input {
   align-items: center;
   justify-content: center;
   height: 100vh;
+  height: 100dvh;
   background: var(--bg-page, #F7F8FA);
   padding: 24px;
 }
@@ -5228,6 +5283,7 @@ select.input {
   align-items: center;
   justify-content: center;
   height: 100vh;
+  height: 100dvh;
   color: var(--text-tertiary);
 }
 
@@ -5239,6 +5295,7 @@ select.input {
   align-items: center;
   justify-content: center;
   height: 100vh;
+  height: 100dvh;
   text-align: center;
   color: var(--text-tertiary, #9BA1B0);
   gap: 8px;
@@ -5290,6 +5347,12 @@ select.input {
 
   .dashboard-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Fase-labels onder de stippen lopen samen op smalle schermen;
+     de actieve fase staat al in de stepper-header. */
+  .dash-stepper__labels {
+    display: none;
   }
 
   .main-topbar {
