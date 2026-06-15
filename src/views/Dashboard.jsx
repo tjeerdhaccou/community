@@ -164,8 +164,8 @@ export default function Dashboard() {
 
       {/* Document request alert for members */}
       {feed.docRequests > 0 && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/mijn-documenten`)} role="button" tabIndex={0} style={{ borderLeft: '4px solid #2D8CFF' }}>
-          <div className="dash-intake-alert__icon" style={{ background: 'rgba(45, 140, 255, 0.1)', color: '#2D8CFF' }}>
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/mijn-documenten`)} role="button" tabIndex={0}>
+          <div className="dash-intake-alert__icon" style={{ background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' }}>
             <i className="fa-solid fa-file-circle-question" />
           </div>
           <div className="dash-intake-alert__text">
