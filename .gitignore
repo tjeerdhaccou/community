@@ -2,7 +2,8 @@ IGNORE/
 node_modules
 dist
 .env
-.env.local
+.env.*
+!.env.example
 *.local
 supabase/.temp/
 .vercel
