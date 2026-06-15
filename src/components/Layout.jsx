@@ -9,14 +9,13 @@ function ThemeToggle() {
   const { mode, setMode } = useTheme()
 
   const modes = [
-    { value: 'light', icon: 'fa-solid fa-sun', label: 'Licht' },
     { value: 'warm', icon: 'fa-solid fa-cloud-sun', label: 'Warm' },
     { value: 'dark', icon: 'fa-solid fa-moon', label: 'Donker' },
     { value: 'contrast', icon: 'fa-solid fa-eye', label: 'Hoog contrast' },
   ]
 
-  const current = modes.find(m => m.value === mode)
-  const nextIndex = (modes.findIndex(m => m.value === mode) + 1) % modes.length
+  const current = modes.find(m => m.value === mode) || modes[0]
+  const nextIndex = (modes.findIndex(m => m.value === current.value) + 1) % modes.length
 
   return (
     <button

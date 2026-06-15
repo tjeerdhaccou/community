@@ -13,7 +13,10 @@ export function ThemeProvider({ children, projectBranding, scope }) {
 
   const [mode, setModeState] = useState(() => {
     if (!storageKey) return 'light'
-    return safeStorage.getItem(storageKey) || projectBranding?.default_theme || 'light'
+    const stored = safeStorage.getItem(storageKey) || projectBranding?.default_theme || 'light'
+    // Front-end project-dashboard biedt 'light' niet meer aan — val terug op 'warm'.
+    if (scope?.startsWith('project-') && stored === 'light') return 'warm'
+    return stored
   })
 
   // If no scope, mode is always light
