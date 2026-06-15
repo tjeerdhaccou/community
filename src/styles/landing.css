@@ -954,6 +954,125 @@ textarea.lp-input { resize: vertical; }
   border-top: 1px solid rgba(243, 240, 235, 0.12);
 }
 
+/* ===== Pijn-sectie ===== */
+.lp-pain {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 96px 32px 24px;
+}
+.lp-pain__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.lp-pain__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: #fff;
+  border: 2px solid var(--lp-ink);
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 4px 5px 0 rgba(35, 33, 27, 0.12);
+}
+.lp-pain__item i {
+  flex-shrink: 0;
+  color: var(--lp-coral);
+  font-size: 20px;
+  margin-top: 2px;
+}
+.lp-pain__item span {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* 3-koloms variant voor de oplossing-sectie */
+.lp-features__grid--3 { grid-template-columns: repeat(3, 1fr); }
+
+/* ===== Voor wie (persona-strip) ===== */
+.lp-personas {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 32px 96px;
+}
+.lp-personas__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.lp-persona {
+  text-align: center;
+  padding: 0 8px;
+}
+.lp-persona i {
+  font-size: 28px;
+  color: var(--lp-lilac);
+  margin-bottom: 14px;
+}
+.lp-persona h3 {
+  font-family: var(--lp-display);
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.lp-persona p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: rgba(35, 33, 27, 0.7);
+  margin: 0;
+}
+
+/* ===== Plan-accent (pro = aanbevolen) ===== */
+.lp-plan--featured {
+  box-shadow: 8px 10px 0 var(--lp-lilac);
+}
+.lp-plan--featured:hover {
+  box-shadow: 11px 13px 0 var(--lp-lilac);
+}
+
+/* ===== Testimonial eyebrow ===== */
+.lp-quote__eyebrow {
+  font-family: var(--lp-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(35, 33, 27, 0.45);
+  margin: 0 0 20px;
+}
+
+/* ===== Zijdeur (bewoners/initiatiefnemers) ===== */
+.lp-sidedoor {
+  max-width: 1000px;
+  margin: 0 auto 96px;
+  padding: 0 32px;
+}
+.lp-sidedoor__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  background: var(--lp-green-soft);
+  border: 2px solid var(--lp-ink);
+  border-radius: 24px;
+  box-shadow: 6px 7px 0 var(--lp-green);
+  padding: 32px 40px;
+}
+.lp-sidedoor__text h3 {
+  font-family: var(--lp-display);
+  font-size: 23px;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+.lp-sidedoor__text p {
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(35, 33, 27, 0.72);
+  margin: 0;
+}
+.lp-sidedoor .lp-btn { flex-shrink: 0; }
+
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .lp-hero__title { font-size: 48px; letter-spacing: -1px; }
@@ -968,6 +1087,8 @@ textarea.lp-input { resize: vertical; }
   .lp-steps { grid-template-columns: 1fr; gap: 28px; }
   .lp-steps__squiggle { display: none; }
   .lp-plans__grid { grid-template-columns: 1fr; }
+  .lp-features__grid--3 { grid-template-columns: 1fr 1fr; }
+  .lp-personas__grid { grid-template-columns: 1fr; gap: 28px; }
   .lp-quote__spark-l, .lp-quote__spark-r { display: none; }
   .lp-final__sun, .lp-final__asterisk, .lp-final__smiley { display: none; }
   .lp-start__choices { grid-template-columns: 1fr; }
@@ -987,6 +1108,12 @@ textarea.lp-input { resize: vertical; }
   .lp-section-header h2 { font-size: 32px; }
   .lp-features { padding: 64px 20px; }
   .lp-features__grid { grid-template-columns: 1fr; }
+  .lp-features__grid--3 { grid-template-columns: 1fr; }
+  .lp-pain { padding: 64px 20px 16px; }
+  .lp-pain__grid { grid-template-columns: 1fr; }
+  .lp-personas { padding: 24px 20px 64px; }
+  .lp-sidedoor { padding: 0 20px; margin-bottom: 64px; }
+  .lp-sidedoor__card { flex-direction: column; align-items: flex-start; gap: 20px; padding: 28px 24px; }
   .lp-stats__inner { grid-template-columns: 1fr; gap: 40px; padding: 48px 20px; }
   .lp-stat__value { font-size: 42px; }
   .lp-showcase { padding: 56px 20px; }

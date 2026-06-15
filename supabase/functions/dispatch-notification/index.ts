@@ -60,6 +60,11 @@ const PREF_COLUMN: Record<Type, 'pref_updates' | 'pref_prikbord' | 'pref_events'
   document_request_submitted: 'pref_documents',
 }
 
+// Types die alleen in-app getoond worden (geen e-mail).
+// document_request_submitted: admins zien dit als bolletje/melding in het CMS,
+// niet als mail bij elke upload.
+const IN_APP_ONLY: Set<Type> = new Set(['document_request_submitted'])
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -136,8 +141,8 @@ serve(async (req) => {
         inAppRecipients.push({ id: profile.id })
       }
 
-      // Email: bij 'all' (default), niet muted, en email aanwezig
-      if (prefValue === 'all' && !muted && profile.email) {
+      // Email: bij 'all' (default), niet muted, email aanwezig, en geen in-app-only type
+      if (prefValue === 'all' && !muted && profile.email && !IN_APP_ONLY.has(type as Type)) {
         emailRecipients.push({ id: profile.id, email: profile.email, full_name: profile.full_name })
       }
     }
@@ -498,11 +503,11 @@ async function loadContext(
   if (type === 'document_request') {
     const { data: dr } = await admin
       .from('document_requests')
-      .select('title, description, type, expires_at')
+      .select('title, description, type, deadline')
       .eq('id', referenceId)
       .single()
     if (!dr) return null
-    const deadline = dr.expires_at ? formatNlDate(dr.expires_at) : null
+    const deadline = dr.deadline ? formatNlDate(dr.deadline) : null
     return {
       project, actorName,
       emailSubject: `Documentverzoek in ${project.name}: ${dr.title}`,
