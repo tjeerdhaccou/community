@@ -16,7 +16,7 @@ export default function Settings() {
   const [description, setDescription] = useState('')
   const [primaryColor, setPrimaryColor] = useState('#4A90D9')
   const [accentColor, setAccentColor] = useState('#3BD269')
-  const [defaultTheme, setDefaultTheme] = useState('light')
+  const [defaultTheme, setDefaultTheme] = useState('warm')
   const [logoUrl, setLogoUrl] = useState('')
   const [logoPreview, setLogoPreview] = useState('')
   const [uploadingLogo, setUploadingLogo] = useState(false)
@@ -44,7 +44,7 @@ export default function Settings() {
       setDescription(project.description || '')
       setPrimaryColor(project.brand_primary_color || '#4A90D9')
       setAccentColor(project.brand_accent_color || '#3BD269')
-      setDefaultTheme(project.default_theme || 'light')
+      setDefaultTheme(project.default_theme === 'light' ? 'warm' : (project.default_theme || 'warm'))
       setLogoUrl(project.logo_url || '')
       setLogoPreview(project.logo_url || '')
       setCoverImageUrl(project.cover_image_url || '')
@@ -221,7 +221,6 @@ export default function Settings() {
             <label>Standaard thema</label>
             <div className="theme-select">
               {[
-                { value: 'light', icon: 'fa-sun', label: 'Licht' },
                 { value: 'warm', icon: 'fa-cloud-sun', label: 'Warm' },
                 { value: 'dark', icon: 'fa-moon', label: 'Donker' },
                 { value: 'contrast', icon: 'fa-eye', label: 'Hoog contrast' },
