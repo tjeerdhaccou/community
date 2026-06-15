@@ -13,10 +13,10 @@ export const POST_TAG_COLORS = {
 export const UPDATE_TAGS = ['Mijlpaal', 'Update', 'Besluit', 'Verslag']
 
 export const UPDATE_TAG_COLORS = {
-  'Mijlpaal': { bg: '#3BD269', color: '#fff' },
-  'Update': { bg: '#4A90D9', color: '#fff' },
-  'Besluit': { bg: '#F23578', color: '#fff' },
-  'Verslag': { bg: '#F09020', color: '#fff' },
+  'Mijlpaal': { bg: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' },
+  'Update': { bg: 'var(--tag-blue-bg)', color: 'var(--tag-blue-text)' },
+  'Besluit': { bg: 'var(--tag-pink-bg)', color: 'var(--tag-pink-text)' },
+  'Verslag': { bg: 'var(--tag-orange-bg)', color: 'var(--tag-orange-text)' },
 }
 
 // ===== Role definitions =====

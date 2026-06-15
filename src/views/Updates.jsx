@@ -117,10 +117,11 @@ export default function Updates() {
         </div>
       ) : (
         <div className="updates-list">
-          {filtered.map(update => (
+          {filtered.map((update, i) => (
             <UpdateCard
               key={update.id}
               update={update}
+              featured={i === 0 && !!update.image_url}
               onEdit={canDo(role, 'publish_update') ? handleEdit : undefined}
               onReaction={toggleReaction}
               onClick={() => setSelectedUpdate(update)}

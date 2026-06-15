@@ -135,7 +135,7 @@ export default function Sidebar() {
         style={featureHidden ? { opacity: 0.6 } : undefined}
         title={featureHidden ? 'Verborgen voor leden' : undefined}
       >
-        <i className={`cl-nav-item__icon ${item.icon}`} style={{ color: item.color }} />
+        <i className={`cl-nav-item__icon ${item.icon}`} style={{ color: isActive(item.to) ? item.color : 'var(--text-tertiary)' }} />
         <span>{item.label}</span>
         {featureHidden && (
           <i className="fa-solid fa-eye-slash" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }} title="Verborgen voor leden" />

@@ -1,10 +1,25 @@
 /**
  * Seed script: populate CommonCity Demoproject with realistic mock data.
- * Run: node scripts/seed-demo.mjs
+ *
+ * Run: SUPABASE_URL=https://xxx.supabase.co \
+ *      SUPABASE_SERVICE_ROLE_KEY=*** \
+ *      node scripts/seed-demo.mjs
+ *
+ * The service-role key bypasses RLS — never hardcode or commit it.
  */
 
-const SUPABASE_URL = 'https://czgsqmbejsmcjusigwhp.supabase.co';
-const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6Z3NxbWJlanNtY2p1c2lnd2hwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQyNTM0OSwiZXhwIjoyMDkwMDAxMzQ5fQ.vvreaxG7Vr-nm3mmhyhq57OU9yGhCfGF_3DJmSFqEMU';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  console.error(
+    'Missing env vars. Run with:\n' +
+    '  SUPABASE_URL=https://<ref>.supabase.co \\\n' +
+    '  SUPABASE_SERVICE_ROLE_KEY=<service_role_key> \\\n' +
+    '  node scripts/seed-demo.mjs'
+  );
+  process.exit(1);
+}
 
 const PROJECT_ID = '00000000-0000-4000-b000-000000000001';
 const ORG_ID = '00000000-0000-4000-a000-000000000001';

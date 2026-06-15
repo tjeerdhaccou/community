@@ -196,8 +196,8 @@ select.input {
   padding: 32px;
   padding-top: 16px;
   background-color: var(--bg-page);
-  background-image: var(--doodle-pattern, none);
-  background-size: 480px 480px;
+  /* Geen doodle-achtergrond op het content-canvas: de feed leest op rustig papier */
+  background-image: none;
   position: relative;
 }
 .main-content > *:not(.main-topbar) {
@@ -1170,6 +1170,22 @@ select.input {
   align-items: center;
 }
 
+@media (max-width: 640px) {
+  .view-header h1 {
+    font-size: 24px;
+  }
+  .view-header__row {
+    gap: 12px;
+  }
+  /* Knop blijft compact en op één regel naast de titel, geen overlap */
+  .view-header__row .btn-primary {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+}
+
 /* Tag filter pills */
 .tag-filter,
 .tag-filters {
@@ -1267,16 +1283,36 @@ select.input {
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 6px;
+  max-width: 30ch;
 }
 
 .update-card__text {
   font-size: 16px;
   color: var(--text-secondary);
   line-height: 1.6;
+  max-width: 64ch;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Featured (newest) update — meer gewicht, geeft de feed ritme */
+.update-card--featured .update-card__image img {
+  height: 300px;
+}
+.update-card--featured .update-card__title {
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.update-card--featured .update-card__body {
+  padding: 28px;
+}
+@media (max-width: 640px) {
+  .update-card--featured .update-card__image img { height: 200px; }
+  .update-card--featured .update-card__title { font-size: 23px; }
+  .update-card--featured .update-card__body { padding: 20px; }
 }
 
 .update-card__footer {
