@@ -646,7 +646,6 @@ select.input {
   margin-bottom: var(--space-5);
   cursor: pointer;
   transition: var(--transition-hover);
-  border-left: 4px solid var(--accent-orange);
 }
 .dash-intake-alert:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
 .dash-intake-alert__icon {
