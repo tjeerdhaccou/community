@@ -156,12 +156,12 @@ export default function Events() {
 
       {/* Tabs + type filter on one row */}
       <div className="events-filter-row">
-        <div className="events-tabs">
-          <button className={`events-tab ${tab === 'upcoming' ? 'events-tab--active' : ''}`} onClick={() => setTab('upcoming')}>
-            Aankomend {visibleUpcoming.length > 0 && <span className="events-tab__count">{visibleUpcoming.length}</span>}
+        <div className="seg-tabs">
+          <button className={`seg-tab ${tab === 'upcoming' ? 'seg-tab--active' : ''}`} onClick={() => setTab('upcoming')}>
+            Aankomend {visibleUpcoming.length > 0 && <span className="seg-tab__count">{visibleUpcoming.length}</span>}
           </button>
-          <button className={`events-tab ${tab === 'past' ? 'events-tab--active' : ''}`} onClick={() => setTab('past')}>
-            Afgelopen {visiblePast.length > 0 && <span className="events-tab__count">{visiblePast.length}</span>}
+          <button className={`seg-tab ${tab === 'past' ? 'seg-tab--active' : ''}`} onClick={() => setTab('past')}>
+            Afgelopen {visiblePast.length > 0 && <span className="seg-tab__count">{visiblePast.length}</span>}
           </button>
         </div>
 

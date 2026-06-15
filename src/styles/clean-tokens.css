@@ -448,43 +448,25 @@
 }
 
 /* Count badges: red */
-[data-theme="contrast"] .events-tab__count,
+[data-theme="contrast"] .seg-tab__count,
 [data-theme="contrast"] .tag-filter__count,
-[data-theme="contrast"] .tag-filter__badge,
-[data-theme="contrast"] .doc-tab__count,
-[data-theme="contrast"] .doc-tab--active .doc-tab__count {
+[data-theme="contrast"] .tag-filter__badge {
   background: var(--accent-cta);
   color: #FFFFFF;
 }
 
-/* Events/docs toggle tabs: outlined pill style */
-[data-theme="contrast"] .events-tab {
-  border: 1px solid #000000;
-  border-radius: 999px;
-}
-
-[data-theme="contrast"] .events-tab--active {
-  background: #000000;
-  color: #FFFFFF;
-  box-shadow: none;
-}
-
-/* Doc tabs: match events tab style */
-[data-theme="contrast"] .doc-tabs {
-  border-bottom: none;
-  gap: 4px;
-}
-
-[data-theme="contrast"] .doc-tab {
+/* Segmented-pill tabs: outlined pill style */
+[data-theme="contrast"] .seg-tab {
   border: 1px solid #000000;
   border-radius: 999px;
   padding: 6px 14px;
 }
 
-[data-theme="contrast"] .doc-tab--active {
+[data-theme="contrast"] .seg-tab--active {
   background: #000000;
   color: #FFFFFF;
   border-color: #000000;
+  box-shadow: none;
 }
 
 /* Remove divider above comments in post detail */

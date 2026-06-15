@@ -1813,6 +1813,13 @@ select.input {
   opacity: 0.3;
 }
 
+.empty-inline__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
 .empty-inline p {
   margin-bottom: 16px;
 }
@@ -2855,12 +2862,15 @@ select.input {
   margin-bottom: 0;
 }
 
-/* Tabs */
-.events-tabs {
+/* ===== Canonical segmented-pill tabs (.seg-tabs) =====
+   Shared across Events, Documenten, Mijn documenten. */
+.seg-tabs {
   display: flex;
   gap: 4px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
-.events-tab {
+.seg-tab {
   padding: 8px 16px;
   border: none;
   background: none;
@@ -2874,9 +2884,9 @@ select.input {
   gap: 6px;
   transition: background 0.12s, color 0.12s;
 }
-.events-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-.events-tab--active { background: var(--bg-surface); color: var(--text-primary); box-shadow: var(--shadow-sm); }
-.events-tab__count {
+.seg-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+.seg-tab--active { background: var(--bg-surface); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.seg-tab__count {
   font-size: 12px;
   background: var(--accent-primary);
   color: #fff;
@@ -2884,6 +2894,8 @@ select.input {
   border-radius: 10px;
   font-weight: 700;
 }
+/* When seg-tabs sit inside the events filter row, the row owns the margin. */
+.events-filter-row .seg-tabs { margin-bottom: 0; }
 
 /* Feed layout (single column) */
 .events-feed {
@@ -3962,11 +3974,13 @@ select.input {
   font-size: 14px;
 }
 
-/* Members search */
+/* Shared search bar — used by Leden, Documenten, etc. */
+.search-bar,
 .members-search {
   position: relative;
   margin-bottom: 16px;
 }
+.search-bar__icon,
 .members-search__icon {
   position: absolute;
   left: 14px;
@@ -3976,6 +3990,7 @@ select.input {
   font-size: 14px;
   pointer-events: none;
 }
+.search-bar__input,
 .members-search__input {
   width: 100%;
   padding: 10px 36px 10px 38px;
@@ -3988,12 +4003,15 @@ select.input {
   outline: none;
   transition: box-shadow 0.15s;
 }
+.search-bar__input:focus,
 .members-search__input:focus {
   box-shadow: var(--shadow-md);
 }
+.search-bar__input::placeholder,
 .members-search__input::placeholder {
   color: var(--text-tertiary);
 }
+.search-bar__clear,
 .members-search__clear {
   position: absolute;
   right: 10px;
@@ -4005,6 +4023,7 @@ select.input {
   cursor: pointer;
   padding: 4px;
 }
+.search-bar__clear:hover,
 .members-search__clear:hover { color: var(--text-primary); }
 
 /* Members pending banner */
@@ -5213,6 +5232,8 @@ select.input {
   color: var(--text-tertiary);
 }
 
+/* Full-page empty/error state — only for standalone returns (welkom, project niet gevonden).
+   In-content empty states use .empty-inline. */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -5222,11 +5243,6 @@ select.input {
   text-align: center;
   color: var(--text-tertiary, #9BA1B0);
   gap: 8px;
-}
-.empty-state__icon {
-  font-size: 48px;
-  color: var(--text-faint, #B0B5C3);
-  margin-bottom: 8px;
 }
 
 .empty-state h2 {
@@ -7922,80 +7938,6 @@ select.input {
 
 /* ===== Unified Documents Page ===== */
 
-.doc-tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--border-default);
-  margin-bottom: 20px;
-}
-.doc-tab {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-secondary);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: color 150ms, border-color 150ms;
-}
-.doc-tab:hover { color: var(--text-primary); }
-.doc-tab--active {
-  color: var(--accent-primary);
-  border-bottom-color: var(--accent-primary);
-}
-.doc-tab__count {
-  background: var(--bg-hover);
-  color: var(--text-secondary);
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-.doc-tab--active .doc-tab__count {
-  background: var(--accent-primary);
-  color: #fff;
-}
-
-.doc-filters-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.doc-filters {
-  display: flex;
-  gap: 8px;
-}
-.doc-search {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md, 12px);
-  background: var(--bg-surface, #ffffff);
-  min-width: 220px;
-}
-.doc-search i {
-  color: var(--text-tertiary, #9BA1B0);
-  font-size: 14px;
-}
-.doc-search input {
-  border: none;
-  background: none;
-  font-size: 15px;
-  color: var(--text-primary);
-  outline: none;
-  flex: 1;
-  min-width: 0;
-}
-
 /* Document rows */
 .doc-list {
   display: flex;
@@ -8658,14 +8600,6 @@ select.input {
   font-weight: 500;
 }
 .link-detected i { font-size: 18px; }
-
-@media (max-width: 768px) {
-  .doc-filters-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .doc-search { min-width: 0; }
-}
 
 /* ============================================================================
    INTAKE FORM — Public page + Admin editor + Responses
