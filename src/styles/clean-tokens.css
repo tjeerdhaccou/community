@@ -365,6 +365,17 @@
   line-height: 1.65;
 }
 
+/* Op smalle schermen is 19px te groot voor de krappe rij-layouts
+   (stepper, event-footer, tabs) en gaat tekst overlappen — temperen naar 17px. */
+@media (max-width: 640px) {
+  [data-theme="contrast"] {
+    --font-size-base: 17px;
+  }
+  [data-theme="contrast"] body {
+    font-size: 17px;
+  }
+}
+
 /* Always visible link underlines */
 [data-theme="contrast"] a {
   text-decoration: underline;
