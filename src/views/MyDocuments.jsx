@@ -187,7 +187,7 @@ export default function MyDocuments() {
                 {completedRequests.map(req => {
                   const sc = STATUS_CONFIG[req.status]
                   return (
-                    <div key={req.id} className="doc-row">
+                    <div key={req.id} className="doc-row" onClick={() => setDetailRequest(req)} role="button" tabIndex={0} style={{ cursor: 'pointer' }}>
                       <div className="doc-row__icon" style={{ color: sc.color }}>
                         <i className={`fa-solid ${req.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'}`} />
                       </div>
@@ -203,6 +203,9 @@ export default function MyDocuments() {
                             {req.review_note}
                           </div>
                         )}
+                      </div>
+                      <div style={{ color: 'var(--text-tertiary)', fontSize: 14, flexShrink: 0 }}>
+                        <i className="fa-solid fa-chevron-right" />
                       </div>
                     </div>
                   )
@@ -261,6 +264,11 @@ export default function MyDocuments() {
                 <span className="request-card__type" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}>
                   {CATEGORY_LABELS[detailRequest.category] || detailRequest.category}
                 </span>
+                {detailRequest.status !== 'pending' && (
+                  <span className="request-card__type" style={{ background: STATUS_CONFIG[detailRequest.status]?.bg, color: STATUS_CONFIG[detailRequest.status]?.color }}>
+                    {STATUS_CONFIG[detailRequest.status]?.label}
+                  </span>
+                )}
                 {detailRequest.deadline && (
                   <span style={{ fontSize: 13, color: new Date(detailRequest.deadline) < new Date() && detailRequest.status === 'pending' ? 'var(--accent-red)' : 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 5 }}>
                     <i className="fa-solid fa-calendar" />
@@ -288,9 +296,22 @@ export default function MyDocuments() {
               )}
 
               {detailRequest.response_file && (
-                <div className="request-card__response">
+                <button
+                  className="request-card__attachment"
+                  style={{ background: 'rgba(59, 210, 105, 0.08)' }}
+                  onClick={() => download(detailRequest.response_file.id, detailRequest.response_file.file_path, detailRequest.response_file.file_name)}
+                >
                   <i className="fa-solid fa-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
-                  <span>Ingediend: {detailRequest.response_file.file_name}</span>
+                  <span>Jouw inzending: {detailRequest.response_file.file_name}</span>
+                  <span className="request-card__attachment-size">{formatFileSize(detailRequest.response_file.file_size)}</span>
+                  <i className="fa-solid fa-download" />
+                </button>
+              )}
+
+              {detailRequest.status === 'submitted' && !detailRequest.response_file && detailRequest.type === 'review_document' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--accent-blue, #4A90D9)', padding: '10px 14px', background: 'rgba(74, 144, 217, 0.08)', borderRadius: 8 }}>
+                  <i className="fa-solid fa-eye" />
+                  <span>Je hebt dit document als gelezen gemarkeerd</span>
                 </div>
               )}
 
