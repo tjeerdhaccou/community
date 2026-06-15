@@ -84,9 +84,9 @@ export default function MyDocuments() {
 
   if (loading) {
     return (
-      <div className="view-container">
-        <div className="view-header"><h1 className="view-title">Mijn documenten</h1></div>
-        <div className="empty-state"><p className="empty-state__text">Laden...</p></div>
+      <div className="view-mydocuments">
+        <div className="view-header"><h1>Mijn documenten</h1></div>
+        <div className="loading-inline"><p>Laden...</p></div>
       </div>
     )
   }
@@ -95,24 +95,24 @@ export default function MyDocuments() {
   const docCount = teamFiles.length
 
   return (
-    <div className="view-container">
+    <div className="view-mydocuments">
       <div className="view-header">
         <div>
-          <h1 className="view-title">Mijn documenten</h1>
-          <p className="view-subtitle">Documenten en verzoeken van het projectteam</p>
+          <h1>Mijn documenten</h1>
+          <p className="view-header__subtitle">Documenten en verzoeken van het projectteam</p>
         </div>
       </div>
 
-      <div className="doc-tabs" style={{ borderBottom: '1px solid var(--border-light)', marginBottom: 24 }}>
-        <button className={`doc-tab ${tab === 'verzoeken' ? 'doc-tab--active' : ''}`} onClick={() => setTab('verzoeken')}>
+      <div className="seg-tabs">
+        <button className={`seg-tab ${tab === 'verzoeken' ? 'seg-tab--active' : ''}`} onClick={() => setTab('verzoeken')}>
           <i className="fa-solid fa-file-circle-question" />
           Verzoeken
-          {requestCount > 0 && <span className="doc-tab__count">{requestCount}</span>}
+          {requestCount > 0 && <span className="seg-tab__count">{requestCount}</span>}
         </button>
-        <button className={`doc-tab ${tab === 'documenten' ? 'doc-tab--active' : ''}`} onClick={() => setTab('documenten')}>
+        <button className={`seg-tab ${tab === 'documenten' ? 'seg-tab--active' : ''}`} onClick={() => setTab('documenten')}>
           <i className="fa-solid fa-folder-open" />
           Documenten
-          {docCount > 0 && <span className="doc-tab__count">{docCount}</span>}
+          {docCount > 0 && <span className="seg-tab__count">{docCount}</span>}
         </button>
       </div>
 
@@ -165,10 +165,10 @@ function RequestsTab({ pendingRequests, submittedRequests, completedRequests, up
 
   if (!hasRequests) {
     return (
-      <div className="empty-state">
-        <i className="fa-solid fa-file-circle-question empty-state__icon" />
-        <h3 className="empty-state__title">Geen verzoeken</h3>
-        <p className="empty-state__text">Er zijn nog geen documentverzoeken van het projectteam.</p>
+      <div className="empty-inline">
+        <i className="fa-solid fa-file-circle-question" />
+        <h3 className="empty-inline__title">Geen verzoeken</h3>
+        <p>Er zijn nog geen documentverzoeken van het projectteam.</p>
       </div>
     )
   }
@@ -255,10 +255,10 @@ function RequestsTab({ pendingRequests, submittedRequests, completedRequests, up
 function DocumentsTab({ files, onOpenDetail }) {
   if (files.length === 0) {
     return (
-      <div className="empty-state">
-        <i className="fa-solid fa-folder-open empty-state__icon" />
-        <h3 className="empty-state__title">Geen documenten</h3>
-        <p className="empty-state__text">Het projectteam heeft nog geen documenten voor je klaargezet.</p>
+      <div className="empty-inline">
+        <i className="fa-solid fa-folder-open" />
+        <h3 className="empty-inline__title">Geen documenten</h3>
+        <p>Het projectteam heeft nog geen documenten voor je klaargezet.</p>
       </div>
     )
   }

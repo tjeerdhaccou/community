@@ -152,49 +152,64 @@ export default function Documents() {
       </div>
 
       {/* Tabs */}
-      <div className="doc-tabs">
+      <div className="seg-tabs">
         {tabs.map(t => (
           <button
             key={t.key}
-            className={`doc-tab ${activeTab === t.key ? 'doc-tab--active' : ''}`}
+            className={`seg-tab ${activeTab === t.key ? 'seg-tab--active' : ''}`}
             onClick={() => { setTab(t.key); setCategoryFilter('all'); setMeetingCat('all') }}
           >
             {t.label}
-            {(counts[t.key] || 0) > 0 && <span className="doc-tab__count">{counts[t.key]}</span>}
+            {(counts[t.key] || 0) > 0 && <span className="seg-tab__count">{counts[t.key]}</span>}
           </button>
         ))}
       </div>
 
-      {/* Filters + search row */}
-      <div className="doc-filters-row">
-        <div className="doc-filters">
-          {activeTab === 'dossier' && (
-            <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-              <option value="all">Alle categorieën</option>
-              {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-          )}
-          {activeTab === 'vergaderingen' && (
-            <select value={meetingCat} onChange={e => setMeetingCat(e.target.value)}>
-              {MEETING_FILE_CATS.map(c => (
-                <option key={c.key} value={c.key}>{c.label}</option>
-              ))}
-            </select>
-          )}
-        </div>
-        <div className="doc-search">
-          <i className="fa-solid fa-magnifying-glass" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Zoeken in documenten..."
-            aria-label="Zoeken"
-          />
-        </div>
+      {/* Search */}
+      <div className="search-bar">
+        <i className="fa-solid fa-magnifying-glass search-bar__icon" />
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Zoeken in documenten..."
+          className="search-bar__input"
+          aria-label="Zoeken"
+        />
+        {search && (
+          <button className="search-bar__clear" onClick={() => setSearch('')} aria-label="Wissen">
+            <i className="fa-solid fa-xmark" />
+          </button>
+        )}
       </div>
+
+      {/* Filter pills */}
+      {activeTab === 'dossier' && (
+        <div className="tag-filter">
+          {[{ key: 'all', label: 'Alle categorieën' }, ...Object.entries(CATEGORY_LABELS).map(([key, label]) => ({ key, label }))].map(c => (
+            <button
+              key={c.key}
+              className={`tag-filter__pill ${categoryFilter === c.key ? 'tag-filter__pill--active' : ''}`}
+              onClick={() => setCategoryFilter(c.key)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {activeTab === 'vergaderingen' && (
+        <div className="tag-filter">
+          {MEETING_FILE_CATS.map(c => (
+            <button
+              key={c.key}
+              className={`tag-filter__pill ${meetingCat === c.key ? 'tag-filter__pill--active' : ''}`}
+              onClick={() => setMeetingCat(c.key)}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Document list */}
       {loading || wgLoading ? (

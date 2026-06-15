@@ -191,9 +191,9 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
         {loading ? (
           <div className="loading-inline"><p>Laden...</p></div>
         ) : projects.length === 0 ? (
-          <div className="empty-state">
-            <i className="fa-solid fa-city empty-state__icon" />
-            <h2>Geen projecten</h2>
+          <div className="empty-inline">
+            <i className="fa-solid fa-city" />
+            <h3 className="empty-inline__title">Geen projecten</h3>
             <p>Maak je eerste project aan om te beginnen.</p>
             {isOrgAdmin && (
               <button className="btn-primary" onClick={() => setCreatingNew(true)}>

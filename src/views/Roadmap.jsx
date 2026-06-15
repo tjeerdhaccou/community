@@ -107,8 +107,8 @@ export default function Roadmap() {
       </div>
 
       {phases.length === 0 ? (
-        <div className="empty-state">
-          <i className="fa-solid fa-route empty-state__icon" />
+        <div className="empty-inline">
+          <i className="fa-solid fa-route" />
           <p>Het stappenplan wordt vanuit het CMS ingericht.</p>
         </div>
       ) : (
