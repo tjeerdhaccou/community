@@ -64,7 +64,21 @@ export function useDocumentRequests() {
     await fetchRequests()
   }
 
-  return { requests, loading, submitResponse, refetch: fetchRequests }
+  async function markReviewed(requestId) {
+    const { error } = await supabase
+      .from('document_requests')
+      .update({
+        status: 'submitted',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', requestId)
+      .eq('profile_id', user.id)
+    if (error) { logger.error('useDocumentRequests.markReviewed', error); throw new Error(friendlyError(error)) }
+    dispatchNotification({ projectId: project.id, type: 'document_request_submitted', referenceId: requestId, actorId: user.id })
+    await fetchRequests()
+  }
+
+  return { requests, loading, submitResponse, markReviewed, refetch: fetchRequests }
 }
 
 export function useAdminDocumentRequests(profileId) {
