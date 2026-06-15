@@ -4,7 +4,6 @@ import { useDocumentRequests } from '../hooks/useDocumentRequests'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../components/Toast'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
-import ConfirmModal from '../components/ConfirmModal'
 
 const CATEGORY_LABELS = {
   contract: 'Contract',
@@ -31,13 +30,14 @@ const STATUS_CONFIG = {
 export default function MyDocuments() {
   const { user } = useAuth()
   const toast = useToast()
-  const { files, loading: filesLoading, download, upload, remove } = useMyDocuments()
+  const { files, loading: filesLoading, download, upload } = useMyDocuments()
   const { requests, loading: requestsLoading, submitResponse, markReviewed } = useDocumentRequests()
   const [uploading, setUploading] = useState(null)
-  const fileRef = useRef(null)
   const requestFileRef = useRef(null)
   const [activeRequestId, setActiveRequestId] = useState(null)
   const [detailRequest, setDetailRequest] = useState(null)
+  const [detailFile, setDetailFile] = useState(null)
+  const [tab, setTab] = useState('verzoeken')
 
   const loading = filesLoading || requestsLoading
 
@@ -45,24 +45,7 @@ export default function MyDocuments() {
   const submittedRequests = requests.filter(r => r.status === 'submitted')
   const completedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected')
 
-  const freeFiles = files.filter(f => !f.request_id)
-  const teamFiles = freeFiles.filter(f => f.uploaded_by !== user?.id)
-  const myUploads = freeFiles.filter(f => f.uploaded_by === user?.id)
-
-  async function handleFreeUpload(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setUploading('free')
-    try {
-      await upload(file)
-      toast.success('Bestand geüpload')
-    } catch (err) {
-      toast.error(err.message || 'Upload mislukt')
-    } finally {
-      setUploading(null)
-      if (fileRef.current) fileRef.current.value = ''
-    }
-  }
+  const teamFiles = files.filter(f => !f.request_id && f.uploaded_by !== user?.id)
 
   async function handleRequestUpload(e) {
     const file = e.target.files?.[0]
@@ -108,244 +91,215 @@ export default function MyDocuments() {
     )
   }
 
-  const hasContent = pendingRequests.length > 0 || submittedRequests.length > 0 || completedRequests.length > 0 || files.length > 0
+  const requestCount = requests.length
+  const docCount = teamFiles.length
 
   return (
     <div className="view-container">
       <div className="view-header">
-        <div className="view-header__row">
-          <div>
-            <h1 className="view-title">Mijn documenten</h1>
-            <p className="view-subtitle">Documenten en verzoeken van het projectteam</p>
-          </div>
-          <button className="btn-primary" onClick={() => fileRef.current?.click()} disabled={uploading}>
-            <i className={`fa-solid ${uploading === 'free' ? 'fa-spinner fa-spin' : 'fa-upload'}`} />
-            {uploading === 'free' ? 'Uploaden...' : 'Bestand uploaden'}
-          </button>
-          <input ref={fileRef} type="file" onChange={handleFreeUpload} style={{ display: 'none' }} />
-          <input ref={requestFileRef} type="file" onChange={handleRequestUpload} style={{ display: 'none' }} />
+        <div>
+          <h1 className="view-title">Mijn documenten</h1>
+          <p className="view-subtitle">Documenten en verzoeken van het projectteam</p>
         </div>
       </div>
 
-      {!hasContent ? (
-        <div className="empty-state">
-          <i className="fa-solid fa-folder-open empty-state__icon" />
-          <h3 className="empty-state__title">Geen documenten</h3>
-          <p className="empty-state__text">
-            Er zijn nog geen documenten of verzoeken. Upload zelf een bestand of wacht tot het projectteam iets klaarzet.
-          </p>
-        </div>
-      ) : (
-        <div className="my-docs">
+      <div className="doc-tabs" style={{ borderBottom: '1px solid var(--border-light)', marginBottom: 24 }}>
+        <button className={`doc-tab ${tab === 'verzoeken' ? 'doc-tab--active' : ''}`} onClick={() => setTab('verzoeken')}>
+          <i className="fa-solid fa-file-circle-question" />
+          Verzoeken
+          {requestCount > 0 && <span className="doc-tab__count">{requestCount}</span>}
+        </button>
+        <button className={`doc-tab ${tab === 'documenten' ? 'doc-tab--active' : ''}`} onClick={() => setTab('documenten')}>
+          <i className="fa-solid fa-folder-open" />
+          Documenten
+          {docCount > 0 && <span className="doc-tab__count">{docCount}</span>}
+        </button>
+      </div>
 
-          {/* ── Acties vereist ── */}
-          {pendingRequests.length > 0 && (
-            <section className="my-docs__section">
-              <h2 className="my-docs__section-title">
-                <i className="fa-solid fa-circle-exclamation" style={{ color: 'var(--accent-orange, #F5A623)' }} />
-                Actie vereist
-                <span className="my-docs__count">{pendingRequests.length}</span>
-              </h2>
-              <div className="my-docs__cards">
-                {pendingRequests.map(req => (
-                  <RequestCard
-                    key={req.id}
-                    request={req}
-                    uploading={uploading === req.id}
-                    onUpload={() => triggerRequestUpload(req.id)}
-                    onMarkReviewed={() => handleMarkReviewed(req.id)}
-                    onDownload={download}
-                    onOpen={() => setDetailRequest(req)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+      <input ref={requestFileRef} type="file" onChange={handleRequestUpload} style={{ display: 'none' }} />
 
-          {/* ── In behandeling ── */}
-          {submittedRequests.length > 0 && (
-            <section className="my-docs__section">
-              <h2 className="my-docs__section-title">
-                <i className="fa-solid fa-clock" style={{ color: 'var(--accent-blue, #4A90D9)' }} />
-                In behandeling
-              </h2>
-              <div className="my-docs__cards">
-                {submittedRequests.map(req => (
-                  <RequestCard key={req.id} request={req} onDownload={download} onOpen={() => setDetailRequest(req)} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── Afgeronde verzoeken ── */}
-          {completedRequests.length > 0 && (
-            <section className="my-docs__section">
-              <h2 className="my-docs__section-title">
-                <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
-                Afgerond
-              </h2>
-              <div className="doc-list">
-                {completedRequests.map(req => {
-                  const sc = STATUS_CONFIG[req.status]
-                  return (
-                    <div key={req.id} className="doc-row" onClick={() => setDetailRequest(req)} role="button" tabIndex={0} style={{ cursor: 'pointer' }}>
-                      <div className="doc-row__icon" style={{ color: sc.color }}>
-                        <i className={`fa-solid ${req.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'}`} />
-                      </div>
-                      <div className="doc-row__info">
-                        <span className="doc-row__title">{req.title}</span>
-                        <div className="doc-row__meta">
-                          <span className="doc-row__source" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
-                          <span>{CATEGORY_LABELS[req.category] || req.category}</span>
-                          <span>{timeAgo(req.reviewed_at || req.updated_at)}</span>
-                        </div>
-                        {req.review_note && (
-                          <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-                            {req.review_note}
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ color: 'var(--text-tertiary)', fontSize: 14, flexShrink: 0 }}>
-                        <i className="fa-solid fa-chevron-right" />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          )}
-
-          {/* ── Documenten van het team ── */}
-          {teamFiles.length > 0 && (
-            <section className="my-docs__section">
-              <h2 className="my-docs__section-title">
-                <i className="fa-solid fa-building" style={{ color: 'var(--accent-primary, #4A90D9)' }} />
-                Van het projectteam
-              </h2>
-              <div className="doc-list">
-                {teamFiles.map(file => (
-                  <FileRow key={file.id} file={file} userId={user?.id} onDownload={download} onRemove={remove} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* ── Eigen uploads ── */}
-          {myUploads.length > 0 && (
-            <section className="my-docs__section">
-              <h2 className="my-docs__section-title">
-                <i className="fa-solid fa-user" style={{ color: 'var(--text-secondary)' }} />
-                Mijn uploads
-              </h2>
-              <div className="doc-list">
-                {myUploads.map(file => (
-                  <FileRow key={file.id} file={file} userId={user?.id} onDownload={download} onRemove={remove} />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
+      {tab === 'verzoeken' && (
+        <RequestsTab
+          pendingRequests={pendingRequests}
+          submittedRequests={submittedRequests}
+          completedRequests={completedRequests}
+          uploading={uploading}
+          onUpload={triggerRequestUpload}
+          onMarkReviewed={handleMarkReviewed}
+          onDownload={download}
+          onOpenDetail={setDetailRequest}
+        />
       )}
 
-      {/* Detail modal */}
+      {tab === 'documenten' && (
+        <DocumentsTab
+          files={teamFiles}
+          onOpenDetail={setDetailFile}
+        />
+      )}
+
       {detailRequest && (
-        <div className="modal-overlay" onClick={() => setDetailRequest(null)}>
-          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
-            <div className="modal-header">
-              <h2>{detailRequest.title}</h2>
-              <button className="modal-close" onClick={() => setDetailRequest(null)} aria-label="Sluiten">
-                <i className="fa-solid fa-xmark" />
-              </button>
-            </div>
-            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span className="request-card__type" style={{ background: STATUS_CONFIG[detailRequest.status]?.bg, color: STATUS_CONFIG[detailRequest.status]?.color }}>
-                  {TYPE_LABELS[detailRequest.type] || detailRequest.type}
-                </span>
-                <span className="request-card__type" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}>
-                  {CATEGORY_LABELS[detailRequest.category] || detailRequest.category}
-                </span>
-                {detailRequest.status !== 'pending' && (
-                  <span className="request-card__type" style={{ background: STATUS_CONFIG[detailRequest.status]?.bg, color: STATUS_CONFIG[detailRequest.status]?.color }}>
-                    {STATUS_CONFIG[detailRequest.status]?.label}
-                  </span>
-                )}
-                {detailRequest.deadline && (
-                  <span style={{ fontSize: 13, color: new Date(detailRequest.deadline) < new Date() && detailRequest.status === 'pending' ? 'var(--accent-red)' : 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <i className="fa-solid fa-calendar" />
-                    {new Date(detailRequest.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </span>
-                )}
-              </div>
-
-              {detailRequest.description && (
-                <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--text-secondary)', margin: 0, whiteSpace: 'pre-wrap' }}>
-                  {detailRequest.description}
-                </p>
-              )}
-
-              {detailRequest.attached_file && (
-                <button
-                  className="request-card__attachment"
-                  onClick={() => download(detailRequest.attached_file.id, detailRequest.attached_file.file_path, detailRequest.attached_file.file_name)}
-                >
-                  <i className={fileIcon(detailRequest.attached_file.file_type || detailRequest.attached_file.file_name)} style={{ color: fileIconColor(detailRequest.attached_file.file_type || detailRequest.attached_file.file_name) }} />
-                  <span>{detailRequest.attached_file.file_name}</span>
-                  <span className="request-card__attachment-size">{formatFileSize(detailRequest.attached_file.file_size)}</span>
-                  <i className="fa-solid fa-download" />
-                </button>
-              )}
-
-              {detailRequest.response_file && (
-                <button
-                  className="request-card__attachment"
-                  style={{ background: 'rgba(59, 210, 105, 0.08)' }}
-                  onClick={() => download(detailRequest.response_file.id, detailRequest.response_file.file_path, detailRequest.response_file.file_name)}
-                >
-                  <i className="fa-solid fa-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
-                  <span>Jouw inzending: {detailRequest.response_file.file_name}</span>
-                  <span className="request-card__attachment-size">{formatFileSize(detailRequest.response_file.file_size)}</span>
-                  <i className="fa-solid fa-download" />
-                </button>
-              )}
-
-              {detailRequest.status === 'submitted' && !detailRequest.response_file && detailRequest.type === 'review_document' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--accent-blue, #4A90D9)', padding: '10px 14px', background: 'rgba(74, 144, 217, 0.08)', borderRadius: 8 }}>
-                  <i className="fa-solid fa-eye" />
-                  <span>Je hebt dit document als gelezen gemarkeerd</span>
-                </div>
-              )}
-
-              {detailRequest.review_note && (
-                <div style={{ fontSize: 14, color: 'var(--text-secondary)', padding: '12px 16px', background: 'var(--bg-hover)', borderRadius: 8 }}>
-                  <strong>Opmerking:</strong> {detailRequest.review_note}
-                </div>
-              )}
-
-              {detailRequest.status === 'pending' && (detailRequest.type === 'upload_request' || detailRequest.type === 'sign_request') && (
-                <button
-                  className="btn-primary"
-                  onClick={() => { setDetailRequest(null); triggerRequestUpload(detailRequest.id) }}
-                  disabled={uploading}
-                >
-                  <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-upload'}`} />
-                  {detailRequest.type === 'sign_request' ? 'Getekend uploaden' : 'Document uploaden'}
-                </button>
-              )}
-              {detailRequest.status === 'pending' && detailRequest.type === 'review_document' && (
-                <button
-                  className="btn-primary"
-                  onClick={() => handleMarkReviewed(detailRequest.id)}
-                  disabled={uploading}
-                >
-                  <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-check'}`} />
-                  {uploading ? 'Bezig...' : 'Markeer als gelezen'}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <RequestDetailModal
+          request={detailRequest}
+          uploading={uploading}
+          onClose={() => setDetailRequest(null)}
+          onDownload={download}
+          onUpload={(id) => { setDetailRequest(null); triggerRequestUpload(id) }}
+          onMarkReviewed={handleMarkReviewed}
+        />
       )}
+
+      {detailFile && (
+        <FileDetailModal
+          file={detailFile}
+          onClose={() => setDetailFile(null)}
+          onDownload={download}
+        />
+      )}
+    </div>
+  )
+}
+
+function RequestsTab({ pendingRequests, submittedRequests, completedRequests, uploading, onUpload, onMarkReviewed, onDownload, onOpenDetail }) {
+  const hasRequests = pendingRequests.length > 0 || submittedRequests.length > 0 || completedRequests.length > 0
+
+  if (!hasRequests) {
+    return (
+      <div className="empty-state">
+        <i className="fa-solid fa-file-circle-question empty-state__icon" />
+        <h3 className="empty-state__title">Geen verzoeken</h3>
+        <p className="empty-state__text">Er zijn nog geen documentverzoeken van het projectteam.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="my-docs">
+      {pendingRequests.length > 0 && (
+        <section className="my-docs__section">
+          <h2 className="my-docs__section-title">
+            <i className="fa-solid fa-circle-exclamation" style={{ color: 'var(--accent-orange, #F5A623)' }} />
+            Actie vereist
+            <span className="my-docs__count">{pendingRequests.length}</span>
+          </h2>
+          <div className="my-docs__cards">
+            {pendingRequests.map(req => (
+              <RequestCard
+                key={req.id}
+                request={req}
+                uploading={uploading === req.id}
+                onUpload={() => onUpload(req.id)}
+                onMarkReviewed={() => onMarkReviewed(req.id)}
+                onDownload={onDownload}
+                onOpen={() => onOpenDetail(req)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {submittedRequests.length > 0 && (
+        <section className="my-docs__section">
+          <h2 className="my-docs__section-title">
+            <i className="fa-solid fa-clock" style={{ color: 'var(--accent-blue, #4A90D9)' }} />
+            In behandeling
+          </h2>
+          <div className="my-docs__cards">
+            {submittedRequests.map(req => (
+              <RequestCard key={req.id} request={req} onDownload={onDownload} onOpen={() => onOpenDetail(req)} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {completedRequests.length > 0 && (
+        <section className="my-docs__section">
+          <h2 className="my-docs__section-title">
+            <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
+            Afgerond
+          </h2>
+          <div className="doc-list">
+            {completedRequests.map(req => {
+              const sc = STATUS_CONFIG[req.status]
+              return (
+                <div key={req.id} className="doc-row" onClick={() => onOpenDetail(req)} role="button" tabIndex={0} style={{ cursor: 'pointer' }}>
+                  <div className="doc-row__icon" style={{ color: sc.color }}>
+                    <i className={`fa-solid ${req.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'}`} />
+                  </div>
+                  <div className="doc-row__info">
+                    <span className="doc-row__title">{req.title}</span>
+                    <div className="doc-row__meta">
+                      <span className="doc-row__source" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
+                      <span>{CATEGORY_LABELS[req.category] || req.category}</span>
+                      <span>{timeAgo(req.reviewed_at || req.updated_at)}</span>
+                    </div>
+                    {req.review_note && (
+                      <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+                        {req.review_note}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ color: 'var(--text-tertiary)', fontSize: 14, flexShrink: 0 }}>
+                    <i className="fa-solid fa-chevron-right" />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}
+
+function DocumentsTab({ files, onOpenDetail }) {
+  if (files.length === 0) {
+    return (
+      <div className="empty-state">
+        <i className="fa-solid fa-folder-open empty-state__icon" />
+        <h3 className="empty-state__title">Geen documenten</h3>
+        <p className="empty-state__text">Het projectteam heeft nog geen documenten voor je klaargezet.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="my-docs__cards">
+      {files.map(file => (
+        <TeamFileCard key={file.id} file={file} onOpen={() => onOpenDetail(file)} />
+      ))}
+    </div>
+  )
+}
+
+function TeamFileCard({ file, onOpen }) {
+  const icon = fileIcon(file.file_type || file.file_name)
+  const iconColor = fileIconColor(file.file_type || file.file_name)
+
+  return (
+    <div className="request-card" onClick={onOpen} role="button" tabIndex={0}>
+      <div className="request-card__header">
+        <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(74, 144, 217, 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
+          {CATEGORY_LABELS[file.category] || file.category || 'Document'}
+        </span>
+        {file.file_size > 0 && (
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{formatFileSize(file.file_size)}</span>
+        )}
+      </div>
+
+      <h3 className="request-card__title">{file.title}</h3>
+      {file.description && <p className="request-card__desc">{file.description}</p>}
+
+      <div className="request-card__attachment-preview">
+        <i className={icon} style={{ color: iconColor }} />
+        <span>{file.file_name}</span>
+      </div>
+
+      <div className="request-card__footer">
+        <div className="request-card__meta">
+          <span>{timeAgo(file.created_at)}</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -414,66 +368,157 @@ function RequestCard({ request, uploading, onUpload, onMarkReviewed, onDownload,
   )
 }
 
-function FileRow({ file, userId, onDownload, onRemove }) {
-  const [confirmDelete, setConfirmDelete] = useState(false)
+function RequestDetailModal({ request, uploading, onClose, onDownload, onUpload, onMarkReviewed }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
+        <div className="modal-header">
+          <h2>{request.title}</h2>
+          <button className="modal-close" onClick={onClose} aria-label="Sluiten">
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="request-card__type" style={{ background: STATUS_CONFIG[request.status]?.bg, color: STATUS_CONFIG[request.status]?.color }}>
+              {TYPE_LABELS[request.type] || request.type}
+            </span>
+            <span className="request-card__type" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}>
+              {CATEGORY_LABELS[request.category] || request.category}
+            </span>
+            {request.status !== 'pending' && (
+              <span className="request-card__type" style={{ background: STATUS_CONFIG[request.status]?.bg, color: STATUS_CONFIG[request.status]?.color }}>
+                {STATUS_CONFIG[request.status]?.label}
+              </span>
+            )}
+            {request.deadline && (
+              <span style={{ fontSize: 13, color: new Date(request.deadline) < new Date() && request.status === 'pending' ? 'var(--accent-red)' : 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <i className="fa-solid fa-calendar" />
+                {new Date(request.deadline).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            )}
+          </div>
+
+          {request.description && (
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--text-secondary)', margin: 0, whiteSpace: 'pre-wrap' }}>
+              {request.description}
+            </p>
+          )}
+
+          {request.attached_file && (
+            <button
+              className="request-card__attachment"
+              onClick={() => onDownload(request.attached_file.id, request.attached_file.file_path, request.attached_file.file_name)}
+            >
+              <i className={fileIcon(request.attached_file.file_type || request.attached_file.file_name)} style={{ color: fileIconColor(request.attached_file.file_type || request.attached_file.file_name) }} />
+              <span>{request.attached_file.file_name}</span>
+              <span className="request-card__attachment-size">{formatFileSize(request.attached_file.file_size)}</span>
+              <i className="fa-solid fa-download" />
+            </button>
+          )}
+
+          {request.response_file && (
+            <button
+              className="request-card__attachment"
+              style={{ background: 'rgba(59, 210, 105, 0.08)' }}
+              onClick={() => onDownload(request.response_file.id, request.response_file.file_path, request.response_file.file_name)}
+            >
+              <i className="fa-solid fa-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
+              <span>Jouw inzending: {request.response_file.file_name}</span>
+              <span className="request-card__attachment-size">{formatFileSize(request.response_file.file_size)}</span>
+              <i className="fa-solid fa-download" />
+            </button>
+          )}
+
+          {request.status === 'submitted' && !request.response_file && request.type === 'review_document' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--accent-blue, #4A90D9)', padding: '10px 14px', background: 'rgba(74, 144, 217, 0.08)', borderRadius: 8 }}>
+              <i className="fa-solid fa-eye" />
+              <span>Je hebt dit document als gelezen gemarkeerd</span>
+            </div>
+          )}
+
+          {request.review_note && (
+            <div style={{ fontSize: 14, color: 'var(--text-secondary)', padding: '12px 16px', background: 'var(--bg-hover)', borderRadius: 8 }}>
+              <strong>Opmerking:</strong> {request.review_note}
+            </div>
+          )}
+
+          {request.status === 'pending' && (request.type === 'upload_request' || request.type === 'sign_request') && (
+            <button
+              className="btn-primary"
+              onClick={() => onUpload(request.id)}
+              disabled={uploading}
+            >
+              <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-upload'}`} />
+              {request.type === 'sign_request' ? 'Getekend uploaden' : 'Document uploaden'}
+            </button>
+          )}
+          {request.status === 'pending' && request.type === 'review_document' && (
+            <button
+              className="btn-primary"
+              onClick={() => onMarkReviewed(request.id)}
+              disabled={uploading}
+            >
+              <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-check'}`} />
+              {uploading ? 'Bezig...' : 'Markeer als gelezen'}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function FileDetailModal({ file, onClose, onDownload }) {
   const icon = fileIcon(file.file_type || file.file_name)
   const iconColor = fileIconColor(file.file_type || file.file_name)
-  const isMine = file.uploaded_by === userId
+  const isImage = file.file_type?.startsWith('image/')
+  const isPdf = file.file_type === 'application/pdf' || file.file_name?.endsWith('.pdf')
 
   return (
-    <div
-      className="doc-row"
-      style={{ cursor: 'pointer' }}
-      onClick={() => onDownload(file.id, file.file_path, file.file_name)}
-    >
-      <div className="doc-row__icon" style={{ color: iconColor }}>
-        <i className={icon} />
-      </div>
-      <div className="doc-row__info">
-        <span className="doc-row__title">{file.title}</span>
-        <div className="doc-row__meta">
-          <span
-            className="doc-row__source"
-            style={{
-              background: isMine ? 'rgba(59, 210, 105, 0.12)' : 'var(--accent-primary-light, rgba(74, 144, 217, 0.12))',
-              color: isMine ? '#3BD269' : 'var(--accent-primary, #4A90D9)',
-            }}
-          >
-            {isMine ? 'Eigen upload' : (CATEGORY_LABELS[file.category] || file.category)}
-          </span>
-          {file.file_size > 0 && <span>{formatFileSize(file.file_size)}</span>}
-          <span>{timeAgo(file.created_at)}</span>
-        </div>
-        {file.description && (
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-            {file.description}
-          </div>
-        )}
-      </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
-        {isMine && (
-          <button
-            className="btn-icon-sm"
-            onClick={e => { e.stopPropagation(); setConfirmDelete(true) }}
-            title="Verwijderen"
-            style={{ color: 'var(--accent-red)' }}
-          >
-            <i className="fa-solid fa-trash" />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
+        <div className="modal-header">
+          <h2>{file.title}</h2>
+          <button className="modal-close" onClick={onClose} aria-label="Sluiten">
+            <i className="fa-solid fa-xmark" />
           </button>
-        )}
-        <div style={{ color: 'var(--text-tertiary)', fontSize: 16 }}>
-          <i className="fa-solid fa-download" />
+        </div>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(74, 144, 217, 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
+              {CATEGORY_LABELS[file.category] || file.category || 'Document'}
+            </span>
+            {file.file_size > 0 && (
+              <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{formatFileSize(file.file_size)}</span>
+            )}
+            <span style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{timeAgo(file.created_at)}</span>
+          </div>
+
+          {file.description && (
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--text-secondary)', margin: 0, whiteSpace: 'pre-wrap' }}>
+              {file.description}
+            </p>
+          )}
+
+          {(isImage || isPdf) && (
+            <div style={{ background: 'var(--bg-hover)', borderRadius: 8, padding: 16, textAlign: 'center', fontSize: 14, color: 'var(--text-secondary)' }}>
+              <i className={icon} style={{ fontSize: 32, color: iconColor, display: 'block', marginBottom: 8 }} />
+              {isImage ? 'Afbeelding' : 'PDF-document'} — klik hieronder om te openen
+            </div>
+          )}
+
+          <button
+            className="request-card__attachment"
+            onClick={() => onDownload(file.id, file.file_path, file.file_name)}
+          >
+            <i className={icon} style={{ color: iconColor }} />
+            <span>{file.file_name}</span>
+            {file.file_size > 0 && <span className="request-card__attachment-size">{formatFileSize(file.file_size)}</span>}
+            <i className="fa-solid fa-download" />
+          </button>
         </div>
       </div>
-      {confirmDelete && (
-        <ConfirmModal
-          message={`Weet je zeker dat je "${file.title}" wilt verwijderen? Dit kan niet ongedaan gemaakt worden.`}
-          confirmLabel="Verwijderen"
-          danger
-          onConfirm={() => { setConfirmDelete(false); onRemove(file.id) }}
-          onCancel={() => setConfirmDelete(false)}
-        />
-      )}
     </div>
   )
 }
