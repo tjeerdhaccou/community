@@ -52,3 +52,15 @@ export function canDo(userRole, action) {
   if (!required) return false
   return (ROLE_LEVELS[userRole] || 0) >= ROLE_LEVELS[required]
 }
+
+/**
+ * Mag de gebruiker (group-scoped) documenten beheren?
+ * Moderators+ beheren het hele projectdossier; commissieleden mogen documenten
+ * aanmaken/beheren binnen hun eigen commissie, ook zonder moderator-rol.
+ * `isCommissieMember` komt uit useWorkgroups:
+ *   myWorkgroups.some(wg => wg.type === 'commissie')
+ * Spiegelt de RLS in migratie 064 (is_commissie_member).
+ */
+export function canManageGroupDocs(userRole, isCommissieMember) {
+  return canDo(userRole, 'manage_workgroups') || !!isCommissieMember
+}

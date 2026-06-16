@@ -32,6 +32,15 @@ export default function PlatformAdmin() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState(null)
 
+  // Initiatiefgroep (light) form
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [groupName, setGroupName] = useState('')
+  const [groupSlug, setGroupSlug] = useState('')
+  const [groupAdminEmail, setGroupAdminEmail] = useState('')
+  const [creatingGroup, setCreatingGroup] = useState(false)
+  const [createGroupError, setCreateGroupError] = useState(null)
+  const [createGroupResult, setCreateGroupResult] = useState(null)
+
   useEffect(() => { loadOrgs() }, [])
 
   async function loadOrgs() {
@@ -112,6 +121,39 @@ export default function PlatformAdmin() {
     setCreating(false)
   }
 
+  async function handleCreateGroup(e) {
+    e.preventDefault()
+    setCreatingGroup(true)
+    setCreateGroupError(null)
+    setCreateGroupResult(null)
+
+    try {
+      const slug = groupSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
+
+      // 1. Atomair: org (kind=personal) + project + admin-koppeling via RPC
+      const { data, error } = await supabase.rpc('create_initiative_group', {
+        p_group_name: groupName.trim(),
+        p_slug: slug,
+        p_admin_email: groupAdminEmail.trim() || null,
+      })
+      if (error) throw error
+
+      // 2. Subdomain op het project zetten (niet de org)
+      supabase.functions.invoke('setup-project-domain', {
+        body: { slug, project_id: data.project_id },
+      }).catch(() => {}) // non-blocking
+
+      setCreateGroupResult(data)
+      setGroupName('')
+      setGroupSlug('')
+      setGroupAdminEmail('')
+      loadOrgs()
+    } catch (err) {
+      setCreateGroupError(err.message)
+    }
+    setCreatingGroup(false)
+  }
+
   async function toggleStatus(orgId, currentStatus) {
     const newStatus = currentStatus === 'active' ? 'paused' : 'active'
     await supabase.from('organizations').update({ status: newStatus }).eq('id', orgId)
@@ -141,7 +183,10 @@ export default function PlatformAdmin() {
           <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Beheer alle organisaties en projecten</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button className="btn-primary" onClick={() => setShowCreate(!showCreate)}>
+          <button className="btn-primary" onClick={() => { setShowCreateGroup(!showCreateGroup); setShowCreate(false); setCreateGroupResult(null) }}>
+            <i className="fa-solid fa-seedling" /> Nieuwe initiatiefgroep
+          </button>
+          <button className="btn-secondary" onClick={() => { setShowCreate(!showCreate); setShowCreateGroup(false) }}>
             <i className="fa-solid fa-plus" /> Nieuwe organisatie
           </button>
           <button className="btn-secondary" onClick={handleSignOut} title={profile?.email ? `Uitloggen (${profile.email})` : 'Uitloggen'}>
@@ -169,6 +214,48 @@ export default function PlatformAdmin() {
           <span className="platform-admin__stat-label">Actief</span>
         </div>
       </div>
+
+      {/* Create initiatiefgroep (light) form */}
+      {showCreateGroup && (
+        <form className="platform-admin__create" onSubmit={handleCreateGroup}>
+          <h3><i className="fa-solid fa-seedling" style={{ color: 'var(--accent-green)', marginRight: 8 }} /> Nieuwe initiatiefgroep</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: -4, marginBottom: 12 }}>
+            Maakt een eigen (onzichtbare) org + project aan. Komt er later een procesbegeleider bij, dan upgrade je deze groep naar pro — geen migratie nodig.
+          </p>
+          <div className="platform-admin__create-grid">
+            <div className="form-group">
+              <label>Naam groep *</label>
+              <input type="text" value={groupName} onChange={e => { setGroupName(e.target.value); if (!groupSlug) setGroupSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')) }} placeholder="Vlinderhaven" required />
+            </div>
+            <div className="form-group">
+              <label>Slug *</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <input type="text" value={groupSlug} onChange={e => setGroupSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} placeholder="vlinderhaven" required />
+                <span style={{ fontSize: 12, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>.buuur.nl</span>
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Admin e-mail</label>
+              <input type="email" value={groupAdminEmail} onChange={e => setGroupAdminEmail(e.target.value)} placeholder="initiatiefnemer@email.nl" />
+              <span className="form-hint">Bestaand account wordt meteen gekoppeld; anders ontvangt diegene een uitnodiging bij signup.</span>
+            </div>
+          </div>
+          {createGroupError && <p style={{ color: 'var(--accent-red)', fontSize: 13, marginTop: 8 }}>{createGroupError}</p>}
+          {createGroupResult && (
+            <p style={{ color: 'var(--accent-green)', fontSize: 13, marginTop: 8 }}>
+              <i className="fa-solid fa-check" /> Groep aangemaakt op <strong>{createGroupResult.slug}.buuur.nl</strong>
+              {createGroupResult.admin_linked && ' — admin gekoppeld.'}
+              {createGroupResult.admin_invited && ' — admin uitgenodigd (koppelt bij signup).'}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button type="button" className="btn-secondary" onClick={() => { setShowCreateGroup(false); setCreateGroupResult(null) }}>Sluiten</button>
+            <button type="submit" className="btn-primary" disabled={creatingGroup || !groupName.trim() || !groupSlug.trim()}>
+              {creatingGroup ? 'Aanmaken...' : 'Initiatiefgroep aanmaken'}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* Create org form */}
       {showCreate && (

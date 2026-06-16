@@ -40,7 +40,9 @@ const NAV_SECTIONS = [
   {
     label: 'Beheer',
     items: [
+      { to: 'aan-de-slag', icon: 'fa-solid fa-rocket', color: 'var(--accent-green, #3BD269)', bubble: 'green', label: 'Aan de slag', adminOnly: true },
       { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', bubble: 'teal', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
+      { to: 'groepen', icon: 'fa-solid fa-people-group', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Groepen', action: 'manage_workgroups' },
       { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Instellingen', adminOnly: true },
     ]
   },

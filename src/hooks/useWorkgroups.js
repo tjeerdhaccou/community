@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { logger, friendlyError } from '../lib/logger'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 
@@ -71,6 +72,49 @@ export function useWorkgroups() {
     return allWorkgroups.filter(wg => ids.has(wg.id) && (!type || wg.type === type))
   }, [workgroupIdsByProfile, allWorkgroups])
 
+  // ===== CRUD (moderator+ via RLS) =====
+  async function createWorkgroup({ name, description, type, icon }) {
+    const { error } = await supabase.from('workgroups').insert({
+      project_id: projectId,
+      name: name.trim(),
+      description: description?.trim() || null,
+      type: type || 'commissie',
+      icon: icon || null,
+    })
+    if (error) { logger.error('useWorkgroups.create', error); throw new Error(friendlyError(error)) }
+    await fetch()
+  }
+
+  async function updateWorkgroup(id, { name, description, type, icon }) {
+    const { error } = await supabase.from('workgroups').update({
+      name: name.trim(),
+      description: description?.trim() || null,
+      type,
+      icon: icon || null,
+    }).eq('id', id)
+    if (error) { logger.error('useWorkgroups.update', error); throw new Error(friendlyError(error)) }
+    await fetch()
+  }
+
+  async function deleteWorkgroup(id) {
+    const { error } = await supabase.from('workgroups').delete().eq('id', id)
+    if (error) { logger.error('useWorkgroups.delete', error); throw new Error(friendlyError(error)) }
+    await fetch()
+  }
+
+  async function addMember(workgroupId, profileId) {
+    const { error } = await supabase.from('workgroup_members').insert({ workgroup_id: workgroupId, profile_id: profileId })
+    if (error) { logger.error('useWorkgroups.addMember', error); throw new Error(friendlyError(error)) }
+    await fetch()
+  }
+
+  async function removeMember(workgroupId, profileId) {
+    const { error } = await supabase.from('workgroup_members').delete()
+      .eq('workgroup_id', workgroupId).eq('profile_id', profileId)
+    if (error) { logger.error('useWorkgroups.removeMember', error); throw new Error(friendlyError(error)) }
+    await fetch()
+  }
+
   return {
     allWorkgroups,
     myWorkgroups,
@@ -79,5 +123,10 @@ export function useWorkgroups() {
     workgroupsForProfile,
     loading,
     refetch: fetch,
+    createWorkgroup,
+    updateWorkgroup,
+    deleteWorkgroup,
+    addMember,
+    removeMember,
   }
 }
