@@ -388,6 +388,73 @@
 }
 
 /* ============================================================================
+   CROWDBUILDING DARK — eigen donkere modus binnen de CrowdBuilding-stijl.
+   Invested Blue-familie als achtergrond; coral CTA en gele focus blijven.
+   Aparte selector (erft niets van het lichte CB-thema), dus de CB-specifieke
+   tokens — pill-knoppen, tags en nav-bubbels — staan hier opnieuw.
+   ============================================================================ */
+
+[data-theme="crowdbuilding-dark"] {
+  --doodle-pattern:      none;
+  --bg-page:             #130F33;   /* Invested Blue */
+  --bg-surface:          #211B4D;
+  --bg-hover:            #2B2459;
+  --bg-active:           #352D6B;
+  --bg-selected:         #2E2858;
+
+  --text-primary:        #F3F0EB;   /* Inspiring Off-White */
+  --text-secondary:      #A8A4C0;
+  --text-tertiary:       #7C779A;
+  --text-faint:          #5C577E;
+  --text-disabled:       #423D63;
+
+  --border-default:      #2B2459;
+  --border-subtle:       #3A3470;
+  --border-focus:        #FFCA45;   /* gele focus leest op donker beter dan navy */
+
+  /* Structuur licht op donker; CTA blijft coral */
+  --accent-primary:      #CFCBE6;
+  --accent-cta:          #FF5C54;
+  --clean-inbox:         #CFCBE6;
+  --accent-blue:         #CFCBE6;
+  --accent-blue-rgb:     207, 203, 230;
+  --accent-green:        #7AD491;
+
+  /* Pill-knoppen — CrowdBuilding-signatuur */
+  --btn-radius:          var(--radius-full);
+
+  /* Tags — lichtere tekst op donkere tint, leesbaar op donkere kaarten */
+  --tag-blue-bg:         rgba(149, 152, 180, 0.20); --tag-blue-text:   #CFCBE6;
+  --tag-green-bg:        rgba(122, 212, 145, 0.18); --tag-green-text:  #8FE0A6;
+  --tag-yellow-bg:       rgba(255, 202, 69, 0.18);  --tag-yellow-text: #FFD773;
+  --tag-orange-bg:       rgba(231, 176, 149, 0.20); --tag-orange-text: #E7B095;
+  --tag-pink-bg:         rgba(255, 203, 225, 0.16); --tag-pink-text:   #FFC2DC;
+  --tag-purple-bg:       rgba(149, 152, 180, 0.22); --tag-purple-text: #C3C4DC;
+  --tag-red-bg:          rgba(255, 92, 84, 0.20);   --tag-red-text:    #FF9A93;
+
+  /* Sidebar icon-bubbels — identiek aan de lichte stijl (lichte tint + donkere
+     glyph); als lichte chips op de donkere sidebar blijven ze goed leesbaar. */
+  --nav-bub-navy-bg:        #DBDCE7; --nav-bub-navy-glyph:        #130F33;
+  --nav-bub-coral-bg:       #FFDAD7; --nav-bub-coral-glyph:       #D84B41;
+  --nav-bub-green-bg:       #DCF0E2; --nav-bub-green-glyph:       #2E7D4A;
+  --nav-bub-amber-bg:       #FFF0CA; --nav-bub-amber-glyph:       #A77E0A;
+  --nav-bub-periwinkle-bg:  #E7E9EE; --nav-bub-periwinkle-glyph:  #4A4E73;
+  --nav-bub-pink-bg:        #FFE2EE; --nav-bub-pink-glyph:        #C04C7D;
+  --nav-bub-indigo-bg:      #E3E4F0; --nav-bub-indigo-glyph:      #2E2F5C;
+  --nav-bub-stone-bg:       #EFEAE0; --nav-bub-stone-glyph:       #8A7E68;
+  --nav-bub-peach-bg:       #FCE3D3; --nav-bub-peach-glyph:       #C56A2A;
+  --nav-bub-terracotta-bg:  #FBD9D6; --nav-bub-terracotta-glyph:  #B23A33;
+  --nav-bub-teal-bg:        #E2EEF5; --nav-bub-teal-glyph:        #2E6E8E;
+  --nav-bub-neutral-bg:     #EFEDE8; --nav-bub-neutral-glyph:     #7C7868;
+
+  --shadow-xs:           0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm:           0 2px 8px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md:           0 6px 20px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-lg:           0 12px 40px rgba(0, 0, 0, 0.50), 0 4px 12px rgba(0, 0, 0, 0.30);
+  --shadow-xl:           0 20px 60px rgba(0, 0, 0, 0.60), 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* ============================================================================
    FONT AWESOME — Self-Hosted @font-face
    
    Place these woff2 files in your project's fonts/ directory:

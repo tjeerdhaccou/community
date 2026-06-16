@@ -10,36 +10,42 @@ function isEveningNow() {
 }
 
 export function ThemeProvider({ children, projectBranding, scope }) {
-  const storageKey = scope ? `theme-mode-${scope}` : null
+  const storageKey = scope ? `dark-mode-${scope}` : null
 
-  // Het thema dat geldt zonder handmatige keuze: 's avonds donker, anders het
-  // project-/org-standaardthema (front-end project-dashboard biedt 'light' niet aan).
-  const autoMode = () => {
-    if (isEveningNow()) return 'dark'
-    let base = projectBranding?.default_theme || 'light'
-    if (scope?.startsWith('project-') && base === 'light') base = 'warm'
-    return base
-  }
+  // STIJL-AS (clean ↔ crowdbuilding) komt UITSLUITEND uit de CMS-cascade
+  // (organizations/projects.default_theme, geresolved in ProjectContext).
+  // De gebruiker kiest de stijl niet — alleen licht/donker.
+  const style = projectBranding?.default_theme === 'crowdbuilding' ? 'crowdbuilding' : 'clean'
 
-  const [mode, setModeState] = useState(() => {
-    if (!storageKey) return 'light'
+  // LICHT/DONKER-AS is wél een gebruikerskeuze (knop rechtsboven). Zonder
+  // handmatige keuze 's avonds automatisch donker.
+  const [dark, setDarkState] = useState(() => {
+    if (!storageKey) return false
     const stored = safeStorage.getItem(storageKey)
-    // Handmatige keuze onthouden; oude 'contrast'-keuze negeren (thema verwijderd).
-    if (stored && stored !== 'contrast') return stored
-    return autoMode()
+    if (stored === 'dark') return true
+    if (stored === 'light') return false
+    return isEveningNow()
   })
 
   // Expliciete keuze: opslaan én de avond-automatiek uitschakelen voor deze scope.
-  const setMode = storageKey
+  const setDark = storageKey
     ? (next) => {
-        safeStorage.setItem(storageKey, next)
-        setModeState(next)
+        safeStorage.setItem(storageKey, next ? 'dark' : 'light')
+        setDarkState(next)
       }
     : () => {}
+  const toggleDark = () => setDark(!dark)
+
+  // data-theme = stijl × licht/donker.
+  const dataTheme = !storageKey
+    ? 'light'
+    : style === 'crowdbuilding'
+      ? (dark ? 'crowdbuilding-dark' : 'crowdbuilding')
+      : (dark ? 'dark' : 'warm')
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', mode)
-  }, [mode])
+    document.documentElement.setAttribute('data-theme', dataTheme)
+  }, [dataTheme])
 
   // Zonder handmatige keuze het thema bijwerken wanneer het tabblad weer zichtbaar
   // wordt — zo wordt het 's avonds donker zonder herladen.
@@ -48,20 +54,18 @@ export function ThemeProvider({ children, projectBranding, scope }) {
     const onVisible = () => {
       if (document.visibilityState !== 'visible') return
       const stored = safeStorage.getItem(storageKey)
-      if (stored && stored !== 'contrast') return
-      setModeState(autoMode())
+      if (stored === 'dark' || stored === 'light') return
+      setDarkState(isEveningNow())
     }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey, projectBranding?.default_theme])
+  }, [storageKey])
 
   useEffect(() => {
-    // Apply project branding colors as CSS custom properties.
-    // Uitzondering: in het CrowdBuilding-thema willen we het volledige merkpalet
-    // (Invested Blue + Coral) tonen — project-branding zou de structuurkleur
-    // anders inline overschrijven, waardoor het thema niet zichtbaar is.
-    const applyBranding = mode !== 'crowdbuilding'
+    // Project-merkkleuren toepassen als CSS custom properties.
+    // Uitzondering: in de CrowdBuilding-stijl tonen we het volledige merkpalet,
+    // dus project-branding mag de structuurkleur dan niet inline overschrijven.
+    const applyBranding = style !== 'crowdbuilding'
     if (applyBranding && projectBranding?.brand_primary_color) {
       document.documentElement.style.setProperty('--accent-primary', projectBranding.brand_primary_color)
       document.documentElement.style.setProperty('--border-focus', projectBranding.brand_primary_color)
@@ -76,17 +80,10 @@ export function ThemeProvider({ children, projectBranding, scope }) {
       document.documentElement.style.removeProperty('--border-focus')
       document.documentElement.style.removeProperty('--accent-green')
     }
-  }, [projectBranding, mode])
-
-  // Reset to light when entering an unscoped context
-  useEffect(() => {
-    if (!storageKey) {
-      document.documentElement.setAttribute('data-theme', 'light')
-    }
-  }, [storageKey])
+  }, [projectBranding, style])
 
   return (
-    <ThemeContext.Provider value={{ mode, setMode, scoped: !!storageKey }}>
+    <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey }}>
       {children}
     </ThemeContext.Provider>
   )

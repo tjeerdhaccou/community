@@ -131,7 +131,6 @@ export default function Settings() {
         name, tagline, location, description,
         brand_primary_color: primaryColor,
         brand_accent_color: accentColor,
-        default_theme: defaultTheme === 'inherit' ? null : defaultTheme,
         logo_url: logoUrl || null,
         cover_image_url: coverImageUrl || null,
         intake_enabled: intakeEnabled,
@@ -214,29 +213,6 @@ export default function Settings() {
                 )}
               </div>
               <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoSelect} style={{ display: 'none' }} />
-            </div>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: 24 }}>
-            <label>Standaard thema</label>
-            <p className="form-hint">Kies "Organisatie" om het thema van je organisatie te volgen.</p>
-            <div className="theme-select">
-              {[
-                { value: 'inherit', icon: 'fa-building', label: 'Organisatie' },
-                { value: 'warm', icon: 'fa-cloud-sun', label: 'Warm' },
-                { value: 'dark', icon: 'fa-moon', label: 'Donker' },
-                { value: 'crowdbuilding', icon: 'fa-palette', label: 'CrowdBuilding' },
-              ].map(t => (
-                <button
-                  key={t.value}
-                  type="button"
-                  className={`theme-select__btn ${defaultTheme === t.value ? 'theme-select__btn--active' : ''}`}
-                  onClick={() => setDefaultTheme(t.value)}
-                >
-                  <i className={`fa-solid ${t.icon}`} />
-                  {t.label}
-                </button>
-              ))}
             </div>
           </div>
 

@@ -6,25 +6,16 @@ import GlobalSearch from './GlobalSearch'
 import { useTheme } from '../contexts/ThemeContext'
 
 function ThemeToggle() {
-  const { mode, setMode } = useTheme()
-
-  const modes = [
-    { value: 'warm', icon: 'fa-solid fa-cloud-sun', label: 'Warm' },
-    { value: 'dark', icon: 'fa-solid fa-moon', label: 'Donker' },
-    { value: 'crowdbuilding', icon: 'fa-solid fa-palette', label: 'CrowdBuilding' },
-  ]
-
-  const current = modes.find(m => m.value === mode) || modes[0]
-  const nextIndex = (modes.findIndex(m => m.value === current.value) + 1) % modes.length
+  const { dark, toggleDark } = useTheme()
 
   return (
     <button
       className="theme-toggle-btn"
-      onClick={() => setMode(modes[nextIndex].value)}
-      title={`Thema: ${current.label}`}
-      aria-label={`Thema: ${current.label}`}
+      onClick={toggleDark}
+      title={dark ? 'Lichte modus' : 'Donkere modus'}
+      aria-label={dark ? 'Schakel naar lichte modus' : 'Schakel naar donkere modus'}
     >
-      <i className={current.icon} />
+      <i className={dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'} />
     </button>
   )
 }

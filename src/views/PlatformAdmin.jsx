@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { useTheme } from '../contexts/ThemeContext'
 import { openSubdomainInNewTab } from '../lib/subdomain'
 import { signOut } from '../lib/auth'
 
@@ -16,7 +15,6 @@ const TIER_LABELS = { free: 'Free', pro: 'Pro', enterprise: 'Enterprise' }
 
 export default function PlatformAdmin() {
   const { isPlatformAdmin, profile } = useAuth()
-  const { mode, setMode } = useTheme()
   const navigate = useNavigate()
 
   async function handleSignOut() {
@@ -118,12 +116,6 @@ export default function PlatformAdmin() {
     const newStatus = currentStatus === 'active' ? 'paused' : 'active'
     await supabase.from('organizations').update({ status: newStatus }).eq('id', orgId)
     setOrgs(prev => prev.map(o => o.id === orgId ? { ...o, status: newStatus } : o))
-  }
-
-  async function setOrgTheme(orgId, theme) {
-    const value = theme || null
-    await supabase.from('organizations').update({ default_theme: value }).eq('id', orgId)
-    setOrgs(prev => prev.map(o => o.id === orgId ? { ...o, default_theme: value } : o))
   }
 
   if (!isPlatformAdmin) {
@@ -257,19 +249,6 @@ export default function PlatformAdmin() {
                 </div>
 
                 <div className="platform-admin__org-actions">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-secondary)' }}>
-                    <i className="fa-solid fa-palette" style={{ color: 'var(--text-tertiary)' }} />
-                    <select
-                      value={org.default_theme || ''}
-                      onChange={e => setOrgTheme(org.id, e.target.value)}
-                      style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--radius-sm)' }}
-                    >
-                      <option value="">Standaard (warm)</option>
-                      <option value="warm">Warm</option>
-                      <option value="dark">Donker</option>
-                      <option value="crowdbuilding">CrowdBuilding</option>
-                    </select>
-                  </label>
                   <button className="btn-secondary btn-sm" onClick={() => openSubdomainInNewTab(`https://${org.slug}.buuur.nl/admin`)}>
                     <i className="fa-solid fa-arrow-up-right-from-square" /> Dashboard
                   </button>

@@ -9,18 +9,15 @@ import ProjectDashboardCard from '../components/ProjectDashboardCard'
 import NewProjectCard from '../components/NewProjectCard'
 import ProfileEditModal from '../components/ProfileEditModal'
 
-const THEME_MODES = [
-  { value: 'light', icon: 'fa-solid fa-sun' },
-  { value: 'warm', icon: 'fa-solid fa-cloud-sun' },
-  { value: 'dark', icon: 'fa-solid fa-moon' },
-]
-
-function ThemeToggle({ mode, setMode }) {
-  const current = THEME_MODES.find(m => m.value === mode)
-  const nextIndex = (THEME_MODES.findIndex(m => m.value === mode) + 1) % THEME_MODES.length
+function ThemeToggle({ dark, onToggle }) {
   return (
-    <button className="theme-toggle-btn" onClick={() => setMode(THEME_MODES[nextIndex].value)} title={`Thema: ${mode}`}>
-      <i className={current.icon} />
+    <button
+      className="theme-toggle-btn"
+      onClick={onToggle}
+      title={dark ? 'Lichte modus' : 'Donkere modus'}
+      aria-label={dark ? 'Schakel naar lichte modus' : 'Schakel naar donkere modus'}
+    >
+      <i className={dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'} />
     </button>
   )
 }
@@ -31,7 +28,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
   const { isOrgAdmin, primaryOrg, primaryOrgId, profile, reload: reloadAuth } = useAuth()
   const profileIncomplete = isOrgAdmin && profile && !profile.full_name?.trim()
   const orgId = orgIdProp || primaryOrgId
-  const { mode, setMode } = useTheme()
+  const { dark, toggleDark } = useTheme()
   const navigate = useNavigate()
   const isSubdomain = !!getProjectSlugFromSubdomain()
   const settingsPath = isSubdomain ? '/settings' : `/org/${orgSlug || orgId}/settings`
@@ -163,7 +160,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
           <h1 className="org-topbar__name">{org?.name || 'Organisatie'}</h1>
         </div>
         <div className="org-topbar__right">
-          <ThemeToggle mode={mode} setMode={setMode} />
+          <ThemeToggle dark={dark} onToggle={toggleDark} />
           {isOrgAdmin && (
             <>
               <button className="btn-secondary" onClick={() => navigate(settingsPath)} aria-label="Instellingen">
