@@ -6,12 +6,23 @@ import { useAuth } from '../contexts/AuthContext'
 import { useRoadmap } from '../hooks/useRoadmap'
 import { ROLE_LABELS, timeAgo, POST_TAG_COLORS } from '../lib/constants'
 import { canDo } from '../lib/permissions'
+import { safeStorage } from '../lib/safeStorage'
 import Skeleton from '../components/Skeleton'
 
 export default function Dashboard() {
   const { project, role, loading, basePath } = useProject()
-  const { profile } = useAuth()
+  const { profile, isPlatformAdmin } = useAuth()
   const navigate = useNavigate()
+
+  // Verse group-admins naar "Aan de slag" tot de checklist klaar/weggeklikt is.
+  // Platform admins die rondkijken slaan we over; de session-guard voorkomt
+  // een redirect-loop nadat de admin in dezelfde sessie heeft weggeklikt.
+  useEffect(() => {
+    if (loading || !project || role !== 'admin' || isPlatformAdmin) return
+    if (project.onboarding_dismissed) return
+    if (safeStorage.getItem(`buuur-onboarding-skip-${project.id}`)) return
+    navigate(`${basePath}/aan-de-slag`, { replace: true })
+  }, [loading, project, role, isPlatformAdmin, basePath, navigate])
   const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)

@@ -41,6 +41,8 @@ import NotificationOnboardingModal from './components/NotificationOnboardingModa
 import Unsubscribe from './views/Unsubscribe'
 import PublicProject from './views/PublicProject'
 import PageBuilder from './views/PageBuilder'
+import Onboarding from './views/Beheer/Onboarding'
+import Groepen from './views/Beheer/Groepen'
 import MyDocuments from './views/MyDocuments'
 import PlatformAdmin from './views/PlatformAdmin'
 import OrgOnboarding from './views/OrgOnboarding'
@@ -342,6 +344,8 @@ function NormalRoutes() {
         <Route path="members" element={<FeatureRoute feature="members"><Members /></FeatureRoute>} />
         <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
         <Route path="profile" element={<Profile />} />
+        <Route path="aan-de-slag" element={<Onboarding />} />
+        <Route path="groepen" element={<Groepen />} />
         <Route path="settings" element={<Settings />} />
         <Route path="page-builder" element={<FeatureRoute feature="page_builder"><PageBuilder /></FeatureRoute>} />
       </Route>
@@ -423,6 +427,8 @@ function ProjectSubdomainApp({ slug }) {
           <Route path="roadmap" element={<FeatureRoute feature="roadmap"><Roadmap /></FeatureRoute>} />
           <Route path="documents" element={<FeatureRoute feature="documents"><DocumentArchive /></FeatureRoute>} />
           <Route path="members" element={<FeatureRoute feature="members"><Members /></FeatureRoute>} />
+          <Route path="aan-de-slag" element={<Onboarding />} />
+          <Route path="groepen" element={<Groepen />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
           <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
