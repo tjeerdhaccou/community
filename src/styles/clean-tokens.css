@@ -25,6 +25,8 @@
      ────────────────────────────────────────────────────────────────────────── */
   --accent-primary:      #4A90D9;   /* Primary actions, links, FAB */
   --accent-cta:          var(--accent-primary);  /* Filled CTA buttons. Defaults to primary; a theme can split it off (zie crowdbuilding-thema) */
+  --accent-blue:         #4A90D9;   /* Info/link-blauw als token zodat een thema het kan vervangen */
+  --accent-blue-rgb:     74, 144, 217;  /* Zelfde blauw als rgb-triplet voor rgba(var(--accent-blue-rgb), x) tints */
   --accent-yellow:       #F4B400;   /* Stars, highlights, financial */
   --accent-red:          #E74C3C;   /* Deadlines, overdue, destructive */
   --accent-green:        #3BD269;   /* Success, completion, positive */
@@ -328,6 +330,11 @@
   /* Structuurkleur = Invested Blue, CTA = Rebellious Coral */
   --accent-primary:      #130F33;
   --accent-cta:          #FF5C54;
+
+  /* Al het lichtblauw → Invested Blue (sidebar-inbox-icoon, info/link-blauw en tints) */
+  --clean-inbox:         #130F33;
+  --accent-blue:         #130F33;
+  --accent-blue-rgb:     19, 15, 51;
 
   /* Blauwe tags → navy-tint (info/structuur, geen CTA) */
   --tag-blue-bg:         rgba(19, 15, 51, 0.10);

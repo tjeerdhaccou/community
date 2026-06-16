@@ -398,7 +398,7 @@
 
 .cl-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.15);
 }
 
 .cl-input::placeholder { color: var(--text-faint); }

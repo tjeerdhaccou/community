@@ -22,7 +22,7 @@ const TYPE_LABELS = {
 
 const STATUS_CONFIG = {
   pending: { label: 'Actie vereist', color: 'var(--accent-orange, #F5A623)', bg: 'rgba(245, 166, 35, 0.12)' },
-  submitted: { label: 'Ingediend', color: 'var(--accent-blue, #4A90D9)', bg: 'rgba(74, 144, 217, 0.12)' },
+  submitted: { label: 'Ingediend', color: 'var(--accent-blue, #4A90D9)', bg: 'rgba(var(--accent-blue-rgb), 0.12)' },
   approved: { label: 'Goedgekeurd', color: 'var(--accent-green, #3BD269)', bg: 'rgba(59, 210, 105, 0.12)' },
   rejected: { label: 'Afgekeurd', color: 'var(--accent-red, #E53E3E)', bg: 'rgba(229, 62, 62, 0.12)' },
 }
@@ -279,7 +279,7 @@ function TeamFileCard({ file, onOpen }) {
   return (
     <div className="request-card" onClick={onOpen} role="button" tabIndex={0}>
       <div className="request-card__header">
-        <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(74, 144, 217, 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
+        <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(var(--accent-blue-rgb), 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
           {CATEGORY_LABELS[file.category] || file.category || 'Document'}
         </span>
         {file.file_size > 0 && (
@@ -431,7 +431,7 @@ function RequestDetailModal({ request, uploading, onClose, onDownload, onUpload,
           )}
 
           {request.status === 'submitted' && !request.response_file && request.type === 'review_document' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--accent-blue, #4A90D9)', padding: '10px 14px', background: 'rgba(74, 144, 217, 0.08)', borderRadius: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--accent-blue, #4A90D9)', padding: '10px 14px', background: 'rgba(var(--accent-blue-rgb), 0.08)', borderRadius: 8 }}>
               <i className="fa-solid fa-eye" />
               <span>Je hebt dit document als gelezen gemarkeerd</span>
             </div>
@@ -486,7 +486,7 @@ function FileDetailModal({ file, onClose, onDownload }) {
         </div>
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(74, 144, 217, 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
+            <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(var(--accent-blue-rgb), 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
               {CATEGORY_LABELS[file.category] || file.category || 'Document'}
             </span>
             {file.file_size > 0 && (
