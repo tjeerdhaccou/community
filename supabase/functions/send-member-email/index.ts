@@ -24,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, personalMessage, orgName, orgUrl, inviterName } = await req.json()
+    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, personalMessage, orgName, orgUrl, inviterName, groupName } = await req.json()
 
     if (!memberEmail) {
       return new Response(JSON.stringify({ error: 'No email address' }), {
@@ -214,6 +214,31 @@ serve(async (req) => {
           </p>
           <p style="font-size: 14px; color: #9ba1b0;">
             De link werkt eenmalig en is een uur geldig. Als je deze mail niet verwachtte kun je hem negeren.
+          </p>
+        </div>
+      `
+    } else if (type === 'added_to_workgroup') {
+      const greeting = memberName ? `Hoi ${memberName}` : 'Hoi'
+      const group = groupName || 'een groep'
+      const link = projectUrl ? projectUrl.replace(/\/$/, '') : null
+      subject = `Je bent toegevoegd aan ${group}`
+      html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+          <h1 style="font-size: 24px; color: #1a1a2e; margin-bottom: 16px;">${greeting},</h1>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            Je bent toegevoegd aan de groep <strong>${group}</strong>${projectName ? ` van <strong>${projectName}</strong>` : ''}.
+          </p>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            Berichten die binnen deze groep gedeeld worden zie je voortaan op het prikbord, en documenten die met de groep gedeeld zijn vind je bij Documenten.
+          </p>
+          ${link ? `
+          <p style="margin: 28px 0;">
+            <a href="${link}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+              Naar de community
+            </a>
+          </p>` : ''}
+          <p style="font-size: 14px; color: #9ba1b0; margin-top: 32px;">
+            Dit is een automatisch bericht${projectName ? ` van ${projectName}` : ''}.
           </p>
         </div>
       `

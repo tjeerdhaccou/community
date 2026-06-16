@@ -4333,6 +4333,18 @@ select.input {
   border-radius: 8px;
 }
 
+.member-card__badge--commissie {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.member-card__badge--commissie i {
+  font-size: 10px;
+}
+
 /* Member profile modal — enriched */
 .member-profile__stats {
   display: flex;
