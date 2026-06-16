@@ -3013,7 +3013,8 @@ select.input {
 }
 
 .events-filter-row .tag-filter,
-.events-filter-row .tag-filters {
+.events-filter-row .tag-filters,
+.events-filter-row .tag-filter-wrap {
   margin-bottom: 0;
 }
 
@@ -5643,22 +5644,22 @@ select.input {
 .roadmap-dot--step {
   width: 10px;
   height: 10px;
-  background: var(--accent-blue);
+  background: var(--rm-dot-step);
 }
 .roadmap-dot--milestone {
   width: 10px;
   height: 10px;
-  background: #F09020;
+  background: var(--rm-dot-milestone);
 }
 .roadmap-dot--key {
   width: 10px;
   height: 10px;
-  background: #F23578;
+  background: var(--rm-dot-key);
 }
 .roadmap-dot--special {
   width: 10px;
   height: 10px;
-  background: #3BD269;
+  background: var(--rm-dot-special);
 }
 
 /* Item content */
@@ -5679,11 +5680,11 @@ select.input {
   line-height: 1.35;
 }
 .roadmap-item__title--key {
-  color: var(--accent-pink, #F23578);
+  color: var(--rm-dot-key);
   font-weight: 700;
 }
 .roadmap-item--special .roadmap-item__title {
-  color: var(--accent-green, #3BD269);
+  color: var(--rm-dot-special);
 }
 
 .roadmap-item__snippet {
@@ -5725,20 +5726,20 @@ select.input {
   white-space: nowrap;
 }
 .roadmap-tag--blue {
-  background: rgba(var(--accent-blue-rgb), 0.1);
-  color: var(--accent-primary);
+  background: var(--tag-blue-bg);
+  color: var(--tag-blue-text);
 }
 .roadmap-tag--orange {
-  background: rgba(240, 144, 32, 0.1);
-  color: var(--accent-orange, #F09020);
+  background: var(--tag-orange-bg);
+  color: var(--tag-orange-text);
 }
 .roadmap-tag--pink {
-  background: rgba(242, 53, 120, 0.1);
-  color: var(--accent-pink, #F23578);
+  background: var(--tag-pink-bg);
+  color: var(--tag-pink-text);
 }
 .roadmap-tag--green {
-  background: rgba(59, 210, 105, 0.1);
-  color: var(--accent-green, #3BD269);
+  background: var(--tag-green-bg);
+  color: var(--tag-green-text);
 }
 .roadmap-tag--muted {
   background: rgba(155, 161, 176, 0.1);
@@ -5753,7 +5754,7 @@ select.input {
 
 /* Roadmap progress indicator in phase period */
 .roadmap-phase__progress {
-  color: var(--accent-green, #3BD269);
+  color: var(--rm-status-done);
 }
 
 /* Done items */
