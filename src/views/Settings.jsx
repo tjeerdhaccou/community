@@ -44,7 +44,7 @@ export default function Settings() {
       setDescription(project.description || '')
       setPrimaryColor(project.brand_primary_color || '#4A90D9')
       setAccentColor(project.brand_accent_color || '#3BD269')
-      setDefaultTheme(project.default_theme === 'light' ? 'warm' : (project.default_theme || 'warm'))
+      setDefaultTheme(project.default_theme === 'light' ? 'warm' : (project.default_theme || 'inherit'))
       setLogoUrl(project.logo_url || '')
       setLogoPreview(project.logo_url || '')
       setCoverImageUrl(project.cover_image_url || '')
@@ -131,7 +131,7 @@ export default function Settings() {
         name, tagline, location, description,
         brand_primary_color: primaryColor,
         brand_accent_color: accentColor,
-        default_theme: defaultTheme,
+        default_theme: defaultTheme === 'inherit' ? null : defaultTheme,
         logo_url: logoUrl || null,
         cover_image_url: coverImageUrl || null,
         intake_enabled: intakeEnabled,
@@ -219,8 +219,10 @@ export default function Settings() {
 
           <div className="form-group" style={{ marginBottom: 24 }}>
             <label>Standaard thema</label>
+            <p className="form-hint">Kies "Organisatie" om het thema van je organisatie te volgen.</p>
             <div className="theme-select">
               {[
+                { value: 'inherit', icon: 'fa-building', label: 'Organisatie' },
                 { value: 'warm', icon: 'fa-cloud-sun', label: 'Warm' },
                 { value: 'dark', icon: 'fa-moon', label: 'Donker' },
                 { value: 'crowdbuilding', icon: 'fa-palette', label: 'CrowdBuilding' },

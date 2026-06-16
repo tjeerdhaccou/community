@@ -22,6 +22,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
   const [inviteIntro, setInviteIntro] = useState('')
+  const [defaultTheme, setDefaultTheme] = useState('warm')
   const [logoUrl, setLogoUrl] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
   const [admins, setAdmins] = useState([])
@@ -58,6 +59,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
         setLogoUrl(orgRes.data.logo_url)
         setLogoPreview(orgRes.data.logo_url)
         setInviteIntro(orgRes.data.invite_intro_text || '')
+        setDefaultTheme(orgRes.data.default_theme || 'warm')
       }
       setAdmins(adminsRes.data || [])
       setPendingInvites(invitesRes.data || [])
@@ -205,6 +207,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
           name: name.trim(),
           logo_url: logoUrl,
           invite_intro_text: inviteIntro.trim() || null,
+          default_theme: defaultTheme,
         })
         .eq('id', org?.id || orgId)
       if (error) throw error
@@ -271,6 +274,31 @@ export default function OrgSettings({ orgId: orgIdProp }) {
                 Variabelen: <code>{'{naam}'}</code> = naam van de uitgenodigde, <code>{'{projectnaam}'}</code> = naam van het project.
                 Lege regel tussen alinea&apos;s.
               </p>
+            </div>
+          </div>
+
+          <div className="profile-section">
+            <h3 className="profile-section__title">Thema</h3>
+            <p className="form-hint" style={{ marginBottom: 16 }}>
+              Standaardthema voor alle projecten in deze organisatie. Projecten die op
+              &quot;Organisatie&quot; staan volgen deze keuze; projecten met een eigen thema overschrijven het.
+            </p>
+            <div className="theme-select">
+              {[
+                { value: 'warm', icon: 'fa-cloud-sun', label: 'Warm' },
+                { value: 'dark', icon: 'fa-moon', label: 'Donker' },
+                { value: 'crowdbuilding', icon: 'fa-palette', label: 'CrowdBuilding' },
+              ].map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  className={`theme-select__btn ${defaultTheme === t.value ? 'theme-select__btn--active' : ''}`}
+                  onClick={() => setDefaultTheme(t.value)}
+                >
+                  <i className={`fa-solid ${t.icon}`} />
+                  {t.label}
+                </button>
+              ))}
             </div>
           </div>
 

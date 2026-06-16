@@ -11,6 +11,7 @@ export function ProjectProvider({ children, slugOverride }) {
   const slug = slugOverride || params.slug
   const { user, memberships, orgMemberships, isOrgAdmin, isPlatformAdmin, reload: reloadAuth } = useAuth()
   const [project, setProject] = useState(null)
+  const [org, setOrg] = useState(null)
   const [milestones, setMilestones] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -60,6 +61,20 @@ export function ProjectProvider({ children, slugOverride }) {
         reloadAuth()
       }
 
+      // Organisatie-thema ophalen voor de cascade (project erft van org als het
+      // zelf geen default_theme heeft). Faalt stil voor leden die de org niet
+      // mogen lezen → dan valt het thema terug op project/warm.
+      let orgData = null
+      if (proj.organization_id) {
+        const orgRes = await supabase
+          .from('organizations')
+          .select('default_theme')
+          .eq('id', proj.organization_id)
+          .single()
+        orgData = orgRes.data
+      }
+      setOrg(orgData)
+
       const milestonesRes = await supabase
         .from('milestones')
         .select('*')
@@ -78,7 +93,8 @@ export function ProjectProvider({ children, slugOverride }) {
   const branding = project ? {
     brand_primary_color: project.brand_primary_color,
     brand_accent_color: project.brand_accent_color,
-    default_theme: project.default_theme,
+    // Cascade: eigen projectthema → organisatiethema → (ThemeContext valt terug op warm)
+    default_theme: project.default_theme || org?.default_theme || undefined,
   } : {}
 
   const isSubdomain = isProjectDomain()
