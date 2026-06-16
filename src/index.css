@@ -1257,6 +1257,16 @@ select.input {
   color: var(--accent-primary);
 }
 
+/* Geen lelijke focus-box bij klik; wel een nette ring bij toetsenbordnavigatie */
+.tag-filter__pill:focus {
+  outline: none;
+}
+
+.tag-filter__pill:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 .tag-filter__pill--active {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
@@ -4333,16 +4343,29 @@ select.input {
   border-radius: 8px;
 }
 
-.member-card__badge--commissie {
+.member-card__commissies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.member-card__commissie {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
   background: var(--bg-hover);
   color: var(--text-secondary);
 }
 
-.member-card__badge--commissie i {
-  font-size: 10px;
+.member-card__commissie i {
+  font-size: 9px;
+  opacity: 0.7;
 }
 
 /* Member profile modal — enriched */
