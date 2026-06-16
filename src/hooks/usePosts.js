@@ -25,6 +25,7 @@ export function usePosts() {
       .select(`
         *,
         author:profiles!author_id(id, full_name, avatar_url),
+        workgroup:workgroups(name),
         comments(count),
         post_likes(profile_id),
         post_follows(profile_id),
@@ -60,6 +61,7 @@ export function usePosts() {
 
         return {
           ...p,
+          workgroup_name: p.workgroup?.name || null,
           comment_count: p.comments?.[0]?.count || 0,
           like_count: p.post_likes?.length || 0,
           is_liked: p.post_likes?.some(l => l.profile_id === user?.id) || false,
@@ -98,7 +100,8 @@ export function usePosts() {
     return () => { supabase.removeChannel(channel); clearTimeout(debounceRef.current) }
   }, [projectId, fetchPosts])
 
-  async function createPost({ text, tag, audience, image_url, post_type, poll_options }) {
+  async function createPost({ text, tag, audience, workgroup_id, image_url, post_type, poll_options }) {
+    const resolvedAudience = audience || 'members'
     const { data, error } = await supabase
       .from('posts')
       .insert({
@@ -106,7 +109,8 @@ export function usePosts() {
         author_id: user.id,
         text,
         tag: tag || null,
-        audience: audience || 'members',
+        audience: resolvedAudience,
+        workgroup_id: resolvedAudience === 'workgroup' ? (workgroup_id || null) : null,
         image_url: image_url || null,
         post_type: post_type || 'post',
       })
