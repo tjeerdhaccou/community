@@ -8,6 +8,7 @@ const TABS = [
   { to: 'community', icon: 'fa-solid fa-comments', label: 'Prikbord', action: 'read_board' },
   { to: 'events', icon: 'fa-solid fa-calendar-check', label: 'Events', action: 'view_meetings' },
   { to: 'members', icon: 'fa-solid fa-users', label: 'Leden' },
+  { to: 'profile', icon: 'fa-solid fa-circle-user', label: 'Account' },
 ]
 
 export default function BottomNav() {
@@ -27,7 +28,7 @@ export default function BottomNav() {
         return (
           <button
             key={tab.to}
-            onClick={() => navigate(tab.to === '' ? basePath : `${basePath}/${tab.to}`)}
+            onClick={() => navigate(tab.to === '' ? (basePath || '/') : `${basePath}/${tab.to}`)}
             className={`bottom-nav-item ${isActive(tab.to) ? 'bottom-nav-item--active' : ''}`}
           >
             <i className={tab.icon} />

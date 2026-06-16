@@ -2067,7 +2067,7 @@ select.input {
   z-index: 1;
 }
 
-.post-detail-content { padding: 24px; padding-top: 40px; }
+.post-detail-content { padding: 24px; padding-top: 4px; }
 
 .post-detail-text {
   font-size: 16px;
@@ -7582,13 +7582,16 @@ select.input {
 }
 /* Unified detail-modal action bar (top-right) */
 .modal-detail-actions {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+  position: sticky;
+  top: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 2px;
-  z-index: 2;
+  z-index: 3;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
 }
 .modal-detail-actions button {
   width: 32px;
@@ -7980,6 +7983,18 @@ select.input {
   display: flex;
   flex-direction: column;
   z-index: 100;
+}
+/* Mobiel: resultaten als full-width paneel vanaf bovenaf i.p.v. afgesneden dropdown */
+@media (max-width: 640px) {
+  .global-search-dropdown {
+    position: fixed;
+    top: 60px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 75vh;
+    border-radius: var(--radius-lg, 16px);
+  }
 }
 .global-search-loading {
   padding: 24px; text-align: center;
