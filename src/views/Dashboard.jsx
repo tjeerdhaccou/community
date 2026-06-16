@@ -223,7 +223,7 @@ export default function Dashboard() {
                       : <div className="dash-post-item__avatar dash-post-item__avatar--placeholder">{(p.author?.full_name || 'U')[0]}</div>
                     }
                     <span className="dash-post-item__text">{p.text}</span>
-                    {p.tag && <span className="dash-post-item__tag" style={{ color: POST_TAG_COLORS[p.tag] }}>{p.tag}</span>}
+                    {p.tag && <span className="dash-post-item__tag" style={{ color: POST_TAG_COLORS[p.tag]?.color }}>{p.tag}</span>}
                   </div>
                 ))}
               </div>

@@ -8,7 +8,7 @@ export default function PostCard({ post, onReaction, onFollow, onVotePoll, onDel
   const menuRef = useRef(null)
   const isAuthor = post.author_id === currentUserId
   const canManage = isAuthor || canModerate
-  const tagColor = POST_TAG_COLORS[post.tag]
+  const tagStyle = POST_TAG_COLORS[post.tag]
   const isPoll = post.post_type === 'poll'
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function PostCard({ post, onReaction, onFollow, onVotePoll, onDel
           </span>
         )}
         {post.tag && (
-          <span className="feed-card__tag" style={{ color: tagColor, background: tagColor ? `${tagColor}14` : undefined }}>
+          <span className="feed-card__tag" style={{ color: tagStyle?.color, background: tagStyle?.bg }}>
             {post.tag}
           </span>
         )}
