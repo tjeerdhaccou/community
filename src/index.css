@@ -298,6 +298,28 @@ select.input {
   color: var(--text-tertiary, #9BA1B0);
   padding: 14px 20px 4px;
 }
+.sidebar-nav-group__label--toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: color 120ms;
+}
+.sidebar-nav-group__label--toggle:hover {
+  color: var(--text-secondary, #6B7280);
+}
+.sidebar-nav-group__chevron {
+  margin-left: auto;
+  font-size: 9px;
+  transition: transform 150ms ease;
+}
+.sidebar-nav-group__chevron--open {
+  transform: rotate(180deg);
+}
 
 .sidebar-badge {
   margin-left: auto;
@@ -7799,6 +7821,53 @@ select.input {
   scrollbar-width: thin;
   scrollbar-color: var(--text-faint, #B0B5C3) transparent;
 }
+/* Cluster-tabs — top-level tabs voor geclusterde views (Leden, Organisatie,
+   Documenten). Underline-stijl zodat ze visueel boven de pill-tabs (.seg-tabs)
+   van de onderliggende views staan. */
+.cluster-view { display: flex; flex-direction: column; }
+.cluster-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border-default);
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cluster-tabs::-webkit-scrollbar { display: none; }
+.cluster-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  margin-bottom: -1px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 150ms, border-color 150ms;
+}
+.cluster-tab:hover { color: var(--text-primary); }
+.cluster-tab--active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+.cluster-tab__count {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.cluster-tab--active .cluster-tab__count {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
 .event-tab-content { display: flex; flex-direction: column; gap: 20px; }
 .event-tab-empty { color: var(--text-tertiary, #9BA1B0); text-align: center; padding: 48px 0; font-size: 16px; }
 

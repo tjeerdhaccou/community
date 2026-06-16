@@ -25,24 +25,31 @@ const NAV_SECTIONS = [
     label: 'Project',
     items: [
       { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', bubble: 'periwinkle', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
-      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', bubble: 'pink', label: 'Documenten', feature: 'documents' },
-      { to: 'mijn-documenten', icon: 'fa-solid fa-file-shield', color: '#2D8CFF', bubble: 'indigo', label: 'Mijn documenten', membersOnly: true },
-      { to: 'adviseurs', icon: 'fa-solid fa-helmet-safety', color: '#C9A96E', bubble: 'stone', label: 'Team', action: 'view_team', feature: 'team' },
+      // Documenten bundelt nu projectdocumenten + 'Mijn documenten' (tabs binnen de view).
+      // Geen feature-gate hier: persoonlijke documenten blijven altijd bereikbaar; de
+      // projectdocumenten-tab self-gate't op de 'documents'-feature in DocumentenHub.
+      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', bubble: 'pink', label: 'Documenten', membersOnly: true },
     ]
   },
   {
     label: 'Community',
     items: [
+      // Leden bundelt de ledenlijst + ledenwerving (werving-tab alleen voor moderators+).
       { to: 'members', icon: 'fa-solid fa-users', color: '#F23578', bubble: 'peach', label: 'Leden', action: 'view_members_list', feature: 'members' },
-      { to: 'ledenwerving', icon: 'fa-solid fa-clipboard-list', color: 'var(--accent-orange, #F09020)', bubble: 'terracotta', label: 'Ledenwerving', action: 'manage_intake', feature: 'ledenwerving' },
+      // Organisatie bundelt Team (adviseurs) + Groepen/commissies. Zichtbaar zodra
+      // minstens één tab toegankelijk is.
+      {
+        to: 'organisatie', icon: 'fa-solid fa-people-group', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Organisatie',
+        visible: (ctx) => (canDo(ctx.role, 'view_team') && ctx.featureEnabled('team')) || canDo(ctx.role, 'manage_workgroups'),
+      },
     ]
   },
   {
     label: 'Beheer',
+    collapsible: true,
     items: [
       { to: 'aan-de-slag', icon: 'fa-solid fa-rocket', color: 'var(--accent-green, #3BD269)', bubble: 'green', label: 'Aan de slag', adminOnly: true },
       { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', bubble: 'teal', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
-      { to: 'groepen', icon: 'fa-solid fa-people-group', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Groepen', action: 'manage_workgroups' },
       { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Instellingen', adminOnly: true },
     ]
   },
@@ -54,6 +61,7 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [openSections, setOpenSections] = useState({})
   const menuRef = useRef(null)
   const isProfessional = role === 'professional'
   const [intakePendingCount, setIntakePendingCount] = useState(0)
@@ -122,6 +130,7 @@ export default function Sidebar() {
   const isAdmin = role === 'admin'
 
   function renderNavItem(item) {
+    if (item.visible && !item.visible({ role, featureEnabled })) return null
     if (item.membersOnly && isProfessional) return null
     if (item.action && !canDo(role, item.action)) return null
     const featureHidden = item.feature && !featureEnabled(item.feature)
@@ -142,10 +151,10 @@ export default function Sidebar() {
         {featureHidden && (
           <i className="fa-solid fa-eye-slash" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }} title="Verborgen voor leden" />
         )}
-        {item.to === 'ledenwerving' && intakePendingCount > 0 && (
+        {item.to === 'members' && intakePendingCount > 0 && (
           <span className="sidebar-badge">{intakePendingCount}</span>
         )}
-        {item.to === 'mijn-documenten' && docRequestCount > 0 && (
+        {item.to === 'documenten' && docRequestCount > 0 && (
           <span className="sidebar-badge">{docRequestCount}</span>
         )}
       </div>
@@ -178,6 +187,7 @@ export default function Sidebar() {
           if (section.membersOnly && isProfessional) return null
 
           const visibleItems = section.items.filter(item => {
+            if (item.visible) return item.visible({ role, featureEnabled })
             if (item.membersOnly && isProfessional) return false
             if (item.adminOnly && role !== 'admin') return false
             if (item.action && !canDo(role, item.action)) return false
@@ -187,12 +197,30 @@ export default function Sidebar() {
           })
           if (visibleItems.length === 0) return null
 
+          // Inklapbare secties (bv. Beheer): standaard dicht, tenzij een item actief is.
+          const hasActiveItem = visibleItems.some(item => isActive(item.to))
+          const isOpen = section.collapsible
+            ? (openSections[section.label] ?? hasActiveItem)
+            : true
+
           return (
             <div key={si} className="sidebar-nav-group">
               {section.label && (
-                <div className="sidebar-nav-group__label">{section.label}</div>
+                section.collapsible ? (
+                  <button
+                    type="button"
+                    className="sidebar-nav-group__label sidebar-nav-group__label--toggle"
+                    onClick={() => setOpenSections(s => ({ ...s, [section.label]: !isOpen }))}
+                    aria-expanded={isOpen}
+                  >
+                    {section.label}
+                    <i className={`fa-solid fa-chevron-down sidebar-nav-group__chevron ${isOpen ? 'sidebar-nav-group__chevron--open' : ''}`} />
+                  </button>
+                ) : (
+                  <div className="sidebar-nav-group__label">{section.label}</div>
+                )
               )}
-              {visibleItems.map(item => renderNavItem(item))}
+              {isOpen && visibleItems.map(item => renderNavItem(item))}
             </div>
           )
         })}

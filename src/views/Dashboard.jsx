@@ -161,7 +161,7 @@ export default function Dashboard() {
 
       {/* Intake alert for admins */}
       {feed.intakePending > 0 && canDo(role, 'manage_intake') && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/ledenwerving`)} role="button" tabIndex={0}>
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/members?tab=werving`)} role="button" tabIndex={0}>
           <div className="dash-intake-alert__icon">
             <i className="fa-solid fa-clipboard-list" />
           </div>
@@ -175,7 +175,7 @@ export default function Dashboard() {
 
       {/* Document request alert for members */}
       {feed.docRequests > 0 && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/mijn-documenten`)} role="button" tabIndex={0}>
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/documenten?tab=mijn`)} role="button" tabIndex={0}>
           <div className="dash-intake-alert__icon" style={{ background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' }}>
             <i className="fa-solid fa-file-circle-question" />
           </div>
