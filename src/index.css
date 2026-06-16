@@ -1866,7 +1866,7 @@ select.input {
 .btn-primary {
   padding: 10px 20px;
   border: none;
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--btn-radius);
   background: var(--accent-cta);
   color: #fff;
   font-size: 16px;
@@ -1915,7 +1915,7 @@ select.input {
 .btn-secondary {
   padding: 10px 20px;
   border: 1px solid var(--border-default);
-  border-radius: var(--radius-md, 10px);
+  border-radius: var(--btn-radius);
   background: transparent;
   color: var(--text-secondary);
   font-size: 16px;
@@ -2888,7 +2888,7 @@ select.input {
   gap: 6px;
   width: 100%;
   padding: 10px 16px;
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--btn-radius);
   border: 1px dashed var(--border-default);
   background: none;
   color: var(--text-tertiary, #9BA1B0);
@@ -7928,7 +7928,7 @@ select.input {
 /* Small button used in add-forms */
 .btn-small {
   padding: 8px 14px;
-  border-radius: var(--radius-md, 12px);
+  border-radius: var(--btn-radius);
   background: var(--accent-cta);
   color: #fff;
   border: none;

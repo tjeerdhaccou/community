@@ -147,6 +147,7 @@
   --radius-lg:           16px;      /* Large cards, panels */
   --radius-xl:           20px;      /* Modals, sheets, expanded cards */
   --radius-full:         9999px;    /* Pills, avatars, circular buttons */
+  --btn-radius:          var(--radius-md);  /* Knop-radius; een thema kan dit pill-vormig maken */
 
   /* ──────────────────────────────────────────────────────────────────────────
      SHADOWS
@@ -335,6 +336,9 @@
   --clean-inbox:         #130F33;
   --accent-blue:         #130F33;
   --accent-blue-rgb:     19, 15, 51;
+
+  /* Pill-knoppen — kenmerkende CrowdBuilding-vorm */
+  --btn-radius:          var(--radius-full);
 
   /* Blauwe tags → navy-tint (info/structuur, geen CTA) */
   --tag-blue-bg:         rgba(19, 15, 51, 0.10);

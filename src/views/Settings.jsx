@@ -223,6 +223,7 @@ export default function Settings() {
               {[
                 { value: 'warm', icon: 'fa-cloud-sun', label: 'Warm' },
                 { value: 'dark', icon: 'fa-moon', label: 'Donker' },
+                { value: 'crowdbuilding', icon: 'fa-palette', label: 'CrowdBuilding' },
               ].map(t => (
                 <button
                   key={t.value}
