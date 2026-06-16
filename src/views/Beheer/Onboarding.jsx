@@ -89,7 +89,7 @@ export default function Onboarding() {
       title: 'Maak een groep',
       desc: 'Organiseer je community in commissies of doelgroepen.',
       done: counts.groups > 0,
-      to: 'groepen',
+      to: 'organisatie?tab=groepen',
       cta: 'Naar groepen',
     },
     {
@@ -99,7 +99,7 @@ export default function Onboarding() {
       title: 'Nodig je eerste leden uit',
       desc: 'Breng je groep samen — nodig de eerste bewoners uit.',
       done: counts.invites > 0 || counts.members > 1,
-      to: 'ledenwerving',
+      to: 'members?tab=werving',
       cta: 'Naar ledenwerving',
     },
   ]

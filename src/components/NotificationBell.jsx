@@ -40,7 +40,7 @@ export default function NotificationBell() {
     else if (related_type === 'event') navigate(`${basePath}/events`)
     else if (related_type === 'document') navigate(`${basePath}/documenten`)
     else if (related_type === 'document_request' && notification.type === 'document_request_submitted') navigate(`${basePath}/members`)
-    else if (related_type === 'document_request') navigate(`${basePath}/mijn-documenten`)
+    else if (related_type === 'document_request') navigate(`${basePath}/documenten?tab=mijn`)
     else navigate(basePath)
   }
 

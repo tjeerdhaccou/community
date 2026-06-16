@@ -19,7 +19,6 @@ import Members from './views/Members'
 import Settings from './views/Settings'
 import Roadmap from './views/Roadmap'
 import ProfessionalUpdates from './views/ProfessionalUpdates'
-import Documents from './views/Documents'
 import AdviseurTeam from './views/AdviseurTeam'
 import Profile from './views/Profile'
 import DocumentArchive from './views/DocumentArchive'
@@ -44,6 +43,9 @@ import PageBuilder from './views/PageBuilder'
 import Onboarding from './views/Beheer/Onboarding'
 import Groepen from './views/Beheer/Groepen'
 import MyDocuments from './views/MyDocuments'
+import Leden from './views/Leden'
+import Organisatie from './views/Organisatie'
+import DocumentenHub from './views/DocumentenHub'
 import PlatformAdmin from './views/PlatformAdmin'
 import OrgOnboarding from './views/OrgOnboarding'
 import Landing from './views/Landing'
@@ -333,15 +335,16 @@ function NormalRoutes() {
       <Route path="/p/:slug" element={<AuthGuard><ProjectShell /></AuthGuard>}>
         <Route index element={<Dashboard />} />
         <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
-        <Route path="documenten" element={<FeatureRoute feature="documents"><Documents /></FeatureRoute>} />
+        <Route path="documenten" element={<DocumentenHub />} />
         <Route path="mijn-documenten" element={<MyDocuments />} />
         <Route path="pro-updates" element={<ProfessionalUpdates />} />
         <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
+        <Route path="organisatie" element={<Organisatie />} />
         <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
         <Route path="events" element={<FeatureRoute feature="events"><Events /></FeatureRoute>} />
         <Route path="roadmap" element={<FeatureRoute feature="roadmap"><Roadmap /></FeatureRoute>} />
         <Route path="documents" element={<FeatureRoute feature="documents"><DocumentArchive /></FeatureRoute>} />
-        <Route path="members" element={<FeatureRoute feature="members"><Members /></FeatureRoute>} />
+        <Route path="members" element={<FeatureRoute feature="members"><Leden /></FeatureRoute>} />
         <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
         <Route path="profile" element={<Profile />} />
         <Route path="aan-de-slag" element={<Onboarding />} />
@@ -418,15 +421,16 @@ function ProjectSubdomainApp({ slug }) {
         <Route path="/*" element={<AuthGuard><ProjectShellSubdomain /></AuthGuard>}>
           <Route index element={<Dashboard />} />
           <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
-          <Route path="documenten" element={<FeatureRoute feature="documents"><Documents /></FeatureRoute>} />
+          <Route path="documenten" element={<DocumentenHub />} />
           <Route path="mijn-documenten" element={<MyDocuments />} />
           <Route path="pro-updates" element={<ProfessionalUpdates />} />
           <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
+          <Route path="organisatie" element={<Organisatie />} />
           <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
           <Route path="events" element={<FeatureRoute feature="events"><Events /></FeatureRoute>} />
           <Route path="roadmap" element={<FeatureRoute feature="roadmap"><Roadmap /></FeatureRoute>} />
           <Route path="documents" element={<FeatureRoute feature="documents"><DocumentArchive /></FeatureRoute>} />
-          <Route path="members" element={<FeatureRoute feature="members"><Members /></FeatureRoute>} />
+          <Route path="members" element={<FeatureRoute feature="members"><Leden /></FeatureRoute>} />
           <Route path="aan-de-slag" element={<Onboarding />} />
           <Route path="groepen" element={<Groepen />} />
           <Route path="settings" element={<Settings />} />

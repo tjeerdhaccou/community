@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProject } from '../contexts/ProjectContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { useRoadmap } from '../hooks/useRoadmap'
 
 const TAG_MAP = {
@@ -12,9 +13,9 @@ const TAG_MAP = {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'done', label: 'Afgerond', color: '#3BD269' },
-  { value: 'active', label: 'Actief', color: '#4A90D9' },
-  { value: 'pending', label: 'Gepland', color: '#9ba1b0' },
+  { value: 'done', label: 'Afgerond', color: 'var(--rm-status-done)' },
+  { value: 'active', label: 'Actief', color: 'var(--rm-status-active)' },
+  { value: 'pending', label: 'Gepland', color: 'var(--rm-status-pending)' },
 ]
 
 function RoadmapItem({ item }) {
@@ -42,17 +43,26 @@ function RoadmapItem({ item }) {
   )
 }
 
-function RoadmapPhase({ phase }) {
+function RoadmapPhase({ phase, index }) {
+  const { style } = useTheme()
   const [open, setOpen] = useState(phase.status === 'active')
 
   const doneItems = phase.items?.filter(i => i.is_done).length || 0
   const totalItems = phase.items?.length || 0
   const statusInfo = STATUS_OPTIONS.find(s => s.value === phase.status) || STATUS_OPTIONS[2]
 
+  // Onder de CrowdBuilding-stijl negeren we de losse DB-kleur en geven we de badge
+  // de nav-bubbel-look (zachte tint + donkere glyph) uit het bestaande DS-palet,
+  // cyclend over zes families. In clean blijft de losse CMS-kleur staan.
+  const slot = index % 6
+  const numStyle = style === 'crowdbuilding'
+    ? { background: `var(--rm-phase-${slot}-bg)`, color: `var(--rm-phase-${slot}-fg)` }
+    : { background: phase.color }
+
   return (
     <div className={`roadmap-phase ${open ? 'roadmap-phase--open' : ''} roadmap-phase--${phase.status}`}>
       <div className="roadmap-phase__head" onClick={() => setOpen(!open)}>
-        <div className="roadmap-phase__num" style={{ background: phase.color }}>{phase.num}</div>
+        <div className="roadmap-phase__num" style={numStyle}>{phase.num}</div>
         <div className="roadmap-phase__info">
           <div className="roadmap-phase__name">
             {phase.name}{phase.subtitle ? ` — ${phase.subtitle}` : ''}
@@ -116,7 +126,7 @@ export default function Roadmap() {
           {phases.map((phase, i) => (
             <div key={phase.id}>
               {i > 0 && <div className="roadmap-connector" />}
-              <RoadmapPhase phase={phase} />
+              <RoadmapPhase phase={phase} index={i} />
             </div>
           ))}
         </div>

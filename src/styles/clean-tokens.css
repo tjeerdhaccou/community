@@ -76,6 +76,21 @@
   --tag-orange-text:     #C47718;
 
   /* ──────────────────────────────────────────────────────────────────────────
+     ROADMAP — semantische kleuren zodat een thema (zie crowdbuilding) ze kan
+     herschilderen, uitsluitend via bestaande DS-tokens. In clean blijven de
+     fase-badges hun losse CMS-kleur (phase.color) houden; een thema kan ze via
+     --rm-phase-N-bg/-fg overschrijven.
+     ────────────────────────────────────────────────────────────────────────── */
+  --rm-dot-step:         var(--accent-blue);
+  --rm-dot-milestone:    var(--accent-orange);
+  --rm-dot-key:          var(--accent-pink);
+  --rm-dot-special:      var(--accent-green);
+
+  --rm-status-done:      var(--accent-green);
+  --rm-status-active:    var(--accent-blue);
+  --rm-status-pending:   var(--text-tertiary);
+
+  /* ──────────────────────────────────────────────────────────────────────────
      TYPOGRAPHY
      Clean uses the system font (SF Pro on Apple) with a clear hierarchy.
      For web, we use a system font stack that matches the feel.
@@ -360,6 +375,25 @@
   --tag-red-bg:          rgba(255, 59, 48, 0.12);
   --tag-red-text:        #C0291F;
 
+  /* Roadmap — fase-badges krijgen de nav-bubbel-look (zachte tint + donkere
+     glyph), exact dezelfde tokens als de sidebar-icon-bubbels. Geen losse
+     kleuren: alles verwijst naar bestaande DS-tokens. */
+  --rm-phase-0-bg:       var(--nav-bub-indigo-bg);      --rm-phase-0-fg: var(--nav-bub-indigo-glyph);
+  --rm-phase-1-bg:       var(--nav-bub-coral-bg);       --rm-phase-1-fg: var(--nav-bub-coral-glyph);
+  --rm-phase-2-bg:       var(--nav-bub-green-bg);       --rm-phase-2-fg: var(--nav-bub-green-glyph);
+  --rm-phase-3-bg:       var(--nav-bub-amber-bg);       --rm-phase-3-fg: var(--nav-bub-amber-glyph);
+  --rm-phase-4-bg:       var(--nav-bub-periwinkle-bg);  --rm-phase-4-fg: var(--nav-bub-periwinkle-glyph);
+  --rm-phase-5-bg:       var(--nav-bub-pink-bg);        --rm-phase-5-fg: var(--nav-bub-pink-glyph);
+
+  --rm-dot-step:         var(--accent-blue);
+  --rm-dot-milestone:    var(--tag-orange-text);
+  --rm-dot-key:          var(--tag-pink-text);
+  --rm-dot-special:      var(--tag-green-text);
+
+  --rm-status-done:      var(--tag-green-text);
+  --rm-status-active:    var(--accent-primary);   /* structuur = Invested Blue */
+  --rm-status-pending:   var(--text-tertiary);
+
   /* Sidebar icon-bubbels — zachte tint + donkere glyph in dezelfde familie.
      Geconsumeerd door clean-components.css ALLEEN onder dit thema. */
   --nav-bub-navy-bg:        #DBDCE7; --nav-bub-navy-glyph:        #130F33;
@@ -431,6 +465,24 @@
   --tag-pink-bg:         rgba(255, 203, 225, 0.16); --tag-pink-text:   #FFC2DC;
   --tag-purple-bg:       rgba(149, 152, 180, 0.22); --tag-purple-text: #C3C4DC;
   --tag-red-bg:          rgba(255, 92, 84, 0.20);   --tag-red-text:    #FF9A93;
+
+  /* Roadmap — zelfde nav-bubbel-tokens als de lichte stijl; ze blijven als
+     lichte chips leesbaar op de donkere kaarten (net als de sidebar-bubbels). */
+  --rm-phase-0-bg:       var(--nav-bub-indigo-bg);      --rm-phase-0-fg: var(--nav-bub-indigo-glyph);
+  --rm-phase-1-bg:       var(--nav-bub-coral-bg);       --rm-phase-1-fg: var(--nav-bub-coral-glyph);
+  --rm-phase-2-bg:       var(--nav-bub-green-bg);       --rm-phase-2-fg: var(--nav-bub-green-glyph);
+  --rm-phase-3-bg:       var(--nav-bub-amber-bg);       --rm-phase-3-fg: var(--nav-bub-amber-glyph);
+  --rm-phase-4-bg:       var(--nav-bub-periwinkle-bg);  --rm-phase-4-fg: var(--nav-bub-periwinkle-glyph);
+  --rm-phase-5-bg:       var(--nav-bub-pink-bg);        --rm-phase-5-fg: var(--nav-bub-pink-glyph);
+
+  --rm-dot-step:         var(--accent-blue);
+  --rm-dot-milestone:    var(--tag-orange-text);
+  --rm-dot-key:          var(--tag-pink-text);
+  --rm-dot-special:      var(--tag-green-text);
+
+  --rm-status-done:      var(--tag-green-text);
+  --rm-status-active:    var(--accent-primary);
+  --rm-status-pending:   var(--text-tertiary);
 
   /* Sidebar icon-bubbels — identiek aan de lichte stijl (lichte tint + donkere
      glyph); als lichte chips op de donkere sidebar blijven ze goed leesbaar. */
