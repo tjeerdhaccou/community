@@ -13,7 +13,6 @@ const THEME_MODES = [
   { value: 'light', icon: 'fa-solid fa-sun' },
   { value: 'warm', icon: 'fa-solid fa-cloud-sun' },
   { value: 'dark', icon: 'fa-solid fa-moon' },
-  { value: 'contrast', icon: 'fa-solid fa-circle-half-stroke' },
 ]
 
 function ThemeToggle({ mode, setMode }) {

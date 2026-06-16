@@ -3,41 +3,60 @@ import { safeStorage } from '../lib/safeStorage'
 
 const ThemeContext = createContext(null)
 
-/**
- * ThemeProvider with optional scope for independent theme storage.
- * - scope="project-{id}" or "org-{id}" → stores theme per scope, user can toggle
- * - scope=null/undefined → forces 'light', no storage, no toggle
- */
+// 's Avonds (19:00–07:00 lokale tijd) standaard donker tonen.
+function isEveningNow() {
+  const hour = new Date().getHours()
+  return hour >= 19 || hour < 7
+}
+
 export function ThemeProvider({ children, projectBranding, scope }) {
   const storageKey = scope ? `theme-mode-${scope}` : null
 
+  // Het thema dat geldt zonder handmatige keuze: 's avonds donker, anders het
+  // project-/org-standaardthema (front-end project-dashboard biedt 'light' niet aan).
+  const autoMode = () => {
+    if (isEveningNow()) return 'dark'
+    let base = projectBranding?.default_theme || 'light'
+    if (scope?.startsWith('project-') && base === 'light') base = 'warm'
+    return base
+  }
+
   const [mode, setModeState] = useState(() => {
     if (!storageKey) return 'light'
-    const stored = safeStorage.getItem(storageKey) || projectBranding?.default_theme || 'light'
-    // Front-end project-dashboard biedt 'light' niet meer aan — val terug op 'warm'.
-    if (scope?.startsWith('project-') && stored === 'light') return 'warm'
-    return stored
+    const stored = safeStorage.getItem(storageKey)
+    // Handmatige keuze onthouden; oude 'contrast'-keuze negeren (thema verwijderd).
+    if (stored && stored !== 'contrast') return stored
+    return autoMode()
   })
 
-  // If no scope, mode is always light
-  const setMode = storageKey ? setModeState : () => {}
+  // Expliciete keuze: opslaan én de avond-automatiek uitschakelen voor deze scope.
+  const setMode = storageKey
+    ? (next) => {
+        safeStorage.setItem(storageKey, next)
+        setModeState(next)
+      }
+    : () => {}
 
   useEffect(() => {
-    if (storageKey) {
-      safeStorage.setItem(storageKey, mode)
-    }
     document.documentElement.setAttribute('data-theme', mode)
-  }, [mode, storageKey])
+  }, [mode])
+
+  // Zonder handmatige keuze het thema bijwerken wanneer het tabblad weer zichtbaar
+  // wordt — zo wordt het 's avonds donker zonder herladen.
+  useEffect(() => {
+    if (!storageKey) return
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const stored = safeStorage.getItem(storageKey)
+      if (stored && stored !== 'contrast') return
+      setModeState(autoMode())
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey, projectBranding?.default_theme])
 
   useEffect(() => {
-    // In contrast mode, don't apply project branding — use theme's own colors
-    if (mode === 'contrast') {
-      document.documentElement.style.removeProperty('--accent-primary')
-      document.documentElement.style.removeProperty('--border-focus')
-      document.documentElement.style.removeProperty('--accent-green')
-      return
-    }
-
     // Apply project branding colors as CSS custom properties
     if (projectBranding?.brand_primary_color) {
       document.documentElement.style.setProperty('--accent-primary', projectBranding.brand_primary_color)
@@ -53,7 +72,7 @@ export function ThemeProvider({ children, projectBranding, scope }) {
       document.documentElement.style.removeProperty('--border-focus')
       document.documentElement.style.removeProperty('--accent-green')
     }
-  }, [projectBranding, mode])
+  }, [projectBranding])
 
   // Reset to light when entering an unscoped context
   useEffect(() => {

@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
-import { POST_TAGS } from '../lib/constants'
+import { POST_TAGS, isTouchDevice } from '../lib/constants'
 import { useProject } from '../contexts/ProjectContext'
+import { useWorkgroups } from '../hooks/useWorkgroups'
 import AudienceSelector from './AudienceSelector'
 import ImageCropper from './ImageCropper'
 
@@ -9,11 +10,13 @@ const GUEST_TAG = 'Even voorstellen'
 
 export default function PostModal({ onSave, onClose, editPost }) {
   const { role } = useProject()
+  const { myWorkgroups } = useWorkgroups()
   const isGuest = role === 'guest'
   const isEdit = !!editPost
   const [text, setText] = useState(editPost?.text || '')
   const [tag, setTag] = useState(editPost?.tag || (isGuest ? GUEST_TAG : ''))
   const [audience, setAudience] = useState(editPost?.audience || (isGuest ? 'public' : 'members'))
+  const [workgroupId, setWorkgroupId] = useState(editPost?.workgroup_id || null)
   const [postType, setPostType] = useState(editPost?.post_type || 'post')
   const [pollOptions, setPollOptions] = useState(['', ''])
   const [imageFile, setImageFile] = useState(null)
@@ -58,6 +61,7 @@ export default function PostModal({ onSave, onClose, editPost }) {
     e.preventDefault()
     if (!text.trim()) return
     if (postType === 'poll' && pollOptions.filter(o => o.trim()).length < 2) return
+    if (audience === 'workgroup' && !workgroupId) return
 
     setSaving(true)
     try {
@@ -69,6 +73,7 @@ export default function PostModal({ onSave, onClose, editPost }) {
         text: text.trim(),
         tag: tag || null,
         audience,
+        workgroup_id: audience === 'workgroup' ? workgroupId : null,
         image_url,
         post_type: postType,
         poll_options: postType === 'poll' ? pollOptions.filter(o => o.trim()) : null,
@@ -137,7 +142,15 @@ export default function PostModal({ onSave, onClose, editPost }) {
           )}
 
           {/* Audience (alleen voor aspirant+; guests posten verplicht 'public') */}
-          {!isGuest && <AudienceSelector value={audience} onChange={setAudience} />}
+          {!isGuest && (
+            <AudienceSelector
+              value={audience}
+              onChange={setAudience}
+              workgroups={myWorkgroups}
+              workgroupId={workgroupId}
+              onWorkgroupChange={setWorkgroupId}
+            />
+          )}
 
           {/* Text */}
           <div className="form-group">
@@ -147,7 +160,7 @@ export default function PostModal({ onSave, onClose, editPost }) {
               placeholder={postType === 'poll' ? 'Stel je vraag aan de community...' : 'Wat wil je delen met de community?'}
               rows={3}
               required
-              autoFocus
+              autoFocus={!isTouchDevice}
             />
           </div>
 
@@ -208,7 +221,7 @@ export default function PostModal({ onSave, onClose, editPost }) {
             />
             <div className="modal-actions__right">
               <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
-              <button type="submit" className="btn-primary" disabled={saving || !text.trim()}>
+              <button type="submit" className="btn-primary" disabled={saving || !text.trim() || (audience === 'workgroup' && !workgroupId)}>
                 {saving ? (isEdit ? 'Opslaan...' : 'Plaatsen...') : (isEdit ? 'Opslaan' : 'Plaatsen')}
               </button>
             </div>

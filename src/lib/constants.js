@@ -1,5 +1,12 @@
 // ===== Tag definitions =====
 
+// Touch-apparaten (mobiel/tablet): autoFocus op formuliervelden opent meteen het
+// toetsenbord en duwt op een bottom-sheet de titel/keuzes uit beeld. Desktop houdt autoFocus.
+export const isTouchDevice =
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(hover: none) and (pointer: coarse)').matches
+
 export const POST_TAGS = ['Vraag', 'Idee', 'Sociaal', 'In de media', 'Even voorstellen']
 
 export const POST_TAG_COLORS = {

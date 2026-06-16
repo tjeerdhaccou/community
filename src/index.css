@@ -1016,7 +1016,10 @@ select.input {
 }
 
 @media (max-width: 768px) {
-  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+  /* Stat-tegels (rol/leden/nieuws/fase) zijn op mobiel grotendeels dubbelop —
+     fase staat al in de stepper, leden/nieuws in de feed eronder.
+     Mobiel leidt direct met de 'nieuwste item'-kaarten. */
+  .dash-stats { display: none; }
   .dash-header { flex-direction: column; align-items: flex-start; }
 }
 
@@ -1196,6 +1199,43 @@ select.input {
   padding: 2px 0;
 }
 
+/* Collapsible tag filter — one row + Meer/Minder toggle, no scrollbar */
+.tag-filter-wrap {
+  margin-bottom: 20px;
+}
+
+.tag-filter-wrap .tag-filter {
+  margin-bottom: 0;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+.tag-filter--collapsed {
+  max-height: 34px;
+}
+
+.tag-filter--expanded {
+  max-height: none;
+}
+
+.tag-filter__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tag-filter__toggle i {
+  font-size: 11px;
+}
+
 .tag-filter__pill {
   padding: 6px 14px;
   border-radius: 999px;
@@ -1225,6 +1265,15 @@ select.input {
 
 .tag-filter__pill--active:hover {
   color: #fff;
+}
+
+.tag-filter__divider {
+  flex-shrink: 0;
+  align-self: center;
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--border-default);
 }
 
 /* Updates list */
@@ -1818,7 +1867,7 @@ select.input {
   padding: 10px 20px;
   border: none;
   border-radius: var(--radius-md, 10px);
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   font-size: 16px;
   font-weight: 600;
@@ -2067,7 +2116,7 @@ select.input {
   z-index: 1;
 }
 
-.post-detail-content { padding: 24px; padding-top: 40px; }
+.post-detail-content { padding: 24px; padding-top: 4px; }
 
 .post-detail-text {
   font-size: 16px;
@@ -2206,7 +2255,7 @@ select.input {
   height: 36px;
   border-radius: 50%;
   border: none;
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   font-size: 16px;
   display: flex;
@@ -2489,6 +2538,23 @@ select.input {
   padding: 3px 8px;
   border-radius: 6px;
   flex-shrink: 0;
+}
+
+.feed-card__group-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.feed-card__group-tag i {
+  font-size: 10px;
 }
 
 .feed-card__text {
@@ -4893,7 +4959,7 @@ select.input {
   color: #fff;
 }
 .pb-publish-bar .btn-primary {
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   border: none;
 }
@@ -5368,13 +5434,24 @@ select.input {
     display: flex;
   }
 
-  .main-content {
-    padding: 20px 16px;
-    padding-bottom: 80px;
+  /* Laat het document zélf scrollen op mobiel, zodat Safari z'n adres-/navigatiebalk
+     inklapt bij scrollen (gebeurt alleen bij body-scroll, niet bij een inner scroller). */
+  html, body {
+    height: auto;
+    overflow: visible;
   }
 
   .app-layout {
     flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .main-content {
+    padding: 20px 16px;
+    padding-bottom: 80px;
+    overflow-y: visible;
   }
 
   .dashboard-cover {
@@ -7582,13 +7659,16 @@ select.input {
 }
 /* Unified detail-modal action bar (top-right) */
 .modal-detail-actions {
-  position: absolute;
-  top: 16px;
-  right: 16px;
+  position: sticky;
+  top: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 2px;
-  z-index: 2;
+  z-index: 3;
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
 }
 .modal-detail-actions button {
   width: 32px;
@@ -7849,7 +7929,7 @@ select.input {
 .btn-small {
   padding: 8px 14px;
   border-radius: var(--radius-md, 12px);
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   border: none;
   font-size: 14px;
@@ -7981,6 +8061,32 @@ select.input {
   flex-direction: column;
   z-index: 100;
 }
+/* Mobiel: resultaten als full-width paneel vanaf bovenaf i.p.v. afgesneden dropdown */
+@media (max-width: 640px) {
+  /* Open zoekbalk vult de balk i.p.v. een smal stukje (kruisje oogde groter dan de balk) */
+  .global-search--open { flex: 1; min-width: 0; }
+  .global-search--open .global-search-bar { width: 100%; }
+  /* 16px voorkomt dat iOS automatisch inzoomt bij focus (en de pagina-spacing verspringt) */
+  .global-search-bar input { font-size: 16px; }
+  /* iOS houdt na tikken een :hover-achtergrond vast -> losse donkere cirkel.
+     In open-staat is de X gewoon een icoon in de balk, geen aparte knop-cirkel. */
+  .global-search--open .global-search-trigger,
+  .global-search--open .global-search-trigger:hover,
+  .global-search--open .global-search-trigger:active,
+  .global-search--open .global-search-trigger:focus {
+    background: none !important;
+  }
+
+  .global-search-dropdown {
+    position: fixed;
+    top: 60px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 75vh;
+    border-radius: var(--radius-lg, 16px);
+  }
+}
 .global-search-loading {
   padding: 24px; text-align: center;
   color: var(--text-tertiary, #9BA1B0);
@@ -8012,6 +8118,7 @@ select.input {
   text-decoration: none; color: inherit;
 }
 .search-item:hover { background: var(--bg-hover); }
+button.search-item { width: 100%; background: none; border: none; font: inherit; text-align: left; }
 .search-item__left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .search-item__left > i { font-size: 16px; flex-shrink: 0; }
 .search-item__left > div { min-width: 0; }

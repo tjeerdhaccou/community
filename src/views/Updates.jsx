@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useUpdates } from '../hooks/useUpdates'
@@ -21,7 +22,18 @@ export default function Updates() {
   const [editingUpdate, setEditingUpdate] = useState(null)
   const [selectedUpdate, setSelectedUpdate] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null)
+  const [searchParams, setSearchParams] = useSearchParams()
   const toast = useToast()
+
+  // Deep-link: ?item=<id> (bijv. vanuit de zoekfunctie) opent direct de detail-modal.
+  useEffect(() => {
+    const itemId = searchParams.get('item')
+    if (!itemId || loading) return
+    const found = updates.find(u => u.id === itemId)
+    if (found) setSelectedUpdate(found)
+    searchParams.delete('item')
+    setSearchParams(searchParams, { replace: true })
+  }, [searchParams, loading, updates, setSearchParams])
 
   // Professional role only sees public updates
   const visibleUpdates = role === 'professional' ? updates.filter(u => u.is_public) : updates

@@ -24,6 +24,7 @@
      COLORS — Accent & Status
      ────────────────────────────────────────────────────────────────────────── */
   --accent-primary:      #4A90D9;   /* Primary actions, links, FAB */
+  --accent-cta:          var(--accent-primary);  /* Filled CTA buttons. Defaults to primary; a theme can split it off (zie crowdbuilding-thema) */
   --accent-yellow:       #F4B400;   /* Stars, highlights, financial */
   --accent-red:          #E74C3C;   /* Deadlines, overdue, destructive */
   --accent-green:        #3BD269;   /* Success, completion, positive */
@@ -300,277 +301,48 @@
 }
 
 /* ============================================================================
-   HIGH CONTRAST THEME TOKENS
-   Optimized for elderly users and low-vision accessibility (WCAG AAA).
-   Maximized contrast, larger text, visible borders, prominent focus.
+   CROWDBUILDING THEME TOKENS
+   Variant B — hybride: Invested Blue als structuurkleur (links, actieve nav,
+   rank-badges, focus), Rebellious Coral (--accent-cta) voor primaire CTA's.
+   Lettertypes blijven die van buuur — dit is puur een kleur-shift.
+   Bron: crowdbuilding-brand (Momkai V2).
    ============================================================================ */
 
-[data-theme="contrast"] {
-  --doodle-pattern:      none;   /* geen scribble-achtergrond in hoog-contrast modus */
-  --bg-page:             #EDF1F5;
-  --bg-surface:          #FFFFFF;
-  --bg-hover:            #E0E0E0;
-  --bg-active:           #D9D9D9;
-  --bg-selected:         #D0E0F0;
+[data-theme="crowdbuilding"] {
+  --bg-page:             #F3F0EB;   /* Inspiring Off-White */
+  --bg-surface:          #FFFFFF;   /* Welcoming White */
+  --bg-hover:            #ECE8E1;
+  --bg-active:           #E5E0D7;   /* Steady Stone */
+  --bg-selected:         #EDE8E0;
 
-  --text-primary:        #000000;
-  --text-secondary:      #222222;
-  --text-tertiary:       #444444;
-  --text-faint:          #555555;
-  --text-disabled:       #767676;
+  --text-primary:        #130F33;   /* Invested Blue — nooit puur zwart */
+  --text-secondary:      #57536A;
+  --text-tertiary:       #918DA0;
+  --text-faint:          #B3AFC0;
+  --text-disabled:       #CFC9D6;
 
-  --border-default:      #666666;
-  --border-subtle:       #888888;
+  --border-default:      #ECE8E1;
+  --border-subtle:       #E5E0D7;   /* Steady Stone */
+  --border-focus:        #130F33;
 
-  --accent-primary:      #000000;
-  --accent-cta:          #E74C3C;
-  --accent-yellow:       #856400;
-  --accent-red:          #C00000;
-  --accent-green:        #007A2B;
-  --accent-pink:         #B80050;
-  --accent-orange:       #A05000;
-  --accent-purple:       #6A2D8A;
+  /* Structuurkleur = Invested Blue, CTA = Rebellious Coral */
+  --accent-primary:      #130F33;
+  --accent-cta:          #FF5C54;
 
-  --tag-blue-bg:         rgba(0, 80, 160, 0.15);
-  --tag-blue-text:       #003870;
-  --tag-yellow-bg:       rgba(133, 100, 0, 0.15);
-  --tag-yellow-text:     #5A4400;
-  --tag-red-bg:          rgba(192, 0, 0, 0.15);
-  --tag-red-text:        #900000;
-  --tag-green-bg:        rgba(0, 122, 43, 0.15);
-  --tag-green-text:      #005A1F;
-  --tag-pink-bg:         rgba(184, 0, 80, 0.15);
-  --tag-pink-text:       #800038;
-  --tag-purple-bg:       rgba(106, 45, 138, 0.15);
-  --tag-purple-text:     #4A1D62;
-  --tag-orange-bg:       rgba(160, 80, 0, 0.15);
-  --tag-orange-text:     #703800;
+  /* Blauwe tags → navy-tint (info/structuur, geen CTA) */
+  --tag-blue-bg:         rgba(19, 15, 51, 0.10);
+  --tag-blue-text:       #130F33;
 
-  /* Flat design: no soft shadows, use borders instead */
-  --shadow-xs:           none;
-  --shadow-sm:           none;
-  --shadow-md:           none;
-  --shadow-lg:           none;
-  --shadow-xl:           none;
-
-  /* Larger base sizing */
-  --font-size-base:      19px;
-  --radius-md:           10px;
-  --radius-sm:           6px;
-}
-
-/* High contrast global overrides */
-[data-theme="contrast"] body {
-  font-size: 19px;
-  line-height: 1.65;
-}
-
-/* Op smalle schermen is 19px te groot voor de krappe rij-layouts
-   (stepper, event-footer, tabs) en gaat tekst overlappen — temperen naar 17px. */
-@media (max-width: 640px) {
-  [data-theme="contrast"] {
-    --font-size-base: 17px;
-  }
-  [data-theme="contrast"] body {
-    font-size: 17px;
-  }
-}
-
-/* Always visible link underlines */
-[data-theme="contrast"] a {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-/* Prominent focus indicators */
-[data-theme="contrast"] *:focus-visible {
-  outline: 3px solid #000000 !important;
-  outline-offset: 2px !important;
-}
-
-/* Larger minimum click targets (WCAG 2.5.8 Target Size) */
-[data-theme="contrast"] button,
-[data-theme="contrast"] [role="button"],
-[data-theme="contrast"] select,
-[data-theme="contrast"] input[type="checkbox"],
-[data-theme="contrast"] input[type="radio"] {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Flat design: ALL cards get solid 1px outline, no shadows */
-/* Cards: white on gray page, no shadow, stroke on hover */
-[data-theme="contrast"] .cl-card,
-[data-theme="contrast"] .cl-card--elevated,
-[data-theme="contrast"] .dash-card,
-[data-theme="contrast"] .dash-stat,
-[data-theme="contrast"] .cl-stat-card,
-[data-theme="contrast"] .feed-card,
-[data-theme="contrast"] .project-card,
-[data-theme="contrast"] .modal-card,
-[data-theme="contrast"] .post-detail-card,
-[data-theme="contrast"] .update-card,
-[data-theme="contrast"] .pro-update-card,
-[data-theme="contrast"] .event-card,
-[data-theme="contrast"] .roadmap-phase,
-[data-theme="contrast"] .doc-row,
-[data-theme="contrast"] .member-card,
-[data-theme="contrast"] .member-row,
-[data-theme="contrast"] .adviseur-card,
-[data-theme="contrast"] .feed-composer-prompt {
-  background: #FFFFFF;
-  border: 1px solid transparent;
-  box-shadow: none;
-  transition: border-color 150ms;
-}
-
-/* Roadmap items inside a phase: subtle dividers */
-[data-theme="contrast"] .roadmap-phase .roadmap-item {
-  background: transparent;
-  border: none;
-  border-top: 1px solid #CCCCCC;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-[data-theme="contrast"] .roadmap-phase .roadmap-item:first-child {
-  border-top: none;
-}
-
-/* Flat buttons: solid border, no shadow */
-[data-theme="contrast"] .cl-btn {
-  border: 1px solid #000000;
-  box-shadow: none;
-}
-
-/* CTA buttons: red */
-[data-theme="contrast"] .btn-primary,
-[data-theme="contrast"] .cl-btn--primary {
-  background: var(--accent-cta);
-  border-color: var(--accent-cta);
-  color: #FFFFFF;
-}
-
-[data-theme="contrast"] .btn-primary:hover,
-[data-theme="contrast"] .cl-btn--primary:hover {
-  opacity: 1;
-  background: #C0392B;
-  border-color: #C0392B;
-}
-
-/* Count badges: red */
-[data-theme="contrast"] .seg-tab__count,
-[data-theme="contrast"] .tag-filter__count,
-[data-theme="contrast"] .tag-filter__badge {
-  background: var(--accent-cta);
-  color: #FFFFFF;
-}
-
-/* Segmented-pill tabs: outlined pill style */
-[data-theme="contrast"] .seg-tab {
-  border: 1px solid #000000;
-  border-radius: 999px;
-  padding: 6px 14px;
-}
-
-[data-theme="contrast"] .seg-tab--active {
-  background: #000000;
-  color: #FFFFFF;
-  border-color: #000000;
-  box-shadow: none;
-}
-
-/* Remove divider above comments in post detail */
-[data-theme="contrast"] .post-detail-comments {
-  border-top: none;
-}
-
-/* Active phase dot: red fill with black stroke */
-[data-theme="contrast"] .dash-stepper__dot--active {
-  background: var(--accent-cta);
-  border-color: var(--text-primary);
-}
-
-/* Pending dots and lines: lighter in contrast theme */
-[data-theme="contrast"] .dash-stepper__dot--pending {
-  border-color: #C0C0C0;
-}
-[data-theme="contrast"] .dash-stepper__line:not(.dash-stepper__line--filled) {
-  background: #C0C0C0;
-}
-
-/* Tags: subtle border, keep original shape */
-[data-theme="contrast"] .cl-tag,
-[data-theme="contrast"] .tag,
-[data-theme="contrast"] .roadmap-item__tag,
-[data-theme="contrast"] .event-card__type-tag,
-[data-theme="contrast"] .doc-row__source,
-[data-theme="contrast"] .doc-row__badge,
-[data-theme="contrast"] .sidebar-badge {
-  border: 1px solid currentColor;
-}
-
-/* Filter buttons: pill shape with thicker stroke */
-[data-theme="contrast"] .tag-filter__pill,
-[data-theme="contrast"] .filter-tag {
-  border-radius: 999px;
-  border-width: 1px;
-  border-color: #000000;
-}
-
-/* Stronger input borders */
-[data-theme="contrast"] input,
-[data-theme="contrast"] textarea,
-[data-theme="contrast"] select {
-  border: 1px solid #000000;
-  box-shadow: none;
-}
-
-/* Hover: black stroke instead of shadow lift */
-[data-theme="contrast"] .cl-card:hover,
-[data-theme="contrast"] .cl-card--elevated:hover,
-[data-theme="contrast"] .dash-card:hover,
-[data-theme="contrast"] .dash-stat:hover,
-[data-theme="contrast"] .feed-card:hover,
-[data-theme="contrast"] .project-card:hover,
-[data-theme="contrast"] .update-card:hover,
-[data-theme="contrast"] .event-card:hover,
-[data-theme="contrast"] .member-card:hover,
-[data-theme="contrast"] .adviseur-card:hover,
-[data-theme="contrast"] .feed-composer-prompt:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: #000000;
-}
-
-/* Larger icon buttons */
-[data-theme="contrast"] .btn-icon,
-[data-theme="contrast"] .btn-icon-sm {
-  min-width: 44px;
-  min-height: 44px;
-  font-size: 18px;
-}
-
-/* Flat popups/dropdowns/modals */
-[data-theme="contrast"] .sidebar-user-menu,
-[data-theme="contrast"] .cl-modal,
-[data-theme="contrast"] .cl-dropdown {
-  border: 1px solid #000000;
-  box-shadow: none;
-}
-
-/* Sidebar: white on gray page, no border */
-[data-theme="contrast"] .cl-sidebar {
-  background: #FFFFFF;
-  border-right: none;
-}
-
-[data-theme="contrast"] .sidebar-project-header {
-  border-bottom: none;
-}
-
-[data-theme="contrast"] .sidebar-footer {
-  border-top: none;
+  /* Blauw-getinte schaduwen (CB s1–s3) i.p.v. de neutrale */
+  --shadow-xs:           0 1px 2px rgba(19, 15, 51, 0.04);
+  --shadow-sm:           0 2px 8px rgba(19, 15, 51, 0.05),
+                         0 1px 2px rgba(19, 15, 51, 0.03);
+  --shadow-md:           0 6px 20px rgba(19, 15, 51, 0.08),
+                         0 1px 3px rgba(19, 15, 51, 0.04);
+  --shadow-lg:           0 12px 40px rgba(19, 15, 51, 0.12),
+                         0 4px 12px rgba(19, 15, 51, 0.06);
+  --shadow-xl:           0 20px 60px rgba(19, 15, 51, 0.16),
+                         0 8px 20px rgba(19, 15, 51, 0.08);
 }
 
 /* ============================================================================

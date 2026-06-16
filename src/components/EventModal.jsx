@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
-import { EVENT_TYPES } from '../lib/constants'
+import { EVENT_TYPES, isTouchDevice } from '../lib/constants'
 import AudienceSelector from './AudienceSelector'
 import { useToast } from './Toast'
 
@@ -146,7 +146,7 @@ export default function EventModal({ event, onSave, onClose, onDelete }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
             <label>Titel</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het event" required autoFocus />
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het event" required autoFocus={!isTouchDevice} />
           </div>
 
           <div className="form-group">

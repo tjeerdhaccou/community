@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { canDo } from '../lib/permissions'
@@ -185,7 +185,7 @@ export default function Documents() {
 
       {/* Filter pills */}
       {activeTab === 'dossier' && (
-        <div className="tag-filter">
+        <CollapsibleTagFilter>
           {[{ key: 'all', label: 'Alle categorieën' }, ...Object.entries(CATEGORY_LABELS).map(([key, label]) => ({ key, label }))].map(c => (
             <button
               key={c.key}
@@ -195,10 +195,10 @@ export default function Documents() {
               {c.label}
             </button>
           ))}
-        </div>
+        </CollapsibleTagFilter>
       )}
       {activeTab === 'vergaderingen' && (
-        <div className="tag-filter">
+        <CollapsibleTagFilter>
           {MEETING_FILE_CATS.map(c => (
             <button
               key={c.key}
@@ -208,7 +208,7 @@ export default function Documents() {
               {c.label}
             </button>
           ))}
-        </div>
+        </CollapsibleTagFilter>
       )}
 
       {/* Document list */}
@@ -229,6 +229,43 @@ export default function Documents() {
             />
           ))}
         </div>
+      )}
+    </div>
+  )
+}
+
+function CollapsibleTagFilter({ children }) {
+  const ref = useRef(null)
+  const [expanded, setExpanded] = useState(false)
+  const [overflowing, setOverflowing] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const check = () => setOverflowing(el.scrollHeight > el.clientHeight + 1)
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [children])
+
+  return (
+    <div className="tag-filter-wrap">
+      <div
+        ref={ref}
+        className={`tag-filter ${expanded ? 'tag-filter--expanded' : 'tag-filter--collapsed'}`}
+      >
+        {children}
+      </div>
+      {(overflowing || expanded) && (
+        <button
+          type="button"
+          className="tag-filter__toggle"
+          onClick={() => setExpanded(e => !e)}
+        >
+          {expanded ? 'Minder' : 'Meer'}
+          <i className={`fa-solid ${expanded ? 'fa-chevron-up' : 'fa-chevron-down'}`} />
+        </button>
       )}
     </div>
   )

@@ -301,7 +301,7 @@
 .cl-btn:active { transform: translateY(0) scale(0.97); }
 
 .cl-btn--primary {
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   box-shadow: var(--shadow-xs);
 }
@@ -328,7 +328,7 @@
   width: 56px;
   height: 56px;
   border-radius: var(--radius-full);
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   border: none;
   font-size: 22px;

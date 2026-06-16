@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { UPDATE_TAGS } from '../lib/constants'
+import { UPDATE_TAGS, isTouchDevice } from '../lib/constants'
 import { uploadImage } from '../lib/storage'
 import AudienceSelector from './AudienceSelector'
 import ImageCropper from './ImageCropper'
@@ -173,7 +173,7 @@ export default function UpdateModal({ update, onSave, onClose, onDelete, onAddAt
               onChange={e => setTitle(e.target.value)}
               placeholder="Titel van de update"
               required
-              autoFocus
+              autoFocus={!isTouchDevice}
             />
           </div>
 

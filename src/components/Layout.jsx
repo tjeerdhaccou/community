@@ -11,7 +11,7 @@ function ThemeToggle() {
   const modes = [
     { value: 'warm', icon: 'fa-solid fa-cloud-sun', label: 'Warm' },
     { value: 'dark', icon: 'fa-solid fa-moon', label: 'Donker' },
-    { value: 'contrast', icon: 'fa-solid fa-eye', label: 'Hoog contrast' },
+    { value: 'crowdbuilding', icon: 'fa-solid fa-palette', label: 'CrowdBuilding' },
   ]
 
   const current = modes.find(m => m.value === mode) || modes[0]
