@@ -9,6 +9,7 @@ import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import { canDo } from '../lib/permissions'
 import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_LABELS, FUNNEL_COLORS } from '../lib/constants'
 import { getIntakeUrl, getProjectBaseUrl } from '../lib/subdomain'
+import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 import MemberProfile from '../components/MemberProfile'
 import RejectModal from '../components/RejectModal'
 import IntakeResponseDetail from '../components/IntakeResponseDetail'
@@ -94,7 +95,7 @@ export default function Members() {
       </div>
 
       {/* Filter pills */}
-      <div className="tag-filter">
+      <CollapsibleTagFilter>
         {[
           { key: 'all', label: `Alle (${active.length})` },
           ...(guests.length > 0 && canDo(role, 'invite_members') ? [{ key: 'pending', label: `Geïnteresseerden (${guests.length})` }] : []),
@@ -126,7 +127,7 @@ export default function Members() {
             ))}
           </>
         )}
-      </div>
+      </CollapsibleTagFilter>
 
       {/* Geïnteresseerden banner */}
       {filter !== 'pending' && guests.length > 0 && canDo(role, 'invite_members') && (
@@ -542,12 +543,17 @@ function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [] }) 
           </span>
         )}
         {isNew && <span className="member-card__badge member-card__badge--new">Nieuw</span>}
-        {commissies.map(c => (
-          <span key={c.id} className="member-card__badge member-card__badge--commissie">
-            <i className="fa-solid fa-users" /> {c.name}
-          </span>
-        ))}
       </div>
+
+      {commissies.length > 0 && (
+        <div className="member-card__commissies">
+          {commissies.map(c => (
+            <span key={c.id} className="member-card__commissie">
+              <i className="fa-solid fa-users" /> {c.name}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
