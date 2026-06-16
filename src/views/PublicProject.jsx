@@ -247,7 +247,7 @@ function ContentBlock({ section, updates, events, onUpdateClick, onEventClick })
       return (
         <section className={`pub-block ${textClass}`} style={style}>
           <div className="pub-block__inner">
-            <h2 className="pub-block__title" style={{ marginBottom: 20 }}>Laatste updates</h2>
+            <h2 className="pub-block__title" style={{ marginBottom: 20 }}>{section.title || 'Laatste updates'}</h2>
             <div className="pub-updates-grid">
               {updates.map(u => (
                 <UpdateCard key={u.id} update={u} onClick={() => onUpdateClick(u)} />

@@ -340,9 +340,40 @@
   /* Pill-knoppen — kenmerkende CrowdBuilding-vorm */
   --btn-radius:          var(--radius-full);
 
-  /* Blauwe tags → navy-tint (info/structuur, geen CTA) */
-  --tag-blue-bg:         rgba(19, 15, 51, 0.10);
+  /* Frisse accent-aanvulling (live van crowdbuilding.com) */
+  --accent-green:        #7AD491;   /* Semantic Green — volwaardig accent */
+  --accent-periwinkle:   #9598B4;   /* Koel info/categorie-accent */
+
+  /* Tags → volledig CB-palet, zodat álle tags binnen de huisstijl vallen */
+  --tag-blue-bg:         rgba(19, 15, 51, 0.10);    /* navy: info/structuur, geen CTA */
   --tag-blue-text:       #130F33;
+  --tag-green-bg:        rgba(122, 212, 145, 0.24);
+  --tag-green-text:      #2E7D4A;
+  --tag-yellow-bg:       rgba(255, 202, 69, 0.22);
+  --tag-yellow-text:     #8C6F00;
+  --tag-orange-bg:       rgba(231, 176, 149, 0.35); /* warme peach (CB kent geen los oranje) */
+  --tag-orange-text:     #B5621F;
+  --tag-pink-bg:         rgba(255, 203, 225, 0.50);
+  --tag-pink-text:       #C04C7D;
+  --tag-purple-bg:       rgba(149, 152, 180, 0.30); /* periwinkle (CB kent geen paars) */
+  --tag-purple-text:     #414570;
+  --tag-red-bg:          rgba(255, 59, 48, 0.12);
+  --tag-red-text:        #C0291F;
+
+  /* Sidebar icon-bubbels — zachte tint + donkere glyph in dezelfde familie.
+     Geconsumeerd door clean-components.css ALLEEN onder dit thema. */
+  --nav-bub-navy-bg:        #DBDCE7; --nav-bub-navy-glyph:        #130F33;
+  --nav-bub-coral-bg:       #FFDAD7; --nav-bub-coral-glyph:       #D84B41;
+  --nav-bub-green-bg:       #DCF0E2; --nav-bub-green-glyph:       #2E7D4A;
+  --nav-bub-amber-bg:       #FFF0CA; --nav-bub-amber-glyph:       #A77E0A;
+  --nav-bub-periwinkle-bg:  #E7E9EE; --nav-bub-periwinkle-glyph:  #4A4E73;
+  --nav-bub-pink-bg:        #FFE2EE; --nav-bub-pink-glyph:        #C04C7D;
+  --nav-bub-indigo-bg:      #E3E4F0; --nav-bub-indigo-glyph:      #2E2F5C;
+  --nav-bub-stone-bg:       #EFEAE0; --nav-bub-stone-glyph:       #8A7E68;
+  --nav-bub-peach-bg:       #FCE3D3; --nav-bub-peach-glyph:       #C56A2A;
+  --nav-bub-terracotta-bg:  #FBD9D6; --nav-bub-terracotta-glyph:  #B23A33;
+  --nav-bub-teal-bg:        #E2EEF5; --nav-bub-teal-glyph:        #2E6E8E;
+  --nav-bub-neutral-bg:     #EFEDE8; --nav-bub-neutral-glyph:     #7C7868;
 
   /* Blauw-getinte schaduwen (CB s1–s3) i.p.v. de neutrale */
   --shadow-xs:           0 1px 2px rgba(19, 15, 51, 0.04);

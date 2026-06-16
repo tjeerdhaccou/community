@@ -9,12 +9,14 @@ export const isTouchDevice =
 
 export const POST_TAGS = ['Vraag', 'Idee', 'Sociaal', 'In de media', 'Even voorstellen']
 
+// Theme-aware via CSS-tokens (zoals UPDATE_TAG_COLORS), zodat prikbord-tags
+// meeschakelen met het thema — incl. het CrowdBuilding-palet.
 export const POST_TAG_COLORS = {
-  'Vraag': '#4A90D9',
-  'Idee': '#3BD269',
-  'Sociaal': '#F09020',
-  'In de media': '#F23578',
-  'Even voorstellen': '#7B5EA7',
+  'Vraag':            { bg: 'var(--tag-blue-bg)',   color: 'var(--tag-blue-text)' },
+  'Idee':             { bg: 'var(--tag-green-bg)',  color: 'var(--tag-green-text)' },
+  'Sociaal':          { bg: 'var(--tag-orange-bg)', color: 'var(--tag-orange-text)' },
+  'In de media':      { bg: 'var(--tag-pink-bg)',   color: 'var(--tag-pink-text)' },
+  'Even voorstellen': { bg: 'var(--tag-purple-bg)', color: 'var(--tag-purple-text)' },
 }
 
 export const UPDATE_TAGS = ['Mijlpaal', 'Update', 'Besluit', 'Verslag']

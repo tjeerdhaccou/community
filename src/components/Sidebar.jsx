@@ -10,38 +10,38 @@ import { isProjectDomain } from '../lib/subdomain'
 const NAV_SECTIONS = [
   {
     items: [
-      { to: '', icon: 'fa-solid fa-house', color: 'var(--clean-inbox, #4A90D9)', label: 'Dashboard', end: true },
+      { to: '', icon: 'fa-solid fa-house', color: 'var(--clean-inbox, #4A90D9)', bubble: 'navy', label: 'Dashboard', end: true },
     ]
   },
   {
     label: 'Actueel',
     items: [
-      { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', label: 'Projectnieuws', feature: 'updates' },
-      { to: 'community', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
-      { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', label: 'Events', feature: 'events' },
+      { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', bubble: 'coral', label: 'Projectnieuws', feature: 'updates' },
+      { to: 'community', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
+      { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', bubble: 'amber', label: 'Events', feature: 'events' },
     ]
   },
   {
     label: 'Project',
     items: [
-      { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
-      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', label: 'Documenten', feature: 'documents' },
-      { to: 'mijn-documenten', icon: 'fa-solid fa-file-shield', color: '#2D8CFF', label: 'Mijn documenten', membersOnly: true },
-      { to: 'adviseurs', icon: 'fa-solid fa-helmet-safety', color: '#C9A96E', label: 'Team', action: 'view_team', feature: 'team' },
+      { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', bubble: 'periwinkle', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
+      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', bubble: 'pink', label: 'Documenten', feature: 'documents' },
+      { to: 'mijn-documenten', icon: 'fa-solid fa-file-shield', color: '#2D8CFF', bubble: 'indigo', label: 'Mijn documenten', membersOnly: true },
+      { to: 'adviseurs', icon: 'fa-solid fa-helmet-safety', color: '#C9A96E', bubble: 'stone', label: 'Team', action: 'view_team', feature: 'team' },
     ]
   },
   {
     label: 'Community',
     items: [
-      { to: 'members', icon: 'fa-solid fa-users', color: '#F23578', label: 'Leden', action: 'view_members_list', feature: 'members' },
-      { to: 'ledenwerving', icon: 'fa-solid fa-clipboard-list', color: 'var(--accent-orange, #F09020)', label: 'Ledenwerving', action: 'manage_intake', feature: 'ledenwerving' },
+      { to: 'members', icon: 'fa-solid fa-users', color: '#F23578', bubble: 'peach', label: 'Leden', action: 'view_members_list', feature: 'members' },
+      { to: 'ledenwerving', icon: 'fa-solid fa-clipboard-list', color: 'var(--accent-orange, #F09020)', bubble: 'terracotta', label: 'Ledenwerving', action: 'manage_intake', feature: 'ledenwerving' },
     ]
   },
   {
     label: 'Beheer',
     items: [
-      { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
-      { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', label: 'Instellingen', adminOnly: true },
+      { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', bubble: 'teal', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
+      { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Instellingen', adminOnly: true },
     ]
   },
 ]
@@ -135,7 +135,7 @@ export default function Sidebar() {
         style={featureHidden ? { opacity: 0.6 } : undefined}
         title={featureHidden ? 'Verborgen voor leden' : undefined}
       >
-        <i className={`cl-nav-item__icon ${item.icon}`} style={{ color: isActive(item.to) ? item.color : 'var(--text-tertiary)' }} />
+        <i className={`cl-nav-item__icon ${item.icon}`} style={{ '--nav-c': item.color, '--nav-bub-bg': `var(--nav-bub-${item.bubble}-bg)`, '--nav-bub-glyph': `var(--nav-bub-${item.bubble}-glyph)` }} />
         <span>{item.label}</span>
         {featureHidden && (
           <i className="fa-solid fa-eye-slash" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }} title="Verborgen voor leden" />

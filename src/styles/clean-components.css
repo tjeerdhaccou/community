@@ -65,10 +65,34 @@
   width: 24px;
   text-align: center;
   flex-shrink: 0;
+  color: var(--text-tertiary);
   transition: transform 200ms var(--ease-spring);
 }
+.cl-nav-item--active .cl-nav-item__icon { color: var(--nav-c, var(--text-primary)); }
 
 .cl-nav-item:hover .cl-nav-item__icon { transform: scale(1.1); }
+
+/* CrowdBuilding-thema: nav-iconen als zachte-tint bubbel (alleen in dit thema).
+   Per item leveren --nav-bub-bg / --nav-bub-glyph de kleur (zie Sidebar.jsx). */
+[data-theme="crowdbuilding"] .cl-nav-item__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--nav-bub-bg, var(--bg-hover));
+  color: var(--nav-bub-glyph, var(--text-secondary));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+[data-theme="crowdbuilding"] .cl-nav-item--active .cl-nav-item__icon {
+  color: var(--nav-bub-glyph, var(--text-secondary));
+}
+[data-theme="crowdbuilding"] .cl-nav-item--project .cl-nav-item__icon {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
 
 .cl-nav-item__badge {
   margin-left: auto;
