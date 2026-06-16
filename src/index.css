@@ -5368,13 +5368,24 @@ select.input {
     display: flex;
   }
 
-  .main-content {
-    padding: 20px 16px;
-    padding-bottom: 80px;
+  /* Laat het document zélf scrollen op mobiel, zodat Safari z'n adres-/navigatiebalk
+     inklapt bij scrollen (gebeurt alleen bij body-scroll, niet bij een inner scroller). */
+  html, body {
+    height: auto;
+    overflow: visible;
   }
 
   .app-layout {
     flex-direction: column;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .main-content {
+    padding: 20px 16px;
+    padding-bottom: 80px;
+    overflow-y: visible;
   }
 
   .dashboard-cover {
