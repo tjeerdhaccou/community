@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { uploadImage, uploadFile } from '../lib/storage'
-import { formatFileSize, PROJECT_PHASES } from '../lib/constants'
+import { formatFileSize, PROJECT_PHASES, isTouchDevice } from '../lib/constants'
 import ImageCropper from './ImageCropper'
 
 export default function ProfessionalUpdateModal({ update, activePhase, onSave, onClose }) {
@@ -162,7 +162,7 @@ export default function ProfessionalUpdateModal({ update, activePhase, onSave, o
               onChange={e => setTitle(e.target.value)}
               placeholder="Titel van de update"
               required
-              autoFocus
+              autoFocus={!isTouchDevice}
             />
           </div>
 

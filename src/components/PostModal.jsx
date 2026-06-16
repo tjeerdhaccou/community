@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
-import { POST_TAGS } from '../lib/constants'
+import { POST_TAGS, isTouchDevice } from '../lib/constants'
 import { useProject } from '../contexts/ProjectContext'
 import AudienceSelector from './AudienceSelector'
 import ImageCropper from './ImageCropper'
@@ -147,7 +147,7 @@ export default function PostModal({ onSave, onClose, editPost }) {
               placeholder={postType === 'poll' ? 'Stel je vraag aan de community...' : 'Wat wil je delen met de community?'}
               rows={3}
               required
-              autoFocus
+              autoFocus={!isTouchDevice}
             />
           </div>
 
