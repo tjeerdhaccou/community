@@ -10,6 +10,7 @@ import PostDetail from '../components/PostDetail'
 import ConfirmModal from '../components/ConfirmModal'
 
 import { POST_TAGS } from '../lib/constants'
+import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...POST_TAGS]
 
 export default function Community() {
@@ -114,7 +115,7 @@ export default function Community() {
       )}
 
       {/* Tag filters with unread badges */}
-      <div className="tag-filter">
+      <CollapsibleTagFilter>
         {FILTER_TAGS.map(tag => (
           <button
             key={tag}
@@ -141,7 +142,7 @@ export default function Community() {
             ))}
           </>
         )}
-      </div>
+      </CollapsibleTagFilter>
 
       <div className="feed-layout">
         {/* Main feed — single column */}

@@ -11,6 +11,7 @@ import ConfirmModal from '../components/ConfirmModal'
 import { useToast } from '../components/Toast'
 
 import { UPDATE_TAGS } from '../lib/constants'
+import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...UPDATE_TAGS]
 
 export default function Updates() {
@@ -105,7 +106,7 @@ export default function Updates() {
         </p>
       </div>
 
-      <div className="tag-filter">
+      <CollapsibleTagFilter>
         {FILTER_TAGS.map(tag => (
           <button
             key={tag}
@@ -115,7 +116,7 @@ export default function Updates() {
             {tag}
           </button>
         ))}
-      </div>
+      </CollapsibleTagFilter>
 
       {loading ? (
         <div className="loading-inline"><p>Projectnieuws laden...</p></div>

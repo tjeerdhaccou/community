@@ -1195,11 +1195,11 @@ select.input {
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  overflow-x: auto;
+  flex-wrap: wrap;
   padding: 2px 0;
 }
 
-/* Collapsible tag filter — one row + Meer/Minder toggle, no scrollbar */
+/* Collapsible tag filter — max. twee rijen + Meer/Minder toggle, no scrollbar */
 .tag-filter-wrap {
   margin-bottom: 20px;
 }
@@ -1211,7 +1211,7 @@ select.input {
 }
 
 .tag-filter--collapsed {
-  max-height: 34px;
+  max-height: 70px;
 }
 
 .tag-filter--expanded {

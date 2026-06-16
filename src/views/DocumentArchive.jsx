@@ -3,6 +3,7 @@ import { useProject } from '../contexts/ProjectContext'
 import { canDo } from '../lib/permissions'
 import { useDocuments } from '../hooks/useDocuments'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
+import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 
 const CATEGORIES = [
   { key: 'all', label: 'Alles' },
@@ -34,7 +35,7 @@ export default function DocumentArchive() {
         </div>
       </div>
 
-      <div className="tag-filter">
+      <CollapsibleTagFilter>
         {CATEGORIES.map(cat => (
           <button key={cat.key}
             className={`tag-filter__pill ${filter === cat.key ? 'tag-filter__pill--active' : ''}`}
@@ -42,7 +43,7 @@ export default function DocumentArchive() {
             {cat.label}
           </button>
         ))}
-      </div>
+      </CollapsibleTagFilter>
 
       {loading ? (
         <div className="loading-inline"><p>Laden...</p></div>

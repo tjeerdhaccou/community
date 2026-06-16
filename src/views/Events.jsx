@@ -10,6 +10,7 @@ import EventModal from '../components/EventModal'
 import EventDetail from '../components/EventDetail'
 import ConfirmModal from '../components/ConfirmModal'
 import { useToast } from '../components/Toast'
+import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 
 const FILTER_TYPES = [{ key: 'alles', label: 'Alles' }, ...EVENT_TYPES]
 
@@ -166,7 +167,7 @@ export default function Events() {
         </div>
 
         {(visibleUpcoming.length > 0 || visiblePast.length > 0) && (
-          <div className="tag-filter">
+          <CollapsibleTagFilter>
             {FILTER_TYPES.map(t => (
               <button
                 key={t.key}
@@ -176,7 +177,7 @@ export default function Events() {
                 {t.label}
               </button>
             ))}
-          </div>
+          </CollapsibleTagFilter>
         )}
       </div>
 
