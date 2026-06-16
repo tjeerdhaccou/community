@@ -95,6 +95,12 @@
   font-size: 14px;
 }
 
+/* CrowdBuilding-donker: hover/active als schone indigo-lift i.p.v. de grauwe
+   --bg-hover/--bg-selected, die te dicht op de sidebar (#211B4D) zaten. Drietraps:
+   sidebar → hover (#2E2858) → active (#3A3470). Alleen de sidebar, niet globaal. */
+[data-theme="crowdbuilding-dark"] .cl-nav-item:hover { background: #2E2858; }
+[data-theme="crowdbuilding-dark"] .cl-nav-item--active { background: #3A3470; }
+
 .cl-nav-item__badge {
   margin-left: auto;
   font-size: 12px;
