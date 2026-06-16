@@ -7991,6 +7991,14 @@ select.input {
   .global-search--open .global-search-bar { width: 100%; }
   /* 16px voorkomt dat iOS automatisch inzoomt bij focus (en de pagina-spacing verspringt) */
   .global-search-bar input { font-size: 16px; }
+  /* iOS houdt na tikken een :hover-achtergrond vast -> losse donkere cirkel.
+     In open-staat is de X gewoon een icoon in de balk, geen aparte knop-cirkel. */
+  .global-search--open .global-search-trigger,
+  .global-search--open .global-search-trigger:hover,
+  .global-search--open .global-search-trigger:active,
+  .global-search--open .global-search-trigger:focus {
+    background: none !important;
+  }
 
   .global-search-dropdown {
     position: fixed;
