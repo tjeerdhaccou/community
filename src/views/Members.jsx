@@ -3,6 +3,7 @@ import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useMembers } from '../hooks/useMembers'
 import { useMemberInvites } from '../hooks/useMemberInvites'
+import { useWorkgroups } from '../hooks/useWorkgroups'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import { canDo } from '../lib/permissions'
@@ -30,6 +31,8 @@ export default function Members() {
     : allMembers.filter(m => !m.profile?.is_platform_admin)
   const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
+  const { allWorkgroups, workgroupIdsByProfile, workgroupsForProfile } = useWorkgroups()
+  const commissies = allWorkgroups.filter(wg => wg.type === 'commissie')
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [selectedMemberId, setSelectedMemberId] = useState(null)
@@ -46,6 +49,7 @@ export default function Members() {
 
   const filtered = (filter === 'all' ? active
     : filter === 'pending' ? guests
+    : filter.startsWith('wg:') ? active.filter(m => (workgroupIdsByProfile[m.profile_id] || new Set()).has(filter.slice(3)))
     : active.filter(m => m.role === filter)
   ).filter(m => {
     if (!search.trim()) return true
@@ -108,6 +112,20 @@ export default function Members() {
             {f.label}
           </button>
         ))}
+        {commissies.length > 0 && (
+          <>
+            <span className="tag-filter__divider" aria-hidden="true" />
+            {commissies.map(c => (
+              <button
+                key={c.id}
+                className={`tag-filter__pill ${filter === `wg:${c.id}` ? 'tag-filter__pill--active' : ''}`}
+                onClick={() => setFilter(`wg:${c.id}`)}
+              >
+                <i className="fa-solid fa-users" style={{ marginRight: '5px', fontSize: '11px' }} /> {c.name}
+              </button>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Geïnteresseerden banner */}
@@ -178,6 +196,7 @@ export default function Members() {
                 isMe={m.profile_id === user?.id}
                 onClick={canViewProfile ? () => setSelectedMember(m) : undefined}
                 showFunnel={canDo(role, 'assign_roles')}
+                commissies={workgroupsForProfile(m.profile_id, 'commissie')}
               />
             )
           })}
@@ -475,7 +494,7 @@ function OpenLinkInvite({ projectName, project }) {
   )
 }
 
-function MemberCard({ membership, isMe, onClick, showFunnel }) {
+function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [] }) {
   const p = membership.profile
   const roleColor = ROLE_COLORS[membership.role] || '#9ba1b0'
   const proLabel = PROFESSIONAL_LABELS[p?.professional_type]
@@ -523,6 +542,11 @@ function MemberCard({ membership, isMe, onClick, showFunnel }) {
           </span>
         )}
         {isNew && <span className="member-card__badge member-card__badge--new">Nieuw</span>}
+        {commissies.map(c => (
+          <span key={c.id} className="member-card__badge member-card__badge--commissie">
+            <i className="fa-solid fa-users" /> {c.name}
+          </span>
+        ))}
       </div>
     </div>
   )

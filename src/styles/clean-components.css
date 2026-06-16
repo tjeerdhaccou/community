@@ -291,7 +291,7 @@
   font-size: 14px;
   font-weight: 600;
   padding: 10px 22px;
-  border-radius: var(--radius-md);
+  border-radius: var(--btn-radius);
   border: none;
   cursor: pointer;
   transition: all 150ms var(--ease-default);
@@ -398,7 +398,7 @@
 
 .cl-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.15);
 }
 
 .cl-input::placeholder { color: var(--text-faint); }

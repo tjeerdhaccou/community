@@ -606,7 +606,7 @@ function MemberDossier({ profileId, projectId }) {
 
 const REQUEST_STATUS_CONFIG = {
   pending: { label: 'Wacht op lid', color: 'var(--accent-orange, #F5A623)', bg: 'rgba(245, 166, 35, 0.12)' },
-  submitted: { label: 'Ingediend', color: 'var(--accent-blue, #4A90D9)', bg: 'rgba(74, 144, 217, 0.12)' },
+  submitted: { label: 'Ingediend', color: 'var(--accent-blue, #4A90D9)', bg: 'rgba(var(--accent-blue-rgb), 0.12)' },
   approved: { label: 'Goedgekeurd', color: 'var(--accent-green, #3BD269)', bg: 'rgba(59, 210, 105, 0.12)' },
   rejected: { label: 'Afgekeurd', color: 'var(--accent-red, #E53E3E)', bg: 'rgba(229, 62, 62, 0.12)' },
 }

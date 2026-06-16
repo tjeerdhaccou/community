@@ -57,12 +57,16 @@ export function ThemeProvider({ children, projectBranding, scope }) {
   }, [storageKey, projectBranding?.default_theme])
 
   useEffect(() => {
-    // Apply project branding colors as CSS custom properties
-    if (projectBranding?.brand_primary_color) {
+    // Apply project branding colors as CSS custom properties.
+    // Uitzondering: in het CrowdBuilding-thema willen we het volledige merkpalet
+    // (Invested Blue + Coral) tonen — project-branding zou de structuurkleur
+    // anders inline overschrijven, waardoor het thema niet zichtbaar is.
+    const applyBranding = mode !== 'crowdbuilding'
+    if (applyBranding && projectBranding?.brand_primary_color) {
       document.documentElement.style.setProperty('--accent-primary', projectBranding.brand_primary_color)
       document.documentElement.style.setProperty('--border-focus', projectBranding.brand_primary_color)
     }
-    if (projectBranding?.brand_accent_color) {
+    if (applyBranding && projectBranding?.brand_accent_color) {
       document.documentElement.style.setProperty('--accent-green', projectBranding.brand_accent_color)
     }
 
@@ -72,7 +76,7 @@ export function ThemeProvider({ children, projectBranding, scope }) {
       document.documentElement.style.removeProperty('--border-focus')
       document.documentElement.style.removeProperty('--accent-green')
     }
-  }, [projectBranding])
+  }, [projectBranding, mode])
 
   // Reset to light when entering an unscoped context
   useEffect(() => {

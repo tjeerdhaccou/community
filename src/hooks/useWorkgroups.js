@@ -17,6 +17,8 @@ export function useWorkgroups() {
   const { project } = useProject()
   const [allWorkgroups, setAllWorkgroups] = useState([])
   const [myWorkgroupIds, setMyWorkgroupIds] = useState(new Set())
+  // profile_id → Set(workgroup_id) voor álle leden van het project
+  const [workgroupIdsByProfile, setWorkgroupIdsByProfile] = useState({})
   const [loading, setLoading] = useState(true)
 
   const projectId = project?.id
@@ -25,31 +27,36 @@ export function useWorkgroups() {
     if (!projectId) return
     setLoading(true)
 
-    const [wgRes, memberRes] = await Promise.all([
-      supabase
-        .from('workgroups')
-        .select('id, name, description, type, icon, sort_order')
-        .eq('project_id', projectId)
-        .order('type')
-        .order('sort_order')
-        .order('name'),
-      user?.id
-        ? supabase
-            .from('workgroup_members')
-            .select('workgroup_id')
-            .eq('profile_id', user.id)
-        : Promise.resolve({ data: [] }),
-    ])
+    const { data: wgData } = await supabase
+      .from('workgroups')
+      .select('id, name, description, type, icon, sort_order')
+      .eq('project_id', projectId)
+      .order('type')
+      .order('sort_order')
+      .order('name')
 
-    setAllWorkgroups(wgRes.data || [])
+    const workgroups = wgData || []
+    setAllWorkgroups(workgroups)
 
-    const memberWgIds = new Set(
-      (memberRes.data || [])
-        .map(m => m.workgroup_id)
-        // Only include workgroups that belong to this project
-        .filter(wgId => (wgRes.data || []).some(wg => wg.id === wgId))
-    )
-    setMyWorkgroupIds(memberWgIds)
+    const wgIds = workgroups.map(wg => wg.id)
+    let memberships = []
+    if (wgIds.length > 0) {
+      const { data: memberData } = await supabase
+        .from('workgroup_members')
+        .select('workgroup_id, profile_id')
+        .in('workgroup_id', wgIds)
+      memberships = memberData || []
+    }
+
+    const byProfile = {}
+    const mine = new Set()
+    for (const m of memberships) {
+      if (!byProfile[m.profile_id]) byProfile[m.profile_id] = new Set()
+      byProfile[m.profile_id].add(m.workgroup_id)
+      if (m.profile_id === user?.id) mine.add(m.workgroup_id)
+    }
+    setWorkgroupIdsByProfile(byProfile)
+    setMyWorkgroupIds(mine)
     setLoading(false)
   }, [projectId, user?.id])
 
@@ -57,10 +64,19 @@ export function useWorkgroups() {
 
   const myWorkgroups = allWorkgroups.filter(wg => myWorkgroupIds.has(wg.id))
 
+  // Geef voor een profiel de workgroup-objecten terug (optioneel gefilterd op type)
+  const workgroupsForProfile = useCallback((profileId, type) => {
+    const ids = workgroupIdsByProfile[profileId]
+    if (!ids) return []
+    return allWorkgroups.filter(wg => ids.has(wg.id) && (!type || wg.type === type))
+  }, [workgroupIdsByProfile, allWorkgroups])
+
   return {
     allWorkgroups,
     myWorkgroups,
     myWorkgroupIds,
+    workgroupIdsByProfile,
+    workgroupsForProfile,
     loading,
     refetch: fetch,
   }
