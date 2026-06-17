@@ -260,3 +260,7 @@ export function onboardingEnabled(features, isLight) {
   if (f.onboarding === false) return false
   return !!isLight
 }
+
+// Versie van privacyverklaring + algemene voorwaarden waarop leden akkoord geven (AVG).
+// Verhoog dit als de voorwaarden materieel wijzigen -> leden geven opnieuw akkoord.
+export const CONSENT_VERSION = '2026-06'

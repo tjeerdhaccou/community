@@ -77,6 +77,15 @@ export default function Profile() {
 
   const isProfessional = !!authProfile?.professional_type
 
+  // Scroll naar #notif-section als de welkomstkaart daarheen linkt.
+  useEffect(() => {
+    if (window.location.hash !== '#notif-section') return
+    const t = setTimeout(() => {
+      document.getElementById('notif-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 300)
+    return () => clearTimeout(t)
+  }, [])
+
   // Load notification preferences
   useEffect(() => {
     if (!authProfile?.id) return

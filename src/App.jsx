@@ -37,7 +37,6 @@ import Datalekprotocol from './views/legal/Datalekprotocol'
 import Verwerkingsregister from './views/legal/Verwerkingsregister'
 import DPIADocument from './views/legal/DPIADocument'
 import CookieConsent from './components/CookieConsent'
-import NotificationOnboardingModal from './components/NotificationOnboardingModal'
 import Unsubscribe from './views/Unsubscribe'
 import PublicProject from './views/PublicProject'
 import PageBuilder from './views/PageBuilder'
@@ -474,7 +473,6 @@ export default function App() {
           <ToastProvider>
           <ConfirmProvider>
             <SubdomainRouter />
-            <NotificationOnboardingModal />
           </ConfirmProvider>
           </ToastProvider>
         </ThemeProvider>

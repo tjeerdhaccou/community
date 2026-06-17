@@ -57,6 +57,14 @@ export default function MemberWelcome() {
       desc: 'Zie waar het project staat en wat er komt.',
       action: () => navigate(`${basePath}/roadmap`),
     },
+    {
+      key: 'notificaties',
+      done: false,
+      icon: 'fa-solid fa-bell',
+      title: 'Stel je notificaties in',
+      desc: 'Bepaal waarover je een e-mail wilt ontvangen.',
+      action: () => navigate(`${basePath}/profile#notif-section`),
+    },
   ]
 
   return (

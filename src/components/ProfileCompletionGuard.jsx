@@ -2,6 +2,8 @@ import { useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { logAudit } from '../lib/audit'
+import { CONSENT_VERSION } from '../lib/constants'
 import ImageCropper from './ImageCropper'
 
 export default function ProfileCompletionGuard({ children }) {
@@ -17,7 +19,9 @@ export default function ProfileCompletionGuard({ children }) {
   // verstuurt. full_name dekt bestaande accounts af zonder gesplitste naam.
   const hasName = !!(profile.first_name?.trim() || profile.full_name?.trim())
   const hasLastName = !!profile.last_name?.trim()
-  const needsCompletion = !hasName || !hasLastName
+  // AVG: expliciete toestemming op de actuele versie van de voorwaarden.
+  const hasConsent = !!profile.terms_accepted_at && profile.terms_version === CONSENT_VERSION
+  const needsCompletion = !hasName || !hasLastName || !hasConsent
 
   if (!needsCompletion) return children
 
@@ -40,6 +44,8 @@ function ProfileCompletionModal({ profile, onComplete }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [cropSrc, setCropSrc] = useState(null)
+  const alreadyConsented = !!profile.terms_accepted_at && profile.terms_version === CONSENT_VERSION
+  const [consent, setConsent] = useState(alreadyConsented)
   const fileRef = useRef(null)
 
   function handlePhotoSelect(e) {
@@ -65,7 +71,7 @@ function ProfileCompletionModal({ profile, onComplete }) {
     }
   }
 
-  const canSubmit = firstName.trim() && lastName.trim()
+  const canSubmit = firstName.trim() && lastName.trim() && consent
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -82,10 +88,13 @@ function ProfileCompletionModal({ profile, onComplete }) {
           last_name: ln,
           full_name: `${fn} ${ln}`.trim(),
           avatar_url: avatarUrl,
+          terms_accepted_at: new Date().toISOString(),
+          terms_version: CONSENT_VERSION,
         })
         .eq('id', profile.id)
 
       if (err) throw err
+      logAudit('user.consent_accepted', 'profile', { resourceId: profile.id, version: CONSENT_VERSION })
       onComplete()
     } catch (err) {
       console.error('Error saving profile:', err)
@@ -147,6 +156,20 @@ function ProfileCompletionModal({ profile, onComplete }) {
               />
             </div>
           </div>
+
+          <label className="guard-consent">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={e => setConsent(e.target.checked)}
+            />
+            <span>
+              Ik ga akkoord met de{' '}
+              <a href="/voorwaarden" target="_blank" rel="noopener noreferrer">algemene voorwaarden</a>{' '}
+              en de{' '}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer">privacyverklaring</a>.
+            </span>
+          </label>
 
           {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
 
