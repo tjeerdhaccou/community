@@ -239,6 +239,14 @@ select.input {
   height: 100%;
 }
 
+/* Focus-ring binnen het element tekenen: de scroll-container (.sidebar-nav-section,
+   overflow-y: auto) knipt anders de standaard 2px-offset-ring aan de zijkanten weg,
+   waardoor de lijn 'achter' de sidebar lijkt te vallen bij tab-navigatie. */
+.cl-sidebar :focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--radius-md);
+}
+
 /* ===== Sidebar Additions (extends cl-sidebar) ===== */
 .sidebar-project-header {
   display: flex;
