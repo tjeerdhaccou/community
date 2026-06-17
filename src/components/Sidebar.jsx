@@ -69,7 +69,8 @@ export default function Sidebar() {
   const { user } = useAuth()
 
   useEffect(() => {
-    if (!project?.id || !canDo(role, 'manage_intake')) return
+    // Geen aanmeldingen-badge als ledenwerving-door-de-community uit staat.
+    if (!project?.id || !canDo(role, 'manage_intake') || !featureEnabled('ledenwerving')) return
     supabase
       .from('intake_responses')
       .select('id', { count: 'exact', head: true })

@@ -13,8 +13,11 @@ import Ledenwerving from './Ledenwerving'
  * Tab is deelbaar via ?tab=leden|werving.
  */
 export default function Leden() {
-  const { project, role } = useProject()
-  const canIntake = canDo(role, 'manage_intake')
+  const { project, role, featureEnabled } = useProject()
+  // Werving-tab vereist niet alleen de rol (moderator+) maar ook dat de org de
+  // ledenwerving-module aan heeft staan. Zo kan de org bij MO-projecten de
+  // ledenwerving-door-de-community uitzetten en zelf centraal de intake draaien.
+  const canIntake = canDo(role, 'manage_intake') && featureEnabled('ledenwerving')
   const [pendingCount, setPendingCount] = useState(0)
 
   // Aantal openstaande aanmeldingen — toont een badge op de Ledenwerving-tab
