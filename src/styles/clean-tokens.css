@@ -34,6 +34,11 @@
   --accent-orange:       #F09020;   /* Warnings, secondary warm */
   --accent-purple:       #9B59B6;   /* Tags, categories, decorative */
 
+  /* Notificatie-bolletjes (telling-badges in sidebar + pagina's). Eén vaste
+     kleur, kleurt NIET mee met de branding: rood in Clean, coral in CrowdBuilding. */
+  --notif-bg:            var(--accent-red);
+  --notif-text:          #fff;
+
   /* ──────────────────────────────────────────────────────────────────────────
      COLORS — Neutrals (Light Theme)
      Clean uses a warm, barely-there gray background with pure white cards.
@@ -347,6 +352,9 @@
   --accent-primary:      #130F33;
   --accent-cta:          #FF5C54;
 
+  /* Notificatie-bolletjes → Rebellious Coral (los van --accent-cta gehouden) */
+  --notif-bg:            #FF5C54;
+
   /* Al het lichtblauw → Invested Blue (sidebar-inbox-icoon, info/link-blauw en tints) */
   --clean-inbox:         #130F33;
   --accent-blue:         #130F33;
@@ -449,6 +457,9 @@
   /* Structuur licht op donker; CTA blijft coral */
   --accent-primary:      #CFCBE6;
   --accent-cta:          #FF5C54;
+
+  /* Notificatie-bolletjes → Rebellious Coral, ook op donker */
+  --notif-bg:            #FF5C54;
   --clean-inbox:         #CFCBE6;
   --accent-blue:         #CFCBE6;
   --accent-blue-rgb:     207, 203, 230;
