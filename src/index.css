@@ -10983,3 +10983,25 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   line-height: 1.5;
   margin: 0 0 var(--space-5);
 }
+
+/* ── Consent-checkbox in profiel-guard (AVG) ───────────────────────── */
+.guard-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  cursor: pointer;
+}
+.guard-consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.guard-consent a {
+  color: var(--accent-primary);
+  text-decoration: underline;
+}
