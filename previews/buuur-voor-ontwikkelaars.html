@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buuur — voor ontwikkelaars die bewoners vroeg betrekken</title>
+<link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;500;600;700;800&family=Albert+Sans:wght@300;400;500;600;700&family=Caveat:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root{
+  --cb-coral:#FF5C54; --cb-coral-dark:#e8524b; --cb-blue:#130F33; --cb-yellow:#FFCA45;
+  --cb-pink:#FFCBE1; --cb-off-white:#F3F0EB; --cb-white:#FFFFFF; --cb-stone:#E5E0D7;
+  --cb-green:#7AD491; --cb-yellow-soft:#FFF1CC; --cb-pink-soft:#FFE6F0;
+  --cb-text-mid:#3A3656; --cb-text-soft:#6B6884; --cb-text-faint:#C8C5D4;
+  --font-display:'Funnel Display',sans-serif; --font-body:'Albert Sans',sans-serif; --font-hand:'Caveat',cursive;
+  --radius-card-lg:28px; --radius-block:36px; --radius-button:1.875rem; --radius-tag:2rem;
+  --shadow-s1:0 2px 8px rgba(19,15,51,.04); --shadow-s2:0 6px 20px rgba(19,15,51,.06); --shadow-s3:0 24px 70px rgba(19,15,51,.12);
+  --max-width:1210px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);color:var(--cb-blue);background:var(--cb-white);line-height:1.7;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--font-display);color:var(--cb-blue);line-height:1.1;font-weight:600;letter-spacing:-.015em}
+p{color:var(--cb-text-mid)}
+a{text-decoration:none;color:inherit}
+.wrap{max-width:var(--max-width);margin:0 auto;padding:0 1.5rem}
+section{padding:5rem 1.5rem}
+.eyebrow-pill{display:inline-block;background:var(--cb-yellow);color:var(--cb-blue);font-weight:600;font-size:14px;padding:6px 18px;border-radius:var(--radius-tag);margin-bottom:1.5rem}
+.eyebrow-text{display:inline-block;font-family:var(--font-body);font-weight:600;font-size:13px;color:var(--cb-coral);text-transform:uppercase;letter-spacing:.14em;margin-bottom:.85rem}
+.cb-button{font-family:var(--font-body);font-size:15px;font-weight:600;padding:.95rem 1.75rem;border-radius:var(--radius-button);border:2px solid var(--cb-coral);background:var(--cb-coral);color:#fff;cursor:pointer;transition:all .2s ease;display:inline-flex;align-items:center;gap:.5rem}
+.cb-button:hover{background:var(--cb-coral-dark);border-color:var(--cb-coral-dark)}
+.cb-button--secondary{background:transparent;color:var(--cb-blue);border-color:var(--cb-blue)}
+.cb-button--secondary:hover{background:var(--cb-blue);color:#fff}
+
+/* Header */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(8px)}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.5rem;max-width:var(--max-width);margin:0 auto}
+.logo{font-family:var(--font-display);font-weight:700;font-size:1.5rem;letter-spacing:-.02em;display:flex;align-items:baseline;gap:.5rem}
+.logo span{font-family:var(--font-body);font-weight:500;font-size:.8rem;color:var(--cb-text-soft);letter-spacing:0}
+.nav__links{display:flex;align-items:center;gap:2rem;font-weight:500;font-size:15px}
+.nav__links a:hover{color:var(--cb-coral)}
+.nav .cb-button{padding:.65rem 1.35rem;font-size:14px}
+@media(max-width:880px){.nav__links a:not(.cb-button){display:none}}
+
+/* Hero */
+.hero{padding:5rem 1.5rem 5.5rem;text-align:center}
+.hero__inner{max-width:840px;margin:0 auto}
+.hero h1{font-size:clamp(2.5rem,6vw,4.25rem);font-weight:700;letter-spacing:-.02em;margin-bottom:1.5rem}
+.hero .lead{font-size:1.25rem;color:var(--cb-text-mid);max-width:640px;margin:0 auto 2.25rem}
+.hero__cta{display:flex;flex-direction:column;align-items:center;gap:1rem}
+.hero__sub-link{font-weight:600;color:var(--cb-blue);font-size:.95rem}
+.hero__sub-link:hover{color:var(--cb-coral)}
+
+/* Partners */
+.partners{padding:2rem 1.5rem 4rem;text-align:center}
+.partners__label{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--cb-text-soft);margin-bottom:1.75rem}
+.partners__row{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:2.5rem}
+.partners__row span{font-family:var(--font-display);font-weight:600;font-size:1.35rem;color:var(--cb-blue);opacity:.4;transition:opacity .2s}
+.partners__row span:hover{opacity:.85}
+
+/* Section head */
+.sec-head{text-align:center;max-width:680px;margin:0 auto 3.5rem}
+.sec-head h2{font-size:clamp(2rem,4vw,2.85rem);margin-bottom:1rem}
+.sec-head p{font-size:1.15rem;color:var(--cb-text-mid)}
+
+/* Pijnpunten */
+.phase-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:var(--max-width);margin:0 auto}
+.phase{background:var(--cb-off-white);border:1px solid transparent;border-radius:var(--radius-card-lg);padding:2rem 2.25rem;display:flex;gap:1.5rem;align-items:flex-start;transition:all .25s ease}
+.phase:hover{background:var(--cb-white);border-color:var(--cb-stone);box-shadow:var(--shadow-s2);transform:translateY(-2px)}
+.phase__icon{width:60px;height:60px;background:var(--cb-yellow);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--cb-blue);flex-shrink:0}
+.phase h3{font-size:1.3rem;margin-bottom:.5rem}
+.phase p{font-size:1rem}
+@media(max-width:880px){.phase-grid{grid-template-columns:1fr}}
+
+/* Compare */
+.compare{background:var(--cb-white);border-radius:24px;overflow:hidden;box-shadow:var(--shadow-s1);max-width:920px;margin:0 auto}
+.compare__row{display:grid;grid-template-columns:1.4fr 1fr 1fr;align-items:stretch}
+.compare__row+.compare__row{box-shadow:inset 0 1px 0 rgba(19,15,51,.05)}
+.compare__cell{padding:1.15rem 1.5rem;display:flex;align-items:center;gap:.5rem;color:var(--cb-text-mid);font-size:1rem}
+.compare__cell--label{font-weight:500;color:var(--cb-blue)}
+.compare__cell--accent{background:var(--cb-yellow-soft);justify-content:center;text-align:center}
+.compare__cell--old{color:var(--cb-text-soft)}
+.compare__row--head .compare__cell{font-family:var(--font-display);font-weight:600;color:var(--cb-blue);font-size:1.05rem;padding:1.4rem 1.5rem;background:var(--cb-off-white)}
+.compare__row--head .compare__cell--label{font-size:.85rem;text-transform:uppercase;letter-spacing:.12em;color:var(--cb-text-soft);font-weight:700;font-family:var(--font-body)}
+.compare__row--head .compare__cell--accent{background:var(--cb-yellow);justify-content:center}
+.compare__cell--accent .ico{color:var(--cb-blue)}
+@media(max-width:880px){.compare__cell{font-size:.9rem;padding:.9rem 1rem}}
+
+/* Timeline */
+.timeline{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;max-width:920px;margin:0 auto}
+.timeline__step{position:relative;padding-right:1rem}
+.timeline__step::before{content:'';position:absolute;top:19px;left:46px;right:0;height:2px;background:var(--cb-stone);z-index:0}
+.timeline__step:last-child::before{display:none}
+.timeline__bullet{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:var(--cb-blue);font-size:.95rem;margin-bottom:1rem;position:relative;z-index:1}
+.timeline__step:nth-child(1) .timeline__bullet{background:var(--cb-yellow)}
+.timeline__step:nth-child(2) .timeline__bullet{background:var(--cb-pink)}
+.timeline__step:nth-child(3) .timeline__bullet{background:var(--cb-green)}
+.timeline__title{font-family:var(--font-display);font-weight:600;font-size:1.15rem;margin-bottom:.35rem}
+.timeline__lead{color:var(--cb-text-soft);font-size:.95rem;line-height:1.55}
+@media(max-width:880px){.timeline{grid-template-columns:1fr;gap:0}.timeline__step{padding:0 0 1.75rem 3.5rem}.timeline__step:last-child{padding-bottom:0}.timeline__bullet{position:absolute;left:0;top:0;margin:0}.timeline__step::before{top:38px;bottom:0;left:18px;width:2px;height:auto;right:auto}}
+
+/* Bigblocks */
+.blocks{max-width:var(--max-width);margin:0 auto}
+.bigblock{border-radius:var(--radius-block);margin:2rem 0;padding:4rem;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;position:relative;overflow:hidden}
+.bigblock--gray{background:var(--cb-off-white)}
+.bigblock--yellow{background:var(--cb-yellow-soft)}
+.bigblock--pink{background:var(--cb-pink-soft)}
+.bigblock--reverse .bigblock__media{order:2}
+.bigblock h3{font-size:clamp(1.6rem,2.6vw,2.1rem);margin-bottom:.5rem}
+.bigblock__sub{font-family:var(--font-display);font-weight:500;font-size:1.2rem;color:var(--cb-coral);margin-bottom:1rem}
+.bigblock__lead{font-size:1.08rem;margin-bottom:1.5rem}
+.bigblock__media{display:flex;justify-content:center;position:relative}
+@media(max-width:880px){.bigblock{grid-template-columns:1fr;gap:2.5rem;padding:2.5rem}.bigblock--reverse .bigblock__media{order:0}}
+
+/* Mockups */
+.mockup{background:var(--cb-white);border-radius:20px;padding:1.5rem;box-shadow:0 16px 50px rgba(19,15,51,.12);width:100%;max-width:360px;position:relative;z-index:2}
+.mk-head{display:flex;align-items:center;gap:.6rem;padding-bottom:.85rem;border-bottom:1px solid var(--cb-stone);margin-bottom:1rem}
+.mk-dot{width:34px;height:34px;border-radius:50%;background:var(--cb-coral);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.mk-dot--blue{background:var(--cb-blue)}
+.mk-dot--green{background:var(--cb-green);color:var(--cb-blue)}
+.mk-title{font-family:var(--font-display);font-weight:600;font-size:.95rem}
+.mk-sub{font-size:.78rem;color:var(--cb-text-soft)}
+.mk-item{display:flex;gap:.7rem;align-items:flex-start;padding:.7rem 0;border-bottom:1px solid var(--cb-off-white)}
+.mk-item:last-child{border-bottom:none}
+.mk-av{width:30px;height:30px;border-radius:50%;background:var(--cb-pink);color:var(--cb-blue);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;font-family:var(--font-display)}
+.mk-av--y{background:var(--cb-yellow)} .mk-av--g{background:var(--cb-green)} .mk-av--b{background:var(--cb-blue);color:#fff}
+.mk-line{font-size:.82rem;color:var(--cb-blue);font-weight:500;line-height:1.35}
+.mk-meta{font-size:.72rem;color:var(--cb-text-soft)}
+.mk-chip{display:inline-block;font-size:.68rem;font-weight:600;padding:2px 9px;border-radius:1rem;background:var(--cb-green);color:var(--cb-blue);margin-top:.2rem}
+.mk-chip--stone{background:var(--cb-off-white);color:var(--cb-text-soft)}
+.mk-url{display:flex;align-items:center;gap:.5rem;background:var(--cb-off-white);border-radius:10px;padding:.5rem .8rem;font-size:.82rem;color:var(--cb-text-mid);margin-bottom:.9rem}
+.mk-url i{color:var(--cb-green)}
+.mk-brandbar{height:8px;border-radius:4px;background:var(--cb-coral);margin-bottom:.6rem;width:60%}
+.mk-skel{height:9px;border-radius:4px;background:var(--cb-off-white);margin-bottom:.5rem}
+
+/* Pro card (dark blue) */
+.procard{background:var(--cb-blue);border-radius:var(--radius-block);padding:3.5rem 4rem;max-width:var(--max-width);margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr;gap:2.5rem;align-items:center}
+.procard h3{color:#fff;font-size:clamp(1.5rem,2.6vw,2rem);margin-bottom:.75rem}
+.procard p{color:rgba(255,255,255,.8);font-size:1.08rem}
+.procard .eyebrow-text{color:var(--cb-yellow)}
+.procard__cta{display:flex;justify-content:flex-end}
+.procard .cb-button{background:var(--cb-yellow);border-color:var(--cb-yellow);color:var(--cb-blue)}
+.procard .cb-button:hover{background:#ffd766;border-color:#ffd766}
+@media(max-width:880px){.procard{grid-template-columns:1fr;padding:2.5rem;gap:1.5rem}.procard__cta{justify-content:flex-start}}
+
+/* FAQ */
+.faq__inner{display:grid;grid-template-columns:1fr 1.4fr;gap:5rem;align-items:start;max-width:var(--max-width);margin:0 auto}
+.faq__head h2{font-size:clamp(1.8rem,3.5vw,2.5rem);margin-bottom:1rem}
+.faq__head p{color:var(--cb-text-mid);font-size:1.1rem}
+.faq-item{border-bottom:1px solid var(--cb-stone)}
+.faq-item:first-child{border-top:1px solid var(--cb-stone)}
+.faq-item summary{list-style:none;cursor:pointer;padding:1.35rem 0;display:flex;align-items:center;justify-content:space-between;gap:1rem;font-family:var(--font-display);font-weight:500;font-size:1.1rem}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary i{transition:transform .2s ease;color:var(--cb-coral);flex-shrink:0}
+.faq-item[open] summary i{transform:rotate(45deg)}
+.faq-item__body{padding:0 0 1.35rem}
+.faq-item__body p{font-size:1rem}
+@media(max-width:880px){.faq__inner{grid-template-columns:1fr;gap:2rem}}
+
+/* Contact */
+.contact{background:linear-gradient(135deg,#FFE799 0%,#FFCA45 100%);border-radius:var(--radius-block);padding:4rem;max-width:calc(var(--max-width) - 3rem);margin:4rem auto;display:grid;grid-template-columns:1fr 1.05fr;gap:3.5rem;align-items:center}
+.contact h2{font-size:clamp(1.8rem,3.5vw,2.5rem);margin-bottom:1rem}
+.contact p{color:var(--cb-blue);font-size:1.15rem;opacity:.85}
+.contact__tiles{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.contact-tile{background:var(--cb-white);border-radius:24px;padding:2rem 1.5rem;text-align:center;box-shadow:0 8px 30px rgba(19,15,51,.08)}
+.contact-tile__av{width:84px;height:84px;border-radius:50%;background:var(--cb-pink);color:var(--cb-blue);font-family:var(--font-display);font-weight:700;font-size:1.7rem;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;border:4px solid #fff;box-shadow:0 4px 12px rgba(19,15,51,.1)}
+.contact-tile__av--c{background:var(--cb-coral);color:#fff}
+.contact-tile h4{font-size:1.1rem;margin-bottom:.15rem}
+.contact-tile .role{font-size:.9rem;color:var(--cb-text-soft);margin-bottom:1rem}
+.contact-tile .cb-button{width:100%;justify-content:center;font-size:14px;padding:.7rem 1rem}
+@media(max-width:880px){.contact{grid-template-columns:1fr;padding:2.5rem;gap:2rem}}
+@media(max-width:480px){.contact__tiles{grid-template-columns:1fr}}
+
+/* Footer */
+footer{background:var(--cb-yellow);padding:4rem 1.5rem 5rem;position:relative;overflow:hidden;margin-top:4rem}
+.footer__top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:3rem;max-width:var(--max-width);margin:0 auto}
+.footer__brand .logo{margin-bottom:1rem}
+.footer__brand p{color:var(--cb-blue);font-family:var(--font-hand);font-size:1.5rem;max-width:280px}
+.footer__col h5{font-family:var(--font-display);font-size:1rem;margin-bottom:1rem;color:var(--cb-blue)}
+.footer__col a{display:block;color:var(--cb-blue);opacity:.75;font-size:.95rem;padding:.3rem 0}
+.footer__col a:hover{opacity:1}
+.footer__decor{position:absolute;bottom:-20px;left:0;right:0;height:80px;display:flex;justify-content:space-around;pointer-events:none}
+.footer__decor span{width:80px;border-radius:50% 50% 0 0;display:block}
+.footer__decor span:nth-child(1){background:var(--cb-coral);height:60px}
+.footer__decor span:nth-child(2){background:var(--cb-blue);height:90px}
+.footer__decor span:nth-child(3){background:var(--cb-pink);height:50px}
+.footer__decor span:nth-child(4){background:var(--cb-coral);height:70px}
+.footer__decor span:nth-child(5){background:var(--cb-blue);height:55px}
+@media(max-width:880px){.footer__top{grid-template-columns:1fr 1fr;gap:2rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <a href="#" class="logo">Buuur <span>by CrowdBuilding</span></a>
+    <div class="nav__links">
+      <a href="#pijn">Waarom Buuur</a>
+      <a href="#features">Functies</a>
+      <a href="#faq">Vragen</a>
+      <a href="#contact" class="cb-button">Plan een demo</a>
+    </div>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero__inner">
+    <span class="eyebrow-pill">Buuur — by CrowdBuilding</span>
+    <h1>Bewoners vroeg betrekken,<br>zonder het overzicht te verliezen.</h1>
+    <p class="lead">Buuur is het platform waarop je toekomstige bewoners samenbrengt, informeert en betrokken houdt. Onder je eigen naam, op je eigen domein — van eerste interesse tot oplevering.</p>
+    <div class="hero__cta">
+      <a href="#contact" class="cb-button">Plan een demo <i class="fa-solid fa-arrow-right"></i></a>
+      <a href="#features" class="hero__sub-link">Of bekijk eerst wat Buuur doet</a>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNERS -->
+<div class="partners">
+  <div class="partners__label">Al gebruikt door wooncollectieven in heel Nederland</div>
+  <div class="partners__row">
+    <span>Vlinderhaven</span>
+    <span>OLGA</span>
+    <span>Erve Bosco</span>
+    <span>Lydio</span>
+    <span>CommonCity</span>
+  </div>
+</div>
+
+<!-- PIJNPUNTEN -->
+<section id="pijn">
+  <div class="sec-head">
+    <h2>Bewoners betrekken is waardevol. En moeilijk goed te organiseren.</h2>
+    <p>We spreken ontwikkelaars die bewoners vroeg aan boord willen halen. De ambitie is er. De middelen schieten tekort.</p>
+  </div>
+  <div class="phase-grid">
+    <div class="phase">
+      <div class="phase__icon"><i class="fa-regular fa-comments"></i></div>
+      <div>
+        <h3>Communicatie raakt versnipperd</h3>
+        <p>Appgroepen, mailthreads en losse documenten. Informatie verspreidt zich over te veel kanalen — en niemand houdt het volledige beeld.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase__icon"><i class="fa-regular fa-building"></i></div>
+      <div>
+        <h3>Het oogt niet professioneel</h3>
+        <p>Je werkt aan een serieus ontwikkeltraject. Een appgroep past daar niet bij en ondermijnt het vertrouwen dat je opbouwt.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase__icon"><i class="fa-regular fa-users"></i></div>
+      <div>
+        <h3>Onvoldoende zicht op betrokkenheid</h3>
+        <p>Er is interesse genoeg. Maar wie is serieus en wie haakt af? Zonder dat inzicht is je groep lastig te sturen.</p>
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase__icon"><i class="fa-regular fa-clock"></i></div>
+      <div>
+        <h3>Begeleiding kost tijd die er niet is</h3>
+        <p>Bewoners betrekken vraagt continue aandacht. Naast al het andere in het project is dat moeilijk vol te houden.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section style="background:var(--cb-white)">
+  <div class="sec-head">
+    <h2>Van losse kanalen naar één omgeving</h2>
+    <p>Hetzelfde traject, een stuk overzichtelijker georganiseerd.</p>
+  </div>
+  <div class="compare">
+    <div class="compare__row compare__row--head">
+      <div class="compare__cell compare__cell--label">Wat je regelt</div>
+      <div class="compare__cell">Nu</div>
+      <div class="compare__cell compare__cell--accent">Met Buuur</div>
+    </div>
+    <div class="compare__row">
+      <div class="compare__cell compare__cell--label">Communicatie</div>
+      <div class="compare__cell compare__cell--old">Verspreid over app, mail en Excel</div>
+      <div class="compare__cell compare__cell--accent">Gebundeld op één plek</div>
+    </div>
+    <div class="compare__row">
+      <div class="compare__cell compare__cell--label">Updates terugvinden</div>
+      <div class="compare__cell compare__cell--old">Zoeken in chatgeschiedenis</div>
+      <div class="compare__cell compare__cell--accent">Overzichtelijk en op volgorde</div>
+    </div>
+    <div class="compare__row">
+      <div class="compare__cell compare__cell--label">Zicht op betrokkenheid</div>
+      <div class="compare__cell compare__cell--old">Op gevoel</div>
+      <div class="compare__cell compare__cell--accent">Inzichtelijk per lid</div>
+    </div>
+    <div class="compare__row">
+      <div class="compare__cell compare__cell--label">Nieuwe bewoners</div>
+      <div class="compare__cell compare__cell--old">Handmatig bijhouden</div>
+      <div class="compare__cell compare__cell--accent">Aanmelding en intake in één flow</div>
+    </div>
+    <div class="compare__row">
+      <div class="compare__cell compare__cell--label">Uitstraling</div>
+      <div class="compare__cell compare__cell--old">Generieke chat-app</div>
+      <div class="compare__cell compare__cell--accent">Je eigen naam en domein</div>
+    </div>
+  </div>
+</section>
+
+<!-- ZO WERKT HET -->
+<section style="background:var(--cb-off-white)">
+  <div class="sec-head">
+    <h2>Binnen een dag operationeel</h2>
+    <p>Geen IT-traject. Je richt de omgeving zelf in en nodigt je eerste bewoners uit.</p>
+  </div>
+  <div class="timeline">
+    <div class="timeline__step">
+      <div class="timeline__bullet">1</div>
+      <div class="timeline__title">Richt je omgeving in</div>
+      <p class="timeline__lead">Eigen logo, coverbeeld en je eigen domein.</p>
+    </div>
+    <div class="timeline__step">
+      <div class="timeline__bullet">2</div>
+      <div class="timeline__title">Nodig bewoners uit</div>
+      <p class="timeline__lead">Van eerste interesse tot ingeschreven lid, in één flow.</p>
+    </div>
+    <div class="timeline__step">
+      <div class="timeline__bullet">3</div>
+      <div class="timeline__title">Houd de groep betrokken</div>
+      <p class="timeline__lead">Updates, prikbord, documenten en events op één plek.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES / BIGBLOCKS -->
+<section id="features">
+  <div class="sec-head">
+    <h2>Alles wat je nodig hebt om je groep betrokken te houden</h2>
+    <p>Eén platform in plaats van losse tools — dat meegroeit met je project.</p>
+  </div>
+  <div class="blocks">
+
+    <div class="bigblock bigblock--gray">
+      <div class="bigblock__media">
+        <div class="mockup">
+          <div class="mk-head"><div class="mk-dot"><i class="fa-solid fa-bullhorn"></i></div><div><div class="mk-title">Update geplaatst</div><div class="mk-sub">Zichtbaar voor 48 bewoners</div></div></div>
+          <div class="mk-item"><div class="mk-av mk-av--b">JT</div><div><div class="mk-line">Omgevingsvergunning verleend</div><div class="mk-meta">2 uur geleden · 31 gelezen</div></div></div>
+          <div class="mk-item"><div class="mk-av mk-av--y">RS</div><div><div class="mk-line">Planning fase 2 online</div><div class="mk-meta">gisteren · 44 gelezen</div></div></div>
+          <div class="mk-item"><div class="mk-av mk-av--g">MK</div><div><div class="mk-line">Notulen bewonersavond</div><div class="mk-meta">3 dagen geleden</div></div></div>
+        </div>
+      </div>
+      <div class="bigblock__content">
+        <span class="eyebrow-text">Updates &amp; nieuws</span>
+        <h3>Houd iedereen op de hoogte</h3>
+        <p class="bigblock__sub">Eén bron, geen losse mailtjes.</p>
+        <p class="bigblock__lead">Plaats een update en elke bewoner ziet 'm. Mijlpalen, planning en beslissingen staan overzichtelijk bij elkaar en blijven terug te vinden.</p>
+      </div>
+    </div>
+
+    <div class="bigblock bigblock--yellow bigblock--reverse">
+      <div class="bigblock__media">
+        <div class="mockup">
+          <div class="mk-head"><div class="mk-dot mk-dot--green"><i class="fa-solid fa-thumbtack"></i></div><div><div class="mk-title">Prikbord</div><div class="mk-sub">12 nieuwe reacties</div></div></div>
+          <div class="mk-item"><div class="mk-av">Sa</div><div><div class="mk-line">Wie wil een gezamenlijke moestuin?</div><div class="mk-meta">8 reacties · 5 vinden dit leuk</div></div></div>
+          <div class="mk-item"><div class="mk-av mk-av--y">Bo</div><div><div class="mk-line">Ideeën voor de gedeelde ruimte?</div><div class="mk-meta">14 reacties</div></div></div>
+          <div class="mk-item"><div class="mk-av mk-av--g">Li</div><div><div class="mk-line">Borrel vrijdag — wie komt?</div><div class="mk-meta">9 reacties</div></div></div>
+        </div>
+      </div>
+      <div class="bigblock__content">
+        <span class="eyebrow-text">Prikbord &amp; community</span>
+        <h3>Laat bewoners elkaar leren kennen</h3>
+        <p class="bigblock__sub">Betrokkenheid begint vóór de bouw.</p>
+        <p class="bigblock__lead">Op het prikbord stellen bewoners vragen, delen ze ideeën en bouwen ze onderling een band op. De groep wordt een gemeenschap, nog voor de eerste paal de grond in gaat.</p>
+      </div>
+    </div>
+
+    <div class="bigblock bigblock--gray">
+      <div class="bigblock__media">
+        <div class="mockup">
+          <div class="mk-head"><div class="mk-dot mk-dot--blue"><i class="fa-solid fa-user-check"></i></div><div><div class="mk-title">Leden &amp; intake</div><div class="mk-sub">48 leden · 6 aanmeldingen</div></div></div>
+          <div class="mk-item"><div class="mk-av mk-av--b">FA</div><div><div class="mk-line">Familie Aldershoff</div><div class="mk-meta">Lid · actief</div><span class="mk-chip">Serieus</span></div></div>
+          <div class="mk-item"><div class="mk-av mk-av--y">PD</div><div><div class="mk-line">Pien de Vries</div><div class="mk-meta">Intake ingepland</div><span class="mk-chip mk-chip--stone">In gesprek</span></div></div>
+          <div class="mk-item"><div class="mk-av">NV</div><div><div class="mk-line">Natasja Verhoogt</div><div class="mk-meta">Aanmelding · wacht op reactie</div></div></div>
+        </div>
+      </div>
+      <div class="bigblock__content">
+        <span class="eyebrow-text">Leden &amp; intake</span>
+        <h3>Houd grip op je groep</h3>
+        <p class="bigblock__sub">Inzicht in wie meedoet.</p>
+        <p class="bigblock__lead">Een actueel ledenoverzicht in plaats van een verouderd bestand. Beheer aanmeldingen, intake en rollen, en zie wie actief is en wie afhaakt — voordat het je planning raakt.</p>
+      </div>
+    </div>
+
+    <div class="bigblock bigblock--pink bigblock--reverse">
+      <div class="bigblock__media">
+        <div class="mockup">
+          <div class="mk-url"><i class="fa-solid fa-lock"></i> jouwproject.buuur.nl</div>
+          <div class="mk-brandbar"></div>
+          <div class="mk-skel" style="width:90%"></div>
+          <div class="mk-skel" style="width:75%"></div>
+          <div class="mk-skel" style="width:85%"></div>
+          <div style="display:flex;gap:.5rem;margin-top:.9rem">
+            <span class="mk-chip" style="background:var(--cb-coral);color:#fff">Eigen logo</span>
+            <span class="mk-chip" style="background:var(--cb-yellow);color:var(--cb-blue)">Eigen domein</span>
+          </div>
+        </div>
+      </div>
+      <div class="bigblock__content">
+        <span class="eyebrow-text">Eigen uitstraling &amp; domein</span>
+        <h3>Onder je eigen naam</h3>
+        <p class="bigblock__sub">Een professionele omgeving.</p>
+        <p class="bigblock__lead">Je eigen logo, coverbeeld en domein, zoals <em>jouwproject.nl</em>. Bewoners herkennen een serieuze, verzorgde omgeving — en jij presenteert je project zoals het hoort.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PROCESBEGELEIDERS -->
+<section>
+  <div class="procard">
+    <div>
+      <span class="eyebrow-text">Ook voor procesbegeleiders</span>
+      <h3>Begeleid je meerdere groepen? Beheer ze vanuit één omgeving.</h3>
+      <p>Elk project zijn eigen community, jij het overzicht over het geheel. Buuur groeit mee met je portefeuille — van één initiatief tot tien.</p>
+    </div>
+    <div class="procard__cta">
+      <a href="#contact" class="cb-button">Ontdek de mogelijkheden <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="background:var(--cb-off-white)">
+  <div class="faq__inner">
+    <div class="faq__head">
+      <h2>Vragen die ontwikkelaars stellen</h2>
+      <p>Geen verkooppraatje. Gewoon wat je wilt weten.</p>
+    </div>
+    <div>
+      <details class="faq-item" open>
+        <summary>Moet ik technisch onderlegd zijn? <i class="fa-solid fa-plus"></i></summary>
+        <div class="faq-item__body"><p>Nee. Het opzetten van een omgeving vraagt geen technische kennis. En heb je hulp nodig, dan staan we klaar.</p></div>
+      </details>
+      <details class="faq-item">
+        <summary>Werkt het ook voor minder digitale bewoners? <i class="fa-solid fa-plus"></i></summary>
+        <div class="faq-item__body"><p>Ja. Buuur werkt intuïtief op telefoon en laptop, zonder handleiding — ook voor wie minder digitaal is.</p></div>
+      </details>
+      <details class="faq-item">
+        <summary>Hoe snel kan ik live? <i class="fa-solid fa-plus"></i></summary>
+        <div class="faq-item__body"><p>Binnen een dag. Je richt de omgeving zelf in en nodigt direct je eerste bewoners uit.</p></div>
+      </details>
+      <details class="faq-item">
+        <summary>Hoe zit het met privacy en data? <i class="fa-solid fa-plus"></i></summary>
+        <div class="faq-item__body"><p>Alle gegevens staan op Europese servers in Frankfurt en voldoen aan de AVG. Jullie data blijft van jullie.</p></div>
+      </details>
+      <details class="faq-item">
+        <summary>Zit ik ergens aan vast? <i class="fa-solid fa-plus"></i></summary>
+        <div class="faq-item__body"><p>Nee, geen langlopend contract. Je blijft zolang het platform waarde toevoegt.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" style="padding-top:1rem;padding-bottom:1rem">
+  <div class="contact">
+    <div>
+      <h2>Benieuwd wat Buuur voor jouw project kan betekenen?</h2>
+      <p>We laten het je graag zien in een korte demo — met jouw project als uitgangspunt, vrijblijvend.</p>
+    </div>
+    <div class="contact__tiles">
+      <div class="contact-tile">
+        <div class="contact-tile__av">SG</div>
+        <h4>Sascha Glasl</h4>
+        <div class="role">Mede-oprichter</div>
+        <a href="#" class="cb-button">Plan een gesprek</a>
+      </div>
+      <div class="contact-tile">
+        <div class="contact-tile__av contact-tile__av--c">FA</div>
+        <h4>Freddie Aldershoff</h4>
+        <div class="role">Partnerships</div>
+        <a href="#" class="cb-button">Plan een gesprek</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer__top">
+    <div class="footer__brand">
+      <a href="#" class="logo">Buuur <span>by CrowdBuilding</span></a>
+      <p>De ultieme woonplek bouw je samen.</p>
+    </div>
+    <div class="footer__col">
+      <h5>Product</h5>
+      <a href="#features">Functies</a>
+      <a href="#pijn">Waarom Buuur</a>
+      <a href="#contact">Demo aanvragen</a>
+    </div>
+    <div class="footer__col">
+      <h5>Voor wie</h5>
+      <a href="#">Ontwikkelaars</a>
+      <a href="#">Procesbegeleiders</a>
+      <a href="https://crowdbuilding.com/voor-gemeenten">Gemeenten</a>
+    </div>
+    <div class="footer__col">
+      <h5>CrowdBuilding</h5>
+      <a href="#">Over ons</a>
+      <a href="#">Kennishub</a>
+      <a href="#">Contact</a>
+    </div>
+  </div>
+  <div class="footer__decor"><span></span><span></span><span></span><span></span><span></span></div>
+</footer>
+
+</body>
+</html>

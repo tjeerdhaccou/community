@@ -48,7 +48,7 @@ const NAV_SECTIONS = [
     label: 'Beheer',
     collapsible: true,
     items: [
-      { to: 'aan-de-slag', icon: 'fa-solid fa-rocket', color: 'var(--accent-green, #3BD269)', bubble: 'green', label: 'Aan de slag', adminOnly: true },
+      { to: 'aan-de-slag', icon: 'fa-solid fa-rocket', color: 'var(--accent-green, #3BD269)', bubble: 'green', label: 'Aan de slag', adminOnly: true, visible: (ctx) => ctx.role === 'admin' && ctx.onboardingActive },
       { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', bubble: 'teal', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
       { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Instellingen', adminOnly: true },
     ]
@@ -57,7 +57,7 @@ const NAV_SECTIONS = [
 
 export default function Sidebar() {
   const { profile, isOrgAdmin, primaryOrgId, primaryOrgSlug } = useAuth()
-  const { project, role, basePath, featureEnabled } = useProject()
+  const { project, role, basePath, featureEnabled, onboardingActive } = useProject()
   const navigate = useNavigate()
   const location = useLocation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -127,15 +127,13 @@ export default function Sidebar() {
 
   const initials = (profile?.full_name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2)
 
-  const isAdmin = role === 'admin'
-
   function renderNavItem(item) {
-    if (item.visible && !item.visible({ role, featureEnabled })) return null
+    if (item.visible && !item.visible({ role, featureEnabled, onboardingActive })) return null
     if (item.membersOnly && isProfessional) return null
     if (item.action && !canDo(role, item.action)) return null
-    const featureHidden = item.feature && !featureEnabled(item.feature)
-    // Non-admins don't see hidden features; admins see them with a marker
-    if (featureHidden && !isAdmin) return null
+    // Uitgezette modules zijn voor iederéén verborgen — ook voor admins. De org
+    // beheert de zichtbaarheid centraal via het org-dashboard (Modules-toggle).
+    if (item.feature && !featureEnabled(item.feature)) return null
     return (
       <div
         key={item.to}
@@ -143,14 +141,9 @@ export default function Sidebar() {
         onClick={() => navigate(item.to === '' ? (basePath || '/') : `${basePath}/${item.to}`)}
         role="button"
         tabIndex={0}
-        style={featureHidden ? { opacity: 0.6 } : undefined}
-        title={featureHidden ? 'Verborgen voor leden' : undefined}
       >
         <i className={`cl-nav-item__icon ${item.icon}`} style={{ '--nav-c': item.color, '--nav-bub-bg': `var(--nav-bub-${item.bubble}-bg)`, '--nav-bub-glyph': `var(--nav-bub-${item.bubble}-glyph)` }} />
         <span>{item.label}</span>
-        {featureHidden && (
-          <i className="fa-solid fa-eye-slash" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }} title="Verborgen voor leden" />
-        )}
         {item.to === 'members' && intakePendingCount > 0 && (
           <span className="sidebar-badge">{intakePendingCount}</span>
         )}
@@ -187,12 +180,12 @@ export default function Sidebar() {
           if (section.membersOnly && isProfessional) return null
 
           const visibleItems = section.items.filter(item => {
-            if (item.visible) return item.visible({ role, featureEnabled })
+            if (item.visible) return item.visible({ role, featureEnabled, onboardingActive })
             if (item.membersOnly && isProfessional) return false
             if (item.adminOnly && role !== 'admin') return false
             if (item.action && !canDo(role, item.action)) return false
-            // Hidden features: admins still see them (with a badge); members don't
-            if (item.feature && !featureEnabled(item.feature) && !isAdmin) return false
+            // Uitgezette modules zijn voor iederéén verborgen, ook voor admins.
+            if (item.feature && !featureEnabled(item.feature)) return false
             return true
           })
           if (visibleItems.length === 0) return null

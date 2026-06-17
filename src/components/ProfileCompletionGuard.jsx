@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
 import ImageCropper from './ImageCropper'
-import { useRef } from 'react'
 
 export default function ProfileCompletionGuard({ children }) {
   const { profile, reload } = useAuth()
@@ -11,7 +10,14 @@ export default function ProfileCompletionGuard({ children }) {
 
   if (completed || !profile) return children
 
-  const needsCompletion = !profile.full_name?.trim()
+  // Bewust minimaal: we vragen alleen voor- en achternaam, zodat niemand
+  // anoniem in de community staat. Het platform dwingt verder niets af —
+  // het verrijken van het profiel (adres, huishouden, motivatie) loopt via
+  // een intake-formulier dat de initiatiefnemer zelf op een gekozen moment
+  // verstuurt. full_name dekt bestaande accounts af zonder gesplitste naam.
+  const hasName = !!(profile.first_name?.trim() || profile.full_name?.trim())
+  const hasLastName = !!profile.last_name?.trim()
+  const needsCompletion = !hasName || !hasLastName
 
   if (!needsCompletion) return children
 
@@ -24,9 +30,10 @@ export default function ProfileCompletionGuard({ children }) {
 }
 
 function ProfileCompletionModal({ profile, onComplete }) {
-  const [fullName, setFullName] = useState(profile.full_name || '')
-  const [phone, setPhone] = useState(profile.phone || '')
-  const [bio, setBio] = useState(profile.bio || '')
+  // full_name terugsplitsen voor bestaande accounts zonder first/last.
+  const nameParts = (profile.full_name || '').trim().split(' ')
+  const [firstName, setFirstName] = useState(profile.first_name || nameParts[0] || '')
+  const [lastName, setLastName] = useState(profile.last_name || nameParts.slice(1).join(' ') || '')
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url || null)
   const [avatarPreview, setAvatarPreview] = useState(profile.avatar_url || null)
   const [uploading, setUploading] = useState(false)
@@ -58,18 +65,22 @@ function ProfileCompletionModal({ profile, onComplete }) {
     }
   }
 
+  const canSubmit = firstName.trim() && lastName.trim()
+
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!fullName.trim()) return
+    if (!canSubmit) return
     setSaving(true)
     setError(null)
     try {
+      const fn = firstName.trim()
+      const ln = lastName.trim()
       const { error: err } = await supabase
         .from('profiles')
         .update({
-          full_name: fullName.trim(),
-          phone: phone.trim() || null,
-          bio: bio.trim() || null,
+          first_name: fn,
+          last_name: ln,
+          full_name: `${fn} ${ln}`.trim(),
           avatar_url: avatarUrl,
         })
         .eq('id', profile.id)
@@ -84,7 +95,7 @@ function ProfileCompletionModal({ profile, onComplete }) {
     }
   }
 
-  const initials = (fullName || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)
+  const initials = `${firstName} ${lastName}`.trim().split(' ').map(n => n[0]).join('').slice(0, 2) || 'A'
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
@@ -94,7 +105,8 @@ function ProfileCompletionModal({ profile, onComplete }) {
         </div>
 
         <p className="modal-form__intro">
-          Voordat je verder kunt, vragen we je om je profiel in te vullen. Zo weten de andere leden wie je bent.
+          Hoe mogen we je noemen? Met je naam weten de andere leden wie je bent.
+          De rest van je profiel vul je later in je eigen tempo aan.
         </p>
 
         <form onSubmit={handleSubmit} className="modal-form">
@@ -110,39 +122,30 @@ function ProfileCompletionModal({ profile, onComplete }) {
             <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: 'none' }} />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="guard-name">Naam <span className="form-required">*</span></label>
-            <input
-              id="guard-name"
-              type="text"
-              value={fullName}
-              onChange={e => setFullName(e.target.value)}
-              placeholder="Voornaam Achternaam"
-              required
-              autoFocus
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="guard-phone">Telefoonnummer</label>
-            <input
-              id="guard-phone"
-              type="tel"
-              value={phone}
-              onChange={e => setPhone(e.target.value)}
-              placeholder="+31 6..."
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="guard-bio">Stel je kort voor</label>
-            <textarea
-              id="guard-bio"
-              value={bio}
-              onChange={e => setBio(e.target.value)}
-              placeholder="Wie ben je en wat breng je mee?"
-              rows={2}
-            />
+          <div className="form-row">
+            <div className="form-group form-group--half">
+              <label htmlFor="guard-first">Voornaam <span className="form-required">*</span></label>
+              <input
+                id="guard-first"
+                type="text"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder="Voornaam"
+                required
+                autoFocus
+              />
+            </div>
+            <div className="form-group form-group--half">
+              <label htmlFor="guard-last">Achternaam <span className="form-required">*</span></label>
+              <input
+                id="guard-last"
+                type="text"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                placeholder="Achternaam"
+                required
+              />
+            </div>
           </div>
 
           {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
@@ -151,7 +154,7 @@ function ProfileCompletionModal({ profile, onComplete }) {
             <button
               type="submit"
               className="btn-primary"
-              disabled={saving || uploading || !fullName.trim()}
+              disabled={saving || uploading || !canSubmit}
             >
               {saving ? 'Opslaan...' : 'Profiel opslaan en verder'}
             </button>

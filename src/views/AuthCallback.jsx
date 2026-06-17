@@ -1,16 +1,19 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { getReturnCookie } from '../lib/auth'
+import { getReturnCookie, sendOtpCode } from '../lib/auth'
 import { redirectByRole } from '../lib/loginRedirect'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
   const handled = useRef(false)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
     if (handled.current) return
     handled.current = true
+
+    function fail() { setFailed(true) }
 
     async function redirectAfterLogin() {
       // Check cookie first (set by subdomain before OAuth redirect)
@@ -59,9 +62,9 @@ export default function AuthCallback() {
             navigate(returnPath ? decodeURIComponent(returnPath) : '/dashboard', { replace: true })
             return
           }
-          navigate('/login', { replace: true })
+          fail()
         } catch {
-          navigate('/login', { replace: true })
+          fail()
         }
       }
       handleHashTokens()
@@ -99,11 +102,11 @@ export default function AuthCallback() {
 
         setTimeout(() => {
           subscription.unsubscribe()
-          navigate('/login', { replace: true })
+          fail()
         }, 5000)
       } catch {
         subscription.unsubscribe()
-        navigate('/login', { replace: true })
+        fail()
       }
     }
 
@@ -111,9 +114,68 @@ export default function AuthCallback() {
     return () => subscription.unsubscribe()
   }, [navigate])
 
+  if (failed) return <ExpiredLink navigate={navigate} />
+
   return (
     <div className="loading-page">
       <p>Inloggen...</p>
+    </div>
+  )
+}
+
+// Getoond wanneer een magic link verlopen of al gebruikt is. Magic links van
+// Supabase zijn eenmalig en een uur geldig — daarna landde de gebruiker
+// voorheen zonder uitleg op /login. Hier sturen we een verse inlogcode en
+// zetten we door naar de code-invoer.
+function ExpiredLink({ navigate }) {
+  const [email, setEmail] = useState('')
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleResend(e) {
+    e.preventDefault()
+    if (!email.trim()) return
+    setSending(true)
+    setError(null)
+    try {
+      await sendOtpCode(email)
+      navigate('/login', { replace: true, state: { email: email.trim(), step: 'otp' } })
+    } catch (err) {
+      console.error('Resend login code failed:', err)
+      setError('Versturen mislukt. Controleer je e-mailadres en probeer het opnieuw.')
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="auth-expired">
+      <div className="auth-expired__card">
+        <div className="auth-expired__icon">
+          <i className="fa-solid fa-link-slash" />
+        </div>
+        <h1>Deze inloglink werkt niet meer</h1>
+        <p>
+          De link is verlopen of al een keer gebruikt. Vul je e-mailadres in,
+          dan sturen we je meteen een nieuwe inlogcode.
+        </p>
+        <form onSubmit={handleResend} className="auth-expired__form">
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="jouw@email.nl"
+            autoFocus
+            required
+          />
+          {error && <p className="auth-expired__error">{error}</p>}
+          <button type="submit" className="cl-btn cl-btn--primary" disabled={sending || !email.trim()}>
+            {sending ? 'Versturen...' : 'Stuur een nieuwe inlogcode'}
+          </button>
+        </form>
+        <button className="auth-expired__back" onClick={() => navigate('/login', { replace: true })}>
+          Terug naar inloggen
+        </button>
+      </div>
     </div>
   )
 }

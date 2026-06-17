@@ -1,0 +1,127 @@
+/* ============================================================================
+   VOORSTEL — Buuur kleurensysteem op CrowdBuilding (Momkai V2)
+   ----------------------------------------------------------------------------
+   Dit is een VOORSTEL-bestand, nog niet toegepast. Het vervangt alleen de
+   KLEUR-tokens van src/styles/clean-tokens.css. Typografie, spacing, radii,
+   schaduw-structuur en transitions blijven ongewijzigd (kopieer die uit het
+   bestaande bestand). Net als het bestaande crowdbuilding-thema: puur kleur.
+
+   Belangrijkste wijzigingen t.o.v. nu:
+   - #4A90D9-blauw verdwijnt volledig → Invested Blue (structuur) + Coral (CTA)
+   - Accent: van 7 → 6 merkkleuren + 1 neutrale categoriekleur (beige)
+   - Thema's: van 4 (light/warm/dark/crowdbuilding) → 2 (CB licht + CB donker)
+   - Pill-knoppen worden de standaard (CrowdBuilding-signatuur)
+   Bron: crowdbuilding-brand (Momkai V2).
+   ============================================================================ */
+
+:root {
+  /* ── Signatuur — sidebar-iconen (zonder achtergrond), binnen het CB-palet ── */
+  --clean-inbox:        #130F33;   /* Invested Blue */
+  --clean-today:        #FFCA45;   /* Sunlit Yellow */
+  --clean-upcoming:     #FF5C54;   /* Rebellious Coral */
+  --clean-anytime:      #7AD491;   /* Semantic Green */
+  --clean-someday:      #CBC4B8;   /* Strong Beige */
+  --clean-logbook:      #918DA0;   /* Gedempt grijs */
+
+  /* ── Accent & status ──────────────────────────────────────────────────────
+     Eén energieke accentkleur (Coral) voor actie/urgentie; Invested Blue als
+     rustige structuurkleur. De rest puur semantisch + zacht. ────────────────── */
+  --accent-primary:     #130F33;   /* Structuur: links, actieve nav, focus, rank-badges */
+  --accent-cta:         #FF5C54;   /* Gevulde primaire CTA-knoppen (los van primary) */
+  --accent-blue:        #130F33;   /* "Info/link" → Invested Blue (geen lichtblauw meer) */
+  --accent-blue-rgb:    19, 15, 51;
+  --accent-coral:       #FF5C54;   /* Rebellious Coral — energie, accenten, bullets */
+  --accent-coral-rgb:   255, 92, 84;
+  --accent-yellow:      #FFCA45;   /* Highlights, financieel, waarschuwing */
+  --accent-red:         #FF3B30;   /* Fout/destructief — NOOIT als accent (gebruik coral) */
+  --accent-green:       #7AD491;   /* Succes, voltooid, positief */
+  --accent-pink:        #FFCBE1;   /* Zachte accenten, secties */
+  --accent-orange:      #FF5C54;   /* Geen losse oranje in CB → valt samen met coral */
+  --accent-neutral:     #CBC4B8;   /* Strong Beige — neutrale 7e categoriekleur (vervangt paars) */
+
+  /* ── Neutralen (CrowdBuilding licht — standaard) ──────────────────────────── */
+  --bg-page:            #F3F0EB;   /* Inspiring Off-White */
+  --bg-surface:         #FFFFFF;   /* Welcoming White */
+  --bg-hover:           #ECE8E1;
+  --bg-active:          #E5E0D7;   /* Steady Stone */
+  --bg-selected:        #EDE8E0;
+
+  --text-primary:       #130F33;   /* Invested Blue — nooit puur zwart */
+  --text-secondary:     #57536A;
+  --text-tertiary:      #918DA0;
+  --text-faint:         #B3AFC0;
+  --text-disabled:      #CFC9D6;
+
+  --border-default:     #ECE8E1;
+  --border-subtle:      #E5E0D7;   /* Steady Stone */
+  --border-focus:       #130F33;
+
+  /* Pill-knoppen — CrowdBuilding-signatuur */
+  --btn-radius:         var(--radius-full);
+
+  /* ── Tag-tinten (lage dekking + donkere tekst, pill-vorm) ─────────────────── */
+  --tag-coral-bg:       rgba(255, 92, 84, 0.14);
+  --tag-coral-text:     #C7453E;
+  --tag-blue-bg:        rgba(19, 15, 51, 0.10);   /* "navy" — info/structuur, geen CTA */
+  --tag-blue-text:      #130F33;
+  --tag-green-bg:       rgba(122, 212, 145, 0.24);
+  --tag-green-text:     #2E7D4A;
+  --tag-yellow-bg:      rgba(255, 202, 69, 0.22);
+  --tag-yellow-text:    #8C6F00;
+  --tag-pink-bg:        rgba(255, 203, 225, 0.50);
+  --tag-pink-text:      #C04C7D;
+  --tag-red-bg:         rgba(255, 59, 48, 0.12);
+  --tag-red-text:       #C0291F;
+  --tag-neutral-bg:     rgba(203, 196, 184, 0.30); /* Strong Beige — neutrale categorie */
+  --tag-neutral-text:   #6B6552;
+  /* Aliassen zodat bestaande --tag-orange-*/-purple-* niet breken */
+  --tag-orange-bg:      var(--tag-coral-bg);
+  --tag-orange-text:    var(--tag-coral-text);
+  --tag-purple-bg:      var(--tag-neutral-bg);
+  --tag-purple-text:    var(--tag-neutral-text);
+
+  /* ── Blauw-getinte schaduwen (CB s1–s3) ───────────────────────────────────── */
+  --shadow-xs:          0 1px 2px rgba(19, 15, 51, 0.04);
+  --shadow-sm:          0 2px 8px rgba(19, 15, 51, 0.05),
+                        0 1px 2px rgba(19, 15, 51, 0.03);
+  --shadow-md:          0 6px 20px rgba(19, 15, 51, 0.08),
+                        0 1px 3px rgba(19, 15, 51, 0.04);
+  --shadow-lg:          0 12px 40px rgba(19, 15, 51, 0.12),
+                        0 4px 12px rgba(19, 15, 51, 0.06);
+  --shadow-xl:          0 20px 60px rgba(19, 15, 51, 0.16),
+                        0 8px 20px rgba(19, 15, 51, 0.08);
+}
+
+/* ============================================================================
+   CROWDBUILDING DARK — voorstel (niet in de merkrichtlijn; afgeleid uit de
+   Invested Blue-familie zodat de avond-automatiek 19:00–07:00 blijft werken).
+   Alleen neutralen + schaduw wisselen; accenten blijven gelijk.
+   ============================================================================ */
+
+[data-theme="dark"] {
+  --doodle-pattern:     none;
+  --bg-page:            #130F33;   /* Invested Blue */
+  --bg-surface:         #211B4D;
+  --bg-hover:           #2B2459;
+  --bg-active:          #352D6B;
+  --bg-selected:        #2E2858;
+
+  --text-primary:       #F3F0EB;   /* Off-White */
+  --text-secondary:     #A8A4C0;
+  --text-tertiary:      #7C779A;
+  --text-faint:         #5C577E;
+  --text-disabled:      #423D63;
+
+  --border-default:     #2B2459;
+  --border-subtle:      #352D6B;
+  --border-focus:       #FFCA45;   /* gele focus op donker leest beter dan navy */
+
+  /* CTA blijft coral; secundair accent op donker = geel (zoals brand: coral/geel op blauw) */
+  --accent-primary:     #F3F0EB;   /* structuur/links op donker = licht i.p.v. navy */
+
+  --shadow-xs:          0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm:          0 2px 8px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md:          0 6px 20px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-lg:          0 12px 40px rgba(0, 0, 0, 0.50), 0 4px 12px rgba(0, 0, 0, 0.30);
+  --shadow-xl:          0 20px 60px rgba(0, 0, 0, 0.60), 0 8px 20px rgba(0, 0, 0, 0.35);
+}

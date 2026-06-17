@@ -276,7 +276,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
                 />
               )}
               {projects.map(p => (
-                <ProjectDashboardCard key={p.project_id} project={p} onSaved={load} />
+                <ProjectDashboardCard key={p.project_id} project={p} onSaved={load} isLight={org?.kind === 'personal'} />
               ))}
             </div>
           </>

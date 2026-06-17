@@ -6,8 +6,9 @@ import { getIntakeUrl, getPublicSiteUrl, getProjectBaseUrl, navigateToSubdomain 
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from './IntakeQuestionEditor'
 import ImageCropper from './ImageCropper'
+import { onboardingEnabled } from '../lib/constants'
 
-export default function ProjectDashboardCard({ project, onSaved }) {
+export default function ProjectDashboardCard({ project, onSaved, isLight = false }) {
   const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
 
@@ -353,11 +354,13 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             { key: 'documents', label: 'Documenten', icon: 'fa-solid fa-folder-open' },
             { key: 'team', label: 'Team', icon: 'fa-solid fa-helmet-safety' },
             { key: 'page_builder', label: 'Pagina bouwer', icon: 'fa-solid fa-wand-magic-sparkles' },
+            // "Aan de slag" volgt een eigen default (aan voor light, uit voor pro/MO).
+            { key: 'onboarding', label: 'Aan de slag', icon: 'fa-solid fa-rocket' },
           ].map(f => (
             <label key={f.key} className="modules-tile">
               <input
                 type="checkbox"
-                checked={features[f.key] !== false}
+                checked={f.key === 'onboarding' ? onboardingEnabled(features, isLight) : features[f.key] !== false}
                 onChange={e => setFeatures(prev => ({ ...prev, [f.key]: e.target.checked }))}
               />
               <i className={`modules-tile__icon ${f.icon}`} />

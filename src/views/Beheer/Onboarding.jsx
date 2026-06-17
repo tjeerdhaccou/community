@@ -10,10 +10,15 @@ import { useProject } from '../../contexts/ProjectContext'
  * linkt naar de bestaande beheertool. Alleen zichtbaar voor admins.
  */
 export default function Onboarding() {
-  const { project, role, basePath } = useProject()
+  const { project, role, basePath, onboardingActive } = useProject()
   const navigate = useNavigate()
   const [counts, setCounts] = useState({ sections: 0, invites: 0, members: 0, groups: 0 })
   const [loading, setLoading] = useState(true)
+
+  // Onboarding uit voor dit project (bv. pro/MO-project) → terug naar dashboard.
+  useEffect(() => {
+    if (project && !onboardingActive) navigate(basePath || '/', { replace: true })
+  }, [project, onboardingActive, basePath, navigate])
 
   useEffect(() => {
     if (!project?.id) return
