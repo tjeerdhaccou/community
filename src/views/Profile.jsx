@@ -5,6 +5,7 @@ import { uploadImage } from '../lib/storage'
 import { logAudit } from '../lib/audit'
 import { exportUserData } from '../lib/dataExport'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { getProfileCompleteness } from '../lib/profileCompleteness'
 import ImageCropper from '../components/ImageCropper'
 import {
   isSupported as browserNotifSupported,
@@ -16,7 +17,12 @@ import {
 
 export default function Profile() {
   const { profile: authProfile, reload } = useAuth()
-  const [fullName, setFullName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [houseNumber, setHouseNumber] = useState('')
+  const [streetAddress, setStreetAddress] = useState('')
+  const [city, setCity] = useState('')
   const [company, setCompany] = useState('')
   const [companyLogoUrl, setCompanyLogoUrl] = useState(null)
   const [companyLogoPreview, setCompanyLogoPreview] = useState(null)
@@ -97,7 +103,13 @@ export default function Profile() {
 
   useEffect(() => {
     if (authProfile) {
-      setFullName(authProfile.full_name || '')
+      const nameParts = (authProfile.full_name || '').trim().split(' ')
+      setFirstName(authProfile.first_name || nameParts[0] || '')
+      setLastName(authProfile.last_name || nameParts.slice(1).join(' ') || '')
+      setPostalCode(authProfile.postal_code || '')
+      setHouseNumber(authProfile.house_number || '')
+      setStreetAddress(authProfile.street_address || '')
+      setCity(authProfile.city || '')
       setCompany(authProfile.company || '')
       setCompanyLogoUrl(authProfile.company_logo_url || null)
       setCompanyLogoPreview(authProfile.company_logo_url || null)
@@ -218,8 +230,16 @@ export default function Profile() {
     setSaving(true)
     setSaved(false)
     try {
+      const fn = firstName.trim()
+      const ln = lastName.trim()
       const updates = {
-        full_name: fullName.trim() || null,
+        first_name: fn || null,
+        last_name: ln || null,
+        full_name: `${fn} ${ln}`.trim() || null,
+        postal_code: postalCode.trim() || null,
+        house_number: houseNumber.trim() || null,
+        street_address: streetAddress.trim() || null,
+        city: city.trim() || null,
         avatar_url: avatarUrl,
         company: company.trim() || null,
         company_logo_url: companyLogoUrl,
@@ -249,7 +269,23 @@ export default function Profile() {
     }
   }
 
+  const fullName = `${firstName} ${lastName}`.trim()
   const initials = (fullName || 'U').split(' ').map(n => n[0]).join('').slice(0, 2)
+
+  // Live voortgang op basis van de huidige formulierwaarden.
+  const completeness = getProfileCompleteness({
+    avatar_url: avatarUrl,
+    first_name: firstName,
+    last_name: lastName,
+    full_name: fullName,
+    postal_code: postalCode,
+    house_number: houseNumber,
+    phone,
+    bio,
+    birth_year: birthYear,
+    household,
+    housing_dream: housingDream,
+  })
   const proColor = PROFESSIONAL_COLORS[authProfile?.professional_type] || '#9ba1b0'
   const proLabel = authProfile?.professional_label || PROFESSIONAL_LABELS[authProfile?.professional_type]
 
@@ -258,6 +294,25 @@ export default function Profile() {
       <div className="view-header">
         <h1>Mijn profiel</h1>
         <p className="view-header__subtitle">Beheer je persoonlijke gegevens</p>
+      </div>
+
+      <div className="profile-progress">
+        <div className="profile-progress__head">
+          <span className="profile-progress__label">
+            {completeness.pct === 100
+              ? 'Je profiel is compleet 🎉'
+              : `Je profiel is ${completeness.pct}% compleet`}
+          </span>
+          <span className="profile-progress__pct">{completeness.pct}%</span>
+        </div>
+        <div className="profile-progress__track">
+          <div className="profile-progress__bar" style={{ width: `${completeness.pct}%` }} />
+        </div>
+        {completeness.missing.length > 0 && (
+          <p className="profile-progress__hint">
+            Nog aan te vullen: {completeness.missing.map(m => m.label).join(', ')}.
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="profile-form">
@@ -291,9 +346,15 @@ export default function Profile() {
         {/* Basic info */}
         <div className="profile-section">
           <h3 className="profile-section__title">Persoonlijk</h3>
-          <div className="form-group">
-            <label htmlFor="prof-name">Naam</label>
-            <input id="prof-name" type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Je volledige naam" />
+          <div className="form-row">
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-first">Voornaam</label>
+              <input id="prof-first" type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Voornaam" />
+            </div>
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-last">Achternaam</label>
+              <input id="prof-last" type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Achternaam" />
+            </div>
           </div>
           <div className="form-group">
             <label htmlFor="prof-bio">Bio</label>
@@ -349,6 +410,31 @@ export default function Profile() {
             <div className="form-group form-group--half">
               <label htmlFor="prof-website">Website</label>
               <input id="prof-website" type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..." />
+            </div>
+          </div>
+        </div>
+
+        {/* Adres */}
+        <div className="profile-section">
+          <h3 className="profile-section__title"><i className="fa-solid fa-location-dot" /> Adres</h3>
+          <div className="form-row">
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-postal">Postcode</label>
+              <input id="prof-postal" type="text" value={postalCode} onChange={e => setPostalCode(e.target.value)} placeholder="1234 AB" />
+            </div>
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-house">Huisnummer</label>
+              <input id="prof-house" type="text" value={houseNumber} onChange={e => setHouseNumber(e.target.value)} placeholder="12" />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-street">Straat</label>
+              <input id="prof-street" type="text" value={streetAddress} onChange={e => setStreetAddress(e.target.value)} placeholder="Straatnaam" />
+            </div>
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-city">Plaats</label>
+              <input id="prof-city" type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Plaats" />
             </div>
           </div>
         </div>

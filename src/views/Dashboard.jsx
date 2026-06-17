@@ -8,23 +8,27 @@ import { ROLE_LABELS, timeAgo, POST_TAG_COLORS } from '../lib/constants'
 import { canDo } from '../lib/permissions'
 import { safeStorage } from '../lib/safeStorage'
 import Skeleton from '../components/Skeleton'
+import MemberWelcome from '../components/MemberWelcome'
 
 export default function Dashboard() {
-  const { project, role, loading, basePath } = useProject()
+  const { project, role, loading, basePath, onboardingActive } = useProject()
   const { profile, isPlatformAdmin } = useAuth()
   const navigate = useNavigate()
 
   // Verse group-admins naar "Aan de slag" tot de checklist klaar/weggeklikt is.
+  // Alleen als onboarding voor dit project actief is (light-groepen; pro/MO-
+  // projecten worden door de org begeleid en krijgen geen checklist).
   // Platform admins die rondkijken slaan we over; de session-guard voorkomt
   // een redirect-loop nadat de admin in dezelfde sessie heeft weggeklikt.
   useEffect(() => {
     if (loading || !project || role !== 'admin' || isPlatformAdmin) return
+    if (!onboardingActive) return
     if (project.onboarding_dismissed) return
     if (safeStorage.getItem(`buuur-onboarding-skip-${project.id}`)) return
     navigate(`${basePath}/aan-de-slag`, { replace: true })
-  }, [loading, project, role, isPlatformAdmin, basePath, navigate])
+  }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
   const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
-  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, stats: { members: 0, updates: 0 } })
+  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
 
   useEffect(() => {
@@ -41,9 +45,10 @@ export default function Dashboard() {
         supabase.from('updates').select('id', { count: 'exact', head: true }).eq('project_id', project.id),
         supabase.from('intake_responses').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('status', 'pending'),
         profile?.id ? supabase.from('document_requests').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'pending') : Promise.resolve({ count: 0 }),
+        profile?.id ? supabase.from('profile_intake_requests').select('token').eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'open').order('sent_at', { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
       ]
 
-      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes, docReqRes] = await Promise.all(queries)
+      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes, docReqRes, intakeReqRes] = await Promise.all(queries)
       if (stale) return
 
       setFeed({
@@ -53,6 +58,7 @@ export default function Dashboard() {
         newMembers: membersRes.data || [],
         intakePending: intakeRes.count || 0,
         docRequests: docReqRes.count || 0,
+        intakeRequest: intakeReqRes.data?.[0] || null,
         stats: { members: memberCount.count || 0, updates: updateCount.count || 0 },
       })
     }
@@ -109,6 +115,23 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Open intake-verzoek van de initiatiefnemer */}
+      {feed.intakeRequest && (
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/profiel-intake/${feed.intakeRequest.token}`)} role="button" tabIndex={0}>
+          <div className="dash-intake-alert__icon" style={{ background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' }}>
+            <i className="fa-solid fa-clipboard-user" />
+          </div>
+          <div className="dash-intake-alert__text">
+            <strong>Vul je gegevens aan</strong>
+            <span>De initiatiefnemers vragen je een paar profielvelden in te vullen</span>
+          </div>
+          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+        </div>
+      )}
+
+      {/* Welkomststappen voor nieuwe leden (profiel afmaken, prikbord, roadmap) */}
+      <MemberWelcome />
 
       {/* Stepper dots progress (reads from roadmap_phases) */}
       {phases.length > 0 && (

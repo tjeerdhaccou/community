@@ -24,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, personalMessage, orgName, orgUrl, inviterName, groupName } = await req.json()
+    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, personalMessage, orgName, orgUrl, inviterName, groupName, token } = await req.json()
 
     if (!memberEmail) {
       return new Response(JSON.stringify({ error: 'No email address' }), {
@@ -85,16 +85,27 @@ serve(async (req) => {
       })
 
       const redirectTo = projectUrl ? `${projectUrl.replace(/\/$/, '')}/auth/callback` : undefined
+      const linkOptions = redirectTo ? { redirectTo } : undefined
 
-      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-        type: 'magiclink',
+      // Nieuwe genodigden hebben nog geen account: `invite` maakt de gebruiker aan én geeft een
+      // action_link terug (verstuurt zelf geen mail). Bestaande accounts kun je niet opnieuw
+      // uitnodigen, dus daarvoor vallen we terug op `magiclink`.
+      let { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'invite',
         email: memberEmail,
-        options: redirectTo ? { redirectTo } : undefined,
+        options: linkOptions,
       })
+      if (linkErr) {
+        ;({ data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: memberEmail,
+          options: linkOptions,
+        }))
+      }
 
       if (linkErr || !linkData?.properties?.action_link) {
         console.error('generateLink error:', linkErr)
-        return new Response(JSON.stringify({ error: 'Magic link generation failed', details: linkErr?.message }), {
+        return new Response(JSON.stringify({ error: 'Magic link generation failed', details: { message: linkErr?.message, status: (linkErr as { status?: number })?.status, code: (linkErr as { code?: string })?.code, name: linkErr?.name } }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
@@ -176,12 +187,21 @@ serve(async (req) => {
       })
 
       const redirectTo = orgUrl ? `${orgUrl.replace(/\/$/, '')}/auth/callback` : undefined
+      const linkOptions = redirectTo ? { redirectTo } : undefined
 
-      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-        type: 'magiclink',
+      // Zie 'invite': nieuwe beheerders hebben nog geen account, dus `invite` met fallback naar `magiclink`.
+      let { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'invite',
         email: memberEmail,
-        options: redirectTo ? { redirectTo } : undefined,
+        options: linkOptions,
       })
+      if (linkErr) {
+        ;({ data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+          type: 'magiclink',
+          email: memberEmail,
+          options: linkOptions,
+        }))
+      }
 
       if (linkErr || !linkData?.properties?.action_link) {
         console.error('generateLink error:', linkErr)
@@ -237,6 +257,31 @@ serve(async (req) => {
               Naar de community
             </a>
           </p>` : ''}
+          <p style="font-size: 14px; color: #9ba1b0; margin-top: 32px;">
+            Dit is een automatisch bericht${projectName ? ` van ${projectName}` : ''}.
+          </p>
+        </div>
+      `
+    } else if (type === 'profile_intake') {
+      const greeting = memberName ? `Hoi ${memberName}` : 'Hoi'
+      const base = projectUrl ? projectUrl.replace(/\/$/, '') : ''
+      const link = token ? `${base}/profiel-intake/${token}` : base
+      subject = `Vul je gegevens aan${projectName ? ` voor ${projectName}` : ''}`
+      html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+          <h1 style="font-size: 24px; color: #1a1a2e; margin-bottom: 16px;">${greeting},</h1>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            ${projectName ? `<strong>${projectName}</strong>` : 'De initiatiefnemers'} ${personalMessage ? '' : 'vraagt je om een paar gegevens aan te vullen voor je profiel.'}
+          </p>
+          ${personalMessage ? `
+          <div style="background: #f4f5f7; border-radius: 12px; padding: 16px 20px; margin: 20px 0;">
+            <p style="font-size: 15px; color: #4a4a6a; margin: 0; line-height: 1.5;">${personalMessage}</p>
+          </div>` : ''}
+          <p style="margin: 28px 0;">
+            <a href="${link}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+              Vul je gegevens aan
+            </a>
+          </p>
           <p style="font-size: 14px; color: #9ba1b0; margin-top: 32px;">
             Dit is een automatisch bericht${projectName ? ` van ${projectName}` : ''}.
           </p>

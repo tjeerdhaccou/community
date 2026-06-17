@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { checkInvitedEmail, sendOtpCode, verifyOtpCode } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { getProjectSlugFromSubdomain } from '../lib/subdomain'
@@ -7,6 +7,10 @@ import { redirectByRole } from '../lib/loginRedirect'
 
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  // AuthCallback stuurt na een verlopen link een verse code en zet door naar
+  // hier met de e-mail al ingevuld en direct op de code-invoerstap.
+  const resend = location.state || {}
   const [projectInfo, setProjectInfo] = useState(null)
 
   useEffect(() => {
@@ -15,8 +19,8 @@ export default function Login() {
     supabase.from('projects').select('name, logo_url, tagline').eq('slug', slug).single()
       .then(({ data }) => { if (data) setProjectInfo(data) })
   }, [])
-  const [mode, setMode] = useState('email') // email | otp
-  const [email, setEmail] = useState('')
+  const [mode, setMode] = useState(resend.step === 'otp' ? 'otp' : 'email') // email | otp
+  const [email, setEmail] = useState(resend.email || '')
   const [otpCode, setOtpCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)

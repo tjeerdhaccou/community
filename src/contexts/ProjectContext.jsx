@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import { isProjectDomain } from '../lib/subdomain'
+import { onboardingEnabled } from '../lib/constants'
 
 const ProjectContext = createContext(null)
 
@@ -68,7 +69,7 @@ export function ProjectProvider({ children, slugOverride }) {
       if (proj.organization_id) {
         const orgRes = await supabase
           .from('organizations')
-          .select('default_theme')
+          .select('default_theme, kind')
           .eq('id', proj.organization_id)
           .single()
         orgData = orgRes.data
@@ -107,8 +108,16 @@ export function ProjectProvider({ children, slugOverride }) {
     return features[key] !== false
   }
 
+  // Light = initiatiefgroep (buuur light); pro = echte organisatie met procesbegeleider.
+  const isLightProject = org?.kind === 'personal'
+
+  // "Aan de slag"-checklist: standaard aan voor light-groepen, uit voor pro/MO-
+  // projecten (die worden door de org begeleid). Per project te overschrijven
+  // via features.onboarding (module-toggle in het org-dashboard).
+  const onboardingActive = onboardingEnabled(project?.features, isLightProject)
+
   return (
-    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain, featureEnabled }}>
+    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain, featureEnabled, isLightProject, onboardingActive }}>
       {children}
     </ProjectContext.Provider>
   )

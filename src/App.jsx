@@ -21,6 +21,7 @@ import Roadmap from './views/Roadmap'
 import ProfessionalUpdates from './views/ProfessionalUpdates'
 import AdviseurTeam from './views/AdviseurTeam'
 import Profile from './views/Profile'
+import ProfileIntake from './views/ProfileIntake'
 import DocumentArchive from './views/DocumentArchive'
 import OrgDashboard from './views/OrgDashboard'
 import OrgSettings from './views/OrgSettings'
@@ -141,10 +142,10 @@ function ProjectShell() {
 }
 
 function FeatureRoute({ feature, children }) {
-  const { featureEnabled, basePath, loading, role } = useProject()
+  const { featureEnabled, basePath, loading } = useProject()
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
-  // Admins always have access so they can build out hidden content
-  if (role === 'admin') return children
+  // Uitgezette module = voor iederéén dicht, ook voor admins. De org beheert de
+  // zichtbaarheid centraal via het org-dashboard (Modules-toggle).
   if (!featureEnabled(feature)) return <Navigate to={basePath || '/'} replace />
   return children
 }
@@ -347,6 +348,7 @@ function NormalRoutes() {
         <Route path="members" element={<FeatureRoute feature="members"><Leden /></FeatureRoute>} />
         <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
         <Route path="profile" element={<Profile />} />
+        <Route path="profiel-intake/:token" element={<ProfileIntake />} />
         <Route path="aan-de-slag" element={<Onboarding />} />
         <Route path="groepen" element={<Groepen />} />
         <Route path="settings" element={<Settings />} />
@@ -435,6 +437,7 @@ function ProjectSubdomainApp({ slug }) {
           <Route path="groepen" element={<Groepen />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="profiel-intake/:token" element={<ProfileIntake />} />
           <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
           <Route path="page-builder" element={<FeatureRoute feature="page_builder"><PageBuilder /></FeatureRoute>} />
         </Route>

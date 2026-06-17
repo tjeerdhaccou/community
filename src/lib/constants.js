@@ -247,3 +247,16 @@ export function timeAgoShort(dateStr) {
   if (diff < 604800) return `${Math.floor(diff / 86400)}d`
   return new Date(dateStr).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
 }
+
+/**
+ * Bepaalt of de "Aan de slag"-onboarding actief is voor een project.
+ * Light-initiatieven (org kind=personal) staan standaard aan; pro-projecten
+ * standaard uit. Een admin kan dit per project overschrijven via de
+ * module-toggle (features.onboarding true/false).
+ */
+export function onboardingEnabled(features, isLight) {
+  const f = features || {}
+  if (f.onboarding === true) return true
+  if (f.onboarding === false) return false
+  return !!isLight
+}

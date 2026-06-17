@@ -5565,7 +5565,8 @@ select.input {
   transition: background 0.15s;
 }
 .roadmap-phase__head:hover {
-  background: var(--bg-hover);
+  /* Zachte lift i.p.v. een vol beige vlak — mengt richting de witte kaart */
+  background: color-mix(in srgb, var(--bg-hover) 45%, var(--bg-surface));
 }
 
 .roadmap-phase__num {
@@ -5655,7 +5656,7 @@ select.input {
 .roadmap-item:first-child { border-radius: 8px 8px 0 0; }
 .roadmap-item:last-child { border-radius: 0 0 8px 8px; }
 .roadmap-item:only-child { border-radius: 8px; }
-.roadmap-item:hover { background: var(--bg-hover); }
+.roadmap-item:hover { background: color-mix(in srgb, var(--bg-hover) 45%, var(--bg-surface)); }
 
 /* Dots */
 .roadmap-dot {
@@ -10687,4 +10688,290 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   .legal-document a { color: inherit !important; text-decoration: underline !important; }
   .legal-document table { page-break-inside: avoid; }
   .legal-document h2 { page-break-after: avoid; }
+}
+
+/* ── Profiel-voortgang (profielpagina) ─────────────────────────────── */
+.profile-progress {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.profile-progress__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.profile-progress__label {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.profile-progress__pct {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+.profile-progress__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-subtle, rgba(0,0,0,0.06));
+  overflow: hidden;
+}
+.profile-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-primary);
+  transition: width 300ms ease;
+}
+.profile-progress__hint {
+  margin: 10px 0 0;
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+/* ── Welkomststappen nieuwe leden (dashboard) ──────────────────────── */
+.member-welcome {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.member-welcome__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.member-welcome__title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text-primary);
+}
+.member-welcome__sub {
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+  margin: 0;
+}
+.member-welcome__dismiss {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.member-welcome__dismiss:hover { color: var(--text-secondary); }
+.member-welcome__steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.member-welcome__step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+  background: var(--bg-subtle, rgba(0,0,0,0.03));
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  transition: var(--transition-hover);
+}
+.member-welcome__step:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+.member-welcome__check {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--tag-blue-bg);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.member-welcome__step--done .member-welcome__check {
+  background: rgba(59, 210, 105, 0.12);
+  color: #3BD269;
+}
+.member-welcome__step-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.member-welcome__step-title {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.member-welcome__step--done .member-welcome__step-title {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+.member-welcome__step-desc {
+  font-size: var(--text-small);
+  color: var(--text-tertiary);
+}
+.member-welcome__step-arrow {
+  color: var(--text-faint);
+  font-size: var(--text-small);
+}
+
+/* ── Verlopen inloglink (auth callback) ────────────────────────────── */
+.auth-expired {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+  background: var(--bg-page, var(--bg-subtle));
+}
+.auth-expired__card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-7, 40px) var(--space-6, 32px);
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+.auth-expired__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--tag-orange-bg);
+  color: var(--accent-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto var(--space-4);
+}
+.auth-expired__card h1 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-3);
+}
+.auth-expired__card > p {
+  font-size: var(--text-body);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 var(--space-5);
+}
+.auth-expired__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  text-align: left;
+}
+.auth-expired__form input {
+  width: 100%;
+}
+.auth-expired__error {
+  color: var(--accent-red);
+  font-size: var(--text-small);
+  margin: 0;
+}
+.auth-expired__back {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: var(--text-small);
+  cursor: pointer;
+  margin-top: var(--space-4);
+  text-decoration: underline;
+}
+.auth-expired__back:hover { color: var(--text-secondary); }
+
+/* ── Profiel-intakeformulier (lid vult in) ─────────────────────────── */
+.intake-fill {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-5) 0;
+}
+.intake-fill__card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6, 32px);
+}
+.intake-fill__card h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+.intake-fill__intro {
+  font-size: var(--text-body);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 var(--space-5);
+  white-space: pre-wrap;
+}
+.intake-fill__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.intake-fill__actions {
+  margin-top: var(--space-2);
+}
+.intake-fill__checkbox label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+.intake-fill__checkbox input { width: 18px; height: 18px; }
+.intake-fill__top3 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.intake-fill__top3-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.intake-fill__top3-row input { flex: 1; }
+.intake-fill__top3-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--tag-blue-bg);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-small);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.intake-fill__card--message {
+  text-align: center;
+}
+.intake-fill__icon {
+  font-size: 32px;
+  color: var(--text-faint);
+  margin-bottom: var(--space-3);
+}
+.intake-fill__icon--done { color: #3BD269; }
+.intake-fill__card--message h1 { margin-bottom: var(--space-2); }
+.intake-fill__card--message p {
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 var(--space-5);
 }
