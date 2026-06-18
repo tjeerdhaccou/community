@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { ROLES, ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_STAGES, FUNNEL_LABELS, FUNNEL_COLORS, FUNNEL_ICONS, formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
 import { uploadFile } from '../lib/storage'
+import { labelForValue } from '../lib/intakeFields'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdminDocumentRequests } from '../hooks/useDocumentRequests'
 import ConfirmModal from './ConfirmModal'
@@ -226,7 +227,7 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                     {profile.household && (
                       <div className="member-profile__detail">
                         <i className="fa-solid fa-people-roof" />
-                        <span>{profile.household}</span>
+                        <span>{labelForValue('household', profile.household)}</span>
                       </div>
                     )}
                   </div>

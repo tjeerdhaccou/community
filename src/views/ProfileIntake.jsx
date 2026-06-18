@@ -191,6 +191,11 @@ export default function ProfileIntake() {
   )
 }
 
+function FieldHelp({ field }) {
+  if (!field.help) return null
+  return <p className="form-hint">{field.help}</p>
+}
+
 function IntakeFieldInput({ field, value, onChange }) {
   const id = `intake-${field.key}`
 
@@ -199,6 +204,7 @@ function IntakeFieldInput({ field, value, onChange }) {
     return (
       <div className="form-group">
         <label>{field.label}</label>
+        <FieldHelp field={field} />
         <div className="intake-fill__top3">
           {[0, 1, 2].map(i => (
             <div key={i} className="intake-fill__top3-row">
@@ -224,6 +230,7 @@ function IntakeFieldInput({ field, value, onChange }) {
     return (
       <div className="form-group">
         <label htmlFor={id}>{field.label}</label>
+        <FieldHelp field={field} />
         <textarea id={id} value={value || ''} onChange={e => onChange(field.key, e.target.value)} rows={3} />
       </div>
     )
@@ -233,9 +240,10 @@ function IntakeFieldInput({ field, value, onChange }) {
     return (
       <div className="form-group">
         <label htmlFor={id}>{field.label}</label>
+        <FieldHelp field={field} />
         <select id={id} value={value || ''} onChange={e => onChange(field.key, e.target.value)}>
           <option value="">Kies…</option>
-          {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
       </div>
     )
@@ -248,6 +256,7 @@ function IntakeFieldInput({ field, value, onChange }) {
           <input id={id} type="checkbox" checked={!!value} onChange={e => onChange(field.key, e.target.checked)} />
           {field.label}
         </label>
+        <FieldHelp field={field} />
       </div>
     )
   }
@@ -255,6 +264,7 @@ function IntakeFieldInput({ field, value, onChange }) {
   return (
     <div className="form-group">
       <label htmlFor={id}>{field.label}</label>
+      <FieldHelp field={field} />
       <input
         id={id}
         type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}

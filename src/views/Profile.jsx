@@ -6,7 +6,10 @@ import { logAudit } from '../lib/audit'
 import { exportUserData } from '../lib/dataExport'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
 import { getProfileCompleteness } from '../lib/profileCompleteness'
+import { getIntakeField } from '../lib/intakeFields'
 import ImageCropper from '../components/ImageCropper'
+
+const HOUSEHOLD_OPTIONS = getIntakeField('household').options
 import {
   isSupported as browserNotifSupported,
   getPermission as getBrowserNotifPermission,
@@ -376,7 +379,10 @@ export default function Profile() {
             </div>
             <div className="form-group form-group--half">
               <label htmlFor="prof-household">Gezinssamenstelling</label>
-              <input id="prof-household" type="text" value={household} onChange={e => setHousehold(e.target.value)} placeholder="bijv. Stel met 2 kinderen" />
+              <select id="prof-household" value={household} onChange={e => setHousehold(e.target.value)}>
+                <option value="">Kies…</option>
+                {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
           </div>
         </div>

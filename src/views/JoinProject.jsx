@@ -5,6 +5,9 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { uploadImage } from '../lib/storage'
 import { getIntakeUrl, getPublicSiteUrl } from '../lib/subdomain'
+import { getIntakeField } from '../lib/intakeFields'
+
+const HOUSEHOLD_OPTIONS = getIntakeField('household').options
 
 export default function JoinProject() {
   const { user, profile, reload } = useAuth()
@@ -282,7 +285,10 @@ export default function JoinProject() {
               </div>
               <div className="form-group form-group--half">
                 <label htmlFor="join-household">Gezinssamenstelling</label>
-                <input id="join-household" type="text" value={household} onChange={e => setHousehold(e.target.value)} placeholder="bijv. Stel met 2 kinderen" />
+                <select id="join-household" value={household} onChange={e => setHousehold(e.target.value)}>
+                  <option value="">Kies…</option>
+                  {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
               </div>
             </div>
 
