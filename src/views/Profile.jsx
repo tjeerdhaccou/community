@@ -6,10 +6,24 @@ import { logAudit } from '../lib/audit'
 import { exportUserData } from '../lib/dataExport'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
 import { getProfileCompleteness } from '../lib/profileCompleteness'
-import { getIntakeField } from '../lib/intakeFields'
+import { INTAKE_FIELDS, INTAKE_FIELD_GROUPS } from '../lib/intakeFields'
+import { CatalogFieldInput } from '../components/CatalogFields'
 import ImageCropper from '../components/ImageCropper'
 
-const HOUSEHOLD_OPTIONS = getIntakeField('household').options
+// Velden die elders op de profielpagina al een eigen plek hebben (of niet als
+// los profielveld passen) en dus niet in de catalogus-gedreven sectie horen.
+const PAGE_FIELD_KEYS = new Set([
+  'first_name', 'last_name', 'phone',
+  'postal_code', 'house_number', 'street_address', 'city',
+  'housing_dream',
+])
+
+// Het 'Woonprofiel': alle catalogusvelden behalve de hierboven en de
+// project-specifieke top-3 (die leeft op memberships, niet op het profiel).
+const WOON_FIELDS = INTAKE_FIELDS.filter(f => f.type !== 'housing_top3' && !PAGE_FIELD_KEYS.has(f.key))
+const WOON_GROUPS = INTAKE_FIELD_GROUPS
+  .map(group => ({ group, fields: WOON_FIELDS.filter(f => f.group === group) }))
+  .filter(g => g.fields.length > 0)
 import {
   isSupported as browserNotifSupported,
   getPermission as getBrowserNotifPermission,
@@ -32,9 +46,8 @@ export default function Profile() {
   const [phone, setPhone] = useState('')
   const [website, setWebsite] = useState('')
   const [bio, setBio] = useState('')
-  const [birthYear, setBirthYear] = useState('')
-  const [household, setHousehold] = useState('')
   const [housingDream, setHousingDream] = useState('')
+  const [woonValues, setWoonValues] = useState({})
   const [photoUrls, setPhotoUrls] = useState([])
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -128,9 +141,13 @@ export default function Profile() {
       setPhone(authProfile.phone || '')
       setWebsite(authProfile.website || '')
       setBio(authProfile.bio || '')
-      setBirthYear(authProfile.birth_year || '')
-      setHousehold(authProfile.household || '')
       setHousingDream(authProfile.housing_dream || '')
+      const wv = {}
+      for (const f of WOON_FIELDS) {
+        const v = authProfile[f.column]
+        wv[f.key] = v == null ? (f.type === 'boolean' ? false : '') : v
+      }
+      setWoonValues(wv)
       setPhotoUrls(authProfile.photo_urls || [])
       setAvatarUrl(authProfile.avatar_url || null)
       setAvatarPreview(authProfile.avatar_url || null)
@@ -237,6 +254,10 @@ export default function Profile() {
     }
   }
 
+  function setWoon(key, val) {
+    setWoonValues(prev => ({ ...prev, [key]: val }))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
@@ -258,10 +279,16 @@ export default function Profile() {
         phone: phone.trim() || null,
         website: website.trim() || null,
         bio: bio.trim() || null,
-        birth_year: birthYear ? parseInt(birthYear, 10) : null,
-        household: household.trim() || null,
         housing_dream: housingDream.trim() || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
+      }
+
+      // Catalogus-gedreven woonprofiel (canonieke waarden, juiste types).
+      for (const f of WOON_FIELDS) {
+        const raw = woonValues[f.key]
+        if (f.type === 'number') updates[f.column] = raw === '' || raw == null ? null : Number(raw)
+        else if (f.type === 'boolean') updates[f.column] = !!raw
+        else updates[f.column] = (typeof raw === 'string' ? raw.trim() : raw) || null
       }
 
       const { error } = await supabase
@@ -294,8 +321,8 @@ export default function Profile() {
     house_number: houseNumber,
     phone,
     bio,
-    birth_year: birthYear,
-    household,
+    date_of_birth: woonValues.date_of_birth,
+    household: woonValues.household,
     housing_dream: housingDream,
   })
   const proColor = PROFESSIONAL_COLORS[authProfile?.professional_type] || '#9ba1b0'
@@ -372,19 +399,9 @@ export default function Profile() {
             <label htmlFor="prof-bio">Bio</label>
             <textarea id="prof-bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="Vertel iets over jezelf..." rows={3} />
           </div>
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-birth-year">Geboortejaar</label>
-              <input id="prof-birth-year" type="number" value={birthYear} onChange={e => setBirthYear(e.target.value)} placeholder="bijv. 1985" min="1920" max={new Date().getFullYear()} />
-            </div>
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-household">Gezinssamenstelling</label>
-              <select id="prof-household" value={household} onChange={e => setHousehold(e.target.value)}>
-                <option value="">Kies…</option>
-                {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
+          {WOON_FIELDS.filter(f => f.group === 'Persoonlijk').map(f => (
+            <CatalogFieldInput key={f.key} field={f} value={woonValues[f.key]} onChange={setWoon} />
+          ))}
         </div>
 
         {/* Woondroom */}
@@ -413,6 +430,16 @@ export default function Profile() {
             <input ref={photoRef} type="file" accept="image/*" onChange={handleGalleryPhoto} style={{ display: 'none' }} />
           </div>
         </div>
+
+        {/* Woonprofiel — catalogus-gedreven, identiek aan CMS en intakeformulier */}
+        {WOON_GROUPS.filter(g => g.group !== 'Persoonlijk').map(g => (
+          <div className="profile-section" key={g.group}>
+            <h3 className="profile-section__title">{g.group}</h3>
+            {g.fields.map(f => (
+              <CatalogFieldInput key={f.key} field={f} value={woonValues[f.key]} onChange={setWoon} />
+            ))}
+          </div>
+        ))}
 
         {/* Contact */}
         <div className="profile-section">

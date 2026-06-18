@@ -66,7 +66,10 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
   const joinDate = membership?.joined_at
     ? new Date(membership.joined_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
-  const age = profile?.birth_year ? new Date().getFullYear() - profile.birth_year : null
+  const birthYearVal = profile?.date_of_birth
+    ? new Date(profile.date_of_birth).getFullYear()
+    : profile?.birth_year || null
+  const age = birthYearVal ? new Date().getFullYear() - birthYearVal : null
 
   // Close role menu on outside click
   useEffect(() => {

@@ -14,7 +14,7 @@ const FIELDS = [
   { key: 'house_number', label: 'Huisnummer', check: p => !!p.house_number?.trim?.() },
   { key: 'phone', label: 'Telefoonnummer', check: p => !!p.phone?.trim?.() },
   { key: 'bio', label: 'Korte introductie', check: p => !!p.bio?.trim?.() },
-  { key: 'birth_year', label: 'Geboortejaar', check: p => !!p.birth_year },
+  { key: 'date_of_birth', label: 'Geboortedatum', check: p => !!(p.date_of_birth || p.birth_year) },
   { key: 'household', label: 'Gezinssamenstelling', check: p => !!p.household?.trim?.() },
   { key: 'housing_dream', label: 'Woondroom', check: p => !!p.housing_dream?.trim?.() },
 ]
