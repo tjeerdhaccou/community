@@ -9,3 +9,8 @@ supabase/.temp/
 .vercel
 .claude/worktrees/
 *.DS_Store
+
+# Playwright
+/test-results/
+/playwright-report/
+/e2e/.auth/
