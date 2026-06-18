@@ -6648,7 +6648,17 @@ select.input {
   color: var(--text-tertiary, #9BA1B0);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+}
+/* Ruimte tussen velden binnen een sectie (alleen directe kinderen, zodat de
+   halve velden naast elkaar in een form-row niet geraakt worden). */
+.profile-section > .form-group,
+.profile-section > .form-row {
+  margin-bottom: 20px;
+}
+.profile-section > .form-group:last-child,
+.profile-section > .form-row:last-child {
+  margin-bottom: 0;
 }
 /* Publiek-profiel-banner */
 .profile-public-note {
