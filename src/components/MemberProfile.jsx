@@ -236,8 +236,8 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                   </div>
                 )}
 
-                {/* Contact details */}
-                {(profile.company || profile.website || profile.phone) && (
+                {/* Contact details — telefoon is privé en alleen voor beheerders */}
+                {(profile.company || profile.website || (profile.phone && canManage)) && (
                   <div className="member-profile__details">
                     {profile.company && (
                       <div className="member-profile__detail">
@@ -256,7 +256,7 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                         </a>
                       </div>
                     )}
-                    {profile.phone && (
+                    {profile.phone && canManage && (
                       <div className="member-profile__detail">
                         <i className="fa-solid fa-phone" />
                         <a href={`tel:${profile.phone}`}>{profile.phone}</a>
@@ -265,8 +265,8 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                   </div>
                 )}
 
-                {/* Contact actions */}
-                {profile.phone && (
+                {/* Contact actions — bellen alleen voor beheerders */}
+                {profile.phone && canManage && (
                   <div className="member-profile__actions">
                     <a href={`tel:${profile.phone}`} className="btn-secondary member-profile__action-btn">
                       <i className="fa-solid fa-phone" /> Bellen
@@ -274,8 +274,8 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                   </div>
                 )}
 
-                {/* Intake answers for guests */}
-                {intakeData && intakeQuestions.length > 0 && (
+                {/* Intake answers — privé, alleen voor beheerders */}
+                {canManage && intakeData && intakeQuestions.length > 0 && (
                   <div className="member-profile__intake">
                     <h4>Intake antwoorden</h4>
                     {intakeQuestions.map(q => {

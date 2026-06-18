@@ -224,7 +224,7 @@ export default function IntakeForm() {
                       <label htmlFor={`q-${q.id}`}>
                         {q.question_text}{q.required ? ' *' : ''}
                       </label>
-                      {field?.help && <p className="form-hint">{field.help}</p>}
+                      {field?.help && <p className="form-hint" style={{ margin: '2px 0 6px' }}>{field.help}</p>}
                       {renderQuestion(q, field, answers[q.id], val => setAnswer(q.id, val))}
                     </div>
                   )

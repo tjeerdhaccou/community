@@ -5,7 +5,7 @@
 
 export function CatalogFieldHelp({ field }) {
   if (!field.help) return null
-  return <p className="form-hint">{field.help}</p>
+  return <p className="form-hint" style={{ margin: '2px 0 6px' }}>{field.help}</p>
 }
 
 // Eén catalogusveld. onChange(key, value) — value heeft het juiste type

@@ -6634,13 +6634,13 @@ select.input {
 .profile-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 .profile-section {
   background: var(--bg-surface, #ffffff);
   border-radius: 16px;
   box-shadow: var(--shadow-sm);
-  padding: 24px;
+  padding: 20px;
 }
 .profile-section__title {
   font-size: 14px;
@@ -6648,7 +6648,39 @@ select.input {
   color: var(--text-tertiary, #9BA1B0);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+/* Publiek-profiel-banner */
+.profile-public-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--accent-primary-soft, rgba(74, 144, 217, 0.08));
+  border-radius: 12px;
+  padding: 14px 16px;
   margin-bottom: 16px;
+}
+.profile-public-note > i {
+  color: var(--accent-primary, #4A90D9);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.profile-public-note p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.profile-public-note__sub {
+  margin-top: 4px !important;
+  font-size: 13px !important;
+  color: var(--text-tertiary) !important;
+}
+.profile-public-note button {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .profile-public-note { flex-wrap: wrap; }
 }
 /* Org admin list in settings */
 .org-admin-list {
