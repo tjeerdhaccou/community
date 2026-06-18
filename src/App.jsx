@@ -332,6 +332,10 @@ function NormalRoutes() {
       <Route path="/org/:orgId/new-project" element={<AuthGuard><OrgThemeWrapper><NewProject /></OrgThemeWrapper></AuthGuard>} />
 
       {/* Project-level routes */}
+      {/* Auth-callback for path-based projects (no custom domain): invite/magic-link
+          emails redirect to /p/:slug/auth/callback. Must sit OUTSIDE the AuthGuard so
+          the session can be set from the URL before any auth gate runs. */}
+      <Route path="/p/:slug/auth/callback" element={<AuthCallback />} />
       <Route path="/p/:slug" element={<AuthGuard><ProjectShell /></AuthGuard>}>
         <Route index element={<Dashboard />} />
         <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
