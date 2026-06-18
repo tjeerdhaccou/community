@@ -70,14 +70,18 @@ export default function IntakeForm() {
     setError(null)
 
     try {
+      const now = new Date().toISOString()
       const { error: insertError } = await supabase.from('intake_responses').insert({
         project_id: project.id,
         name: name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
         answers,
-        terms_accepted_at: new Date().toISOString(),
+        terms_accepted_at: now,
         terms_version: CONSENT_VERSION,
+        // Aparte toestemming voor het delen van gegevens met initiatiefnemers/leden.
+        // De verzendknop staat uit tot dit vinkje aan is, dus hier altijd gezet.
+        data_sharing_consent_at: now,
       })
 
       if (insertError) throw insertError
