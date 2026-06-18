@@ -153,63 +153,35 @@ serve(async (req) => {
         </div>
       `
     } else if (type === 'invite') {
-      if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-        console.error('[send-member-email] Missing SUPABASE_URL or SERVICE_ROLE_KEY')
-        return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      })
-
-      const redirectTo = projectUrl ? `${projectUrl.replace(/\/$/, '')}/auth/callback` : undefined
-      const linkOptions = redirectTo ? { redirectTo } : undefined
-
-      // Nieuwe genodigden hebben nog geen account: `invite` maakt de gebruiker aan én geeft een
-      // action_link terug (verstuurt zelf geen mail). Bestaande accounts kun je niet opnieuw
-      // uitnodigen, dus daarvoor vallen we terug op `magiclink`.
-      let { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-        type: 'invite',
-        email: memberEmail,
-        options: linkOptions,
-      })
-      if (linkErr) {
-        ;({ data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
-          type: 'magiclink',
-          email: memberEmail,
-          options: linkOptions,
-        }))
-      }
-
-      if (linkErr || !linkData?.properties?.action_link) {
-        console.error('generateLink error:', linkErr)
-        return new Response(JSON.stringify({ error: 'Magic link generation failed', details: { message: linkErr?.message, status: (linkErr as { status?: number })?.status, code: (linkErr as { code?: string })?.code, name: linkErr?.name } }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-
-      const actionLink = linkData.properties.action_link
+      // Geen magische link meer (1 uur geldig, eenmalig — onhandig als de mail op
+      // een raar moment binnenkomt). We sturen naar de permanente projectpagina;
+      // daar logt de genodigde in met e-mail + verificatiecode (opnieuw aan te
+      // vragen, geen tijdslimiet). Het account wordt bij die eerste login
+      // aangemaakt — handle_new_user koppelt dan de uitnodiging/intake en vult
+      // naam + consent, dus de profiel-modal blijft weg.
       const greeting = memberName ? `Hoi ${memberName}` : 'Hoi'
+      const loginUrl = projectUrl ? projectUrl.replace(/\/$/, '') : 'https://buuur.nl'
 
-      // Cascade: project.invite_intro_text > organization.invite_intro_text > default
+      // Cascade intro-tekst: project.invite_intro_text > organization > default.
+      // Best-effort: lukt het lezen niet (geen service key), dan de default.
       let introText: string | null = null
-      if (projectId) {
-        const { data: projectData } = await admin
-          .from('projects')
-          .select('invite_intro_text, organization_id, organizations(invite_intro_text)')
-          .eq('id', projectId)
-          .single()
-
-        const orgIntro = (projectData?.organizations as { invite_intro_text?: string | null } | null)?.invite_intro_text || null
-        introText = projectData?.invite_intro_text || orgIntro || null
+      if (projectId && SUPABASE_URL && SERVICE_ROLE_KEY) {
+        try {
+          const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+            auth: { autoRefreshToken: false, persistSession: false },
+          })
+          const { data: projectData } = await admin
+            .from('projects')
+            .select('invite_intro_text, organizations(invite_intro_text)')
+            .eq('id', projectId)
+            .single()
+          const orgIntro = (projectData?.organizations as { invite_intro_text?: string | null } | null)?.invite_intro_text || null
+          introText = projectData?.invite_intro_text || orgIntro || null
+        } catch (_e) { /* val terug op default */ }
       }
 
       if (!introText) {
-        introText = `Je bent uitgenodigd om kennis te maken met {projectnaam}.\n\nKlik op de knop hieronder om je account aan te maken en in te loggen — geen wachtwoord nodig.`
+        introText = `Je bent uitgenodigd om kennis te maken met {projectnaam}.\n\nKlik op de knop hieronder, vul je e-mailadres in en je krijgt een verificatiecode om in te loggen — geen wachtwoord nodig.`
       }
 
       // Placeholder substitution (na escape; placeholders zijn geen user input maar de waardes wel)
@@ -245,12 +217,12 @@ serve(async (req) => {
           ${personalHtml}
           ${introHtml}
           <p style="margin: 28px 0;">
-            <a href="${actionLink}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
-              Open je uitnodiging
+            <a href="${loginUrl}" style="display:inline-block;background:#4A90D9;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+              Inloggen bij ${projectName || 'het project'}
             </a>
           </p>
           <p style="font-size: 14px; color: #9ba1b0;">
-            De link werkt eenmalig en is een uur geldig. Als je deze mail niet verwachtte kun je hem negeren.
+            Je logt in met je e-mailadres en een verificatiecode die we je toesturen — geen wachtwoord nodig. Deze link blijft geldig, dus je kunt 'm altijd opnieuw gebruiken.
           </p>
         </div>
       `

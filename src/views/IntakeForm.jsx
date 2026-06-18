@@ -16,7 +16,8 @@ export default function IntakeForm() {
   const [error, setError] = useState(null)
 
   // Form fields
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [answers, setAnswers] = useState({})
@@ -101,7 +102,7 @@ export default function IntakeForm() {
       const { error: insertError } = await supabase.from('intake_responses').insert({
         id: responseId,
         project_id: project.id,
-        name: name.trim(),
+        name: `${firstName.trim()} ${lastName.trim()}`.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
         answers,
@@ -170,7 +171,7 @@ export default function IntakeForm() {
             <div className="intake-success-icon" style={{ color: brandColor }}>
               <i className="fa-solid fa-circle-check" />
             </div>
-            <h1 className="join-card__title">Bedankt, {name.split(' ')[0]}!</h1>
+            <h1 className="join-card__title">Bedankt, {firstName.trim()}!</h1>
             <p className="join-card__tagline">
               Je aanmelding voor {project.name} is ontvangen. De beheerders bekijken je aanmelding
               en nemen contact met je op via {email}.
@@ -211,16 +212,29 @@ export default function IntakeForm() {
               <i className="fa-solid fa-user" /> Jouw gegevens
             </div>
 
-            <div className="form-group">
-              <label htmlFor="intake-name">Naam *</label>
-              <input
-                id="intake-name"
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Je volledige naam"
-                required
-              />
+            <div className="form-row">
+              <div className="form-group form-group--half">
+                <label htmlFor="intake-first">Voornaam *</label>
+                <input
+                  id="intake-first"
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder="Voornaam"
+                  required
+                />
+              </div>
+              <div className="form-group form-group--half">
+                <label htmlFor="intake-last">Achternaam *</label>
+                <input
+                  id="intake-last"
+                  type="text"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  placeholder="Achternaam"
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-row">
@@ -290,7 +304,7 @@ export default function IntakeForm() {
             <button
               type="submit"
               className="btn-primary join-card__btn"
-              disabled={submitting || !name.trim() || !email.trim() || !consent || !termsConsent}
+              disabled={submitting || !firstName.trim() || !lastName.trim() || !email.trim() || !consent || !termsConsent}
               style={{ background: brandColor }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
