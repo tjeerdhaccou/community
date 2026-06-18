@@ -54,7 +54,9 @@ export function useMyDocuments() {
   }
 
   async function upload(file, requestId = null) {
-    const { publicUrl, path } = await uploadFile(file, 'member-files')
+    // Owner-scoped path: the storage RLS policy treats the last folder segment
+    // (the profile id) as the file owner, so members may only read/write here.
+    const { path } = await uploadFile(file, 'member-files', `${project.id}/${user.id}`)
     const row = {
       profile_id: user.id,
       project_id: project.id,

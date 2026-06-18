@@ -74,9 +74,9 @@ export default function ProfessionalUpdateModal({ update, activePhase, onSave, o
 
     for (const item of additions) {
       try {
-        const { publicUrl } = await uploadFile(item.file)
+        const { path } = await uploadFile(item.file)
         setPendingFiles(prev =>
-          prev.map(f => f.id === item.id ? { ...f, uploading: false, file_path: publicUrl } : f)
+          prev.map(f => f.id === item.id ? { ...f, uploading: false, file_path: path } : f)
         )
       } catch (err) {
         console.error('File upload failed:', err)

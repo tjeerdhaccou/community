@@ -4,6 +4,7 @@ import { canDo } from '../lib/permissions'
 import { useDocuments } from '../hooks/useDocuments'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
+import { openProjectFile } from '../lib/storage'
 
 const CATEGORIES = [
   { key: 'all', label: 'Alles' },
@@ -60,7 +61,7 @@ export default function DocumentArchive() {
                 <i className={fileIcon(doc.file_type)} style={{ color: fileIconColor(doc.file_type) }} />
               </div>
               <div className="doc-archive-item__info">
-                <a href={doc.file_path} target="_blank" rel="noopener noreferrer" className="doc-archive-item__title">
+                <a href={doc.file_path} onClick={(e) => { e.preventDefault(); openProjectFile(doc.file_path) }} target="_blank" rel="noopener noreferrer" className="doc-archive-item__title">
                   {doc.title}
                 </a>
                 {doc.description && <p className="doc-archive-item__desc">{doc.description}</p>}
@@ -72,7 +73,7 @@ export default function DocumentArchive() {
                 </div>
               </div>
               <div className="doc-archive-item__actions">
-                <a href={doc.file_path} download className="btn-icon" title="Download">
+                <a href={doc.file_path} onClick={(e) => { e.preventDefault(); openProjectFile(doc.file_path) }} className="btn-icon" title="Download">
                   <i className="fa-solid fa-download" />
                 </a>
                 {canDo(role, 'moderate_board') && (

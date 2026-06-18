@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { CONSENT_VERSION } from '../lib/constants'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -19,6 +20,7 @@ export default function IntakeForm() {
   const [phone, setPhone] = useState('')
   const [answers, setAnswers] = useState({})
   const [consent, setConsent] = useState(false)
+  const [termsConsent, setTermsConsent] = useState(false)
 
   useEffect(() => {
     loadForm()
@@ -74,6 +76,8 @@ export default function IntakeForm() {
         email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
         answers,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: CONSENT_VERSION,
       })
 
       if (insertError) throw insertError
@@ -229,12 +233,22 @@ export default function IntakeForm() {
               <span>Ik ga akkoord dat mijn gegevens gedeeld worden met de initiatiefnemers en leden van {project.name}.</span>
             </label>
 
+            <label className="intake-consent">
+              <input type="checkbox" checked={termsConsent} onChange={e => setTermsConsent(e.target.checked)} />
+              <span>
+                Ik ga akkoord met de{' '}
+                <a href="/voorwaarden" target="_blank" rel="noopener noreferrer">algemene voorwaarden</a>{' '}
+                en de{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer">privacyverklaring</a>.
+              </span>
+            </label>
+
             {error && <p className="join-card__error">{error}</p>}
 
             <button
               type="submit"
               className="btn-primary join-card__btn"
-              disabled={submitting || !name.trim() || !email.trim() || !consent}
+              disabled={submitting || !name.trim() || !email.trim() || !consent || !termsConsent}
               style={{ background: brandColor }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}

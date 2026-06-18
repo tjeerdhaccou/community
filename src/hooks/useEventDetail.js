@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { toStoragePath } from '../lib/storage'
 
 export function useEventDetail(meetingId) {
   const { user } = useAuth()
@@ -87,12 +88,10 @@ export function useEventDetail(meetingId) {
     const { error: uploadErr } = await supabase.storage.from('project-files').upload(path, file)
     if (uploadErr) return uploadErr
 
-    const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(path)
-
     const { error } = await supabase.from('meeting_files').insert({
       meeting_id: meetingId,
       file_name: file.name,
-      file_path: publicUrl,
+      file_path: path,
       file_size: file.size,
       file_type: file.type,
       category,
@@ -104,7 +103,7 @@ export function useEventDetail(meetingId) {
 
   async function removeFile(id, filePath) {
     // Extract storage path from public URL
-    const storagePath = filePath?.split('/project-files/')[1]
+    const storagePath = toStoragePath(filePath)
     if (storagePath) {
       await supabase.storage.from('project-files').remove([storagePath])
     }

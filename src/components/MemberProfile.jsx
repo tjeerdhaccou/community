@@ -412,7 +412,9 @@ function MemberDossier({ profileId, projectId }) {
     if (!file) return
     setUploading(true)
     try {
-      const { publicUrl, path } = await uploadFile(file, 'member-files')
+      // Owner-scoped path: last folder segment (member profile id) = file owner,
+      // so the member can read their own document via the storage RLS policy.
+      const { path } = await uploadFile(file, 'member-files', `${projectId}/${profileId}`)
       const { error } = await supabase.from('member_files').insert({
         profile_id: profileId,
         project_id: projectId,
