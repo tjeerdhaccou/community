@@ -422,6 +422,14 @@ function ProjectSubdomainApp({ slug }) {
         <Route path="/public" element={<PublicProject slugOverride={slug} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        {/* Juridische pagina's moeten leesbaar zijn zonder login */}
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/voorwaarden" element={<AlgemeneVoorwaarden />} />
+        <Route path="/legal" element={<LegalOverview />} />
+        <Route path="/legal/verwerkersovereenkomst" element={<Verwerkersovereenkomst />} />
+        <Route path="/legal/datalekprotocol" element={<Datalekprotocol />} />
+        <Route path="/legal/verwerkingsregister" element={<Verwerkingsregister />} />
+        <Route path="/legal/dpia" element={<DPIADocument />} />
         {/* Authenticated project — all other paths */}
         <Route path="/*" element={<AuthGuard><ProjectShellSubdomain /></AuthGuard>}>
           <Route index element={<Dashboard />} />
