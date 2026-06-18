@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION } from '../lib/constants'
+import { getIntakeField } from '../lib/intakeFields'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -220,14 +221,18 @@ export default function IntakeForm() {
                   <i className="fa-solid fa-comments" /> Over jou
                 </div>
 
-                {questions.map(q => (
-                  <div key={q.id} className="form-group">
-                    <label htmlFor={`q-${q.id}`}>
-                      {q.question_text}{q.required ? ' *' : ''}
-                    </label>
-                    {renderQuestion(q, answers[q.id] || '', val => setAnswer(q.id, val))}
-                  </div>
-                ))}
+                {questions.map(q => {
+                  const field = q.profile_field_key ? getIntakeField(q.profile_field_key) : null
+                  return (
+                    <div key={q.id} className="form-group">
+                      <label htmlFor={`q-${q.id}`}>
+                        {q.question_text}{q.required ? ' *' : ''}
+                      </label>
+                      {field?.help && <p className="form-hint" style={{ margin: '2px 0 6px' }}>{field.help}</p>}
+                      {renderQuestion(q, field, answers[q.id], val => setAnswer(q.id, val))}
+                    </div>
+                  )
+                })}
               </>
             )}
 
@@ -269,15 +274,60 @@ export default function IntakeForm() {
   )
 }
 
-function renderQuestion(question, value, onChange) {
+function renderQuestion(question, field, value, onChange) {
   const id = `q-${question.id}`
+
+  // Catalogus-gekoppelde vraag: render op basis van het profielveld, met
+  // canonieke waarden en het juiste opslagtype.
+  if (field) {
+    switch (field.type) {
+      case 'select':
+        return (
+          <select id={id} value={value || ''} onChange={e => onChange(e.target.value)} required={question.required}>
+            <option value="">Kies…</option>
+            {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          </select>
+        )
+      case 'textarea':
+        return (
+          <textarea id={id} value={value || ''} onChange={e => onChange(e.target.value)} rows={3} required={question.required} />
+        )
+      case 'boolean':
+        return (
+          <label className="intake-radio-option">
+            <input type="checkbox" checked={!!value} onChange={e => onChange(e.target.checked)} />
+            <span>Ja</span>
+          </label>
+        )
+      case 'number':
+        return (
+          <input
+            id={id}
+            type="number"
+            value={value ?? ''}
+            onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
+            required={question.required}
+          />
+        )
+      case 'date':
+        return (
+          <input id={id} type="date" value={value || ''} onChange={e => onChange(e.target.value)} required={question.required} />
+        )
+      default:
+        return (
+          <input id={id} type="text" value={value || ''} onChange={e => onChange(e.target.value)} required={question.required} />
+        )
+    }
+  }
+
+  const v = value || ''
 
   switch (question.question_type) {
     case 'textarea':
       return (
         <textarea
           id={id}
-          value={value}
+          value={v}
           onChange={e => onChange(e.target.value)}
           placeholder="Typ hier je antwoord..."
           rows={3}
@@ -289,7 +339,7 @@ function renderQuestion(question, value, onChange) {
       return (
         <select
           id={id}
-          value={value}
+          value={v}
           onChange={e => onChange(e.target.value)}
           required={question.required}
         >
@@ -309,9 +359,9 @@ function renderQuestion(question, value, onChange) {
                 type="radio"
                 name={id}
                 value={opt}
-                checked={value === opt}
+                checked={v === opt}
                 onChange={() => onChange(opt)}
-                required={question.required && !value}
+                required={question.required && !v}
               />
               <span>{opt}</span>
             </label>
@@ -325,7 +375,7 @@ function renderQuestion(question, value, onChange) {
         <input
           id={id}
           type="text"
-          value={value}
+          value={v}
           onChange={e => onChange(e.target.value)}
           placeholder="Typ hier je antwoord..."
           required={question.required}

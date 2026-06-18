@@ -6,7 +6,16 @@ import { logAudit } from '../lib/audit'
 import { exportUserData } from '../lib/dataExport'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
 import { getProfileCompleteness } from '../lib/profileCompleteness'
+import { getIntakeField } from '../lib/intakeFields'
+import { useProject } from '../contexts/ProjectContext'
+import MemberProfile from '../components/MemberProfile'
 import ImageCropper from '../components/ImageCropper'
+
+// Het publieke profiel toont alleen lichte, sociale velden. Privé/detailgegevens
+// (adres, telefoon, woonsituatie, inkomen, partner, ...) gaan via het
+// intakeformulier en zijn alleen zichtbaar voor de initiatiefnemers in het CMS.
+const HOUSEHOLD_OPTIONS = getIntakeField('household').options
+
 import {
   isSupported as browserNotifSupported,
   getPermission as getBrowserNotifPermission,
@@ -17,21 +26,19 @@ import {
 
 export default function Profile() {
   const { profile: authProfile, reload } = useAuth()
+  const { project } = useProject()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [postalCode, setPostalCode] = useState('')
-  const [houseNumber, setHouseNumber] = useState('')
-  const [streetAddress, setStreetAddress] = useState('')
   const [city, setCity] = useState('')
   const [company, setCompany] = useState('')
   const [companyLogoUrl, setCompanyLogoUrl] = useState(null)
   const [companyLogoPreview, setCompanyLogoPreview] = useState(null)
-  const [phone, setPhone] = useState('')
   const [website, setWebsite] = useState('')
   const [bio, setBio] = useState('')
   const [birthYear, setBirthYear] = useState('')
   const [household, setHousehold] = useState('')
   const [housingDream, setHousingDream] = useState('')
+  const [showPreview, setShowPreview] = useState(false)
   const [photoUrls, setPhotoUrls] = useState([])
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -115,14 +122,10 @@ export default function Profile() {
       const nameParts = (authProfile.full_name || '').trim().split(' ')
       setFirstName(authProfile.first_name || nameParts[0] || '')
       setLastName(authProfile.last_name || nameParts.slice(1).join(' ') || '')
-      setPostalCode(authProfile.postal_code || '')
-      setHouseNumber(authProfile.house_number || '')
-      setStreetAddress(authProfile.street_address || '')
       setCity(authProfile.city || '')
       setCompany(authProfile.company || '')
       setCompanyLogoUrl(authProfile.company_logo_url || null)
       setCompanyLogoPreview(authProfile.company_logo_url || null)
-      setPhone(authProfile.phone || '')
       setWebsite(authProfile.website || '')
       setBio(authProfile.bio || '')
       setBirthYear(authProfile.birth_year || '')
@@ -241,22 +244,20 @@ export default function Profile() {
     try {
       const fn = firstName.trim()
       const ln = lastName.trim()
+      // Alleen de publieke profielvelden. Privé/detailgegevens (adres, telefoon,
+      // woonprofiel) worden hier bewust NIET aangeraakt — die lopen via intake.
       const updates = {
         first_name: fn || null,
         last_name: ln || null,
         full_name: `${fn} ${ln}`.trim() || null,
-        postal_code: postalCode.trim() || null,
-        house_number: houseNumber.trim() || null,
-        street_address: streetAddress.trim() || null,
         city: city.trim() || null,
         avatar_url: avatarUrl,
         company: company.trim() || null,
         company_logo_url: companyLogoUrl,
-        phone: phone.trim() || null,
         website: website.trim() || null,
         bio: bio.trim() || null,
         birth_year: birthYear ? parseInt(birthYear, 10) : null,
-        household: household.trim() || null,
+        household: household || null,
         housing_dream: housingDream.trim() || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
       }
@@ -287,12 +288,10 @@ export default function Profile() {
     first_name: firstName,
     last_name: lastName,
     full_name: fullName,
-    postal_code: postalCode,
-    house_number: houseNumber,
-    phone,
     bio,
     birth_year: birthYear,
     household,
+    city,
     housing_dream: housingDream,
   })
   const proColor = PROFESSIONAL_COLORS[authProfile?.professional_type] || '#9ba1b0'
@@ -301,8 +300,24 @@ export default function Profile() {
   return (
     <div className="view-profile">
       <div className="view-header">
-        <h1>Mijn profiel</h1>
-        <p className="view-header__subtitle">Beheer je persoonlijke gegevens</p>
+        <h1>Mijn publieke profiel</h1>
+        <p className="view-header__subtitle">
+          Dit zien andere leden{project?.name ? ` van ${project.name}` : ''}.
+        </p>
+      </div>
+
+      <div className="profile-public-note">
+        <i className="fa-solid fa-eye" />
+        <div>
+          <p>Alles op deze pagina is zichtbaar voor andere leden. Alle velden zijn optioneel.</p>
+          <p className="profile-public-note__sub">
+            Wil je meer privé delen? De initiatiefnemers kunnen je apart om aanvullende
+            gegevens vragen via een intakeformulier — die zijn niet zichtbaar voor medeleden.
+          </p>
+        </div>
+        <button type="button" className="btn-secondary btn-sm" onClick={() => setShowPreview(true)}>
+          <i className="fa-solid fa-user-group" /> Bekijk als ander lid
+        </button>
       </div>
 
       <div className="profile-progress">
@@ -366,18 +381,26 @@ export default function Profile() {
             </div>
           </div>
           <div className="form-group">
-            <label htmlFor="prof-bio">Bio</label>
+            <label htmlFor="prof-bio">Over mij</label>
             <textarea id="prof-bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="Vertel iets over jezelf..." rows={3} />
           </div>
           <div className="form-row">
             <div className="form-group form-group--half">
               <label htmlFor="prof-birth-year">Geboortejaar</label>
               <input id="prof-birth-year" type="number" value={birthYear} onChange={e => setBirthYear(e.target.value)} placeholder="bijv. 1985" min="1920" max={new Date().getFullYear()} />
+              <p className="form-hint" style={{ margin: '2px 0 0' }}>Andere leden zien alleen je leeftijd.</p>
             </div>
             <div className="form-group form-group--half">
-              <label htmlFor="prof-household">Gezinssamenstelling</label>
-              <input id="prof-household" type="text" value={household} onChange={e => setHousehold(e.target.value)} placeholder="bijv. Stel met 2 kinderen" />
+              <label htmlFor="prof-household">Huishouden</label>
+              <select id="prof-household" value={household} onChange={e => setHousehold(e.target.value)}>
+                <option value="">Kies…</option>
+                {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
+          </div>
+          <div className="form-group">
+            <label htmlFor="prof-city">Woonplaats</label>
+            <input id="prof-city" type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="bijv. Amsterdam" />
           </div>
         </div>
 
@@ -408,53 +431,19 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Contact */}
-        <div className="profile-section">
-          <h3 className="profile-section__title">Contact</h3>
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-phone">Telefoon</label>
-              <input id="prof-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+31 6..." />
-            </div>
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-website">Website</label>
-              <input id="prof-website" type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..." />
-            </div>
-          </div>
-        </div>
-
-        {/* Adres */}
-        <div className="profile-section">
-          <h3 className="profile-section__title"><i className="fa-solid fa-location-dot" /> Adres</h3>
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-postal">Postcode</label>
-              <input id="prof-postal" type="text" value={postalCode} onChange={e => setPostalCode(e.target.value)} placeholder="1234 AB" />
-            </div>
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-house">Huisnummer</label>
-              <input id="prof-house" type="text" value={houseNumber} onChange={e => setHouseNumber(e.target.value)} placeholder="12" />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-street">Straat</label>
-              <input id="prof-street" type="text" value={streetAddress} onChange={e => setStreetAddress(e.target.value)} placeholder="Straatnaam" />
-            </div>
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-city">Plaats</label>
-              <input id="prof-city" type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Plaats" />
-            </div>
-          </div>
-        </div>
-
         {/* Professional section — only for adviseurs */}
         {isProfessional && (
           <div className="profile-section">
             <h3 className="profile-section__title">Bedrijf</h3>
-            <div className="form-group">
-              <label htmlFor="prof-company">Bedrijfsnaam</label>
-              <input id="prof-company" type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="Bedrijfsnaam" />
+            <div className="form-row">
+              <div className="form-group form-group--half">
+                <label htmlFor="prof-company">Bedrijfsnaam</label>
+                <input id="prof-company" type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="Bedrijfsnaam" />
+              </div>
+              <div className="form-group form-group--half">
+                <label htmlFor="prof-website">Website</label>
+                <input id="prof-website" type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..." />
+              </div>
             </div>
             <div className="form-group">
               <label>Bedrijfslogo</label>
@@ -638,6 +627,15 @@ export default function Profile() {
           round={true}
           onComplete={handleAvatarCropComplete}
           onCancel={() => setCropSrc(null)}
+        />
+      )}
+
+      {showPreview && authProfile?.id && (
+        <MemberProfile
+          profileId={authProfile.id}
+          isMe
+          canManage={false}
+          onClose={() => setShowPreview(false)}
         />
       )}
     </div>

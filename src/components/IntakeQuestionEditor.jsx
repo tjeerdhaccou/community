@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { INTAKE_FIELDS, INTAKE_FIELD_GROUPS, getIntakeField } from '../lib/intakeFields'
 
 const QUESTION_TYPES = [
   { value: 'text', label: 'Kort antwoord' },
@@ -7,14 +8,51 @@ const QUESTION_TYPES = [
   { value: 'radio', label: 'Keuzerondje' },
 ]
 
+// Profielvelden die in het publieke formulier al apart gevraagd worden of niet
+// als losse vraag passen.
+const EXCLUDED_PROFILE_KEYS = new Set(['first_name', 'last_name', 'phone'])
+
+// Catalogustype → opgeslagen question_type (moet binnen de CHECK-constraint van
+// intake_questions vallen). De daadwerkelijke render gebeurt op basis van het
+// catalogusveld zelf (via profile_field_key).
+function catalogQuestionType(field) {
+  if (field.type === 'select') return 'select'
+  if (field.type === 'textarea') return 'textarea'
+  return 'text'
+}
+
 export default function IntakeQuestionEditor({ questions, onAdd, onUpdate, onDelete, onReorder }) {
-  const [adding, setAdding] = useState(false)
+  // adding: null | 'custom' | 'profile'
+  const [adding, setAdding] = useState(null)
   const [newText, setNewText] = useState('')
   const [newType, setNewType] = useState('text')
   const [newOptions, setNewOptions] = useState('')
   const [newRequired, setNewRequired] = useState(true)
+  const [fieldKey, setFieldKey] = useState('')
 
-  function handleAdd() {
+  const usedProfileKeys = new Set(questions.map(q => q.profile_field_key).filter(Boolean))
+  const availableProfileGroups = INTAKE_FIELD_GROUPS
+    .map(group => ({
+      group,
+      fields: INTAKE_FIELDS.filter(f =>
+        f.group === group &&
+        f.target !== 'memberships' &&
+        !EXCLUDED_PROFILE_KEYS.has(f.key) &&
+        !usedProfileKeys.has(f.key)
+      ),
+    }))
+    .filter(g => g.fields.length > 0)
+
+  function resetForm() {
+    setNewText('')
+    setNewType('text')
+    setNewOptions('')
+    setNewRequired(true)
+    setFieldKey('')
+    setAdding(null)
+  }
+
+  function handleAddCustom() {
     if (!newText.trim()) return
     const options = (newType === 'select' || newType === 'radio')
       ? newOptions.split('\n').map(o => o.trim()).filter(Boolean)
@@ -26,11 +64,20 @@ export default function IntakeQuestionEditor({ questions, onAdd, onUpdate, onDel
       options,
       required: newRequired,
     })
-    setNewText('')
-    setNewType('text')
-    setNewOptions('')
-    setNewRequired(true)
-    setAdding(false)
+    resetForm()
+  }
+
+  function handleAddProfile() {
+    const field = getIntakeField(fieldKey)
+    if (!field) return
+    onAdd({
+      question_text: newText.trim() || field.label,
+      question_type: catalogQuestionType(field),
+      options: null,
+      required: newRequired,
+      profile_field_key: field.key,
+    })
+    resetForm()
   }
 
   function handleMoveUp(index) {
@@ -46,6 +93,8 @@ export default function IntakeQuestionEditor({ questions, onAdd, onUpdate, onDel
     ;[reordered[index], reordered[index + 1]] = [reordered[index + 1], reordered[index]]
     onReorder(reordered)
   }
+
+  const selectedField = getIntakeField(fieldKey)
 
   return (
     <div className="intake-editor">
@@ -70,7 +119,7 @@ export default function IntakeQuestionEditor({ questions, onAdd, onUpdate, onDel
         ))}
       </div>
 
-      {adding ? (
+      {adding === 'custom' && (
         <div className="intake-editor__add-form">
           <div className="form-group">
             <label>Vraag</label>
@@ -117,14 +166,67 @@ export default function IntakeQuestionEditor({ questions, onAdd, onUpdate, onDel
           )}
 
           <div className="intake-editor__add-actions">
-            <button className="btn-secondary btn-sm" onClick={() => setAdding(false)}>Annuleren</button>
-            <button className="btn-primary btn-sm" onClick={handleAdd} disabled={!newText.trim()}>Toevoegen</button>
+            <button className="btn-secondary btn-sm" onClick={resetForm}>Annuleren</button>
+            <button className="btn-primary btn-sm" onClick={handleAddCustom} disabled={!newText.trim()}>Toevoegen</button>
           </div>
         </div>
-      ) : (
-        <button className="btn-secondary intake-editor__add-btn" onClick={() => setAdding(true)}>
-          <i className="fa-solid fa-plus" /> Vraag toevoegen
-        </button>
+      )}
+
+      {adding === 'profile' && (
+        <div className="intake-editor__add-form">
+          <div className="form-group">
+            <label>Profielveld</label>
+            <select value={fieldKey} onChange={e => { setFieldKey(e.target.value); setNewText('') }} autoFocus>
+              <option value="">Kies een profielveld…</option>
+              {availableProfileGroups.map(g => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.fields.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+                </optgroup>
+              ))}
+            </select>
+            {selectedField?.help && <p className="form-hint">{selectedField.help}</p>}
+          </div>
+
+          {selectedField && (
+            <div className="form-row">
+              <div className="form-group form-group--half">
+                <label>Vraagtekst (optioneel)</label>
+                <input
+                  type="text"
+                  value={newText}
+                  onChange={e => setNewText(e.target.value)}
+                  placeholder={selectedField.label}
+                />
+              </div>
+              <div className="form-group form-group--half">
+                <label className="intake-editor__checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={newRequired}
+                    onChange={e => setNewRequired(e.target.checked)}
+                  />
+                  Verplicht
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div className="intake-editor__add-actions">
+            <button className="btn-secondary btn-sm" onClick={resetForm}>Annuleren</button>
+            <button className="btn-primary btn-sm" onClick={handleAddProfile} disabled={!fieldKey}>Toevoegen</button>
+          </div>
+        </div>
+      )}
+
+      {!adding && (
+        <div className="intake-editor__add-actions">
+          <button className="btn-secondary intake-editor__add-btn" onClick={() => setAdding('profile')}>
+            <i className="fa-solid fa-id-card" /> Profielveld toevoegen
+          </button>
+          <button className="btn-secondary intake-editor__add-btn" onClick={() => setAdding('custom')}>
+            <i className="fa-solid fa-plus" /> Eigen vraag toevoegen
+          </button>
+        </div>
       )}
     </div>
   )
@@ -139,6 +241,7 @@ function QuestionRow({ question, index, total, onUpdate, onDelete, onMoveUp, onM
     setEditing(false)
   }
 
+  const isProfileField = !!question.profile_field_key
   const typeLabel = QUESTION_TYPES.find(t => t.value === question.question_type)?.label || question.question_type
 
   return (
@@ -181,7 +284,7 @@ function QuestionRow({ question, index, total, onUpdate, onDelete, onMoveUp, onM
           <>
             <span className="intake-editor__row-text">{question.question_text}</span>
             <span className="intake-editor__row-meta">
-              {typeLabel}
+              {isProfileField ? <><i className="fa-solid fa-id-card" /> Profielveld</> : typeLabel}
               {question.required && ' · Verplicht'}
               {!question.active && ' · Inactief'}
             </span>

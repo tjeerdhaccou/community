@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { ROLES, ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_STAGES, FUNNEL_LABELS, FUNNEL_COLORS, FUNNEL_ICONS, formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
 import { uploadFile } from '../lib/storage'
+import { labelForValue } from '../lib/intakeFields'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdminDocumentRequests } from '../hooks/useDocumentRequests'
 import ConfirmModal from './ConfirmModal'
@@ -65,7 +66,10 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
   const joinDate = membership?.joined_at
     ? new Date(membership.joined_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
-  const age = profile?.birth_year ? new Date().getFullYear() - profile.birth_year : null
+  const birthYearVal = profile?.date_of_birth
+    ? new Date(profile.date_of_birth).getFullYear()
+    : profile?.birth_year || null
+  const age = birthYearVal ? new Date().getFullYear() - birthYearVal : null
 
   // Close role menu on outside click
   useEffect(() => {
@@ -226,14 +230,14 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                     {profile.household && (
                       <div className="member-profile__detail">
                         <i className="fa-solid fa-people-roof" />
-                        <span>{profile.household}</span>
+                        <span>{labelForValue('household', profile.household)}</span>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Contact details */}
-                {(profile.company || profile.website || profile.phone) && (
+                {/* Contact details — telefoon is privé en alleen voor beheerders */}
+                {(profile.company || profile.website || (profile.phone && canManage)) && (
                   <div className="member-profile__details">
                     {profile.company && (
                       <div className="member-profile__detail">
@@ -252,7 +256,7 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                         </a>
                       </div>
                     )}
-                    {profile.phone && (
+                    {profile.phone && canManage && (
                       <div className="member-profile__detail">
                         <i className="fa-solid fa-phone" />
                         <a href={`tel:${profile.phone}`}>{profile.phone}</a>
@@ -261,8 +265,8 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                   </div>
                 )}
 
-                {/* Contact actions */}
-                {profile.phone && (
+                {/* Contact actions — bellen alleen voor beheerders */}
+                {profile.phone && canManage && (
                   <div className="member-profile__actions">
                     <a href={`tel:${profile.phone}`} className="btn-secondary member-profile__action-btn">
                       <i className="fa-solid fa-phone" /> Bellen
@@ -270,8 +274,8 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                   </div>
                 )}
 
-                {/* Intake answers for guests */}
-                {intakeData && intakeQuestions.length > 0 && (
+                {/* Intake answers — privé, alleen voor beheerders */}
+                {canManage && intakeData && intakeQuestions.length > 0 && (
                   <div className="member-profile__intake">
                     <h4>Intake antwoorden</h4>
                     {intakeQuestions.map(q => {
