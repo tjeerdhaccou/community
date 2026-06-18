@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { UPDATE_TAGS, isTouchDevice } from '../lib/constants'
-import { uploadImage } from '../lib/storage'
+import { uploadImage, openProjectFile } from '../lib/storage'
 import AudienceSelector from './AudienceSelector'
 import ImageCropper from './ImageCropper'
 
@@ -223,7 +223,7 @@ export default function UpdateModal({ update, onSave, onClose, onDelete, onAddAt
                 {attachments.map(a => (
                   <div key={a.id} className="update-attachment-row">
                     <i className={`fa-regular ${fileIcon(a.file_name, a.file_type)} update-attachment-row__icon`} />
-                    <a href={a.file_path} target="_blank" rel="noopener noreferrer" className="update-attachment-row__name">
+                    <a href={a.file_path} onClick={(e) => { e.preventDefault(); openProjectFile(a.file_path) }} target="_blank" rel="noopener noreferrer" className="update-attachment-row__name">
                       {a.file_name}
                     </a>
                     <span className="update-attachment-row__size">{formatBytes(a.file_size)}</span>

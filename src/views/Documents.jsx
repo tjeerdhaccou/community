@@ -5,6 +5,7 @@ import { canDo } from '../lib/permissions'
 import { useAllDocuments } from '../hooks/useAllDocuments'
 import { useWorkgroups } from '../hooks/useWorkgroups'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
+import { openProjectFile } from '../lib/storage'
 import {
   PROJECT_PHASES, formatFileSize, fileIcon, fileIconColor, linkInfo, timeAgo,
 } from '../lib/constants'
@@ -250,6 +251,8 @@ function DocumentRow({ doc, showCategory }) {
   const isLink = doc.doc_type === 'link'
   const link = isLink ? linkInfo(doc.url) : null
   const href = isLink ? doc.url : doc.file_path
+  // External links open directly; stored files resolve a short-lived signed URL.
+  const openFile = isLink ? undefined : (e) => { e.preventDefault(); openProjectFile(doc.file_path) }
 
   return (
     <div className="doc-row">
@@ -260,7 +263,7 @@ function DocumentRow({ doc, showCategory }) {
         }
       </div>
       <div className="doc-row__info">
-        <a href={href} target="_blank" rel="noopener noreferrer" className="doc-row__title">
+        <a href={href} onClick={openFile} target="_blank" rel="noopener noreferrer" className="doc-row__title">
           {doc.title || doc.file_name}
           {isLink && <i className="fa-solid fa-arrow-up-right-from-square doc-row__external" />}
         </a>
@@ -287,7 +290,7 @@ function DocumentRow({ doc, showCategory }) {
             <i className="fa-solid fa-arrow-up-right-from-square" />
           </a>
         ) : (
-          <a href={href} download className="doc-row__btn" title="Download">
+          <a href={href} onClick={openFile} className="doc-row__btn" title="Download">
             <i className="fa-solid fa-download" />
           </a>
         )}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { timeAgo, formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
+import { openProjectFile } from '../lib/storage'
 
 export default function GlobalSearch() {
   const { project, basePath } = useProject()
@@ -126,7 +127,7 @@ export default function GlobalSearch() {
                     <SearchSection title="Documenten" icon="fa-solid fa-folder">
                       {results.documents.map(d => (
                         <SearchItem key={d.id} title={d.title} subtitle={d.file_name}
-                          time={d.created_at} href={d.file_path} fileType={d.file_type} />
+                          time={d.created_at} onClick={() => openProjectFile(d.file_path)} fileType={d.file_type} />
                       ))}
                     </SearchSection>
                   )}
@@ -135,7 +136,7 @@ export default function GlobalSearch() {
                       {results.meetingFiles.map(f => (
                         <SearchItem key={f.id} title={f.file_name}
                           subtitle={f.meeting?.title ? `Vergadering: ${f.meeting.title}` : ''}
-                          time={f.created_at} href={f.file_path} fileType={f.file_type} />
+                          time={f.created_at} onClick={() => openProjectFile(f.file_path)} fileType={f.file_type} />
                       ))}
                     </SearchSection>
                   )}

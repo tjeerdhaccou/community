@@ -82,14 +82,68 @@ export async function uploadImage(file, bucket = 'post-images') {
   return data.publicUrl
 }
 
-export async function uploadFile(file, bucket = 'project-files') {
+/**
+ * Upload a file to a (private) bucket. Returns only the storage `path`.
+ *
+ * `pathPrefix` scopes the object into a folder, e.g. `${projectId}/${profileId}`
+ * for member-files — the storage RLS policy treats the LAST folder segment as
+ * the owner, so member self-uploads must end in the owner's profile id.
+ *
+ * We intentionally do NOT return a public URL: project-files and member-files
+ * are private buckets, so callers must store the `path` and resolve a
+ * short-lived signed URL on demand via `getSignedUrl()`.
+ */
+export async function uploadFile(file, bucket = 'project-files', pathPrefix = '') {
   validateFile(file)
   const ext = file.name.split('.').pop().toLowerCase()
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+  const path = pathPrefix ? `${pathPrefix.replace(/\/+$/, '')}/${filename}` : filename
 
   const { error } = await supabase.storage.from(bucket).upload(path, file)
   if (error) throw error
 
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
-  return { publicUrl: data.publicUrl, path }
+  return { path }
+}
+
+/**
+ * Normalise a stored file reference to a bare storage object path.
+ *
+ * Accepts either a bare path (`documents/<projectId>/<file>`) or a legacy full
+ * public URL (rows created before the private-bucket migration stored
+ * `getPublicUrl(...)`). Used both for signing and for deletion.
+ */
+export function toStoragePath(pathOrUrl, bucket = 'project-files') {
+  if (!pathOrUrl) return null
+  const marker = `/${bucket}/`
+  let path = pathOrUrl.includes(marker)
+    ? pathOrUrl.split(marker)[1].split('?')[0]
+    : pathOrUrl
+  // Legacy public URLs are percent-encoded; storage object names are not.
+  try { path = decodeURIComponent(path) } catch { /* keep as-is */ }
+  return path
+}
+
+/**
+ * Resolve a stored file reference to a short-lived signed URL.
+ *
+ * Returns null on failure so callers can degrade gracefully. The signed URL is
+ * enforced by RLS, so it only succeeds when the current user may actually read
+ * the underlying document.
+ */
+export async function getSignedUrl(pathOrUrl, { bucket = 'project-files', expiresIn = 120 } = {}) {
+  const path = toStoragePath(pathOrUrl, bucket)
+  if (!path) return null
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
+  if (error) {
+    console.error('getSignedUrl failed', error)
+    return null
+  }
+  return data.signedUrl
+}
+
+/** Resolve a signed URL and open it in a new tab. */
+export async function openProjectFile(pathOrUrl, bucket = 'project-files') {
+  const url = await getSignedUrl(pathOrUrl, { bucket })
+  if (url) window.open(url, '_blank', 'noopener,noreferrer')
 }

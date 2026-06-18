@@ -6,6 +6,7 @@ import { canDo } from '../lib/permissions'
 import { useConfirm } from './ConfirmDialog'
 import { useEventDetail } from '../hooks/useEventDetail'
 import { formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
+import { openProjectFile } from '../lib/storage'
 
 const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
 const MONTHS_SHORT = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC']
@@ -276,7 +277,7 @@ function FilesTab({ files, canEdit, onUpload, onRemove }) {
               <div key={f.id} className="file-row">
                 <i className={fileIcon(f.file_type)} style={{ color: fileIconColor(f.file_type) }} />
                 <div className="file-row__info">
-                  <a href={f.file_path} target="_blank" rel="noopener noreferrer" className="file-row__name">
+                  <a href={f.file_path} onClick={(e) => { e.preventDefault(); openProjectFile(f.file_path) }} target="_blank" rel="noopener noreferrer" className="file-row__name">
                     {f.file_name}
                   </a>
                   <span className="file-row__meta">
@@ -286,7 +287,7 @@ function FilesTab({ files, canEdit, onUpload, onRemove }) {
                   </span>
                 </div>
                 <div className="file-row__actions">
-                  <a href={f.file_path} download className="file-row__download" title="Download">
+                  <a href={f.file_path} onClick={(e) => { e.preventDefault(); openProjectFile(f.file_path) }} className="file-row__download" title="Download">
                     <i className="fa-solid fa-download" />
                   </a>
                   {canEdit && (

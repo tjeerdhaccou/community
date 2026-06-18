@@ -5,7 +5,7 @@ import { logAudit } from '../lib/audit'
 import { dispatchNotification } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
-import { uploadFile } from '../lib/storage'
+import { uploadFile, toStoragePath } from '../lib/storage'
 
 export function useUpdates() {
   const { user } = useAuth()
@@ -170,13 +170,13 @@ export function useUpdates() {
   }
 
   async function addAttachment(updateId, file) {
-    const { publicUrl } = await uploadFile(file, 'project-files')
+    const { path } = await uploadFile(file, 'project-files')
     const { data, error } = await supabase
       .from('update_attachments')
       .insert({
         update_id: updateId,
         file_name: file.name,
-        file_path: publicUrl,
+        file_path: path,
         file_size: file.size,
         file_type: file.type,
         uploaded_by: user.id,
@@ -194,7 +194,7 @@ export function useUpdates() {
 
   async function removeAttachment(updateId, attachmentId, filePath) {
     // Strip storage path from public URL so we can also clean up the file itself.
-    const storagePath = filePath?.split('/project-files/')[1]
+    const storagePath = toStoragePath(filePath)
     if (storagePath) {
       await supabase.storage.from('project-files').remove([storagePath])
     }

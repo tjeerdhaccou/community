@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
+import { toStoragePath } from '../lib/storage'
 
 /**
  * Unified document hook that combines:
@@ -158,13 +159,11 @@ export function useAllDocuments() {
     const { error: upErr } = await supabase.storage.from('project-files').upload(path, file)
     if (upErr) throw upErr
 
-    const { data: { publicUrl } } = supabase.storage.from('project-files').getPublicUrl(path)
-
     const { data: doc, error } = await supabase.from('documents').insert({
       project_id: projectId, title, description: description || null,
       category: category || 'overig',
       visibility: visibility || 'members',
-      file_name: file.name, file_path: publicUrl,
+      file_name: file.name, file_path: path,
       file_size: file.size, file_type: file.type, uploaded_by: user?.id,
     }).select('id').single()
     if (error) throw error
@@ -199,7 +198,7 @@ export function useAllDocuments() {
   }
 
   async function removeDoc(id, source, filePath) {
-    const storagePath = filePath?.split('/project-files/')[1]
+    const storagePath = toStoragePath(filePath)
     if (storagePath) {
       await supabase.storage.from('project-files').remove([storagePath])
     }
