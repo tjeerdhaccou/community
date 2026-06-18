@@ -17,7 +17,7 @@
 //             slug is die in de database wordt opgeslagen (NIET het label).
 
 export const INTAKE_FIELD_GROUPS = [
-  'Persoonlijk', 'Adres', 'Huishouden', 'Wonen', 'Werk & inkomen', 'Motivatie', 'Noodcontact',
+  'Persoonlijk', 'Adres', 'Huishouden', 'Wonen', 'Motivatie', 'Noodcontact',
 ]
 
 // Gedeelde optielijsten (canonieke slugs). Hergebruikt voor o.a. geslacht +
@@ -96,21 +96,6 @@ export const INTAKE_FIELDS = [
   { key: 'housing_dream', label: 'Woondroom', type: 'textarea', column: 'housing_dream', group: 'Wonen',
     help: 'Beschrijf in een paar zinnen hoe jij ideaal zou willen wonen.' },
 
-  // Werk & inkomen
-  { key: 'occupation', label: 'Beroep', type: 'text', column: 'occupation', group: 'Werk & inkomen' },
-  { key: 'employer', label: 'Werkgever', type: 'text', column: 'employer', group: 'Werk & inkomen', help: 'Optioneel.' },
-  { key: 'income_indication', label: 'Inkomensindicatie', type: 'select', column: 'income_indication', group: 'Werk & inkomen',
-    help: 'Een indicatie helpt bij het toetsen van de haalbaarheid. Wordt vertrouwelijk behandeld.',
-    options: [
-      { value: 'tot-30k', label: 'Tot €30k' },
-      { value: '30k-50k', label: '€30–50k' },
-      { value: '50k-75k', label: '€50–75k' },
-      { value: '75k-100k', label: '€75–100k' },
-      { value: '100k+', label: '€100k+' },
-      { value: 'zeg-ik-liever-niet', label: 'Liever niet' },
-    ] },
-  { key: 'partner_occupation', label: 'Beroep partner', type: 'text', column: 'partner_occupation', group: 'Werk & inkomen',
-    help: 'Beroep van je partner, indien van toepassing.' },
 
   // Motivatie
   { key: 'motivation', label: 'Motivatie', type: 'textarea', column: 'motivation', group: 'Motivatie',
