@@ -43,7 +43,10 @@
      COLORS — Neutrals (Light Theme)
      Clean uses a warm, barely-there gray background with pure white cards.
      ────────────────────────────────────────────────────────────────────────── */
-  --bg-page:             #FBF7EE;   /* App background — warm paper (matcht marketing) */
+  --bg-page:             #F3F1ED;   /* App background — neutrale warme tint, gelijk aan [data-theme="warm"].
+                                        Bewust NIET de gelere cream #FBF7EE: die werd zichtbaar als flits vóór
+                                        de paint (data-theme wordt pas in een effect gezet) en blijvend op
+                                        non-scoped/light-pagina's zoals het intakeformulier. */
   --bg-surface:          #FFFFFF;   /* Cards, sidebar, modals, sheets */
   --bg-hover:            #F3EEE2;   /* Hover state on list items */
   --bg-active:           #EBE4D5;   /* Active/pressed state */
