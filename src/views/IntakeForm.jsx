@@ -27,13 +27,35 @@ export default function IntakeForm() {
     loadForm()
   }, [projectIdent])
 
+  // Pas het projectthema toe op het publieke formulier, zodat de achtergrond
+  // (en overige tokens) matchen met de getthemede site i.p.v. de default.
+  useEffect(() => {
+    if (!project) return
+    const resolvedTheme = project.default_theme || project.organization?.default_theme || 'clean'
+    const style = resolvedTheme === 'crowdbuilding' ? 'crowdbuilding' : 'clean'
+    const root = document.documentElement
+    const prevTheme = root.getAttribute('data-theme')
+    root.setAttribute('data-theme', style === 'crowdbuilding' ? 'crowdbuilding' : 'warm')
+    // Merkkleur toepassen (alleen in clean-stijl; crowdbuilding heeft eigen palet).
+    if (style !== 'crowdbuilding' && project.brand_primary_color) {
+      root.style.setProperty('--accent-primary', project.brand_primary_color)
+      root.style.setProperty('--border-focus', project.brand_primary_color)
+    }
+    return () => {
+      if (prevTheme) root.setAttribute('data-theme', prevTheme)
+      else root.removeAttribute('data-theme')
+      root.style.removeProperty('--accent-primary')
+      root.style.removeProperty('--border-focus')
+    }
+  }, [project])
+
   async function loadForm() {
     setLoading(true)
     try {
       const projectColumn = UUID_REGEX.test(projectIdent) ? 'id' : 'slug'
       const projectRes = await supabase
         .from('projects')
-        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, intake_enabled, intake_intro_text')
+        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, intake_enabled, intake_intro_text, default_theme, organization:organizations(default_theme)')
         .eq(projectColumn, projectIdent)
         .single()
 
