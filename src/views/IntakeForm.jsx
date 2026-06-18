@@ -94,7 +94,12 @@ export default function IntakeForm() {
 
     try {
       const now = new Date().toISOString()
+      // Id client-side genereren: anonieme inzenders hebben wel INSERT- maar geen
+      // SELECT-recht op intake_responses, dus kunnen we het id niet terugkrijgen via
+      // .select(). Met een eigen uuid kennen we 'm toch voor de bevestigingsmail.
+      const responseId = crypto.randomUUID()
       const { error: insertError } = await supabase.from('intake_responses').insert({
+        id: responseId,
         project_id: project.id,
         name: name.trim(),
         email: email.trim().toLowerCase(),
@@ -109,6 +114,12 @@ export default function IntakeForm() {
 
       if (insertError) throw insertError
       setSubmitted(true)
+
+      // Bevestigingsmail (best-effort): de aanmelder weet dat de aanvraag in
+      // behandeling is. Mag de succespagina nooit blokkeren — fouten loggen we stil.
+      supabase.functions
+        .invoke('send-member-email', { body: { type: 'intake_received', responseId } })
+        .catch(err => console.error('intake_received email failed:', err))
     } catch (err) {
       console.error('Submit error:', err)
       setError('Er ging iets mis bij het versturen. Probeer het opnieuw.')

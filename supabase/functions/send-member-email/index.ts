@@ -24,7 +24,88 @@ serve(async (req) => {
   }
 
   try {
-    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, personalMessage, orgName, orgUrl, inviterName, groupName, token } = await req.json()
+    const { type, memberName, memberEmail, projectName, reason, projectUrl, projectId, personalMessage, orgName, orgUrl, inviterName, groupName, token, responseId } = await req.json()
+
+    // Bevestigingsmail na een publieke intake-inzending. Aangeroepen vanaf het
+    // anonieme intakeformulier, daarom vertrouwen we GEEN client-input voor de
+    // ontvanger: we zoeken naam/e-mail/project op via responseId met de service
+    // key. Zo kan dit endpoint niet misbruikt worden om naar willekeurige
+    // adressen te mailen.
+    if (type === 'intake_received') {
+      if (!responseId) {
+        return new Response(JSON.stringify({ error: 'No responseId' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+        console.error('[send-member-email] Missing SUPABASE_URL or SERVICE_ROLE_KEY')
+        return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+
+      const { data: resp, error: respErr } = await admin
+        .from('intake_responses')
+        .select('name, email, projects(name, logo_url)')
+        .eq('id', responseId)
+        .single()
+
+      if (respErr || !resp?.email) {
+        console.error('[send-member-email] intake_received lookup failed:', respErr)
+        return new Response(JSON.stringify({ error: 'Response not found' }), {
+          status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const proj = (resp.projects as { name?: string; logo_url?: string } | null) || null
+      const projName = proj?.name || 'het project'
+      const firstName = (resp.name || '').trim().split(' ')[0]
+      const greeting = firstName ? `Hoi ${firstName}` : 'Hoi'
+
+      const subject = `We hebben je aanmelding voor ${projName} ontvangen`
+      const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px;">
+          ${proj?.logo_url ? `<img src="${proj.logo_url}" alt="${projName}" style="height:48px;margin-bottom:24px;" />` : ''}
+          <h1 style="font-size: 24px; color: #1a1a2e; margin-bottom: 16px;">${greeting},</h1>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            Bedankt voor je aanmelding bij <strong>${projName}</strong>. We hebben 'm goed ontvangen.
+          </p>
+          <p style="font-size: 16px; color: #4a4a6a; line-height: 1.6;">
+            De initiatiefnemers bekijken je aanmelding en nemen daarna contact met je op. Je hoeft nu even niets te doen.
+          </p>
+          <p style="font-size: 14px; color: #9ba1b0; margin-top: 32px;">
+            Dit is een automatisch bericht van ${projName}. Heb je je niet aangemeld? Dan kun je deze mail negeren.
+          </p>
+        </div>
+      `
+
+      if (!RESEND_API_KEY) {
+        console.log(`[send-member-email] No RESEND_API_KEY set. Would send intake_received to ${resp.email}`)
+        return new Response(JSON.stringify({ success: true, dry_run: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: `${FROM_NAME} <${FROM_EMAIL}>`, to: [resp.email], subject, html }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        console.error('Resend error (intake_received):', data)
+        return new Response(JSON.stringify({ error: 'Email send failed', details: data }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      return new Response(JSON.stringify({ success: true, id: data.id }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     if (!memberEmail) {
       return new Response(JSON.stringify({ error: 'No email address' }), {
