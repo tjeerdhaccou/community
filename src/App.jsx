@@ -23,6 +23,7 @@ import AdviseurTeam from './views/AdviseurTeam'
 import Profile from './views/Profile'
 import ProfileIntake from './views/ProfileIntake'
 import DocumentArchive from './views/DocumentArchive'
+import DocumentShare from './views/DocumentShare'
 import OrgDashboard from './views/OrgDashboard'
 import OrgSettings from './views/OrgSettings'
 import NewProject from './views/NewProject'
@@ -320,6 +321,7 @@ function NormalRoutes() {
 
       <Route path="/" element={<Landing />} />
       <Route path="/start" element={<Start />} />
+      <Route path="/d/:code" element={<AuthGuard><DocumentShare /></AuthGuard>} />
       <Route path="/dashboard" element={<AuthGuard><PostLoginRedirect /></AuthGuard>} />
 
       {/* Platform admin */}

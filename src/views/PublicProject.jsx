@@ -455,14 +455,8 @@ export default function PublicProject({ slugOverride }) {
     load()
   }, [slug, isPreview])
 
-  // Apply project branding
-  useEffect(() => {
-    if (!project) return
-    if (project.brand_primary_color) {
-      document.documentElement.style.setProperty('--accent-primary', project.brand_primary_color)
-    }
-    return () => document.documentElement.style.removeProperty('--accent-primary')
-  }, [project])
+  // Project-merkkleuren worden niet meer toegepast (zie ThemeContext): alle
+  // surfaces gebruiken het vaste functionele palet, ook de publieke pagina.
 
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
 

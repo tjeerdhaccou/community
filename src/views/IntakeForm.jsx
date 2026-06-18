@@ -37,11 +37,8 @@ export default function IntakeForm() {
     const root = document.documentElement
     const prevTheme = root.getAttribute('data-theme')
     root.setAttribute('data-theme', style === 'crowdbuilding' ? 'crowdbuilding' : 'warm')
-    // Merkkleur toepassen (alleen in clean-stijl; crowdbuilding heeft eigen palet).
-    if (style !== 'crowdbuilding' && project.brand_primary_color) {
-      root.style.setProperty('--accent-primary', project.brand_primary_color)
-      root.style.setProperty('--border-focus', project.brand_primary_color)
-    }
+    // Project-merkkleuren worden niet meer toegepast (zie ThemeContext): het
+    // vaste functionele palet wordt overal gebruikt.
     return () => {
       if (prevTheme) root.setAttribute('data-theme', prevTheme)
       else root.removeAttribute('data-theme')
@@ -129,8 +126,8 @@ export default function IntakeForm() {
     }
   }
 
-  // Apply project branding
-  const brandColor = project?.brand_primary_color || '#4A90D9'
+  // Functioneel accent (geen project-merkkleur meer — zie ThemeContext).
+  const brandColor = 'var(--accent-primary)'
 
   if (loading) {
     return (

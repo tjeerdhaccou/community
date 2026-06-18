@@ -67,6 +67,7 @@ export function useAllDocuments() {
       id: d.id,
       source: 'document',
       doc_type: d.doc_type || 'file',
+      share_code: d.share_code,
       url: d.url,
       file_name: d.file_name,
       file_path: d.file_path,

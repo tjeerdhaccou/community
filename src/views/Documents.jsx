@@ -6,6 +6,8 @@ import { useAllDocuments } from '../hooks/useAllDocuments'
 import { useWorkgroups } from '../hooks/useWorkgroups'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 import { openProjectFile } from '../lib/storage'
+import { getDocumentShareUrl } from '../lib/subdomain'
+import { useToast } from '../components/Toast'
 import {
   PROJECT_PHASES, formatFileSize, fileIcon, fileIconColor, linkInfo, timeAgo,
 } from '../lib/constants'
@@ -248,11 +250,22 @@ function emptyMessage(tab) {
 
 // ===== Document Row =====
 function DocumentRow({ doc, showCategory }) {
+  const toast = useToast()
   const isLink = doc.doc_type === 'link'
   const link = isLink ? linkInfo(doc.url) : null
   const href = isLink ? doc.url : doc.file_path
   // External links open directly; stored files resolve a short-lived signed URL.
   const openFile = isLink ? undefined : (e) => { e.preventDefault(); openProjectFile(doc.file_path) }
+
+  async function copyShareLink(e) {
+    e.preventDefault()
+    try {
+      await navigator.clipboard.writeText(getDocumentShareUrl(doc.share_code))
+      toast.success('Deellink gekopieerd')
+    } catch {
+      toast.error('Kopiëren mislukt')
+    }
+  }
 
   return (
     <div className="doc-row">
@@ -285,6 +298,11 @@ function DocumentRow({ doc, showCategory }) {
         </div>
       </div>
       <div className="doc-row__actions">
+        {doc.share_code && (
+          <button type="button" onClick={copyShareLink} className="doc-row__btn" title="Kopieer deellink">
+            <i className="fa-solid fa-link" />
+          </button>
+        )}
         {isLink ? (
           <a href={href} target="_blank" rel="noopener noreferrer" className="doc-row__btn" title="Openen">
             <i className="fa-solid fa-arrow-up-right-from-square" />

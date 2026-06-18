@@ -61,26 +61,13 @@ export function ThemeProvider({ children, projectBranding, scope }) {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [storageKey])
 
-  useEffect(() => {
-    // Project-merkkleuren toepassen als CSS custom properties.
-    // Uitzondering: in de CrowdBuilding-stijl tonen we het volledige merkpalet,
-    // dus project-branding mag de structuurkleur dan niet inline overschrijven.
-    const applyBranding = style !== 'crowdbuilding'
-    if (applyBranding && projectBranding?.brand_primary_color) {
-      document.documentElement.style.setProperty('--accent-primary', projectBranding.brand_primary_color)
-      document.documentElement.style.setProperty('--border-focus', projectBranding.brand_primary_color)
-    }
-    if (applyBranding && projectBranding?.brand_accent_color) {
-      document.documentElement.style.setProperty('--accent-green', projectBranding.brand_accent_color)
-    }
-
-    return () => {
-      // Clean up when leaving project
-      document.documentElement.style.removeProperty('--accent-primary')
-      document.documentElement.style.removeProperty('--border-focus')
-      document.documentElement.style.removeProperty('--accent-green')
-    }
-  }, [projectBranding, style])
+  // Project-merkkleuren (brand_primary_color / brand_accent_color) worden
+  // bewust NIET meer toegepast. Ze overschreven --accent-primary/--accent-green
+  // inline op <html> in zowel licht als donker, waardoor donkere merkkleuren
+  // onleesbaar werden tegen de zwarte dark-mode achtergrond. Het functionele
+  // palet (uit clean-tokens.css) is per thema al op contrast afgestemd, dus
+  // alle projecten gebruiken nu datzelfde palet. Sluit aan op de geparkeerde
+  // merkkleur-kiezer (botste met het functionele palet).
 
   return (
     <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey }}>

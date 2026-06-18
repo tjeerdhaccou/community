@@ -98,3 +98,12 @@ export function getPublicSiteUrl(project) {
 function getMainOrigin() {
   return MAIN_DOMAIN ? `https://${MAIN_DOMAIN}` : window.location.origin
 }
+
+/**
+ * Clean, stable share URL for a document (buuur.nl/d/<code>).
+ * Resolved server-side by /api/d/[code] to a fresh signed URL on each click.
+ */
+export function getDocumentShareUrl(shareCode) {
+  if (!shareCode) return ''
+  return `${getMainOrigin()}/d/${shareCode}`
+}
