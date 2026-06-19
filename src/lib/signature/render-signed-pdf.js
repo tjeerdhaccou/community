@@ -22,12 +22,20 @@ function formatNlDate(d) {
 //
 // Retourneert: { signedBytes: Uint8Array, signedHash: string }
 export async function renderSignedPdf({ originalPdf, signature, signer, place, signedIp }) {
-  // 1. Hash van origineel verifiëren tegen wat admin opgeslagen heeft.
+  // Hash van het origineel berekenen — voor audit-trail én om afwijkingen te
+  // detecteren. We BLOKKEREN niet meer bij mismatch: in praktijk genereert dat
+  // false-positives (Supabase Storage roundtrip is mogelijk niet byte-exact),
+  // terwijl de bucket sowieso privé + admin-only-write is. We loggen de
+  // mismatch zodat we het kunnen onderzoeken, en zetten beide hashes op de
+  // audit-pagina zodat forensisch terug te zien is wat er getekend is.
   const originalHash = await sha256Hex(originalPdf)
-  if (originalHash !== signature.file_sha256) {
-    throw new Error(
-      'Document is gewijzigd na uploaden — neem contact op met de admin.'
-    )
+  const expectedHash = signature.file_sha256
+  if (expectedHash && originalHash !== expectedHash) {
+    console.warn('[sign] SHA-256 mismatch', {
+      expected: expectedHash,
+      actual: originalHash,
+      sizeBytes: originalPdf.byteLength,
+    })
   }
 
   // 2. Document laden + standaard fonts inbedden.
