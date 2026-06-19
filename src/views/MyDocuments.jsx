@@ -6,6 +6,8 @@ import { useSignatureRequests } from '../hooks/useSignatureRequests'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { useToast } from '../components/Toast'
+import { supabase } from '../lib/supabase'
+import { logger } from '../lib/logger'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
 
 const SIGNER_STATUS_CONFIG = {
@@ -396,12 +398,56 @@ function SignatureCard({ signature, onOpen }) {
           </button>
         )}
         {signature.status === 'signed' && (
-          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-            Getekend op {new Date(signature.signed_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+              Getekend op {new Date(signature.signed_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+            <SignedDownloadButton signedPath={signature.signed_file_path} fileName={signature.file_name} />
+          </div>
         )}
       </div>
     </div>
+  )
+}
+
+// Knop om de getekende versie van een tekenverzoek te downloaden. Werkt op
+// de privé signatures-bucket via een tijdelijke signed URL (RLS laat signers
+// hun eigen signed-<id>.pdf lezen).
+function SignedDownloadButton({ signedPath, fileName }) {
+  const [busy, setBusy] = useState(false)
+  async function onClick(e) {
+    e.stopPropagation()
+    if (!signedPath) return
+    setBusy(true)
+    try {
+      const { data, error } = await supabase.storage
+        .from('signatures')
+        .createSignedUrl(signedPath, 120)
+      if (error || !data?.signedUrl) throw new Error(error?.message || 'Geen URL')
+      const res = await fetch(data.signedUrl)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `Getekend - ${fileName || 'document.pdf'}`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err) {
+      logger.error('Download getekende PDF mislukt', err)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <button
+      type="button"
+      className="btn-secondary"
+      onClick={onClick}
+      disabled={busy || !signedPath}
+      style={{ fontSize: 13 }}
+    >
+      <i className="fa-solid fa-download" />
+      {busy ? 'Laden…' : 'Download getekende versie'}
+    </button>
   )
 }
 

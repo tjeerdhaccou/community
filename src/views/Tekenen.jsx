@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { useToast } from '../components/Toast'
 import { logger, friendlyError } from '../lib/logger'
-import { renderSignedPdf, getClientIp } from '../lib/signature/render-signed-pdf'
+import { renderSignedPdf } from '../lib/signature/render-signed-pdf'
 
 export default function Tekenen() {
   const { id } = useParams() // signer_id
@@ -136,7 +136,10 @@ export default function Tekenen() {
       try {
         const pdfjs = await import('pdfjs-dist')
         pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
-        const doc = await pdfjs.getDocument({ data: pdfBytes }).promise
+        // pdfjs draagt de buffer over naar zijn worker thread (transferable) —
+        // dat detacht het origineel. We sturen een kopie zodat onze bytes
+        // intact blijven voor de signing-flow én voor de hash-verify.
+        const doc = await pdfjs.getDocument({ data: pdfBytes.slice() }).promise
         if (cancelled) return
 
         const container = canvasContainerRef.current
@@ -223,13 +226,14 @@ export default function Tekenen() {
 
     setSubmitting(true)
     try {
-      const signedIp = await getClientIp()
+      // Defensief: kopie maken zodat eventuele toekomstige transfers door
+      // pdf-lib of crypto.subtle de bron-bytes niet kunnen detachen.
       const { signedBytes } = await renderSignedPdf({
-        originalPdf: pdfBytes,
+        originalPdf: pdfBytes.slice(),
         signature: signer,
         signer: { full_name: profile?.full_name ?? user?.email ?? 'Onbekend', email: user?.email ?? null },
         place: place.trim(),
-        signedIp,
+        signedIp: null, // CSP blokt externe IP-lookup; IP wordt server-side via een trigger gevuld (TODO)
       })
 
       // Upload signed PDF
@@ -276,6 +280,28 @@ export default function Tekenen() {
       setSubmitting(false)
     }
   }, [signer, pdfBytes, place, agreed, profile, user, basePath, navigate, toast])
+
+  // Download van het originele document (vóór tekenen) — lid wil het rustig
+  // kunnen lezen / offline doornemen voordat ze tekenen.
+  const onDownloadOriginal = useCallback(async () => {
+    if (!signer) return
+    try {
+      const { data, error: urlErr } = await supabase.storage
+        .from('signatures')
+        .createSignedUrl(signer.file_path, 120)
+      if (urlErr || !data?.signedUrl) throw new Error(urlErr?.message || 'Geen URL')
+      const res = await fetch(data.signedUrl)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = signer.file_name || 'document.pdf'
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch (err) {
+      logger.error('Download mislukt', err)
+      toast.error('Download mislukt — probeer opnieuw.')
+    }
+  }, [signer, toast])
 
   // 4. Weigeren-action
   const onDecline = useCallback(async () => {
@@ -403,9 +429,20 @@ export default function Tekenen() {
         boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
       }}>
         <h3 style={{ marginTop: 0, fontSize: 16 }}>Ondertekenen</h3>
-        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-          Je krabbel, naam, plaats en de datum komen op de gemarkeerde plek in het document. Een audit-pagina met IP en hash wordt achteraan toegevoegd.
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+          Je krabbel, naam, plaats en de datum komen op de gemarkeerde plek in het document. Een audit-pagina met hash en tijdstip wordt achteraan toegevoegd.
         </p>
+
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={onDownloadOriginal}
+          disabled={submitting}
+          style={{ width: '100%', marginBottom: 16, fontSize: 13 }}
+        >
+          <i className="fa-solid fa-download" />
+          Download origineel om te lezen
+        </button>
 
         <div style={{ marginBottom: 12 }}>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Naam</label>
