@@ -52,6 +52,7 @@ type Type =
   | 'new_update_comment'
   | 'document_request'
   | 'document_request_submitted'
+  | 'signature_request'
 
 // Mapping van notificatie-type naar preference-kolom
 const PREF_COLUMN: Record<Type, 'pref_updates' | 'pref_prikbord' | 'pref_events' | 'pref_documents'> = {
@@ -64,6 +65,7 @@ const PREF_COLUMN: Record<Type, 'pref_updates' | 'pref_prikbord' | 'pref_events'
   new_update_comment: 'pref_updates',
   document_request: 'pref_documents',
   document_request_submitted: 'pref_documents',
+  signature_request: 'pref_documents',
 }
 
 // Types die alleen in-app getoond worden (geen e-mail).
@@ -548,6 +550,31 @@ async function loadContext(
     }
   }
 
+  if (type === 'signature_request') {
+    const { data: sr } = await admin
+      .from('signature_requests')
+      .select('title, description, due_at')
+      .eq('id', referenceId)
+      .single()
+    if (!sr) return null
+    const deadline = sr.due_at ? formatNlDate(sr.due_at) : null
+    return {
+      project, actorName,
+      emailSubject: `Tekenverzoek in ${project.name}: ${sr.title}`,
+      emailIntro: `Het team van ${project.name} heeft je gevraagd om een document te ondertekenen.`,
+      emailHeading: sr.title,
+      emailBody:
+        (sr.description ? truncate(sr.description, 200) : 'Open het verzoek om de overeenkomst te bekijken en te ondertekenen.')
+        + (deadline ? `\n\nReageer voor: ${deadline}` : ''),
+      // emailLinkPath wijst naar /mijn-documenten — de lijst met openstaande
+      // tekenverzoeken. Vanaf daar gaat de lid naar /tekenen/<signer_id>.
+      emailLinkPath: '/mijn-documenten',
+      inAppTitle: `Nieuw tekenverzoek: ${sr.title}`,
+      inAppBody: sr.description ? truncate(sr.description, 100) : null,
+      relatedType: 'document_request',
+    }
+  }
+
   return null
 }
 
@@ -641,6 +668,18 @@ async function resolveRecipients(
 
   if (type === 'document_request_submitted') {
     return await memberIds(admin, projectId, 'moderator')
+  }
+
+  if (type === 'signature_request') {
+    // Alle signers van dit verzoek krijgen een notificatie. Alleen pending/viewed
+    // — wie al getekend of geweigerd heeft, niet opnieuw lastigvallen.
+    const { data: signers } = await admin
+      .from('signature_request_signers')
+      .select('profile_id, status')
+      .eq('request_id', refId)
+    return (signers || [])
+      .filter((s: any) => s.status === 'pending' || s.status === 'viewed')
+      .map((s: any) => s.profile_id)
   }
 
   return []

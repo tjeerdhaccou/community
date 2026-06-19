@@ -12,6 +12,8 @@
   "dependencies": {
     "@sentry/react": "^10.46.0",
     "@supabase/supabase-js": "^2.49.1",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.0.227",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-easy-crop": "^5.5.7",

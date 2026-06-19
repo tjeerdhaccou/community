@@ -44,6 +44,7 @@ import PageBuilder from './views/PageBuilder'
 import Onboarding from './views/Beheer/Onboarding'
 import Groepen from './views/Beheer/Groepen'
 import MyDocuments from './views/MyDocuments'
+import Tekenen from './views/Tekenen'
 import Leden from './views/Leden'
 import Organisatie from './views/Organisatie'
 import DocumentenHub from './views/DocumentenHub'
@@ -343,6 +344,7 @@ function NormalRoutes() {
         <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
         <Route path="documenten" element={<DocumentenHub />} />
         <Route path="mijn-documenten" element={<MyDocuments />} />
+        <Route path="tekenen/:id" element={<Tekenen />} />
         <Route path="pro-updates" element={<ProfessionalUpdates />} />
         <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
         <Route path="organisatie" element={<Organisatie />} />
@@ -438,6 +440,7 @@ function ProjectSubdomainApp({ slug }) {
           <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
           <Route path="documenten" element={<DocumentenHub />} />
           <Route path="mijn-documenten" element={<MyDocuments />} />
+        <Route path="tekenen/:id" element={<Tekenen />} />
           <Route path="pro-updates" element={<ProfessionalUpdates />} />
           <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
           <Route path="organisatie" element={<Organisatie />} />
