@@ -149,15 +149,7 @@ export async function renderSignedPdf({ originalPdf, signature, signer, place, s
   return { signedBytes, signedHash }
 }
 
-// Best-effort IP-detectie via een publieke service. Faalt stil (geen IP →
-// audit-pagina noteert "onbekend"). Niet kritisch voor SES-geldigheid.
-export async function getClientIp() {
-  try {
-    const res = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' })
-    if (!res.ok) return null
-    const data = await res.json()
-    return data?.ip ?? null
-  } catch {
-    return null
-  }
-}
+// IP-detectie deden we eerst via ipify, maar de CSP staat alleen Supabase/
+// Sentry/CrowdBuilding-hosts toe. Voor nu blijft signedIp leeg in de audit-
+// pagina; client IP kunnen we later via een Supabase edge function vastleggen
+// (die heeft toegang tot de request headers).
