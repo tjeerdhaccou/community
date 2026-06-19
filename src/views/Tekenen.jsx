@@ -226,6 +226,17 @@ export default function Tekenen() {
 
     setSubmitting(true)
     try {
+      // Server-side IP-lookup via edge function (CSP staat externe IP-services
+      // niet toe; edge functions zitten wél op de whitelist). Faalt stil naar
+      // null — niet kritisch voor SES-geldigheid.
+      let signedIp = null
+      try {
+        const { data: ipData } = await supabase.functions.invoke('get-client-ip')
+        signedIp = ipData?.ip ?? null
+      } catch (e) {
+        logger.error('get-client-ip mislukt', e)
+      }
+
       // Defensief: kopie maken zodat eventuele toekomstige transfers door
       // pdf-lib of crypto.subtle de bron-bytes niet kunnen detachen.
       const { signedBytes } = await renderSignedPdf({
@@ -233,7 +244,7 @@ export default function Tekenen() {
         signature: signer,
         signer: { full_name: profile?.full_name ?? user?.email ?? 'Onbekend', email: user?.email ?? null },
         place: place.trim(),
-        signedIp: null, // CSP blokt externe IP-lookup; IP wordt server-side via een trigger gevuld (TODO)
+        signedIp,
       })
 
       // Upload signed PDF
