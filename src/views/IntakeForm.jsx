@@ -307,11 +307,6 @@ export default function IntakeForm({ slugOverride } = {}) {
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
             </button>
-
-            <p className="intake-privacy">
-              <i className="fa-solid fa-lock" /> Je gegevens worden alleen gedeeld met de
-              beheerders van {project.name}.
-            </p>
           </form>
         </div>
       </div>
