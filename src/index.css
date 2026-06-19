@@ -9539,21 +9539,11 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   animation: toast-in 200ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
   max-width: 420px;
 }
-.toast--error {
-  background: var(--bg-surface, #fff);
-  color: var(--accent-red, #E74C3C);
-  border-left: 3px solid var(--accent-red, #E74C3C);
-}
-.toast--success {
-  background: var(--bg-surface, #fff);
-  color: var(--accent-green, #3BD269);
-  border-left: 3px solid var(--accent-green, #3BD269);
-}
-.toast--info {
-  background: var(--bg-surface, #fff);
-  color: var(--accent-primary, #4A90D9);
-  border-left: 3px solid var(--accent-primary, #4A90D9);
-}
+/* Neutrale kaart; alleen het icoon krijgt status-kleur (color: erft door
+   .toast span override niet naar de tekst). Geen border-accent. */
+.toast--error   { background: var(--bg-surface, #fff); color: var(--accent-red, #E74C3C); }
+.toast--success { background: var(--bg-surface, #fff); color: var(--accent-green, #3BD269); }
+.toast--info    { background: var(--bg-surface, #fff); color: var(--accent-primary, #4A90D9); }
 .toast span { color: var(--text-primary); }
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(12px); }
