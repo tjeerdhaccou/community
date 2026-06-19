@@ -6,6 +6,7 @@ import { canDo } from '../lib/permissions'
 import { signOut } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { isProjectDomain } from '../lib/subdomain'
+import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
 
 const NAV_SECTIONS = [
   {
@@ -67,6 +68,11 @@ export default function Sidebar() {
   const [intakePendingCount, setIntakePendingCount] = useState(0)
   const [docRequestCount, setDocRequestCount] = useState(0)
   const { user } = useAuth()
+  const signatureRequestCount = useSignatureRequestCount()
+  // Eén badge op 'Documenten' voor alle openstaande acties van de user:
+  // documentverzoeken (upload/ter inzage/tekenen-via-doc-request) + nieuwe
+  // tekenverzoeken (signature_requests).
+  const documentenActionCount = docRequestCount + signatureRequestCount
 
   useEffect(() => {
     // Geen aanmeldingen-badge als ledenwerving-door-de-community uit staat.
@@ -148,8 +154,8 @@ export default function Sidebar() {
         {item.to === 'members' && intakePendingCount > 0 && (
           <span className="sidebar-badge">{intakePendingCount}</span>
         )}
-        {item.to === 'documenten' && docRequestCount > 0 && (
-          <span className="sidebar-badge">{docRequestCount}</span>
+        {item.to === 'documenten' && documentenActionCount > 0 && (
+          <span className="sidebar-badge">{documentenActionCount}</span>
         )}
       </div>
     )

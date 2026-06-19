@@ -9,6 +9,7 @@ import { canDo } from '../lib/permissions'
 import { safeStorage } from '../lib/safeStorage'
 import Skeleton from '../components/Skeleton'
 import MemberWelcome from '../components/MemberWelcome'
+import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
 
 export default function Dashboard() {
   const { project, role, loading, basePath, onboardingActive } = useProject()
@@ -28,6 +29,7 @@ export default function Dashboard() {
     navigate(`${basePath}/aan-de-slag`, { replace: true })
   }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
   const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
+  const signatureCount = useSignatureRequestCount()
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
 
@@ -205,6 +207,22 @@ export default function Dashboard() {
           <div className="dash-intake-alert__text">
             <strong>{feed.docRequests} {feed.docRequests === 1 ? 'documentverzoek' : 'documentverzoeken'}</strong>
             <span>wacht op jouw actie</span>
+          </div>
+          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+        </div>
+      )}
+
+      {/* Signature request alert — eigen card omdat tekenen visueel anders is dan
+          documentverzoek (oranje accent + ander icoon) en uit de DB-tabel
+          signature_request_signers komt i.p.v. document_requests. */}
+      {signatureCount > 0 && (
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/documenten?tab=mijn`)} role="button" tabIndex={0}>
+          <div className="dash-intake-alert__icon" style={{ background: 'rgba(245, 166, 35, 0.12)', color: 'var(--accent-orange, #F5A623)' }}>
+            <i className="fa-solid fa-signature" />
+          </div>
+          <div className="dash-intake-alert__text">
+            <strong>{signatureCount} {signatureCount === 1 ? 'tekenverzoek' : 'tekenverzoeken'}</strong>
+            <span>wacht op jouw handtekening</span>
           </div>
           <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
         </div>
