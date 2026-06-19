@@ -1,9 +1,19 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMyDocuments } from '../hooks/useMyDocuments'
 import { useDocumentRequests } from '../hooks/useDocumentRequests'
+import { useSignatureRequests } from '../hooks/useSignatureRequests'
 import { useAuth } from '../contexts/AuthContext'
+import { useProject } from '../contexts/ProjectContext'
 import { useToast } from '../components/Toast'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
+
+const SIGNER_STATUS_CONFIG = {
+  pending:  { label: 'Wacht op tekenen', color: 'var(--accent-orange, #F5A623)', bg: 'rgba(245, 166, 35, 0.12)' },
+  viewed:   { label: 'Bekeken',          color: 'var(--accent-blue, #4A90D9)',   bg: 'rgba(var(--accent-blue-rgb), 0.12)' },
+  signed:   { label: 'Getekend',         color: 'var(--accent-green, #3BD269)',  bg: 'rgba(59, 210, 105, 0.12)' },
+  declined: { label: 'Geweigerd',        color: 'var(--accent-red, #E53E3E)',    bg: 'rgba(229, 62, 62, 0.12)' },
+}
 
 const CATEGORY_LABELS = {
   contract: 'Contract',
@@ -29,9 +39,12 @@ const STATUS_CONFIG = {
 
 export default function MyDocuments() {
   const { user } = useAuth()
+  const { basePath } = useProject()
+  const navigate = useNavigate()
   const toast = useToast()
   const { files, loading: filesLoading, download, upload } = useMyDocuments()
   const { requests, loading: requestsLoading, submitResponse, markReviewed } = useDocumentRequests()
+  const { requests: signatures, loading: signaturesLoading } = useSignatureRequests()
   const [uploading, setUploading] = useState(null)
   const requestFileRef = useRef(null)
   const [activeRequestId, setActiveRequestId] = useState(null)
@@ -39,7 +52,14 @@ export default function MyDocuments() {
   const [detailFile, setDetailFile] = useState(null)
   const [tab, setTab] = useState('verzoeken')
 
-  const loading = filesLoading || requestsLoading
+  const loading = filesLoading || requestsLoading || signaturesLoading
+
+  // Tekenverzoeken: cancelled verzoeken (admin trok in) niet tonen — voor lid
+  // niet meer relevant. De rest groeperen op signer-status.
+  const activeSignatures = signatures.filter(s => s.request_status !== 'cancelled')
+  const pendingSignatures = activeSignatures.filter(s => s.status === 'pending' || s.status === 'viewed')
+  const signedSignatures  = activeSignatures.filter(s => s.status === 'signed')
+  const declinedSignatures = activeSignatures.filter(s => s.status === 'declined')
 
   const pendingRequests = requests.filter(r => r.status === 'pending')
   const submittedRequests = requests.filter(r => r.status === 'submitted')
@@ -93,6 +113,8 @@ export default function MyDocuments() {
 
   const requestCount = requests.length
   const docCount = teamFiles.length
+  const signatureCount = activeSignatures.length
+  const pendingSignatureCount = pendingSignatures.length
 
   return (
     <div className="view-mydocuments">
@@ -108,6 +130,11 @@ export default function MyDocuments() {
           <i className="fa-solid fa-file-circle-question" />
           Verzoeken
           {requestCount > 0 && <span className="seg-tab__count">{requestCount}</span>}
+        </button>
+        <button className={`seg-tab ${tab === 'tekenen' ? 'seg-tab--active' : ''}`} onClick={() => setTab('tekenen')}>
+          <i className="fa-solid fa-signature" />
+          Tekenen
+          {pendingSignatureCount > 0 && <span className="seg-tab__count">{pendingSignatureCount}</span>}
         </button>
         <button className={`seg-tab ${tab === 'documenten' ? 'seg-tab--active' : ''}`} onClick={() => setTab('documenten')}>
           <i className="fa-solid fa-folder-open" />
@@ -128,6 +155,15 @@ export default function MyDocuments() {
           onMarkReviewed={handleMarkReviewed}
           onDownload={download}
           onOpenDetail={setDetailRequest}
+        />
+      )}
+
+      {tab === 'tekenen' && (
+        <SignaturesTab
+          pending={pendingSignatures}
+          signed={signedSignatures}
+          declined={declinedSignatures}
+          onOpen={(signerId) => navigate(`${basePath}/tekenen/${signerId}`)}
         />
       )}
 
@@ -248,6 +284,123 @@ function RequestsTab({ pendingRequests, submittedRequests, completedRequests, up
           </div>
         </section>
       )}
+    </div>
+  )
+}
+
+function SignaturesTab({ pending, signed, declined, onOpen }) {
+  const hasAny = pending.length > 0 || signed.length > 0 || declined.length > 0
+  if (!hasAny) {
+    return (
+      <div className="empty-inline">
+        <i className="fa-solid fa-signature" />
+        <h3 className="empty-inline__title">Geen tekenverzoeken</h3>
+        <p>Er staan geen documenten klaar om te ondertekenen.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="my-docs">
+      {pending.length > 0 && (
+        <section className="my-docs__section">
+          <h2 className="my-docs__section-title">
+            <i className="fa-solid fa-circle-exclamation" style={{ color: 'var(--accent-orange, #F5A623)' }} />
+            Actie vereist
+            <span className="my-docs__count">{pending.length}</span>
+          </h2>
+          <div className="my-docs__cards">
+            {pending.map(sig => <SignatureCard key={sig.signer_id} signature={sig} onOpen={() => onOpen(sig.signer_id)} />)}
+          </div>
+        </section>
+      )}
+
+      {signed.length > 0 && (
+        <section className="my-docs__section">
+          <h2 className="my-docs__section-title">
+            <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
+            Getekend
+          </h2>
+          <div className="my-docs__cards">
+            {signed.map(sig => <SignatureCard key={sig.signer_id} signature={sig} onOpen={() => onOpen(sig.signer_id)} />)}
+          </div>
+        </section>
+      )}
+
+      {declined.length > 0 && (
+        <section className="my-docs__section">
+          <h2 className="my-docs__section-title">
+            <i className="fa-solid fa-circle-xmark" style={{ color: 'var(--accent-red, #E53E3E)' }} />
+            Geweigerd
+          </h2>
+          <div className="my-docs__cards">
+            {declined.map(sig => <SignatureCard key={sig.signer_id} signature={sig} onOpen={() => onOpen(sig.signer_id)} />)}
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}
+
+function SignatureCard({ signature, onOpen }) {
+  const sc = SIGNER_STATUS_CONFIG[signature.status]
+  const isOverdue = signature.due_at && new Date(signature.due_at) < new Date() && signature.status !== 'signed' && signature.status !== 'declined'
+  const canSign = signature.status === 'pending' || signature.status === 'viewed'
+
+  return (
+    <div className={`request-card ${isOverdue ? 'request-card--overdue' : ''}`} onClick={onOpen} role="button" tabIndex={0} style={{ cursor: 'pointer' }}>
+      <div className="request-card__header">
+        <span className="request-card__type" style={{ background: sc.bg, color: sc.color }}>
+          {sc.label}
+        </span>
+        {signature.due_at && (
+          <span className={`request-card__deadline ${isOverdue ? 'request-card__deadline--overdue' : ''}`}>
+            <i className="fa-solid fa-calendar" />
+            {new Date(signature.due_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+      </div>
+
+      <h3 className="request-card__title">{signature.title}</h3>
+      {signature.description && <p className="request-card__desc">{signature.description}</p>}
+
+      <div className="request-card__attachment-preview">
+        <i className="fa-solid fa-file-pdf" style={{ color: 'var(--accent-red, #E53E3E)' }} />
+        <span>{signature.file_name}</span>
+      </div>
+
+      <div className="request-card__footer">
+        <div className="request-card__meta">
+          {signature.creator_name && (
+            <span><i className="fa-solid fa-user" /> {signature.creator_name}</span>
+          )}
+          <span>{timeAgo(signature.created_at)}</span>
+        </div>
+        {canSign && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={(e) => { e.stopPropagation(); onOpen() }}
+          >
+            <i className="fa-solid fa-signature" />
+            Bekijken &amp; tekenen
+          </button>
+        )}
+        {signature.status === 'declined' && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={(e) => { e.stopPropagation(); onOpen() }}
+          >
+            Details
+          </button>
+        )}
+        {signature.status === 'signed' && (
+          <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+            Getekend op {new Date(signature.signed_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
