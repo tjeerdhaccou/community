@@ -424,6 +424,7 @@ function ProjectSubdomainApp({ slug }) {
       <Routes>
         {/* Public — no auth */}
         <Route path="/public" element={<PublicProject slugOverride={slug} />} />
+        <Route path="/intake" element={<IntakeForm slugOverride={slug} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         {/* Juridische pagina's moeten leesbaar zijn zonder login */}

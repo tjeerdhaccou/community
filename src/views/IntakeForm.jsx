@@ -6,8 +6,9 @@ import { getIntakeField } from '../lib/intakeFields'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export default function IntakeForm() {
-  const { projectId: projectIdent } = useParams()
+export default function IntakeForm({ slugOverride } = {}) {
+  const params = useParams()
+  const projectIdent = slugOverride || params.projectId
   const [project, setProject] = useState(null)
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
