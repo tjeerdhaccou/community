@@ -501,14 +501,18 @@ select.input {
 /* ===== Landing ===== styles live in src/styles/landing.css (imported by Landing.jsx) */
 
 /* ===== Login ===== */
+/* height (niet alleen min-height) is nodig omdat html, body overflow:hidden is —
+   zonder een vast hoogtekader pakt overflow-y geen scrollbar voor lange content
+   (juridische pagina's) en wordt de overflow stilzwijgend door body geclipt. */
 .login-page {
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--bg-page);
   padding: 24px;
+  overflow-y: auto;
 }
 
 .login-card {
