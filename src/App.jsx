@@ -248,6 +248,29 @@ function SubdomainLookup({ slug }) {
     )
   }
 
+  // Juridische pagina's zijn statisch en hoeven het project niet te kennen.
+  // Anonieme bezoekers worden anders naar Login gestuurd zodra RLS de
+  // project-lookup blokkeert, waardoor /privacy en /voorwaarden onbereikbaar
+  // zijn vanaf een subdomain.
+  if (
+    location.pathname === '/privacy' ||
+    location.pathname === '/voorwaarden' ||
+    location.pathname === '/legal' ||
+    location.pathname.startsWith('/legal/')
+  ) {
+    return (
+      <Routes>
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/voorwaarden" element={<AlgemeneVoorwaarden />} />
+        <Route path="/legal" element={<LegalOverview />} />
+        <Route path="/legal/verwerkersovereenkomst" element={<Verwerkersovereenkomst />} />
+        <Route path="/legal/datalekprotocol" element={<Datalekprotocol />} />
+        <Route path="/legal/verwerkingsregister" element={<Verwerkingsregister />} />
+        <Route path="/legal/dpia" element={<DPIADocument />} />
+      </Routes>
+    )
+  }
+
   if (loading || authLoading) return <div className="loading-page"><p>Laden...</p></div>
   if (type === 'project') return <ProjectSubdomainApp slug={slug} />
   if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
