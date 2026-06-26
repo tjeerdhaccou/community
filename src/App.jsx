@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
@@ -9,52 +9,54 @@ import Layout from './components/Layout'
 import { ConfirmProvider } from './components/ConfirmDialog'
 import ErrorBoundary from './components/ErrorBoundary'
 import { ToastProvider } from './components/Toast'
-import Login from './views/Login'
-import AuthCallback from './views/AuthCallback'
-import Dashboard from './views/Dashboard'
-import Updates from './views/Updates'
-import Community from './views/Community'
-import Events from './views/Events'
-import Members from './views/Members'
-import Settings from './views/Settings'
-import Roadmap from './views/Roadmap'
-import ProfessionalUpdates from './views/ProfessionalUpdates'
-import AdviseurTeam from './views/AdviseurTeam'
-import Profile from './views/Profile'
-import ProfileIntake from './views/ProfileIntake'
-import DocumentArchive from './views/DocumentArchive'
-import DocumentShare from './views/DocumentShare'
-import OrgDashboard from './views/OrgDashboard'
-import OrgSettings from './views/OrgSettings'
-import NewProject from './views/NewProject'
-import JoinProject from './views/JoinProject'
-import IntakeForm from './views/IntakeForm'
-import Ledenwerving from './views/Ledenwerving'
-import PrivacyPolicy from './views/PrivacyPolicy'
-import AlgemeneVoorwaarden from './views/AlgemeneVoorwaarden'
-import LegalOverview from './views/legal/LegalOverview'
-import Verwerkersovereenkomst from './views/legal/Verwerkersovereenkomst'
-import Datalekprotocol from './views/legal/Datalekprotocol'
-import Verwerkingsregister from './views/legal/Verwerkingsregister'
-import DPIADocument from './views/legal/DPIADocument'
 import CookieConsent from './components/CookieConsent'
-import Unsubscribe from './views/Unsubscribe'
-import PublicProject from './views/PublicProject'
-import PageBuilder from './views/PageBuilder'
-import Onboarding from './views/Beheer/Onboarding'
-import Groepen from './views/Beheer/Groepen'
-import MyDocuments from './views/MyDocuments'
-import Tekenen from './views/Tekenen'
-import Leden from './views/Leden'
-import Organisatie from './views/Organisatie'
-import DocumentenHub from './views/DocumentenHub'
-import PlatformAdmin from './views/PlatformAdmin'
-import OrgOnboarding from './views/OrgOnboarding'
-import Landing from './views/Landing'
-import Start from './views/Start'
-import PostLoginRedirect from './views/PostLoginRedirect'
 import ProfileCompletionGuard from './components/ProfileCompletionGuard'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
+
+const Login = lazy(() => import('./views/Login'))
+const AuthCallback = lazy(() => import('./views/AuthCallback'))
+const Dashboard = lazy(() => import('./views/Dashboard'))
+const Updates = lazy(() => import('./views/Updates'))
+const Community = lazy(() => import('./views/Community'))
+const Events = lazy(() => import('./views/Events'))
+const Settings = lazy(() => import('./views/Settings'))
+const Roadmap = lazy(() => import('./views/Roadmap'))
+const ProfessionalUpdates = lazy(() => import('./views/ProfessionalUpdates'))
+const AdviseurTeam = lazy(() => import('./views/AdviseurTeam'))
+const Profile = lazy(() => import('./views/Profile'))
+const ProfileIntake = lazy(() => import('./views/ProfileIntake'))
+const DocumentArchive = lazy(() => import('./views/DocumentArchive'))
+const DocumentShare = lazy(() => import('./views/DocumentShare'))
+const OrgDashboard = lazy(() => import('./views/OrgDashboard'))
+const OrgSettings = lazy(() => import('./views/OrgSettings'))
+const NewProject = lazy(() => import('./views/NewProject'))
+const JoinProject = lazy(() => import('./views/JoinProject'))
+const IntakeForm = lazy(() => import('./views/IntakeForm'))
+const Ledenwerving = lazy(() => import('./views/Ledenwerving'))
+const PrivacyPolicy = lazy(() => import('./views/PrivacyPolicy'))
+const AlgemeneVoorwaarden = lazy(() => import('./views/AlgemeneVoorwaarden'))
+const LegalOverview = lazy(() => import('./views/legal/LegalOverview'))
+const Verwerkersovereenkomst = lazy(() => import('./views/legal/Verwerkersovereenkomst'))
+const Datalekprotocol = lazy(() => import('./views/legal/Datalekprotocol'))
+const Verwerkingsregister = lazy(() => import('./views/legal/Verwerkingsregister'))
+const DPIADocument = lazy(() => import('./views/legal/DPIADocument'))
+const Unsubscribe = lazy(() => import('./views/Unsubscribe'))
+const PublicProject = lazy(() => import('./views/PublicProject'))
+const PageBuilder = lazy(() => import('./views/PageBuilder'))
+const Onboarding = lazy(() => import('./views/Beheer/Onboarding'))
+const Groepen = lazy(() => import('./views/Beheer/Groepen'))
+const MyDocuments = lazy(() => import('./views/MyDocuments'))
+const Tekenen = lazy(() => import('./views/Tekenen'))
+const Leden = lazy(() => import('./views/Leden'))
+const Organisatie = lazy(() => import('./views/Organisatie'))
+const DocumentenHub = lazy(() => import('./views/DocumentenHub'))
+const PlatformAdmin = lazy(() => import('./views/PlatformAdmin'))
+const OrgOnboarding = lazy(() => import('./views/OrgOnboarding'))
+const Landing = lazy(() => import('./views/Landing'))
+const Start = lazy(() => import('./views/Start'))
+const PostLoginRedirect = lazy(() => import('./views/PostLoginRedirect'))
+
+const RouteFallback = () => <div className="loading-page"><p>Laden...</p></div>
 
 function NotFound() {
   return (
@@ -214,6 +216,7 @@ function SubdomainLookup({ slug }) {
   const location = useLocation()
   const { user, loading: authLoading } = useAuth()
   const [type, setType] = useState(null) // 'project' | 'org' | null
+  const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -221,9 +224,11 @@ function SubdomainLookup({ slug }) {
     let cancelled = false
     async function lookup() {
       setLoading(true)
-      const { data: project } = await supabase.from('projects').select('id').eq('slug', slug).maybeSingle()
+      // Volledig project ophalen ipv alleen id — ProjectProvider hergebruikt dit
+      // zodat de tweede round-trip naar Frankfurt wegvalt.
+      const { data: proj } = await supabase.from('projects').select('*').eq('slug', slug).maybeSingle()
       if (cancelled) return
-      if (project) { setType('project'); setLoading(false); return }
+      if (proj) { setProject(proj); setType('project'); setLoading(false); return }
 
       const { data: org } = await supabase.from('organizations').select('id').eq('slug', slug).maybeSingle()
       if (cancelled) return
@@ -272,7 +277,7 @@ function SubdomainLookup({ slug }) {
   }
 
   if (loading || authLoading) return <div className="loading-page"><p>Laden...</p></div>
-  if (type === 'project') return <ProjectSubdomainApp slug={slug} />
+  if (type === 'project') return <ProjectSubdomainApp slug={slug} initialProject={project} />
   if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
   // Anonieme bezoekers kunnen de org niet zien door RLS — stuur naar login
   // ipv 404, zodat ze na inloggen op het juiste subdomain landen
@@ -441,9 +446,9 @@ function OrgSubdomainApp({ orgSlug }) {
   )
 }
 
-function ProjectSubdomainApp({ slug }) {
+function ProjectSubdomainApp({ slug, initialProject }) {
   return (
-    <ProjectProvider slugOverride={slug}>
+    <ProjectProvider slugOverride={slug} initialProject={initialProject}>
       <Routes>
         {/* Public — no auth */}
         <Route path="/public" element={<PublicProject slugOverride={slug} />} />
@@ -513,7 +518,9 @@ export default function App() {
         <ThemeProvider>
           <ToastProvider>
           <ConfirmProvider>
-            <SubdomainRouter />
+            <Suspense fallback={<RouteFallback />}>
+              <SubdomainRouter />
+            </Suspense>
           </ConfirmProvider>
           </ToastProvider>
         </ThemeProvider>

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
@@ -31,7 +32,9 @@ export default function Layout() {
           <ThemeToggle />
           <NotificationBell />
         </div>
-        <Outlet />
+        <Suspense fallback={<div className="loading-page"><p>Laden...</p></div>}>
+          <Outlet />
+        </Suspense>
       </main>
       <BottomNav />
     </div>

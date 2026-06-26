@@ -7,11 +7,11 @@ import { onboardingEnabled } from '../lib/constants'
 
 const ProjectContext = createContext(null)
 
-export function ProjectProvider({ children, slugOverride }) {
+export function ProjectProvider({ children, slugOverride, initialProject }) {
   const params = useParams()
   const slug = slugOverride || params.slug
   const { user, memberships, orgMemberships, isOrgAdmin, isPlatformAdmin, reload: reloadAuth } = useAuth()
-  const [project, setProject] = useState(null)
+  const [project, setProject] = useState(initialProject || null)
   const [org, setOrg] = useState(null)
   const [milestones, setMilestones] = useState([])
   const [loading, setLoading] = useState(true)
@@ -33,21 +33,27 @@ export function ProjectProvider({ children, slugOverride }) {
       setLoading(true)
       setError(null)
 
-      // Fetch project by slug or by UUID
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
-      const projectRes = isUUID
-        ? await supabase.from('projects').select('*').eq('id', slug).single()
-        : await supabase.from('projects').select('*').eq('slug', slug).single()
-      if (projectRes.error || !projectRes.data) {
-        console.error('ProjectContext: failed to load project', projectRes.error)
-        setError(projectRes.error || new Error('Project niet gevonden'))
-        setLoading(false)
-        return
+      // Fetch project alleen als SubdomainLookup hem niet al heeft meegegeven.
+      let proj = initialProject && (initialProject.slug === slug || initialProject.id === slug)
+        ? initialProject
+        : null
+
+      if (!proj) {
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+        const projectRes = isUUID
+          ? await supabase.from('projects').select('*').eq('id', slug).single()
+          : await supabase.from('projects').select('*').eq('slug', slug).single()
+        if (projectRes.error || !projectRes.data) {
+          console.error('ProjectContext: failed to load project', projectRes.error)
+          setError(projectRes.error || new Error('Project niet gevonden'))
+          setLoading(false)
+          return
+        }
+        proj = projectRes.data
+        setProject(proj)
       }
-      setProject(projectRes.data)
 
       // Auto-create admin membership for org admins / platform admins zonder fysieke membership
-      const proj = projectRes.data
       const hasMembership = memberships.some(m => m.project_id === proj.id)
       const isAdminOfOrg = isOrgAdmin && proj.organization_id && orgMemberships.some(om =>
         om.organization_id === proj.organization_id && om.role === 'admin'
@@ -62,25 +68,15 @@ export function ProjectProvider({ children, slugOverride }) {
         reloadAuth()
       }
 
-      // Organisatie-thema ophalen voor de cascade (project erft van org als het
-      // zelf geen default_theme heeft). Faalt stil voor leden die de org niet
-      // mogen lezen → dan valt het thema terug op project/warm.
-      let orgData = null
-      if (proj.organization_id) {
-        const orgRes = await supabase
-          .from('organizations')
-          .select('default_theme, kind')
-          .eq('id', proj.organization_id)
-          .single()
-        orgData = orgRes.data
-      }
-      setOrg(orgData)
-
-      const milestonesRes = await supabase
-        .from('milestones')
-        .select('*')
-        .eq('project_id', proj.id)
-        .order('sort_order')
+      // Org-thema + milestones parallel ophalen — geen onderlinge afhankelijkheid.
+      // Org-fetch faalt stil voor leden zonder leesrecht → thema valt terug op project/warm.
+      const [orgRes, milestonesRes] = await Promise.all([
+        proj.organization_id
+          ? supabase.from('organizations').select('default_theme, kind').eq('id', proj.organization_id).single()
+          : Promise.resolve({ data: null }),
+        supabase.from('milestones').select('*').eq('project_id', proj.id).order('sort_order'),
+      ])
+      setOrg(orgRes.data)
       setMilestones(milestonesRes.data || [])
       setLoading(false)
     }
