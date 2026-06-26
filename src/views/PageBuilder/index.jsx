@@ -4,11 +4,15 @@ import { supabase } from '../../lib/supabase'
 import { uploadImage } from '../../lib/storage'
 import { useToast } from '../../components/Toast'
 import { getPublicSiteUrl } from '../../lib/subdomain'
+import { loadFonts } from '../../lib/fonts'
 import { SECTION_TYPES, FONT_THEMES, COLOR_THEMES, getThemeSwatches, tempId, withSectionDefaults } from './constants'
 import SectionEditor from './SectionEditor'
 import AddSectionButton from './AddSectionButton'
 
 export { COLOR_THEMES }
+
+// Alle font-thema families — de picker laat ze allemaal zien als preview.
+const ALL_BUILDER_FONTS = ['Inter', 'Playfair Display', 'Source Sans 3', 'Space Grotesk', 'DM Sans', 'Lora', 'Nunito', 'Ubuntu', 'Kreon']
 
 export default function PageBuilder() {
   const { project } = useProject()
@@ -18,6 +22,9 @@ export default function PageBuilder() {
   const [projectMembers, setProjectMembers] = useState([])
   const [fontTheme, setFontTheme] = useState('clean')
   const [isPublic, setIsPublic] = useState(project?.is_public || false)
+
+  // De picker toont alle 5 thema's met live preview → alle families inladen.
+  useEffect(() => { loadFonts(ALL_BUILDER_FONTS) }, [])
   const [ctaText, setCtaText] = useState('')
   const [ctaBtnColor, setCtaBtnColor] = useState(null)
   const [colorTheme, setColorTheme] = useState('clean')

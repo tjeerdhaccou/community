@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { timeAgo, MONTHS_SHORT, MONTHS_LONG, DAYS_LONG } from '../lib/constants'
 import { COLOR_THEMES } from './PageBuilder'
+import { loadFonts } from '../lib/fonts'
 
 const FONT_MAP = {
   clean: { heading: 'Inter, sans-serif', body: 'Inter, sans-serif' },
@@ -10,6 +11,14 @@ const FONT_MAP = {
   modern: { heading: '"Space Grotesk", sans-serif', body: '"DM Sans", sans-serif' },
   warm: { heading: 'Lora, serif', body: 'Nunito, sans-serif' },
   bold: { heading: 'Ubuntu, sans-serif', body: 'Kreon, serif' },
+}
+
+const FONT_FAMILIES = {
+  clean: ['Inter'],
+  editorial: ['Playfair Display', 'Source Sans 3'],
+  modern: ['Space Grotesk', 'DM Sans'],
+  warm: ['Lora', 'Nunito'],
+  bold: ['Ubuntu', 'Kreon'],
 }
 
 /* ==================== Sub-components ==================== */
@@ -507,6 +516,12 @@ export default function PublicProject({ slugOverride }) {
 
   // Project-merkkleuren worden niet meer toegepast (zie ThemeContext): alle
   // surfaces gebruiken het vaste functionele palet, ook de publieke pagina.
+
+  // Web fonts on-demand laden voor het actieve font-thema.
+  const fontTheme = previewTheme?.fontTheme || project?.font_theme || 'clean'
+  useEffect(() => {
+    loadFonts(FONT_FAMILIES[fontTheme] || FONT_FAMILIES.clean)
+  }, [fontTheme])
 
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
 

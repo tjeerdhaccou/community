@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { loadFonts } from '../lib/fonts'
 import {
   UnderlineDoodle,
   SparkleDoodle,
@@ -50,6 +51,9 @@ export default function Start() {
   const [searchParams, setSearchParams] = useSearchParams()
   const paramSegment = searchParams.get('segment')
   const segment = SEGMENTS[paramSegment] ? paramSegment : null
+
+  // landing.css verwijst naar Inter/Space Grotesk/Caveat — on-demand laden.
+  useEffect(() => { loadFonts(['Inter', 'Space Grotesk', 'Caveat']) }, [])
 
   const [form, setForm] = useState({
     name: '',

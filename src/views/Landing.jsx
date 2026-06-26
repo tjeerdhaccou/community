@@ -14,6 +14,7 @@ import {
   HouseDoodle,
 } from '../components/LandingDoodles'
 import '../styles/landing.css'
+import { loadFonts } from '../lib/fonts'
 
 const PHOTO_URBAN = 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=700&q=80&auto=format'
 const PHOTO_PEOPLE = 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=700&q=80&auto=format'
@@ -222,6 +223,12 @@ export default function Landing() {
   const demoLink = '/start?segment=professional'
   const primaryTo = user ? '/dashboard' : demoLink
   const primaryLabel = user ? 'Naar het platform' : 'Plan een demo'
+
+  // Web fonts on-demand laden — niet in index.html zodat dashboard-bezoekers
+  // ze niet downloaden. landing.css verwijst naar Inter, Space Grotesk, Caveat.
+  useEffect(() => {
+    loadFonts(['Inter', 'Space Grotesk', 'Caveat'])
+  }, [])
 
   // Nav verbergen bij omlaag scrollen, tonen bij omhoog scrollen
   useEffect(() => {
