@@ -1,8 +1,11 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { useAuth } from '../contexts/AuthContext'
+import ImageCropper from './ImageCropper'
 
 export default function NewProjectCard({ orgId, onCreated, onCancel }) {
+  const { user } = useAuth()
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
   const [tagline, setTagline] = useState('')
@@ -17,24 +20,48 @@ export default function NewProjectCard({ orgId, onCreated, onCancel }) {
   const logoRef = useRef(null)
   const coverRef = useRef(null)
 
-  async function handleLogoSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+  const [cropAspect, setCropAspect] = useState(1)
+  const [cropRound, setCropRound] = useState(false)
+  const [cropTarget, setCropTarget] = useState(null)
+
+  function handleLogoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setLogoPreview(URL.createObjectURL(file))
-    setUploadingLogo(true)
-    try { setLogoUrl(await uploadImage(file)) }
-    catch { setLogoPreview(null) }
-    finally { setUploadingLogo(false) }
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(1)
+    setCropRound(false)
+    setCropTarget('logo')
+    e.target.value = ''
   }
 
-  async function handleCoverSelect(e) {
+  function handleCoverSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setCoverPreview(URL.createObjectURL(file))
-    setUploadingCover(true)
-    try { setCoverUrl(await uploadImage(file)) }
-    catch { setCoverPreview(null) }
-    finally { setUploadingCover(false) }
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(16 / 9)
+    setCropRound(false)
+    setCropTarget('cover')
+    e.target.value = ''
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+
+    if (cropTarget === 'logo') {
+      setLogoPreview(URL.createObjectURL(blob))
+      setUploadingLogo(true)
+      try { setLogoUrl(await uploadImage(file)) }
+      catch { setLogoPreview(null) }
+      finally { setUploadingLogo(false) }
+    } else if (cropTarget === 'cover') {
+      setCoverPreview(URL.createObjectURL(blob))
+      setUploadingCover(true)
+      try { setCoverUrl(await uploadImage(file)) }
+      catch { setCoverPreview(null) }
+      finally { setUploadingCover(false) }
+    }
   }
 
   async function handleSave(e) {
@@ -42,18 +69,35 @@ export default function NewProjectCard({ orgId, onCreated, onCancel }) {
     if (!name.trim()) return
     setSaving(true)
     try {
-      const { error } = await supabase
+      const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      const { data: project, error } = await supabase
         .from('projects')
         .insert({
           organization_id: orgId,
           name: name.trim(),
+          slug,
           location: location.trim() || null,
           tagline: tagline.trim() || null,
           description: description.trim() || null,
           logo_url: logoUrl,
           cover_image_url: coverUrl,
         })
+        .select()
+        .single()
       if (error) throw error
+
+      // Auto-add creator as admin member
+      await supabase.from('memberships').insert({
+        profile_id: user.id,
+        project_id: project.id,
+        role: 'admin',
+      })
+
+      // Setup subdomain in background (non-blocking)
+      supabase.functions.invoke('setup-project-domain', {
+        body: { slug, project_id: project.id },
+      }).catch(err => console.warn('Domain setup deferred:', err))
+
       onCreated()
     } catch (err) {
       console.error('Error creating project:', err)
@@ -155,6 +199,16 @@ export default function NewProjectCard({ orgId, onCreated, onCancel }) {
             {saving ? 'Aanmaken...' : 'Project aanmaken'}
           </button>
         </div>
+
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={cropAspect}
+            round={cropRound}
+            onComplete={handleCropComplete}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </form>
     </div>
   )

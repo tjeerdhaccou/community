@@ -1,10 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { timeAgo, formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
+import { openProjectFile } from '../lib/storage'
 
 export default function GlobalSearch() {
-  const { project } = useProject()
+  const { project, basePath } = useProject()
+  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -63,6 +66,11 @@ export default function GlobalSearch() {
     setResults(null)
   }
 
+  function goTo(path) {
+    handleClose()
+    navigate(path)
+  }
+
   // Cleanup debounce timer on unmount
   useEffect(() => {
     return () => clearTimeout(timerRef.current)
@@ -102,16 +110,16 @@ export default function GlobalSearch() {
               ) : (
                 <>
                   {results.updates.length > 0 && (
-                    <SearchSection title="Updates" icon="fa-solid fa-bullhorn">
+                    <SearchSection title="Projectnieuws" icon="fa-solid fa-bullhorn">
                       {results.updates.map(u => (
-                        <SearchItem key={u.id} title={u.title} subtitle={u.body?.slice(0, 100)} time={u.created_at} tag={u.tag} />
+                        <SearchItem key={u.id} title={u.title} subtitle={u.body?.slice(0, 100)} time={u.created_at} tag={u.tag} onClick={() => goTo(`${basePath}/updates?item=${u.id}`)} />
                       ))}
                     </SearchSection>
                   )}
                   {results.decisions.length > 0 && (
                     <SearchSection title="Besluiten" icon="fa-solid fa-gavel">
                       {results.decisions.map(d => (
-                        <SearchItem key={d.id} title={d.text} subtitle={d.meeting?.title ? `Vergadering: ${d.meeting.title}` : ''} time={d.created_at} />
+                        <SearchItem key={d.id} title={d.text} subtitle={d.meeting?.title ? `Vergadering: ${d.meeting.title}` : ''} time={d.created_at} onClick={() => goTo(`${basePath}/events`)} />
                       ))}
                     </SearchSection>
                   )}
@@ -119,7 +127,7 @@ export default function GlobalSearch() {
                     <SearchSection title="Documenten" icon="fa-solid fa-folder">
                       {results.documents.map(d => (
                         <SearchItem key={d.id} title={d.title} subtitle={d.file_name}
-                          time={d.created_at} href={d.file_path} fileType={d.file_type} />
+                          time={d.created_at} onClick={() => openProjectFile(d.file_path)} fileType={d.file_type} />
                       ))}
                     </SearchSection>
                   )}
@@ -128,14 +136,14 @@ export default function GlobalSearch() {
                       {results.meetingFiles.map(f => (
                         <SearchItem key={f.id} title={f.file_name}
                           subtitle={f.meeting?.title ? `Vergadering: ${f.meeting.title}` : ''}
-                          time={f.created_at} href={f.file_path} fileType={f.file_type} />
+                          time={f.created_at} onClick={() => openProjectFile(f.file_path)} fileType={f.file_type} />
                       ))}
                     </SearchSection>
                   )}
                   {results.proUpdates.length > 0 && (
                     <SearchSection title="Adviseur updates" icon="fa-solid fa-hard-hat">
                       {results.proUpdates.map(u => (
-                        <SearchItem key={u.id} title={u.title} subtitle={u.body?.slice(0, 100)} time={u.created_at} />
+                        <SearchItem key={u.id} title={u.title} subtitle={u.body?.slice(0, 100)} time={u.created_at} onClick={() => goTo(`${basePath}/pro-updates`)} />
                       ))}
                     </SearchSection>
                   )}
@@ -158,7 +166,7 @@ function SearchSection({ title, icon, children }) {
   )
 }
 
-function SearchItem({ title, subtitle, time, tag, href, fileType }) {
+function SearchItem({ title, subtitle, time, tag, href, fileType, onClick }) {
   const content = (
     <>
       <div className="search-item__left">
@@ -174,6 +182,9 @@ function SearchItem({ title, subtitle, time, tag, href, fileType }) {
 
   if (href) {
     return <a href={href} target="_blank" rel="noopener noreferrer" className="search-item">{content}</a>
+  }
+  if (onClick) {
+    return <button type="button" className="search-item" onClick={onClick}>{content}</button>
   }
   return <div className="search-item">{content}</div>
 }

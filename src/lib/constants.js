@@ -1,30 +1,38 @@
 // ===== Tag definitions =====
 
-export const POST_TAGS = ['Vraag', 'Idee', 'Sociaal', 'In de media', 'Nieuw lid']
+// Touch-apparaten (mobiel/tablet): autoFocus op formuliervelden opent meteen het
+// toetsenbord en duwt op een bottom-sheet de titel/keuzes uit beeld. Desktop houdt autoFocus.
+export const isTouchDevice =
+  typeof window !== 'undefined' &&
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(hover: none) and (pointer: coarse)').matches
 
+export const POST_TAGS = ['Vraag', 'Idee', 'Sociaal', 'In de media', 'Even voorstellen']
+
+// Theme-aware via CSS-tokens (zoals UPDATE_TAG_COLORS), zodat prikbord-tags
+// meeschakelen met het thema — incl. het CrowdBuilding-palet.
 export const POST_TAG_COLORS = {
-  'Vraag': '#4A90D9',
-  'Idee': '#3BD269',
-  'Sociaal': '#F09020',
-  'In de media': '#F23578',
-  'Nieuw lid': '#7B5EA7',
+  'Vraag':            { bg: 'var(--tag-blue-bg)',   color: 'var(--tag-blue-text)' },
+  'Idee':             { bg: 'var(--tag-green-bg)',  color: 'var(--tag-green-text)' },
+  'Sociaal':          { bg: 'var(--tag-orange-bg)', color: 'var(--tag-orange-text)' },
+  'In de media':      { bg: 'var(--tag-pink-bg)',   color: 'var(--tag-pink-text)' },
+  'Even voorstellen': { bg: 'var(--tag-purple-bg)', color: 'var(--tag-purple-text)' },
 }
 
 export const UPDATE_TAGS = ['Mijlpaal', 'Update', 'Besluit', 'Verslag']
 
 export const UPDATE_TAG_COLORS = {
-  'Mijlpaal': { bg: '#3BD269', color: '#fff' },
-  'Update': { bg: '#4A90D9', color: '#fff' },
-  'Besluit': { bg: '#F23578', color: '#fff' },
-  'Verslag': { bg: '#F09020', color: '#fff' },
+  'Mijlpaal': { bg: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' },
+  'Update': { bg: 'var(--tag-blue-bg)', color: 'var(--tag-blue-text)' },
+  'Besluit': { bg: 'var(--tag-pink-bg)', color: 'var(--tag-pink-text)' },
+  'Verslag': { bg: 'var(--tag-orange-bg)', color: 'var(--tag-orange-text)' },
 }
 
 // ===== Role definitions =====
 
-export const ROLES = ['interested', 'guest', 'professional', 'aspirant', 'member', 'moderator', 'admin']
+export const ROLES = ['guest', 'professional', 'aspirant', 'member', 'moderator', 'admin']
 
 export const ROLE_LABELS = {
-  interested: 'Interesselijst',
   guest: 'Gast',
   professional: 'Adviseur',
   aspirant: 'Aspirant-lid',
@@ -34,7 +42,6 @@ export const ROLE_LABELS = {
 }
 
 export const ROLE_COLORS = {
-  interested: '#7B5EA7',
   guest: '#9ba1b0',
   professional: '#C9A96E',
   aspirant: '#F4B400',
@@ -68,6 +75,34 @@ export const PROFESSIONAL_COLORS = {
   anders: '#9ba1b0',
 }
 
+// ===== Funnel stage definitions =====
+
+export const FUNNEL_STAGES = ['nieuw', 'orienterend', 'aspirant_koper', 'koper', 'bewoner']
+
+export const FUNNEL_LABELS = {
+  nieuw: 'Nieuw',
+  orienterend: 'Oriënterend',
+  aspirant_koper: 'Aspirant-koper',
+  koper: 'Koper',
+  bewoner: 'Bewoner',
+}
+
+export const FUNNEL_COLORS = {
+  nieuw: '#9ba1b0',
+  orienterend: '#4A90D9',
+  aspirant_koper: '#F4B400',
+  koper: '#F09020',
+  bewoner: '#3BD269',
+}
+
+export const FUNNEL_ICONS = {
+  nieuw: 'fa-solid fa-circle',
+  orienterend: 'fa-solid fa-magnifying-glass',
+  aspirant_koper: 'fa-solid fa-file-signature',
+  koper: 'fa-solid fa-handshake',
+  bewoner: 'fa-solid fa-house-chimney',
+}
+
 // ===== Reaction definitions =====
 
 export const REACTIONS = [
@@ -94,6 +129,9 @@ export const NOTIFICATION_CONFIG = {
   role_change:          { icon: 'fa-solid fa-user-tag',      color: '#3BD269' },
   membership_approved:  { icon: 'fa-solid fa-circle-check',  color: '#3BD269' },
   new_document:         { icon: 'fa-solid fa-folder-open',   color: '#7B5EA7' },
+  document_request:     { icon: 'fa-solid fa-file-circle-question', color: '#2D8CFF' },
+  document_request_submitted: { icon: 'fa-solid fa-file-circle-check', color: '#3BD269' },
+  new_support_message:  { icon: 'fa-solid fa-headset',       color: '#4A90D9' },
 }
 
 // ===== Event types =====
@@ -112,9 +150,8 @@ export const EVENT_TYPE_MAP = Object.fromEntries(
 )
 
 export const EVENT_VISIBILITY = [
-  { key: 'public', label: 'Iedereen (ook gasten)', icon: 'fa-solid fa-globe' },
-  { key: 'aspirant', label: 'Aspirant-leden en leden', icon: 'fa-solid fa-user-check' },
-  { key: 'members', label: 'Alleen leden', icon: 'fa-solid fa-lock' },
+  { key: 'public', label: 'Iedereen', icon: 'fa-solid fa-globe' },
+  { key: 'members', label: 'Alleen leden', icon: 'fa-solid fa-user-check' },
 ]
 
 export const EVENT_VISIBILITY_MAP = Object.fromEntries(
@@ -211,3 +248,20 @@ export function timeAgoShort(dateStr) {
   if (diff < 604800) return `${Math.floor(diff / 86400)}d`
   return new Date(dateStr).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
 }
+
+/**
+ * Bepaalt of de "Aan de slag"-onboarding actief is voor een project.
+ * Light-initiatieven (org kind=personal) staan standaard aan; pro-projecten
+ * standaard uit. Een admin kan dit per project overschrijven via de
+ * module-toggle (features.onboarding true/false).
+ */
+export function onboardingEnabled(features, isLight) {
+  const f = features || {}
+  if (f.onboarding === true) return true
+  if (f.onboarding === false) return false
+  return !!isLight
+}
+
+// Versie van privacyverklaring + algemene voorwaarden waarop leden akkoord geven (AVG).
+// Verhoog dit als de voorwaarden materieel wijzigen -> leden geven opnieuw akkoord.
+export const CONSENT_VERSION = '2026-06'

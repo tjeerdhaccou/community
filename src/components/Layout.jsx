@@ -1,31 +1,23 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
+import SupportWidget from './SupportChat/SupportWidget'
 import { useTheme } from '../contexts/ThemeContext'
 
 function ThemeToggle() {
-  const { mode, setMode } = useTheme()
-
-  const modes = [
-    { value: 'light', icon: 'fa-solid fa-sun', label: 'Licht' },
-    { value: 'warm', icon: 'fa-solid fa-cloud-sun', label: 'Warm' },
-    { value: 'dark', icon: 'fa-solid fa-moon', label: 'Donker' },
-    { value: 'contrast', icon: 'fa-solid fa-eye', label: 'Hoog contrast' },
-  ]
-
-  const current = modes.find(m => m.value === mode)
-  const nextIndex = (modes.findIndex(m => m.value === mode) + 1) % modes.length
+  const { dark, toggleDark } = useTheme()
 
   return (
     <button
       className="theme-toggle-btn"
-      onClick={() => setMode(modes[nextIndex].value)}
-      title={`Thema: ${current.label}`}
-      aria-label={`Thema: ${current.label}`}
+      onClick={toggleDark}
+      title={dark ? 'Lichte modus' : 'Donkere modus'}
+      aria-label={dark ? 'Schakel naar lichte modus' : 'Schakel naar donkere modus'}
     >
-      <i className={current.icon} />
+      <i className={dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'} />
     </button>
   )
 }
@@ -41,9 +33,12 @@ export default function Layout() {
           <ThemeToggle />
           <NotificationBell />
         </div>
-        <Outlet />
+        <Suspense fallback={<div className="loading-page"><p>Laden...</p></div>}>
+          <Outlet />
+        </Suspense>
       </main>
       <BottomNav />
+      <SupportWidget />
     </div>
   )
 }

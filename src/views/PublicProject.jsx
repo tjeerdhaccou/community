@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { timeAgo, MONTHS_SHORT, MONTHS_LONG, DAYS_LONG } from '../lib/constants'
 import { COLOR_THEMES } from './PageBuilder'
+import { loadFonts } from '../lib/fonts'
 
 const FONT_MAP = {
   clean: { heading: 'Inter, sans-serif', body: 'Inter, sans-serif' },
@@ -10,6 +11,14 @@ const FONT_MAP = {
   modern: { heading: '"Space Grotesk", sans-serif', body: '"DM Sans", sans-serif' },
   warm: { heading: 'Lora, serif', body: 'Nunito, sans-serif' },
   bold: { heading: 'Ubuntu, sans-serif', body: 'Kreon, serif' },
+}
+
+const FONT_FAMILIES = {
+  clean: ['Inter'],
+  editorial: ['Playfair Display', 'Source Sans 3'],
+  modern: ['Space Grotesk', 'DM Sans'],
+  warm: ['Lora', 'Nunito'],
+  bold: ['Ubuntu', 'Kreon'],
 }
 
 /* ==================== Sub-components ==================== */
@@ -158,18 +167,30 @@ function TeamMember({ member }) {
   )
 }
 
+// Carousel-items mogen oude string-URLs zijn of nieuwe {url, caption}-objecten.
+function normalizeSlides(images) {
+  return (images || []).map((it) =>
+    typeof it === 'string' ? { url: it, caption: '' } : { url: it?.url || '', caption: it?.caption || '' }
+  )
+}
+
 function Carousel({ images }) {
   const [current, setCurrent] = useState(0)
-  const total = images.length
+  const slides = normalizeSlides(images)
+  const total = slides.length
   if (total === 0) return null
+  const active = slides[current]
 
   return (
     <div className="pub-carousel">
       <div className="pub-carousel__track" style={{ transform: `translateX(-${current * 100}%)` }}>
-        {images.map((url, i) => (
-          <img key={i} src={url} alt="" className="pub-carousel__slide" />
+        {slides.map((s, i) => (
+          <img key={i} src={s.url} alt={s.caption || ''} className="pub-carousel__slide" />
         ))}
       </div>
+      {active?.caption && (
+        <div className="pub-carousel__caption">{active.caption}</div>
+      )}
       {total > 1 && (
         <>
           <button className="pub-carousel__btn pub-carousel__btn--prev" onClick={() => setCurrent(c => (c - 1 + total) % total)}>
@@ -179,7 +200,7 @@ function Carousel({ images }) {
             <i className="fa-solid fa-chevron-right" />
           </button>
           <div className="pub-carousel__dots">
-            {images.map((_, i) => (
+            {slides.map((_, i) => (
               <button key={i} className={`pub-carousel__dot ${i === current ? 'pub-carousel__dot--active' : ''}`} onClick={() => setCurrent(i)} />
             ))}
           </div>
@@ -187,6 +208,16 @@ function Carousel({ images }) {
       )}
     </div>
   )
+}
+
+// Rich text body: HTML uit Tiptap, of plain text uit oude data.
+function RichBody({ html, className }) {
+  if (!html) return null
+  const isHtml = /<\w+[^>]*>/.test(html)
+  if (isHtml) {
+    return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
+  }
+  return <p className={className}>{html}</p>
 }
 
 /* ==================== Block Renderer ==================== */
@@ -205,7 +236,7 @@ function ContentBlock({ section, updates, events, onUpdateClick, onEventClick })
           <div className={`pub-block__inner pub-block__inner--split ${reverse ? 'pub-block__inner--reverse' : ''}`}>
             <div className="pub-block__text">
               {section.title && <h2 className="pub-block__title">{section.title}</h2>}
-              {section.body && <p className="pub-block__body">{section.body}</p>}
+              <RichBody html={section.body} className="pub-block__body" />
             </div>
             {section.image_url && (
               <div className="pub-block__media">
@@ -217,20 +248,48 @@ function ContentBlock({ section, updates, events, onUpdateClick, onEventClick })
       )
     }
 
-    case 'text-only':
+    case 'text-only': {
+      const hasBtn = !!(section.cta_label && section.cta_url)
       return (
         <section className={`pub-block ${textClass}`} style={style}>
           <div className="pub-block__inner pub-block__inner--text-only" style={{ textAlign: section.text_align || 'left' }}>
             {section.title && <h2 className="pub-block__title">{section.title}</h2>}
-            {section.body && <p className={`pub-block__body ${section.text_size === 'large' ? 'pub-block__body--large' : ''}`}>{section.body}</p>}
+            <RichBody
+              html={section.body}
+              className={`pub-block__body ${section.text_size === 'large' ? 'pub-block__body--large' : ''}`}
+            />
+            {hasBtn && (
+              <div className="pub-text-only-btn-wrap">
+                <a
+                  href={section.cta_url}
+                  className="cl-btn cl-btn--primary"
+                  target={section.cta_url.startsWith('http') ? '_blank' : undefined}
+                  rel={section.cta_url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  style={section.cta_btn_color ? { background: section.cta_btn_color, borderColor: section.cta_btn_color, color: '#fff' } : undefined}
+                >
+                  {section.cta_label}
+                </a>
+              </div>
+            )}
           </div>
         </section>
       )
+    }
 
     case 'image-full':
       return (
         <section className={`pub-block pub-block--image-full ${textClass}`} style={style}>
+          {section.title && (
+            <div className="pub-block__inner">
+              <h2 className="pub-block__title">{section.title}</h2>
+            </div>
+          )}
           {section.image_url && <img src={section.image_url} alt={section.title || ''} className="pub-block__full-img" />}
+          {section.body && (
+            <div className="pub-block__inner">
+              <p className="pub-block__caption">{section.body}</p>
+            </div>
+          )}
         </section>
       )
 
@@ -247,7 +306,7 @@ function ContentBlock({ section, updates, events, onUpdateClick, onEventClick })
       return (
         <section className={`pub-block ${textClass}`} style={style}>
           <div className="pub-block__inner">
-            <h2 className="pub-block__title" style={{ marginBottom: 20 }}>Laatste updates</h2>
+            <h2 className="pub-block__title" style={{ marginBottom: 20 }}>{section.title || 'Laatste updates'}</h2>
             <div className="pub-updates-grid">
               {updates.map(u => (
                 <UpdateCard key={u.id} update={u} onClick={() => onUpdateClick(u)} />
@@ -272,7 +331,7 @@ function ContentBlock({ section, updates, events, onUpdateClick, onEventClick })
                   {card.image_url && <img src={card.image_url} alt={card.title || ''} className="pub-card__img" />}
                   <div className="pub-card__content">
                     {card.title && <h3 className="pub-card__title">{card.title}</h3>}
-                    {card.body && <p className="pub-card__body">{card.body}</p>}
+                    <RichBody html={card.body} className="pub-card__body" />
                   </div>
                 </div>
               ))}
@@ -289,7 +348,7 @@ function ContentBlock({ section, updates, events, onUpdateClick, onEventClick })
           <div className={`pub-block__inner pub-block__inner--text-only pub-footer-inner${hasBtn ? ' pub-footer-inner--with-btn' : ''}`}>
             <div className="pub-footer__text">
               {section.title && <h2 className="pub-block__title pub-block__title--footer">{section.title}</h2>}
-              {section.body && <p className="pub-block__body">{section.body}</p>}
+              <RichBody html={section.body} className="pub-block__body" />
             </div>
             {hasBtn && (
               <a href={section.cta_url} className="cl-btn cl-btn--primary cl-btn--lg pub-footer__btn" target="_blank" rel="noopener noreferrer"
@@ -455,14 +514,14 @@ export default function PublicProject({ slugOverride }) {
     load()
   }, [slug, isPreview])
 
-  // Apply project branding
+  // Project-merkkleuren worden niet meer toegepast (zie ThemeContext): alle
+  // surfaces gebruiken het vaste functionele palet, ook de publieke pagina.
+
+  // Web fonts on-demand laden voor het actieve font-thema.
+  const fontTheme = previewTheme?.fontTheme || project?.font_theme || 'clean'
   useEffect(() => {
-    if (!project) return
-    if (project.brand_primary_color) {
-      document.documentElement.style.setProperty('--accent-primary', project.brand_primary_color)
-    }
-    return () => document.documentElement.style.removeProperty('--accent-primary')
-  }, [project])
+    loadFonts(FONT_FAMILIES[fontTheme] || FONT_FAMILIES.clean)
+  }, [fontTheme])
 
   if (loading) return <div className="loading-page"><p>Laden...</p></div>
 

@@ -6,14 +6,31 @@ import { useAuth } from '../contexts/AuthContext'
 import { useRoadmap } from '../hooks/useRoadmap'
 import { ROLE_LABELS, timeAgo, POST_TAG_COLORS } from '../lib/constants'
 import { canDo } from '../lib/permissions'
+import { safeStorage } from '../lib/safeStorage'
 import Skeleton from '../components/Skeleton'
+import MemberWelcome from '../components/MemberWelcome'
+import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
 
 export default function Dashboard() {
-  const { project, role, loading, basePath } = useProject()
-  const { profile } = useAuth()
+  const { project, role, loading, basePath, onboardingActive } = useProject()
+  const { profile, isPlatformAdmin } = useAuth()
   const navigate = useNavigate()
+
+  // Verse group-admins naar "Aan de slag" tot de checklist klaar/weggeklikt is.
+  // Alleen als onboarding voor dit project actief is (light-groepen; pro/MO-
+  // projecten worden door de org begeleid en krijgen geen checklist).
+  // Platform admins die rondkijken slaan we over; de session-guard voorkomt
+  // een redirect-loop nadat de admin in dezelfde sessie heeft weggeklikt.
+  useEffect(() => {
+    if (loading || !project || role !== 'admin' || isPlatformAdmin) return
+    if (!onboardingActive) return
+    if (project.onboarding_dismissed) return
+    if (safeStorage.getItem(`buuur-onboarding-skip-${project.id}`)) return
+    navigate(`${basePath}/aan-de-slag`, { replace: true })
+  }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
   const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
-  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, stats: { members: 0, updates: 0 } })
+  const signatureCount = useSignatureRequestCount()
+  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
 
   useEffect(() => {
@@ -29,9 +46,11 @@ export default function Dashboard() {
         supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('project_id', project.id).neq('role', 'guest'),
         supabase.from('updates').select('id', { count: 'exact', head: true }).eq('project_id', project.id),
         supabase.from('intake_responses').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('status', 'pending'),
+        profile?.id ? supabase.from('document_requests').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'pending') : Promise.resolve({ count: 0 }),
+        profile?.id ? supabase.from('profile_intake_requests').select('token').eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'open').order('sent_at', { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
       ]
 
-      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes] = await Promise.all(queries)
+      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes, docReqRes, intakeReqRes] = await Promise.all(queries)
       if (stale) return
 
       setFeed({
@@ -40,6 +59,8 @@ export default function Dashboard() {
         latestPosts: postsRes.data || [],
         newMembers: membersRes.data || [],
         intakePending: intakeRes.count || 0,
+        docRequests: docReqRes.count || 0,
+        intakeRequest: intakeReqRes.data?.[0] || null,
         stats: { members: memberCount.count || 0, updates: updateCount.count || 0 },
       })
     }
@@ -97,6 +118,23 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Open intake-verzoek van de initiatiefnemer */}
+      {feed.intakeRequest && (
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/profiel-intake/${feed.intakeRequest.token}`)} role="button" tabIndex={0}>
+          <div className="dash-intake-alert__icon" style={{ background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' }}>
+            <i className="fa-solid fa-clipboard-user" />
+          </div>
+          <div className="dash-intake-alert__text">
+            <strong>Vul je gegevens aan</strong>
+            <span>De initiatiefnemers vragen je een paar profielvelden in te vullen</span>
+          </div>
+          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+        </div>
+      )}
+
+      {/* Welkomststappen voor nieuwe leden (profiel afmaken, prikbord, roadmap) */}
+      <MemberWelcome />
+
       {/* Stepper dots progress (reads from roadmap_phases) */}
       {phases.length > 0 && (
         <div className="dash-stepper" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
@@ -137,7 +175,7 @@ export default function Dashboard() {
         <div className="dash-stat" onClick={() => navigate(`${basePath}/updates`)} role="button" tabIndex={0}>
           <i className="fa-solid fa-bullhorn dash-stat__icon" style={{ color: '#F23578' }} />
           <span className="dash-stat__value">{feed.stats.updates}</span>
-          <span className="dash-stat__label">Updates</span>
+          <span className="dash-stat__label">Nieuws</span>
         </div>
         <div className="dash-stat" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
           <i className="fa-solid fa-road dash-stat__icon" style={{ color: '#7B5EA7' }} />
@@ -148,13 +186,43 @@ export default function Dashboard() {
 
       {/* Intake alert for admins */}
       {feed.intakePending > 0 && canDo(role, 'manage_intake') && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/ledenwerving`)} role="button" tabIndex={0}>
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/members?tab=werving`)} role="button" tabIndex={0}>
           <div className="dash-intake-alert__icon">
             <i className="fa-solid fa-clipboard-list" />
           </div>
           <div className="dash-intake-alert__text">
             <strong>{feed.intakePending} nieuwe {feed.intakePending === 1 ? 'aanmelding' : 'aanmeldingen'}</strong>
             <span>via het intake formulier</span>
+          </div>
+          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+        </div>
+      )}
+
+      {/* Document request alert for members */}
+      {feed.docRequests > 0 && (
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/documenten?tab=mijn`)} role="button" tabIndex={0}>
+          <div className="dash-intake-alert__icon" style={{ background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' }}>
+            <i className="fa-solid fa-file-circle-question" />
+          </div>
+          <div className="dash-intake-alert__text">
+            <strong>{feed.docRequests} {feed.docRequests === 1 ? 'documentverzoek' : 'documentverzoeken'}</strong>
+            <span>wacht op jouw actie</span>
+          </div>
+          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+        </div>
+      )}
+
+      {/* Signature request alert — eigen card omdat tekenen visueel anders is dan
+          documentverzoek (oranje accent + ander icoon) en uit de DB-tabel
+          signature_request_signers komt i.p.v. document_requests. */}
+      {signatureCount > 0 && (
+        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/documenten?tab=mijn`)} role="button" tabIndex={0}>
+          <div className="dash-intake-alert__icon" style={{ background: 'rgba(245, 166, 35, 0.12)', color: 'var(--accent-orange, #F5A623)' }}>
+            <i className="fa-solid fa-signature" />
+          </div>
+          <div className="dash-intake-alert__text">
+            <strong>{signatureCount} {signatureCount === 1 ? 'tekenverzoek' : 'tekenverzoeken'}</strong>
+            <span>wacht op jouw handtekening</span>
           </div>
           <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
         </div>
@@ -207,7 +275,7 @@ export default function Dashboard() {
                       : <div className="dash-post-item__avatar dash-post-item__avatar--placeholder">{(p.author?.full_name || 'U')[0]}</div>
                     }
                     <span className="dash-post-item__text">{p.text}</span>
-                    {p.tag && <span className="dash-post-item__tag" style={{ color: POST_TAG_COLORS[p.tag] }}>{p.tag}</span>}
+                    {p.tag && <span className="dash-post-item__tag" style={{ color: POST_TAG_COLORS[p.tag]?.color }}>{p.tag}</span>}
                   </div>
                 ))}
               </div>

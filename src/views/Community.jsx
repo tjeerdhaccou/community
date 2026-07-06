@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { usePosts } from '../hooks/usePosts'
+import { useWorkgroups } from '../hooks/useWorkgroups'
 import { canDo } from '../lib/permissions'
 import PostCard from '../components/PostCard'
 import PostModal from '../components/PostModal'
@@ -9,12 +10,14 @@ import PostDetail from '../components/PostDetail'
 import ConfirmModal from '../components/ConfirmModal'
 
 import { POST_TAGS } from '../lib/constants'
+import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...POST_TAGS]
 
 export default function Community() {
   const { role } = useProject()
   const { profile } = useAuth()
   const { posts, loading, createPost, toggleLike, toggleReaction, toggleFollow, votePoll, deletePost, updatePost, togglePin } = usePosts()
+  const { myWorkgroups } = useWorkgroups()
   const [activeTag, setActiveTag] = useState('Alles')
   const [modalOpen, setModalOpen] = useState(false)
   const [editPost, setEditPost] = useState(null) // post object for editing
@@ -25,7 +28,14 @@ export default function Community() {
 
   const filtered = activeTag === 'Alles'
     ? posts
-    : posts.filter(p => p.tag === activeTag)
+    : activeTag.startsWith('wg:')
+      ? posts.filter(p => p.workgroup_id === activeTag.slice(3))
+      : posts.filter(p => p.tag === activeTag)
+
+  const isGroupFilter = activeTag.startsWith('wg:')
+  const activeFilterLabel = isGroupFilter
+    ? (myWorkgroups.find(wg => `wg:${wg.id}` === activeTag)?.name ?? 'deze groep')
+    : activeTag
 
   // Count unread per tag (posts from last 7 days)
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
@@ -58,7 +68,13 @@ export default function Community() {
 
   async function handleSave(data) {
     if (editPost) {
-      await updatePost(editPost.id, { text: data.text, tag: data.tag, image_url: data.image_url })
+      await updatePost(editPost.id, {
+        text: data.text,
+        tag: data.tag,
+        audience: data.audience,
+        workgroup_id: data.audience === 'workgroup' ? data.workgroup_id : null,
+        image_url: data.image_url,
+      })
     } else {
       await createPost(data)
     }
@@ -75,6 +91,9 @@ export default function Community() {
         <div className="view-header__row">
           <h1>Prikbord</h1>
         </div>
+        <p className="view-header__subtitle">
+          Praat met je medeleden — stel een vraag, deel een idee of begin een gesprek.
+        </p>
       </div>
 
       {/* Inline composer prompt */}
@@ -96,7 +115,7 @@ export default function Community() {
       )}
 
       {/* Tag filters with unread badges */}
-      <div className="tag-filter">
+      <CollapsibleTagFilter>
         {FILTER_TAGS.map(tag => (
           <button
             key={tag}
@@ -109,7 +128,21 @@ export default function Community() {
             )}
           </button>
         ))}
-      </div>
+        {myWorkgroups.length > 0 && (
+          <>
+            <span className="tag-filter__divider" aria-hidden="true" />
+            {myWorkgroups.map(wg => (
+              <button
+                key={wg.id}
+                className={`tag-filter__pill ${activeTag === `wg:${wg.id}` ? 'tag-filter__pill--active' : ''}`}
+                onClick={() => setActiveTag(`wg:${wg.id}`)}
+              >
+                <i className="fa-solid fa-users" style={{ marginRight: '5px', fontSize: '11px' }} /> {wg.name}
+              </button>
+            ))}
+          </>
+        )}
+      </CollapsibleTagFilter>
 
       <div className="feed-layout">
         {/* Main feed — single column */}
@@ -122,15 +155,19 @@ export default function Community() {
                 <i className="fa-solid fa-comments" />
               </div>
               <h3>
-                {activeTag !== 'Alles'
-                  ? `Nog geen berichten met tag "${activeTag}"`
-                  : 'Het prikbord is nog leeg'
+                {activeTag === 'Alles'
+                  ? 'Het prikbord is nog leeg'
+                  : isGroupFilter
+                    ? `Nog geen berichten in ${activeFilterLabel}`
+                    : `Nog geen berichten met tag "${activeFilterLabel}"`
                 }
               </h3>
               <p>
-                {activeTag !== 'Alles'
-                  ? 'Wees de eerste die iets deelt in deze categorie!'
-                  : 'Deel een vraag, idee of update met de community.'
+                {activeTag === 'Alles'
+                  ? 'Deel een vraag, idee of update met de community.'
+                  : isGroupFilter
+                    ? 'Wees de eerste die iets deelt met deze groep!'
+                    : 'Wees de eerste die iets deelt in deze categorie!'
                 }
               </p>
               {canDo(role, 'post_on_board') && (

@@ -40,6 +40,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
+  margin: 2px 0;
   border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
@@ -65,10 +66,40 @@
   width: 24px;
   text-align: center;
   flex-shrink: 0;
+  color: var(--text-tertiary);
   transition: transform 200ms var(--ease-spring);
 }
+.cl-nav-item--active .cl-nav-item__icon { color: var(--nav-c, var(--text-primary)); }
 
 .cl-nav-item:hover .cl-nav-item__icon { transform: scale(1.1); }
+
+/* CrowdBuilding-thema: nav-iconen als zachte-tint bubbel (alleen in dit thema).
+   Per item leveren --nav-bub-bg / --nav-bub-glyph de kleur (zie Sidebar.jsx). */
+[data-theme="crowdbuilding"] .cl-nav-item__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--nav-bub-bg, var(--bg-hover));
+  color: var(--nav-bub-glyph, var(--text-secondary));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+[data-theme="crowdbuilding"] .cl-nav-item--active .cl-nav-item__icon {
+  color: var(--nav-bub-glyph, var(--text-secondary));
+}
+[data-theme="crowdbuilding"] .cl-nav-item--project .cl-nav-item__icon {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+
+/* CrowdBuilding-donker: hover/active als schone indigo-lift i.p.v. de grauwe
+   --bg-hover/--bg-selected, die te dicht op de sidebar (#211B4D) zaten. Drietraps:
+   sidebar → hover (#2E2858) → active (#3A3470). Alleen de sidebar, niet globaal. */
+[data-theme="crowdbuilding-dark"] .cl-nav-item:hover { background: #2E2858; }
+[data-theme="crowdbuilding-dark"] .cl-nav-item--active { background: #3A3470; }
 
 .cl-nav-item__badge {
   margin-left: auto;
@@ -291,7 +322,7 @@
   font-size: 14px;
   font-weight: 600;
   padding: 10px 22px;
-  border-radius: var(--radius-md);
+  border-radius: var(--btn-radius);
   border: none;
   cursor: pointer;
   transition: all 150ms var(--ease-default);
@@ -301,7 +332,7 @@
 .cl-btn:active { transform: translateY(0) scale(0.97); }
 
 .cl-btn--primary {
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   box-shadow: var(--shadow-xs);
 }
@@ -328,7 +359,7 @@
   width: 56px;
   height: 56px;
   border-radius: var(--radius-full);
-  background: var(--accent-primary);
+  background: var(--accent-cta);
   color: #fff;
   border: none;
   font-size: 22px;
@@ -398,7 +429,7 @@
 
 .cl-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.15);
 }
 
 .cl-input::placeholder { color: var(--text-faint); }

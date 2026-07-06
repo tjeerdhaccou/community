@@ -2,13 +2,14 @@ import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
-import { isProjectDomain, isOrgDomain } from '../lib/subdomain'
+import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 
 export default function NewProject({ orgId: orgIdProp }) {
   const params = useParams()
-  const orgId = orgIdProp || params.orgId
+  const orgSlug = params.orgSlug
+  const orgId = orgIdProp
   const navigate = useNavigate()
-  const backPath = isOrgDomain() ? '/' : `/org/${orgId}`
+  const backPath = getProjectSlugFromSubdomain() ? '/admin' : `/org/${orgSlug || orgId}`
 
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')

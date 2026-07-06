@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
+import { dispatchNotification } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 
@@ -69,7 +70,23 @@ export function useEvents() {
       .select('*')
       .single()
     if (error) { logger.error('useEvents.createEvent', error); throw new Error(friendlyError(error)) }
-    // Realtime subscription will trigger fetchEvents automatically
+    // Optimistic insert — don't wait for realtime to confirm the new row, otherwise
+    // the user sees a stale list after closing the modal.
+    if (data) {
+      setEvents(prev => {
+        if (prev.some(e => e.id === data.id)) return prev
+        return [...prev, {
+          ...data,
+          event_rsvps: [],
+          meeting_files: [],
+          going_count: 0,
+          maybe_count: 0,
+          my_rsvp: null,
+          file_count: 0,
+        }]
+      })
+    }
+    if (data?.id) dispatchNotification({ projectId, type: 'new_event', referenceId: data.id, actorId: user.id })
     return data
   }
 
@@ -80,6 +97,16 @@ export function useEvents() {
       .eq('id', eventId)
     if (error) { logger.error('useEvents.updateEvent', error); throw new Error(friendlyError(error)) }
     // Realtime subscription will trigger fetchEvents automatically
+  }
+
+  async function deleteEvent(eventId) {
+    const { error } = await supabase
+      .from('meetings')
+      .delete()
+      .eq('id', eventId)
+    if (error) { logger.error('useEvents.deleteEvent', error); throw new Error(friendlyError(error)) }
+    // Optimistic remove — don't wait for realtime
+    setEvents(prev => prev.filter(e => e.id !== eventId))
   }
 
   async function rsvp(meetingId, status) {
@@ -109,5 +136,5 @@ export function useEvents() {
     }))
   }
 
-  return { events, upcoming, past, loading, createEvent, updateEvent, rsvp, refetch: fetchEvents }
+  return { events, upcoming, past, loading, createEvent, updateEvent, deleteEvent, rsvp, refetch: fetchEvents }
 }

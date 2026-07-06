@@ -1,8 +1,13 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { getIntakeField } from '../lib/intakeFields'
+import ImageCropper from './ImageCropper'
 
-export default function ProfileEditModal({ profile, onSave, onClose }) {
+const HOUSEHOLD_OPTIONS = getIntakeField('household').options
+
+export default function ProfileEditModal({ profile, onSave, onClose, mandatory = false }) {
+  const [fullName, setFullName] = useState(profile.full_name || '')
   const [company, setCompany] = useState(profile.company || '')
   const [phone, setPhone] = useState(profile.phone || '')
   const [website, setWebsite] = useState(profile.website || '')
@@ -19,10 +24,19 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
   const fileRef = useRef(null)
   const photoRef = useRef(null)
 
-  async function handlePhotoSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+
+  function handlePhotoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setAvatarPreview(URL.createObjectURL(file))
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setAvatarPreview(URL.createObjectURL(blob))
     setUploading(true)
     try {
       const url = await uploadImage(file)
@@ -56,9 +70,11 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!fullName.trim()) return
     setSaving(true)
     try {
       const updates = {
+        full_name: fullName.trim(),
         company: company.trim() || null,
         phone: phone.trim() || null,
         website: website.trim() || null,
@@ -85,17 +101,28 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
     }
   }
 
-  const initials = (profile.full_name || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)
+  const initials = (fullName || profile.full_name || 'A').split(' ').map(n => n[0]).join('').slice(0, 2)
+  const canClose = !mandatory || fullName.trim()
+  const handleOverlayClick = canClose ? onClose : undefined
+  const handleCloseClick = canClose ? onClose : undefined
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-card modal-card--profile-edit" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Profiel bewerken</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Sluiten">
-            <i className="fa-solid fa-xmark" />
-          </button>
+          <h2>{mandatory ? 'Vul je profiel aan' : 'Profiel bewerken'}</h2>
+          {canClose && (
+            <button className="modal-close" onClick={handleCloseClick} aria-label="Sluiten">
+              <i className="fa-solid fa-xmark" />
+            </button>
+          )}
         </div>
+
+        {mandatory && (
+          <p className="modal-form__intro">
+            Voordat je verder kunt, vragen we je naam. Een profielfoto is optioneel maar maakt je herkenbaar voor de leden van je organisatie.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} className="modal-form">
           {/* Avatar */}
@@ -106,9 +133,23 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
               <div className="profile-edit__avatar profile-edit__avatar--placeholder">{initials}</div>
             )}
             <button type="button" className="btn-secondary btn-sm" onClick={() => fileRef.current?.click()}>
-              {uploading ? 'Uploaden...' : 'Foto wijzigen'}
+              {uploading ? 'Uploaden...' : avatarPreview ? 'Foto wijzigen' : 'Foto toevoegen'}
             </button>
             <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoSelect} style={{ display: 'none' }} />
+          </div>
+
+          {/* Naam */}
+          <div className="form-group">
+            <label htmlFor="prof-name">Naam <span className="form-required">*</span></label>
+            <input
+              id="prof-name"
+              type="text"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+              placeholder="Voornaam Achternaam"
+              required
+              autoFocus={mandatory}
+            />
           </div>
 
           {/* Bio */}
@@ -125,7 +166,10 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
             </div>
             <div className="form-group form-group--half">
               <label htmlFor="prof-household">Gezinssamenstelling</label>
-              <input id="prof-household" type="text" value={household} onChange={e => setHousehold(e.target.value)} placeholder="bijv. Stel met 2 kinderen" />
+              <select id="prof-household" value={household} onChange={e => setHousehold(e.target.value)}>
+                <option value="">Kies…</option>
+                {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
           </div>
 
@@ -174,12 +218,28 @@ export default function ProfileEditModal({ profile, onSave, onClose }) {
           </div>
 
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
-            <button type="submit" className="btn-primary" disabled={saving || uploading || uploadingPhoto}>
-              {saving ? 'Opslaan...' : 'Opslaan'}
+            {canClose && (
+              <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
+            )}
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={saving || uploading || uploadingPhoto || !fullName.trim()}
+            >
+              {saving ? 'Opslaan...' : mandatory ? 'Profiel opslaan' : 'Opslaan'}
             </button>
           </div>
         </form>
+
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={1}
+            round={true}
+            onComplete={handleCropComplete}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </div>
     </div>
   )

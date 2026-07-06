@@ -32,6 +32,7 @@ export function useMembers() {
       .select('*, profile:profiles(id, full_name, avatar_url, email, is_platform_admin, company, bio, phone, website, professional_type)')
       .eq('project_id', projectId)
       .order('joined_at', { ascending: true })
+    // funnel_stage is on memberships table directly
 
     if (error) {
       logger.error('useMembers.fetch', error)
@@ -43,14 +44,36 @@ export function useMembers() {
 
   useEffect(() => { fetchMembers() }, [fetchMembers])
 
+  const WELCOME_TARGET_ROLES = ['aspirant', 'member', 'moderator', 'admin']
+
   async function updateRole(membershipId, newRole) {
+    const member = members.find(m => m.id === membershipId)
+    const oldRole = member?.role
+    if (oldRole === newRole) return
+
+    // Optimistische update: UI verandert direct, DB-call op de achtergrond
+    setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: newRole } : m))
+
     const { error } = await supabase
       .from('memberships')
       .update({ role: newRole })
       .eq('id', membershipId)
 
-    if (error) { logger.error('useMembers.updateRole', error); throw new Error(friendlyError(error)) }
-    setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: newRole } : m))
+    if (error) {
+      // Rollback bij fout
+      setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: oldRole } : m))
+      logger.error('useMembers.updateRole', error)
+      throw new Error(friendlyError(error))
+    }
+
+    // Welkomstmail bij promotie uit guest naar een echte lid-rol
+    if (oldRole === 'guest' && WELCOME_TARGET_ROLES.includes(newRole) && member?.profile) {
+      sendMemberEmail('welcome', {
+        memberName: member.profile.full_name,
+        memberEmail: member.profile.email,
+        projectName: project?.name,
+      })
+    }
   }
 
   async function removeMember(membershipId) {
@@ -64,17 +87,7 @@ export function useMembers() {
   }
 
   async function approveMember(membershipId) {
-    const member = members.find(m => m.id === membershipId)
     await updateRole(membershipId, 'aspirant')
-
-    // Send welcome email (best-effort)
-    if (member?.profile) {
-      sendMemberEmail('welcome', {
-        memberName: member.profile.full_name,
-        memberEmail: member.profile.email,
-        projectName: project?.name,
-      })
-    }
   }
 
   async function rejectMember(membershipId, reason) {
@@ -93,5 +106,23 @@ export function useMembers() {
     await removeMember(membershipId)
   }
 
-  return { members, loading, updateRole, removeMember, approveMember, rejectMember, refetch: fetchMembers }
+  async function updateFunnelStage(membershipId, newStage) {
+    const member = members.find(m => m.id === membershipId)
+    const oldStage = member?.funnel_stage
+
+    setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, funnel_stage: newStage } : m))
+
+    const { error } = await supabase
+      .from('memberships')
+      .update({ funnel_stage: newStage })
+      .eq('id', membershipId)
+
+    if (error) {
+      setMembers(prev => prev.map(m => m.id === membershipId ? { ...m, funnel_stage: oldStage } : m))
+      logger.error('useMembers.updateFunnelStage', error)
+      throw new Error(friendlyError(error))
+    }
+  }
+
+  return { members, loading, updateRole, updateFunnelStage, removeMember, approveMember, rejectMember, refetch: fetchMembers }
 }

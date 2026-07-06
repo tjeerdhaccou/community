@@ -2,5 +2,15 @@ IGNORE/
 node_modules
 dist
 .env
-.env.local
+.env.*
+!.env.example
 *.local
+supabase/.temp/
+.vercel
+.claude/worktrees/
+*.DS_Store
+
+# Playwright
+/test-results/
+/playwright-report/
+/e2e/.auth/

@@ -3,13 +3,13 @@ import { useProject } from '../contexts/ProjectContext'
 import { canDo } from '../lib/permissions'
 import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
 
-export default function UpdateCard({ update, onEdit, onReaction, onClick }) {
+export default function UpdateCard({ update, onEdit, onReaction, onClick, featured = false }) {
   const { role } = useProject()
   const [showReactions, setShowReactions] = useState(false)
   const tagStyle = UPDATE_TAG_COLORS[update.tag] || { bg: 'var(--bg-hover)', color: 'var(--text-secondary)' }
 
   return (
-    <article className="update-card" onClick={onClick} style={{ cursor: 'pointer' }}>
+    <article className={`update-card${featured ? ' update-card--featured' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
       {update.image_url && (
         <div className="update-card__image">
           <img src={update.image_url} alt={update.title || ''} />
@@ -53,6 +53,13 @@ export default function UpdateCard({ update, onEdit, onReaction, onClick }) {
               <i className={`${update.comment_count > 0 ? 'fa-solid' : 'fa-regular'} fa-comment`} />
               {update.comment_count > 0 && <span>{update.comment_count}</span>}
             </span>
+            {/* Attachment count */}
+            {update.attachment_count > 0 && (
+              <span className="feed-card__action-btn" onClick={onClick} title={`${update.attachment_count} bijlage${update.attachment_count !== 1 ? 'n' : ''}`}>
+                <i className="fa-solid fa-paperclip" />
+                <span>{update.attachment_count}</span>
+              </span>
+            )}
           </div>
 
           <div className="update-card__actions-right">

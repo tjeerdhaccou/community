@@ -1,4 +1,5 @@
 import { fileIcon, fileIconColor, formatFileSize, timeAgo, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { openProjectFile } from '../lib/storage'
 
 export default function DocumentsGrid({ updates }) {
   // Flatten all files from all updates
@@ -32,9 +33,9 @@ export default function DocumentsGrid({ updates }) {
             key={file.id}
             className="docs-grid__card"
             href={file.file_path}
+            onClick={(e) => { e.preventDefault(); openProjectFile(file.file_path) }}
             target="_blank"
             rel="noopener noreferrer"
-            download={file.file_name}
           >
             <i className={`docs-grid__icon ${icon}`} style={{ color }} />
             <div className="docs-grid__name">{file.file_name}</div>

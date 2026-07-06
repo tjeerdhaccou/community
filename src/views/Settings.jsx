@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { getIntakeUrl, getPublicSiteUrl } from '../lib/subdomain'
+import { exportProjectData, exportMembersCSV } from '../lib/dataExport'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
+import ImageCropper from '../components/ImageCropper'
 
 export default function Settings() {
   const { project, milestones, loading: projectLoading } = useProject()
@@ -13,13 +16,18 @@ export default function Settings() {
   const [description, setDescription] = useState('')
   const [primaryColor, setPrimaryColor] = useState('#4A90D9')
   const [accentColor, setAccentColor] = useState('#3BD269')
-  const [defaultTheme, setDefaultTheme] = useState('light')
+  const [defaultTheme, setDefaultTheme] = useState('warm')
+  const [logoUrl, setLogoUrl] = useState('')
+  const [logoPreview, setLogoPreview] = useState('')
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const logoRef = useRef(null)
   const [coverImageUrl, setCoverImageUrl] = useState('')
   const [coverPreview, setCoverPreview] = useState('')
   const [uploadingCover, setUploadingCover] = useState(false)
   const coverRef = useRef(null)
   const [intakeEnabled, setIntakeEnabled] = useState(false)
   const [intakeIntro, setIntakeIntro] = useState('')
+  const [inviteIntro, setInviteIntro] = useState('')
   const [isPublic, setIsPublic] = useState(false)
   const [slug, setSlug] = useState('')
   const [publicDescription, setPublicDescription] = useState('')
@@ -36,11 +44,14 @@ export default function Settings() {
       setDescription(project.description || '')
       setPrimaryColor(project.brand_primary_color || '#4A90D9')
       setAccentColor(project.brand_accent_color || '#3BD269')
-      setDefaultTheme(project.default_theme || 'light')
+      setDefaultTheme(project.default_theme === 'light' ? 'warm' : (project.default_theme || 'inherit'))
+      setLogoUrl(project.logo_url || '')
+      setLogoPreview(project.logo_url || '')
       setCoverImageUrl(project.cover_image_url || '')
       setCoverPreview(project.cover_image_url || '')
       setIntakeEnabled(project.intake_enabled || false)
       setIntakeIntro(project.intake_intro_text || '')
+      setInviteIntro(project.invite_intro_text || '')
       setIsPublic(project.is_public || false)
       setSlug(project.slug || '')
       setPublicDescription(project.public_description || '')
@@ -48,19 +59,59 @@ export default function Settings() {
     }
   }, [project])
 
-  async function handleCoverSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+  const [cropAspect, setCropAspect] = useState(16 / 9)
+  const [cropRound, setCropRound] = useState(false)
+  const [cropTarget, setCropTarget] = useState(null) // 'cover'
+
+  function handleLogoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setCoverPreview(URL.createObjectURL(file))
-    setUploadingCover(true)
-    try {
-      const url = await uploadImage(file)
-      setCoverImageUrl(url)
-    } catch (err) {
-      console.error('Cover upload failed:', err)
-      setCoverPreview(coverImageUrl || '')
-    } finally {
-      setUploadingCover(false)
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(1)
+    setCropRound(false)
+    setCropTarget('logo')
+    e.target.value = ''
+  }
+
+  function handleCoverSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(16 / 9)
+    setCropRound(false)
+    setCropTarget('cover')
+    e.target.value = ''
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+
+    if (cropTarget === 'logo') {
+      setLogoPreview(URL.createObjectURL(blob))
+      setUploadingLogo(true)
+      try {
+        const url = await uploadImage(file)
+        setLogoUrl(url)
+      } catch (err) {
+        console.error('Logo upload failed:', err)
+        setLogoPreview(logoUrl || '')
+      } finally {
+        setUploadingLogo(false)
+      }
+    } else if (cropTarget === 'cover') {
+      setCoverPreview(URL.createObjectURL(blob))
+      setUploadingCover(true)
+      try {
+        const url = await uploadImage(file)
+        setCoverImageUrl(url)
+      } catch (err) {
+        console.error('Cover upload failed:', err)
+        setCoverPreview(coverImageUrl || '')
+      } finally {
+        setUploadingCover(false)
+      }
     }
   }
 
@@ -80,10 +131,11 @@ export default function Settings() {
         name, tagline, location, description,
         brand_primary_color: primaryColor,
         brand_accent_color: accentColor,
-        default_theme: defaultTheme,
+        logo_url: logoUrl || null,
         cover_image_url: coverImageUrl || null,
         intake_enabled: intakeEnabled,
         intake_intro_text: intakeIntro.trim() || null,
+        invite_intro_text: inviteIntro.trim() || null,
         is_public: isPublic,
         slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null,
         public_description: publicDescription.trim() || null,
@@ -139,42 +191,28 @@ export default function Settings() {
         <section className="settings-section">
           <h2>Branding</h2>
 
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label>Primaire kleur</label>
-              <div className="color-input">
-                <input type="color" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} />
-                <input type="text" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} className="color-hex" />
-              </div>
-            </div>
-            <div className="form-group form-group--half">
-              <label>Accent kleur</label>
-              <div className="color-input">
-                <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} />
-                <input type="text" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="color-hex" />
-              </div>
-            </div>
-          </div>
-
           <div className="form-group">
-            <label>Standaard thema</label>
-            <div className="theme-select">
-              {[
-                { value: 'light', icon: 'fa-sun', label: 'Licht' },
-                { value: 'warm', icon: 'fa-cloud-sun', label: 'Warm' },
-                { value: 'dark', icon: 'fa-moon', label: 'Donker' },
-                { value: 'contrast', icon: 'fa-eye', label: 'Hoog contrast' },
-              ].map(t => (
-                <button
-                  key={t.value}
-                  type="button"
-                  className={`theme-select__btn ${defaultTheme === t.value ? 'theme-select__btn--active' : ''}`}
-                  onClick={() => setDefaultTheme(t.value)}
-                >
-                  <i className={`fa-solid ${t.icon}`} />
-                  {t.label}
+            <label>Project logo</label>
+            <p className="form-hint">Vierkant logo, wordt getoond in de sidebar en op kaarten.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
+              {logoPreview ? (
+                <img src={logoPreview} alt="Logo" style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)', fontSize: 24, fontWeight: 700 }}>
+                  {(name || 'P')[0]}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="btn-secondary btn-sm" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
+                  {uploadingLogo ? 'Uploaden...' : logoPreview ? 'Wijzigen' : 'Logo kiezen'}
                 </button>
-              ))}
+                {logoPreview && (
+                  <button type="button" className="btn-secondary btn-sm" onClick={() => { setLogoUrl(''); setLogoPreview('') }} style={{ color: 'var(--accent-red)' }}>
+                    Verwijderen
+                  </button>
+                )}
+              </div>
+              <input ref={logoRef} type="file" accept="image/*" onChange={handleLogoSelect} style={{ display: 'none' }} />
             </div>
           </div>
 
@@ -204,33 +242,37 @@ export default function Settings() {
 
         {/* Public project page */}
         <section className="settings-section">
-          <h2><i className="fa-solid fa-globe" /> Publieke projectpagina</h2>
+          <h2>Publieke projectpagina</h2>
           <p className="form-hint" style={{ marginBottom: 16 }}>
             Een openbare pagina voor omwonenden en geïnteresseerden. Toont projectinfo, tijdlijn, publieke updates en events.
           </p>
 
-          <div className="toggle-row" style={{ marginBottom: 16 }}>
-            <label className="toggle">
-              <input type="checkbox" checked={isPublic} onChange={e => setIsPublic(e.target.checked)} />
-              <span className="toggle__slider" />
-            </label>
+          <label className="intake-toggle">
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={e => setIsPublic(e.target.checked)}
+            />
             <span>Publieke pagina actief</span>
-          </div>
+          </label>
 
           {isPublic && (
             <>
               <div className="form-group">
                 <label htmlFor="set-slug">URL-slug</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 14, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>/project/</span>
-                  <input
-                    id="set-slug"
-                    type="text"
-                    value={slug}
-                    onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                    placeholder="vlinderhaven"
-                  />
-                </div>
+                <input
+                  id="set-slug"
+                  type="text"
+                  value={slug}
+                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                  placeholder="vlinderhaven"
+                />
+                {slug && (
+                  <span className="form-hint" style={{ marginTop: 6 }}>
+                    <i className="fa-solid fa-link" style={{ marginRight: 4 }} />
+                    {getPublicSiteUrl({ ...project, slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') })}
+                  </span>
+                )}
               </div>
               <div className="form-group">
                 <label htmlFor="set-pub-desc">Publieke beschrijving</label>
@@ -253,14 +295,9 @@ export default function Settings() {
                   placeholder="info@project.nl"
                 />
               </div>
-              {slug && (
-                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 8 }}>
-                  <i className="fa-solid fa-link" style={{ marginRight: 6 }} />
-                  Pagina zichtbaar op: <strong>{window.location.origin}/project/{slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')}</strong>
-                </p>
-              )}
             </>
           )}
+
         </section>
 
         {/* Intake form */}
@@ -287,13 +324,13 @@ export default function Settings() {
                   <input
                     type="text"
                     readOnly
-                    value={`${window.location.origin}/intake/${project.id}`}
+                    value={getIntakeUrl(project)}
                     className="intake-url-input"
                   />
                   <button
                     type="button"
                     className="btn-secondary btn-sm"
-                    onClick={() => navigator.clipboard.writeText(`${window.location.origin}/intake/${project.id}`)}
+                    onClick={() => navigator.clipboard.writeText(getIntakeUrl(project))}
                   >
                     <i className="fa-solid fa-copy" /> Kopieer
                   </button>
@@ -324,20 +361,28 @@ export default function Settings() {
           )}
         </section>
 
-        {/* Milestones overview */}
         <section className="settings-section">
-          <h2>Fases</h2>
-          <div className="settings-milestones">
-            {milestones.map(m => (
-              <div key={m.id} className="settings-milestone">
-                <span className={`settings-milestone__dot settings-milestone__dot--${m.status}`} />
-                <span>{m.label}</span>
-                <span className="settings-milestone__status">{m.status}</span>
-              </div>
-            ))}
+          <h2>Uitnodigingsmail</h2>
+          <p className="form-hint" style={{ marginBottom: 16 }}>
+            De tekst die nieuwe leden in hun uitnodigingsmail zien, vóór de inlogknop.
+            Laat leeg om de standaardtekst van je organisatie te gebruiken.
+          </p>
+
+          <div className="form-group">
+            <label>Persoonlijke uitnodigingstekst</label>
+            <textarea
+              value={inviteIntro}
+              onChange={e => setInviteIntro(e.target.value)}
+              rows={5}
+              placeholder={'Bijvoorbeeld:\n\nWelkom bij {projectnaam}! We zijn een collectief dat samen werkt aan duurzame woningen. Leuk dat je interesse hebt.'}
+            />
+            <p className="form-hint" style={{ marginTop: 8 }}>
+              Variabelen: <code>{'{naam}'}</code> = naam van de uitgenodigde, <code>{'{projectnaam}'}</code> = naam van het project.
+              Lege regel tussen alinea&apos;s.
+            </p>
           </div>
-          <p className="form-hint">Fase beheer wordt later uitgebreid.</p>
         </section>
+
 
         <div className="settings-save">
           <button type="submit" className="btn-primary" disabled={saving}>
@@ -345,6 +390,94 @@ export default function Settings() {
           </button>
         </div>
       </form>
+
+      <DataExportSection projectId={project?.id} projectSlug={project?.slug} />
+
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={cropAspect}
+          round={cropRound}
+          onComplete={handleCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </div>
+  )
+}
+
+function DataExportSection({ projectId, projectSlug }) {
+  const [exporting, setExporting] = useState(null) // 'full' | 'csv' | null
+  const [result, setResult] = useState(null)
+
+  async function handleExportFull() {
+    setExporting('full')
+    setResult(null)
+    try {
+      const res = await exportProjectData(projectId, projectSlug)
+      setResult(res.counts)
+    } catch {
+      setResult('error')
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  async function handleExportCSV() {
+    setExporting('csv')
+    setResult(null)
+    try {
+      const res = await exportMembersCSV(projectId, projectSlug)
+      setResult({ csv: res.count })
+    } catch {
+      setResult('error')
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  return (
+    <section className="settings-section" style={{ marginTop: 32 }}>
+      <h2><i className="fa-solid fa-download" style={{ marginRight: 8 }} />Data-export</h2>
+      <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 16 }}>
+        Exporteer alle projectdata conform de AVG (Art. 20 dataportabiliteit).
+        De organisatie is eigenaar van alle data in dit project.
+      </p>
+
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <button
+          className="btn-secondary"
+          onClick={handleExportFull}
+          disabled={exporting}
+        >
+          <i className={exporting === 'full' ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-file-arrow-down'} />{' '}
+          {exporting === 'full' ? 'Exporteren...' : 'Volledige export (JSON)'}
+        </button>
+        <button
+          className="btn-secondary"
+          onClick={handleExportCSV}
+          disabled={exporting}
+        >
+          <i className={exporting === 'csv' ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-table'} />{' '}
+          {exporting === 'csv' ? 'Exporteren...' : 'Ledenlijst (CSV)'}
+        </button>
+      </div>
+
+      {result && result !== 'error' && !result.csv && (
+        <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-green)' }}>
+          <i className="fa-solid fa-check" /> Export gedownload: {result.leden} leden, {result.prikbord} berichten, {result.updates} updates, {result.evenementen} evenementen, {result.documenten} documenten, {result.intake_reacties} intake-reacties
+        </p>
+      )}
+      {result?.csv && (
+        <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-green)' }}>
+          <i className="fa-solid fa-check" /> CSV gedownload met {result.csv} leden
+        </p>
+      )}
+      {result === 'error' && (
+        <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-red)' }}>
+          <i className="fa-solid fa-triangle-exclamation" /> Export mislukt. Probeer het opnieuw.
+        </p>
+      )}
+    </section>
   )
 }

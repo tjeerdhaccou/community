@@ -8,7 +8,7 @@ export default function PostCard({ post, onReaction, onFollow, onVotePoll, onDel
   const menuRef = useRef(null)
   const isAuthor = post.author_id === currentUserId
   const canManage = isAuthor || canModerate
-  const tagColor = POST_TAG_COLORS[post.tag]
+  const tagStyle = POST_TAG_COLORS[post.tag]
   const isPoll = post.post_type === 'poll'
 
   useEffect(() => {
@@ -39,8 +39,13 @@ export default function PostCard({ post, onReaction, onFollow, onVotePoll, onDel
           <span className="feed-card__name">{post.author?.full_name || 'Onbekend'}</span>
           <span className="feed-card__time">{timeAgoShort(post.created_at)}</span>
         </div>
+        {post.workgroup_name && (
+          <span className="feed-card__group-tag" title={`Alleen zichtbaar voor groep ${post.workgroup_name}`}>
+            <i className="fa-solid fa-users" /> {post.workgroup_name}
+          </span>
+        )}
         {post.tag && (
-          <span className="feed-card__tag" style={{ color: tagColor, background: tagColor ? `${tagColor}14` : undefined }}>
+          <span className="feed-card__tag" style={{ color: tagStyle?.color, background: tagStyle?.bg }}>
             {post.tag}
           </span>
         )}

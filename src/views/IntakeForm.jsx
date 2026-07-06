@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { CONSENT_VERSION } from '../lib/constants'
+import { getIntakeField } from '../lib/intakeFields'
 
-export default function IntakeForm() {
-  const { projectId } = useParams()
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export default function IntakeForm({ slugOverride } = {}) {
+  const params = useParams()
+  const projectIdent = slugOverride || params.projectId
   const [project, setProject] = useState(null)
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -12,23 +17,46 @@ export default function IntakeForm() {
   const [error, setError] = useState(null)
 
   // Form fields
-  const [name, setName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [answers, setAnswers] = useState({})
   const [consent, setConsent] = useState(false)
+  const [termsConsent, setTermsConsent] = useState(false)
 
   useEffect(() => {
     loadForm()
-  }, [projectId])
+  }, [projectIdent])
+
+  // Pas het projectthema toe op het publieke formulier, zodat de achtergrond
+  // (en overige tokens) matchen met de getthemede site i.p.v. de default.
+  useEffect(() => {
+    if (!project) return
+    const resolvedTheme = project.default_theme || project.organization?.default_theme || 'clean'
+    const style = resolvedTheme === 'crowdbuilding' ? 'crowdbuilding' : 'clean'
+    const root = document.documentElement
+    const prevTheme = root.getAttribute('data-theme')
+    root.setAttribute('data-theme', style === 'crowdbuilding' ? 'crowdbuilding' : 'warm')
+    // Project-merkkleuren worden niet meer toegepast (zie ThemeContext): het
+    // vaste functionele palet wordt overal gebruikt.
+    return () => {
+      if (prevTheme) root.setAttribute('data-theme', prevTheme)
+      else root.removeAttribute('data-theme')
+      root.style.removeProperty('--accent-primary')
+      root.style.removeProperty('--border-focus')
+    }
+  }, [project])
 
   async function loadForm() {
     setLoading(true)
     try {
-      const [projectRes, questionsRes] = await Promise.all([
-        supabase.from('projects').select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, intake_enabled, intake_intro_text').eq('id', projectId).single(),
-        supabase.from('intake_questions').select('*').eq('project_id', projectId).eq('active', true).order('sort_order'),
-      ])
+      const projectColumn = UUID_REGEX.test(projectIdent) ? 'id' : 'slug'
+      const projectRes = await supabase
+        .from('projects')
+        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, intake_enabled, intake_intro_text, default_theme, organization:organizations(default_theme)')
+        .eq(projectColumn, projectIdent)
+        .single()
 
       if (projectRes.error) throw projectRes.error
       if (!projectRes.data.intake_enabled) {
@@ -36,6 +64,13 @@ export default function IntakeForm() {
         setLoading(false)
         return
       }
+
+      const questionsRes = await supabase
+        .from('intake_questions')
+        .select('*')
+        .eq('project_id', projectRes.data.id)
+        .eq('active', true)
+        .order('sort_order')
 
       setProject(projectRes.data)
       setQuestions(questionsRes.data || [])
@@ -57,16 +92,33 @@ export default function IntakeForm() {
     setError(null)
 
     try {
+      const now = new Date().toISOString()
+      // Id client-side genereren: anonieme inzenders hebben wel INSERT- maar geen
+      // SELECT-recht op intake_responses, dus kunnen we het id niet terugkrijgen via
+      // .select(). Met een eigen uuid kennen we 'm toch voor de bevestigingsmail.
+      const responseId = crypto.randomUUID()
       const { error: insertError } = await supabase.from('intake_responses').insert({
-        project_id: projectId,
-        name: name.trim(),
+        id: responseId,
+        project_id: project.id,
+        name: `${firstName.trim()} ${lastName.trim()}`.trim(),
         email: email.trim().toLowerCase(),
         phone: phone.trim() || null,
         answers,
+        terms_accepted_at: now,
+        terms_version: CONSENT_VERSION,
+        // Aparte toestemming voor het delen van gegevens met initiatiefnemers/leden.
+        // De verzendknop staat uit tot dit vinkje aan is, dus hier altijd gezet.
+        data_sharing_consent_at: now,
       })
 
       if (insertError) throw insertError
       setSubmitted(true)
+
+      // Bevestigingsmail (best-effort): de aanmelder weet dat de aanvraag in
+      // behandeling is. Mag de succespagina nooit blokkeren — fouten loggen we stil.
+      supabase.functions
+        .invoke('send-member-email', { body: { type: 'intake_received', responseId } })
+        .catch(err => console.error('intake_received email failed:', err))
     } catch (err) {
       console.error('Submit error:', err)
       setError('Er ging iets mis bij het versturen. Probeer het opnieuw.')
@@ -75,8 +127,8 @@ export default function IntakeForm() {
     }
   }
 
-  // Apply project branding
-  const brandColor = project?.brand_primary_color || '#4A90D9'
+  // Functioneel accent (geen project-merkkleur meer — zie ThemeContext).
+  const brandColor = 'var(--accent-primary)'
 
   if (loading) {
     return (
@@ -117,7 +169,7 @@ export default function IntakeForm() {
             <div className="intake-success-icon" style={{ color: brandColor }}>
               <i className="fa-solid fa-circle-check" />
             </div>
-            <h1 className="join-card__title">Bedankt, {name.split(' ')[0]}!</h1>
+            <h1 className="join-card__title">Bedankt, {firstName.trim()}!</h1>
             <p className="join-card__tagline">
               Je aanmelding voor {project.name} is ontvangen. De beheerders bekijken je aanmelding
               en nemen contact met je op via {email}.
@@ -158,16 +210,29 @@ export default function IntakeForm() {
               <i className="fa-solid fa-user" /> Jouw gegevens
             </div>
 
-            <div className="form-group">
-              <label htmlFor="intake-name">Naam *</label>
-              <input
-                id="intake-name"
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Je volledige naam"
-                required
-              />
+            <div className="form-row">
+              <div className="form-group form-group--half">
+                <label htmlFor="intake-first">Voornaam *</label>
+                <input
+                  id="intake-first"
+                  type="text"
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder="Voornaam"
+                  required
+                />
+              </div>
+              <div className="form-group form-group--half">
+                <label htmlFor="intake-last">Achternaam *</label>
+                <input
+                  id="intake-last"
+                  type="text"
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  placeholder="Achternaam"
+                  required
+                />
+              </div>
             </div>
 
             <div className="form-row">
@@ -201,14 +266,18 @@ export default function IntakeForm() {
                   <i className="fa-solid fa-comments" /> Over jou
                 </div>
 
-                {questions.map(q => (
-                  <div key={q.id} className="form-group">
-                    <label htmlFor={`q-${q.id}`}>
-                      {q.question_text}{q.required ? ' *' : ''}
-                    </label>
-                    {renderQuestion(q, answers[q.id] || '', val => setAnswer(q.id, val))}
-                  </div>
-                ))}
+                {questions.map(q => {
+                  const field = q.profile_field_key ? getIntakeField(q.profile_field_key) : null
+                  return (
+                    <div key={q.id} className="form-group">
+                      <label htmlFor={`q-${q.id}`}>
+                        {q.question_text}{q.required ? ' *' : ''}
+                      </label>
+                      {field?.help && <p className="form-hint" style={{ margin: '2px 0 6px' }}>{field.help}</p>}
+                      {renderQuestion(q, field, answers[q.id], val => setAnswer(q.id, val))}
+                    </div>
+                  )
+                })}
               </>
             )}
 
@@ -218,21 +287,26 @@ export default function IntakeForm() {
               <span>Ik ga akkoord dat mijn gegevens gedeeld worden met de initiatiefnemers en leden van {project.name}.</span>
             </label>
 
+            <label className="intake-consent">
+              <input type="checkbox" checked={termsConsent} onChange={e => setTermsConsent(e.target.checked)} />
+              <span>
+                Ik ga akkoord met de{' '}
+                <a href="/voorwaarden" target="_blank" rel="noopener noreferrer">algemene voorwaarden</a>{' '}
+                en de{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer">privacyverklaring</a>.
+              </span>
+            </label>
+
             {error && <p className="join-card__error">{error}</p>}
 
             <button
               type="submit"
               className="btn-primary join-card__btn"
-              disabled={submitting || !name.trim() || !email.trim() || !consent}
+              disabled={submitting || !firstName.trim() || !lastName.trim() || !email.trim() || !consent || !termsConsent}
               style={{ background: brandColor }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
             </button>
-
-            <p className="intake-privacy">
-              <i className="fa-solid fa-lock" /> Je gegevens worden alleen gedeeld met de
-              beheerders van {project.name}.
-            </p>
           </form>
         </div>
       </div>
@@ -240,15 +314,60 @@ export default function IntakeForm() {
   )
 }
 
-function renderQuestion(question, value, onChange) {
+function renderQuestion(question, field, value, onChange) {
   const id = `q-${question.id}`
+
+  // Catalogus-gekoppelde vraag: render op basis van het profielveld, met
+  // canonieke waarden en het juiste opslagtype.
+  if (field) {
+    switch (field.type) {
+      case 'select':
+        return (
+          <select id={id} value={value || ''} onChange={e => onChange(e.target.value)} required={question.required}>
+            <option value="">Kies…</option>
+            {field.options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          </select>
+        )
+      case 'textarea':
+        return (
+          <textarea id={id} value={value || ''} onChange={e => onChange(e.target.value)} rows={3} required={question.required} />
+        )
+      case 'boolean':
+        return (
+          <label className="intake-radio-option">
+            <input type="checkbox" checked={!!value} onChange={e => onChange(e.target.checked)} />
+            <span>Ja</span>
+          </label>
+        )
+      case 'number':
+        return (
+          <input
+            id={id}
+            type="number"
+            value={value ?? ''}
+            onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))}
+            required={question.required}
+          />
+        )
+      case 'date':
+        return (
+          <input id={id} type="date" value={value || ''} onChange={e => onChange(e.target.value)} required={question.required} />
+        )
+      default:
+        return (
+          <input id={id} type="text" value={value || ''} onChange={e => onChange(e.target.value)} required={question.required} />
+        )
+    }
+  }
+
+  const v = value || ''
 
   switch (question.question_type) {
     case 'textarea':
       return (
         <textarea
           id={id}
-          value={value}
+          value={v}
           onChange={e => onChange(e.target.value)}
           placeholder="Typ hier je antwoord..."
           rows={3}
@@ -260,7 +379,7 @@ function renderQuestion(question, value, onChange) {
       return (
         <select
           id={id}
-          value={value}
+          value={v}
           onChange={e => onChange(e.target.value)}
           required={question.required}
         >
@@ -280,9 +399,9 @@ function renderQuestion(question, value, onChange) {
                 type="radio"
                 name={id}
                 value={opt}
-                checked={value === opt}
+                checked={v === opt}
                 onChange={() => onChange(opt)}
-                required={question.required && !value}
+                required={question.required && !v}
               />
               <span>{opt}</span>
             </label>
@@ -296,7 +415,7 @@ function renderQuestion(question, value, onChange) {
         <input
           id={id}
           type="text"
-          value={value}
+          value={v}
           onChange={e => onChange(e.target.value)}
           placeholder="Typ hier je antwoord..."
           required={question.required}

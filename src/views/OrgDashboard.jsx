@@ -3,35 +3,36 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { isOrgDomain } from '../lib/subdomain'
+import { getProjectSlugFromSubdomain } from '../lib/subdomain'
+import { signOut } from '../lib/auth'
 import ProjectDashboardCard from '../components/ProjectDashboardCard'
 import NewProjectCard from '../components/NewProjectCard'
+import ProfileEditModal from '../components/ProfileEditModal'
 
-const THEME_MODES = [
-  { value: 'light', icon: 'fa-solid fa-sun' },
-  { value: 'warm', icon: 'fa-solid fa-cloud-sun' },
-  { value: 'dark', icon: 'fa-solid fa-moon' },
-  { value: 'contrast', icon: 'fa-solid fa-circle-half-stroke' },
-]
-
-function ThemeToggle({ mode, setMode }) {
-  const current = THEME_MODES.find(m => m.value === mode)
-  const nextIndex = (THEME_MODES.findIndex(m => m.value === mode) + 1) % THEME_MODES.length
+function ThemeToggle({ dark, onToggle }) {
   return (
-    <button className="theme-toggle-btn" onClick={() => setMode(THEME_MODES[nextIndex].value)} title={`Thema: ${mode}`}>
-      <i className={current.icon} />
+    <button
+      className="theme-toggle-btn"
+      onClick={onToggle}
+      title={dark ? 'Lichte modus' : 'Donkere modus'}
+      aria-label={dark ? 'Schakel naar lichte modus' : 'Schakel naar donkere modus'}
+    >
+      <i className={dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon'} />
     </button>
   )
 }
 
 export default function OrgDashboard({ orgId: orgIdProp }) {
   const params = useParams()
-  const orgId = orgIdProp || params.orgId
-  const { isOrgAdmin, primaryOrg } = useAuth()
-  const { mode, setMode } = useTheme()
+  const orgSlug = params.orgSlug
+  const { isOrgAdmin, primaryOrg, primaryOrgId, profile, reload: reloadAuth } = useAuth()
+  const profileIncomplete = isOrgAdmin && profile && !profile.full_name?.trim()
+  const orgId = orgIdProp || primaryOrgId
+  const { dark, toggleDark } = useTheme()
   const navigate = useNavigate()
-  const settingsPath = isOrgDomain() ? '/settings' : `/org/${orgId}/settings`
-  const newProjectPath = isOrgDomain() ? '/new-project' : `/org/${orgId}/new-project`
+  const isSubdomain = !!getProjectSlugFromSubdomain()
+  const settingsPath = isSubdomain ? '/settings' : `/org/${orgSlug || orgId}/settings`
+  const newProjectPath = isSubdomain ? '/new-project' : `/org/${orgSlug || orgId}/new-project`
   const [org, setOrg] = useState(null)
   const [projects, setProjects] = useState([])
   const [pendingByProject, setPendingByProject] = useState([])
@@ -40,41 +41,63 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
 
   async function load() {
     setLoading(true)
-    const { data: orgData } = await supabase
-      .from('organizations')
-      .select('*')
-      .eq('id', orgId)
-      .single()
+    // Lookup org by slug (from URL) or by id (from prop/context)
+    let orgData
+    if (orgSlug) {
+      const res = await supabase.from('organizations').select('*').eq('slug', orgSlug).single()
+      orgData = res.data
+    } else if (orgId) {
+      const res = await supabase.from('organizations').select('*').eq('id', orgId).single()
+      orgData = res.data
+    }
     setOrg(orgData)
+    const resolvedOrgId = orgData?.id || orgId
 
     const { data: stats, error } = await supabase
-      .rpc('get_org_project_stats', { p_org_id: orgId })
+      .rpc('get_org_project_stats', { p_org_id: resolvedOrgId })
 
     if (error) {
       console.error('Error loading stats:', error)
       const { data: fallback } = await supabase
         .from('projects')
         .select('*')
-        .eq('organization_id', orgId)
+        .eq('organization_id', resolvedOrgId)
         .order('created_at', { ascending: false })
       setProjects((fallback || []).map(p => ({
         project_id: p.id, project_name: p.name, project_location: p.location,
         project_tagline: p.tagline, project_logo_url: p.logo_url,
         project_cover_image_url: p.cover_image_url,
         project_description: p.description,
-        is_public: p.is_public, slug: p.slug,
+        is_public: p.is_public, slug: p.slug, custom_domain: p.custom_domain,
         public_description: p.public_description,
         public_contact_email: p.public_contact_email,
         intake_enabled: p.intake_enabled,
         intake_intro_text: p.intake_intro_text,
+        features: p.features || {},
         member_count: 0, update_count: 0, post_count: 0, advisor_count: 0,
         new_updates_week: 0, new_posts_week: 0, new_members_week: 0,
       })))
     } else {
       const projectIds = (stats || []).map(s => s.project_id)
 
-      // Load admins per project
+      // Load custom domains + features + admins per project
       if (projectIds.length > 0) {
+        const { data: extraData } = await supabase
+          .from('projects')
+          .select('id, custom_domain, features')
+          .in('id', projectIds)
+        const domainMap = {}
+        const featureMap = {}
+        for (const d of (extraData || [])) {
+          domainMap[d.id] = d.custom_domain
+          featureMap[d.id] = d.features || {}
+        }
+        // Merge custom_domain + features into stats
+        for (const s of (stats || [])) {
+          s.custom_domain = domainMap[s.project_id] || null
+          s.features = featureMap[s.project_id] || {}
+        }
+
         const { data: adminData } = await supabase
           .from('memberships')
           .select('project_id, role, profile:profiles(full_name, avatar_url)')
@@ -101,17 +124,22 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
           if (!grouped[p.project_id]) grouped[p.project_id] = []
           grouped[p.project_id].push(p.profile)
         }
-        setPendingByProject(Object.entries(grouped).map(([pid, members]) => ({
-          project_id: pid,
-          project_name: (stats || []).find(s => s.project_id === pid)?.project_name,
-          members,
-        })))
+        setPendingByProject(Object.entries(grouped).map(([pid, members]) => {
+          const s = (stats || []).find(s => s.project_id === pid)
+          return {
+            project_id: pid,
+            project_name: s?.project_name,
+            slug: s?.slug,
+            custom_domain: s?.custom_domain,
+            members,
+          }
+        }))
       }
     }
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [orgId])
+  useEffect(() => { load() }, [orgSlug, orgId])
 
   // Aggregate stats
   const totals = projects.reduce((acc, p) => ({
@@ -132,11 +160,19 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
           <h1 className="org-topbar__name">{org?.name || 'Organisatie'}</h1>
         </div>
         <div className="org-topbar__right">
-          <ThemeToggle mode={mode} setMode={setMode} />
+          <ThemeToggle dark={dark} onToggle={toggleDark} />
           {isOrgAdmin && (
             <>
               <button className="btn-secondary" onClick={() => navigate(settingsPath)} aria-label="Instellingen">
                 <i className="fa-solid fa-gear" />
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={async () => { await signOut() }}
+                aria-label="Uitloggen"
+                title={profile?.email ? `Uitloggen (${profile.email})` : 'Uitloggen'}
+              >
+                <i className="fa-solid fa-right-from-bracket" />
               </button>
               <button className="btn-primary" onClick={() => setCreatingNew(true)}>
                 <i className="fa-solid fa-plus" /> Nieuw project
@@ -151,9 +187,9 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
         {loading ? (
           <div className="loading-inline"><p>Laden...</p></div>
         ) : projects.length === 0 ? (
-          <div className="empty-state">
-            <i className="fa-solid fa-city empty-state__icon" />
-            <h2>Geen projecten</h2>
+          <div className="empty-inline">
+            <i className="fa-solid fa-city" />
+            <h3 className="empty-inline__title">Geen projecten</h3>
             <p>Maak je eerste project aan om te beginnen.</p>
             {isOrgAdmin && (
               <button className="btn-primary" onClick={() => setCreatingNew(true)}>
@@ -179,7 +215,7 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
               <div className="org-stats-strip__item">
                 <i className="fa-solid fa-bullhorn org-stats-strip__icon" style={{ color: 'var(--accent-yellow)' }} />
                 <span className="org-stats-strip__value">{totals.updates}</span>
-                <span className="org-stats-strip__label">Updates</span>
+                <span className="org-stats-strip__label">Nieuws</span>
                 {totals.newUpdates > 0 && <span className="org-stats-strip__trend"><i className="fa-solid fa-arrow-trend-up" /> +{totals.newUpdates} deze week</span>}
               </div>
               <div className="org-stats-strip__item">
@@ -200,7 +236,10 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
                     <div
                       key={p.project_id}
                       className="org-actions__item"
-                      onClick={() => navigate(`/p/${p.slug || p.project_id}/members`)}
+                      onClick={async () => {
+                        const { navigateToSubdomain, getProjectBaseUrl } = await import('../lib/subdomain')
+                        navigateToSubdomain(`${getProjectBaseUrl(p)}/members`)
+                      }}
                     >
                       <div className="org-actions__icon">
                         <i className="fa-solid fa-user-clock" />
@@ -237,12 +276,21 @@ export default function OrgDashboard({ orgId: orgIdProp }) {
                 />
               )}
               {projects.map(p => (
-                <ProjectDashboardCard key={p.project_id} project={p} onSaved={load} />
+                <ProjectDashboardCard key={p.project_id} project={p} onSaved={load} isLight={org?.kind === 'personal'} />
               ))}
             </div>
           </>
         )}
       </main>
+
+      {profileIncomplete && (
+        <ProfileEditModal
+          profile={profile}
+          mandatory
+          onSave={() => { if (reloadAuth) reloadAuth() }}
+          onClose={() => { /* niet sluitbaar zonder save in mandatory mode */ }}
+        />
+      )}
     </div>
   )
 }

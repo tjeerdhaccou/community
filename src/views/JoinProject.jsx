@@ -1,14 +1,31 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { uploadImage } from '../lib/storage'
+import { getIntakeUrl, getPublicSiteUrl } from '../lib/subdomain'
+import { getIntakeField } from '../lib/intakeFields'
+
+const HOUSEHOLD_OPTIONS = getIntakeField('household').options
 
 export default function JoinProject() {
   const { user, profile, reload } = useAuth()
   const { project } = useProject()
   const navigate = useNavigate()
+  const [hasIntake, setHasIntake] = useState(false)
+  const [admins, setAdmins] = useState([])
+
+  useEffect(() => {
+    if (!project) return
+    // Check if intake is enabled
+    supabase.from('projects').select('intake_active').eq('id', project.id).single()
+      .then(({ data }) => setHasIntake(data?.intake_active ?? false))
+    // Load project admins for contact info
+    supabase.from('memberships').select('profile:profiles(full_name, email, avatar_url)')
+      .eq('project_id', project.id).eq('role', 'admin')
+      .then(({ data }) => setAdmins((data || []).map(m => m.profile).filter(Boolean)))
+  }, [project?.id])
   const [step, setStep] = useState('welcome') // welcome | profile | done
   const [joining, setJoining] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -116,7 +133,11 @@ export default function JoinProject() {
 
   const initials = (fullName || profile?.full_name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2)
 
-  // Step 1: Welcome + Join
+  const hasPublicSite = !!project?.slug
+  const publicSiteUrl = getPublicSiteUrl(project)
+  const intakeUrl = getIntakeUrl(project)
+
+  // Step 1: Lobby — show available routes
   if (step === 'welcome') {
     return (
       <div className="join-page">
@@ -150,13 +171,68 @@ export default function JoinProject() {
               <span>Ingelogd als <strong>{profile?.full_name || 'Gebruiker'}</strong></span>
             </div>
 
-            <button className="btn-primary join-card__btn" onClick={handleJoin} disabled={joining}>
-              {joining ? 'Aanmelden...' : 'Lid worden van deze community'}
-            </button>
+            <div className="join-card__routes">
+              {hasIntake && (
+                <a href={intakeUrl} className="join-card__route">
+                  <div className="join-card__route-icon" style={{ background: 'rgba(59,210,105,0.14)', color: '#27A854' }}>
+                    <i className="fa-solid fa-clipboard-list" />
+                  </div>
+                  <div>
+                    <strong>Aanmelden</strong>
+                    <p>Vul het aanmeldformulier in om lid te worden</p>
+                  </div>
+                  <i className="fa-solid fa-arrow-right" />
+                </a>
+              )}
 
-            <p className="join-card__note">
-              Je aanvraag wordt beoordeeld door de beheerders. Na goedkeuring krijg je volledige toegang.
-            </p>
+              {hasPublicSite && (
+                <a href={publicSiteUrl} className="join-card__route">
+                  <div className="join-card__route-icon" style={{ background: 'rgba(74,144,217,0.14)', color: '#3A7BC8' }}>
+                    <i className="fa-solid fa-globe" />
+                  </div>
+                  <div>
+                    <strong>Bekijk project</strong>
+                    <p>Lees meer over {project.name}</p>
+                  </div>
+                  <i className="fa-solid fa-arrow-right" />
+                </a>
+              )}
+
+              {!hasIntake && (
+                <button className="join-card__route" onClick={handleJoin} disabled={joining}>
+                  <div className="join-card__route-icon" style={{ background: 'rgba(240,144,32,0.14)', color: '#C47718' }}>
+                    <i className="fa-solid fa-user-plus" />
+                  </div>
+                  <div>
+                    <strong>{joining ? 'Aanmelden...' : 'Lid worden'}</strong>
+                    <p>Vraag lidmaatschap aan voor deze community</p>
+                  </div>
+                  <i className="fa-solid fa-arrow-right" />
+                </button>
+              )}
+            </div>
+
+            {admins.length > 0 && (
+              <div className="join-card__contact">
+                <p className="join-card__contact-label">Vragen? Neem contact op:</p>
+                {admins.map((admin, i) => (
+                  <div key={i} className="join-card__admin">
+                    {admin.avatar_url ? (
+                      <img src={admin.avatar_url} alt={admin.full_name} className="join-card__admin-avatar" />
+                    ) : (
+                      <div className="join-card__admin-avatar join-card__admin-avatar--placeholder">
+                        {(admin.full_name || '?')[0]}
+                      </div>
+                    )}
+                    <div>
+                      <strong>{admin.full_name}</strong>
+                      {admin.email && <a href={`mailto:${admin.email}`}>{admin.email}</a>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {error && <p className="join-card__error">{error}</p>}
           </div>
         </div>
@@ -209,7 +285,10 @@ export default function JoinProject() {
               </div>
               <div className="form-group form-group--half">
                 <label htmlFor="join-household">Gezinssamenstelling</label>
-                <input id="join-household" type="text" value={household} onChange={e => setHousehold(e.target.value)} placeholder="bijv. Stel met 2 kinderen" />
+                <select id="join-household" value={household} onChange={e => setHousehold(e.target.value)}>
+                  <option value="">Kies…</option>
+                  {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
               </div>
             </div>
 

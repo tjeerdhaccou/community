@@ -2,10 +2,14 @@ import { useState } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useMembers } from '../hooks/useMembers'
+import { useMemberInvites } from '../hooks/useMemberInvites'
+import { useWorkgroups } from '../hooks/useWorkgroups'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import { canDo } from '../lib/permissions'
-import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_LABELS, FUNNEL_COLORS } from '../lib/constants'
+import { getIntakeUrl, getProjectBaseUrl } from '../lib/subdomain'
+import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 import MemberProfile from '../components/MemberProfile'
 import RejectModal from '../components/RejectModal'
 import IntakeResponseDetail from '../components/IntakeResponseDetail'
@@ -14,13 +18,28 @@ const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
 
 export default function Members() {
   const { project, role } = useProject()
-  const { user } = useAuth()
-  const { members, loading, updateRole, removeMember, approveMember, rejectMember } = useMembers()
-  const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name)
+  const { user, isPlatformAdmin, isOrgAdmin, orgMemberships } = useAuth()
+  // Alleen org/platform admins mogen project-admins promoveren/demoteren of verwijderen
+  const isAdminOfProjectOrg = isOrgAdmin && project?.organization_id && orgMemberships.some(om =>
+    om.organization_id === project.organization_id && om.role === 'admin'
+  )
+  const canManageAdmins = isPlatformAdmin || isAdminOfProjectOrg
+  const { members: allMembers, loading, updateRole, updateFunnelStage, removeMember, approveMember, rejectMember } = useMembers()
+  // Stealth mode: platform admins zijn onzichtbaar voor andere project-leden.
+  // Alleen platform admins zelf zien medeplatform-admins in de ledenlijst.
+  const members = isPlatformAdmin
+    ? allMembers
+    : allMembers.filter(m => !m.profile?.is_platform_admin)
+  const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
+  const { allWorkgroups, workgroupIdsByProfile, workgroupsForProfile } = useWorkgroups()
+  const commissies = allWorkgroups.filter(wg => wg.type === 'commissie')
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
-  const [selectedMember, setSelectedMember] = useState(null)
+  const [selectedMemberId, setSelectedMemberId] = useState(null)
+  // Derive selectedMember from members list, zo blijft 'ie in sync na role-updates
+  const selectedMember = selectedMemberId ? members.find(m => m.id === selectedMemberId) : null
+  const setSelectedMember = (m) => setSelectedMemberId(m?.id ?? null)
   const [showInvite, setShowInvite] = useState(false)
   const [rejectTarget, setRejectTarget] = useState(null)
   const [selectedIntake, setSelectedIntake] = useState(null)
@@ -31,6 +50,7 @@ export default function Members() {
 
   const filtered = (filter === 'all' ? active
     : filter === 'pending' ? guests
+    : filter.startsWith('wg:') ? active.filter(m => (workgroupIdsByProfile[m.profile_id] || new Set()).has(filter.slice(3)))
     : active.filter(m => m.role === filter)
   ).filter(m => {
     if (!search.trim()) return true
@@ -46,7 +66,7 @@ export default function Members() {
         <div className="view-header__row">
           <div>
             <h1>Leden</h1>
-            <p className="view-header__subtitle">{active.length} leden{guests.length > 0 && canDo(role, 'invite_members') ? ` · ${guests.length} wachtend` : ''}</p>
+            <p className="view-header__subtitle">{active.length} leden{guests.length > 0 && canDo(role, 'invite_members') ? ` · ${guests.length} geïnteresseerd` : ''}</p>
           </div>
           {canDo(role, 'invite_members') && (
             <button className="btn-primary" onClick={() => setShowInvite(true)}>
@@ -75,10 +95,10 @@ export default function Members() {
       </div>
 
       {/* Filter pills */}
-      <div className="tag-filter">
+      <CollapsibleTagFilter>
         {[
           { key: 'all', label: `Alle (${active.length})` },
-          ...(guests.length > 0 && canDo(role, 'invite_members') ? [{ key: 'pending', label: `Wachtend (${guests.length})` }] : []),
+          ...(guests.length > 0 && canDo(role, 'invite_members') ? [{ key: 'pending', label: `Geïnteresseerden (${guests.length})` }] : []),
           { key: 'admin', label: 'Admins' },
           { key: 'moderator', label: 'Moderators' },
           { key: 'member', label: 'Leden' },
@@ -93,13 +113,27 @@ export default function Members() {
             {f.label}
           </button>
         ))}
-      </div>
+        {commissies.length > 0 && (
+          <>
+            <span className="tag-filter__divider" aria-hidden="true" />
+            {commissies.map(c => (
+              <button
+                key={c.id}
+                className={`tag-filter__pill ${filter === `wg:${c.id}` ? 'tag-filter__pill--active' : ''}`}
+                onClick={() => setFilter(`wg:${c.id}`)}
+              >
+                <i className="fa-solid fa-users" style={{ marginRight: '5px', fontSize: '11px' }} /> {c.name}
+              </button>
+            ))}
+          </>
+        )}
+      </CollapsibleTagFilter>
 
-      {/* Pending approvals banner */}
+      {/* Geïnteresseerden banner */}
       {filter !== 'pending' && guests.length > 0 && canDo(role, 'invite_members') && (
         <div className="members-pending-banner">
           <i className="fa-solid fa-user-clock" />
-          <span>{guests.length} {guests.length === 1 ? 'persoon wacht' : 'personen wachten'} op goedkeuring</span>
+          <span>{guests.length} {guests.length === 1 ? 'geïnteresseerde' : 'geïnteresseerden'} in dit project</span>
           <button className="members-pending-banner__btn" onClick={() => setFilter('pending')}>
             Bekijk <i className="fa-solid fa-arrow-right" />
           </button>
@@ -162,6 +196,8 @@ export default function Members() {
                 membership={m}
                 isMe={m.profile_id === user?.id}
                 onClick={canViewProfile ? () => setSelectedMember(m) : undefined}
+                showFunnel={canDo(role, 'assign_roles')}
+                commissies={workgroupsForProfile(m.profile_id, 'commissie')}
               />
             )
           })}
@@ -174,10 +210,14 @@ export default function Members() {
           membership={selectedMember}
           onClose={() => setSelectedMember(null)}
           isMe={selectedMember.profile_id === user?.id}
-          canManage={canDo(role, 'assign_roles') && selectedMember.profile_id !== user?.id}
-          canRemove={canDo(role, 'remove_members') && selectedMember.profile_id !== user?.id}
+          canManage={canDo(role, 'assign_roles') && selectedMember.profile_id !== user?.id
+            && (selectedMember.role !== 'admin' || canManageAdmins)}
+          canRemove={canDo(role, 'remove_members') && selectedMember.profile_id !== user?.id
+            && (selectedMember.role !== 'admin' || canManageAdmins)}
+          canAssignAdminRole={canManageAdmins}
           canApprove={canDo(role, 'invite_members') && selectedMember.role === 'guest'}
           onRoleChange={updateRole}
+          onFunnelChange={updateFunnelStage}
           onRemove={removeMember}
           onApprove={approveMember}
           onReject={() => { setSelectedMember(null); setRejectTarget(selectedMember) }}
@@ -185,16 +225,15 @@ export default function Members() {
       )}
 
       {showInvite && (
-        <InviteModal projectName={project?.name} projectId={project?.slug || project?.id} onClose={() => setShowInvite(false)} />
+        <InviteModal projectName={project?.name} project={project} onClose={() => setShowInvite(false)} />
       )}
 
       {selectedIntake && (
         <IntakeResponseDetail
           response={selectedIntake}
           questions={intakeQuestions}
-          projectId={project?.slug || project?.id}
           onClose={() => setSelectedIntake(null)}
-          onInvite={async () => { await updateIntakeStatus(selectedIntake.id, 'invited'); setSelectedIntake(null) }}
+          onInvite={async () => { await updateIntakeStatus(selectedIntake.id, 'invited') }}
           onReject={async () => { await updateIntakeStatus(selectedIntake.id, 'rejected'); setSelectedIntake(null) }}
         />
       )}
@@ -210,15 +249,9 @@ export default function Members() {
   )
 }
 
-function InviteModal({ projectName, projectId, onClose }) {
-  const [copied, setCopied] = useState(false)
-  const inviteUrl = `${window.location.origin}/p/${projectId}`
-
-  function copyLink() {
-    navigator.clipboard.writeText(inviteUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+function InviteModal({ projectName, project, onClose }) {
+  const [tab, setTab] = useState('personal')
+  const { invites, createInvite, revokeInvite, resendInvite } = useMemberInvites()
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -230,47 +263,246 @@ function InviteModal({ projectName, projectId, onClose }) {
           </button>
         </div>
 
-        <div className="invite-modal__content">
-          <p className="invite-modal__desc">
-            Deel deze link om mensen uit te nodigen voor <strong>{projectName}</strong>. Na registratie verschijnen ze als wachtend op goedkeuring.
-          </p>
-
-          <div className="invite-modal__link-row">
-            <input type="text" value={inviteUrl} readOnly className="invite-modal__link-input" />
-            <button className="btn-primary" onClick={copyLink}>
-              <i className={`fa-solid ${copied ? 'fa-check' : 'fa-copy'}`} />
-              {copied ? 'Gekopieerd' : 'Kopieer'}
-            </button>
-          </div>
-
-          <div className="invite-modal__share-row">
-            <a
-              href={`mailto:?subject=Uitnodiging voor ${projectName}&body=Je bent uitgenodigd om lid te worden van ${projectName}. Meld je aan via: ${inviteUrl}`}
-              className="btn-secondary invite-modal__share-btn"
-            >
-              <i className="fa-solid fa-envelope" /> Via e-mail
-            </a>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Je bent uitgenodigd voor ${projectName}! Meld je aan: ${inviteUrl}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary invite-modal__share-btn"
-            >
-              <i className="fa-brands fa-whatsapp" /> WhatsApp
-            </a>
-          </div>
+        <div className="tag-filter" style={{ padding: '12px 24px 20px', marginBottom: 0 }}>
+          <button
+            className={`tag-filter__pill ${tab === 'personal' ? 'tag-filter__pill--active' : ''}`}
+            onClick={() => setTab('personal')}
+          >
+            Persoonlijk
+          </button>
+          <button
+            className={`tag-filter__pill ${tab === 'link' ? 'tag-filter__pill--active' : ''}`}
+            onClick={() => setTab('link')}
+          >
+            Open link
+          </button>
         </div>
+
+        {tab === 'personal' ? (
+          <PersonalInvite
+            projectName={projectName}
+            invites={invites}
+            onInvite={createInvite}
+            onRevoke={revokeInvite}
+            onResend={resendInvite}
+          />
+        ) : (
+          <OpenLinkInvite projectName={projectName} project={project} />
+        )}
       </div>
     </div>
   )
 }
 
-function MemberCard({ membership, isMe, onClick }) {
+function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) {
+  const [email, setEmail] = useState('')
+  const [name, setName] = useState('')
+  const [personalMessage, setPersonalMessage] = useState('')
+  const [assignedRole, setAssignedRole] = useState('guest')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [resending, setResending] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!email.trim()) return
+    setError(null)
+    setSaving(true)
+    try {
+      await onInvite({ email: email.trim(), name: name.trim(), personalMessage: personalMessage.trim(), assignedRole })
+      setEmail('')
+      setName('')
+      setPersonalMessage('')
+      setAssignedRole('guest')
+    } catch (err) {
+      setError(err.message || 'Uitnodiging versturen mislukt.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleResend(invite) {
+    setResending(invite.id)
+    try {
+      await onResend(invite)
+    } catch (err) {
+      setError(err.message || 'Opnieuw versturen mislukt.')
+    } finally {
+      setResending(null)
+    }
+  }
+
+  const visibleInvites = invites.filter(i => i.status !== 'revoked')
+
+  return (
+    <div className="invite-modal__content">
+      <p className="invite-modal__desc">
+        Stuur een persoonlijke uitnodiging naar iemand die je wil toevoegen aan <strong>{projectName}</strong>. Ze krijgen een e-mail met een directe inloglink.
+      </p>
+
+      <form onSubmit={handleSubmit} className="modal-form">
+        <div className="form-group">
+          <label htmlFor="invite-email">E-mailadres</label>
+          <input
+            id="invite-email"
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="naam@voorbeeld.nl"
+            required
+            autoFocus
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="invite-name">Naam <span style={{ color: 'var(--color-text-muted)', fontWeight: 'normal' }}>(optioneel)</span></label>
+          <input
+            id="invite-name"
+            type="text"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Volledige naam"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="invite-personal-message">
+            Persoonlijk bericht <span style={{ color: 'var(--color-text-muted)', fontWeight: 'normal' }}>(optioneel)</span>
+          </label>
+          <textarea
+            id="invite-personal-message"
+            value={personalMessage}
+            onChange={e => setPersonalMessage(e.target.value)}
+            placeholder="Bijvoorbeeld: 'Hoi Jan, leuk je te ontmoeten gisteren. Hier de uitnodiging voor onze community.'"
+            rows={3}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="invite-role">Rol na registratie</label>
+          <select
+            id="invite-role"
+            value={assignedRole}
+            onChange={e => setAssignedRole(e.target.value)}
+            className="form-select"
+          >
+            <option value="guest">Gast (wacht op goedkeuring)</option>
+            <option value="aspirant">Aspirant-lid</option>
+            <option value="member">Lid</option>
+            <option value="moderator">Moderator</option>
+          </select>
+          <span className="form-hint">De uitgenodigde kan deze rol zelf niet aanpassen.</span>
+        </div>
+
+        {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
+
+        <div className="modal-actions" style={{ justifyContent: 'flex-end' }}>
+          <button type="submit" className="btn-primary" disabled={saving || !email.trim()}>
+            <i className="fa-solid fa-paper-plane" /> {saving ? 'Versturen...' : 'Uitnodiging versturen'}
+          </button>
+        </div>
+      </form>
+
+      {visibleInvites.length > 0 && (
+        <div className="invite-list">
+          <h3 className="invite-list__title">Uitgenodigd</h3>
+          {visibleInvites.map(inv => (
+            <div key={inv.id} className="invite-row">
+              <div className="invite-row__avatar" style={{ background: 'var(--accent-blue)' }}>
+                {(inv.name || inv.email)[0].toUpperCase()}
+              </div>
+              <div className="invite-row__info">
+                <span className="invite-row__name">{inv.name || inv.email}</span>
+                {inv.name && <span className="invite-row__email">{inv.email}</span>}
+              </div>
+              {inv.assigned_role && inv.assigned_role !== 'guest' && (
+                <span className="invite-role-badge" style={{ background: `${ROLE_COLORS[inv.assigned_role]}14`, color: ROLE_COLORS[inv.assigned_role] }}>
+                  {ROLE_LABELS[inv.assigned_role]}
+                </span>
+              )}
+              {inv.status === 'accepted' ? (
+                <span className="invite-status invite-status--accepted">Aangemeld</span>
+              ) : (
+                <>
+                  <button
+                    className="btn-icon-sm"
+                    onClick={() => handleResend(inv)}
+                    disabled={resending === inv.id}
+                    title="Opnieuw versturen"
+                    aria-label="Opnieuw versturen"
+                  >
+                    <i className={`fa-solid ${resending === inv.id ? 'fa-spinner fa-spin' : 'fa-rotate-right'}`} />
+                  </button>
+                  <button
+                    className="btn-icon-sm"
+                    onClick={() => onRevoke(inv.id)}
+                    title="Intrekken"
+                    aria-label="Intrekken"
+                  >
+                    <i className="fa-solid fa-xmark" />
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function OpenLinkInvite({ projectName, project }) {
+  const [copied, setCopied] = useState(false)
+  const intakeUrl = getIntakeUrl(project)
+
+  function copyLink() {
+    navigator.clipboard.writeText(intakeUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="invite-modal__content">
+      <p className="invite-modal__desc">
+        Deel deze link met geïnteresseerden voor <strong>{projectName}</strong>. Ze vullen eerst het intake-formulier in — jij bepaalt daarna wie je uitnodigt.
+      </p>
+
+      <div className="invite-modal__link-row">
+        <input type="text" value={intakeUrl} readOnly className="invite-modal__link-input" />
+        <button className="btn-primary" onClick={copyLink}>
+          <i className={`fa-solid ${copied ? 'fa-check' : 'fa-copy'}`} />
+          {copied ? 'Gekopieerd' : 'Kopieer'}
+        </button>
+      </div>
+
+      <div className="invite-modal__share-row">
+        <a
+          href={`mailto:?subject=${encodeURIComponent(`Aanmelden voor ${projectName}`)}&body=${encodeURIComponent(`Wil je meer weten over ${projectName}? Meld je aan via: ${intakeUrl}`)}`}
+          className="btn-secondary invite-modal__share-btn"
+        >
+          <i className="fa-solid fa-envelope" /> Via e-mail
+        </a>
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(`Wil je meer weten over ${projectName}? Meld je aan via: ${intakeUrl}`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-secondary invite-modal__share-btn"
+        >
+          <i className="fa-brands fa-whatsapp" /> WhatsApp
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [] }) {
   const p = membership.profile
   const roleColor = ROLE_COLORS[membership.role] || '#9ba1b0'
   const proLabel = PROFESSIONAL_LABELS[p?.professional_type]
   const proColor = PROFESSIONAL_COLORS[p?.professional_type]
   const isNew = Date.now() - new Date(membership.joined_at).getTime() < FOURTEEN_DAYS
+  const funnelColor = FUNNEL_COLORS[membership.funnel_stage]
+  const funnelLabel = FUNNEL_LABELS[membership.funnel_stage]
 
   return (
     <div className={`member-card ${onClick ? '' : 'member-card--no-click'}`} onClick={onClick}>
@@ -305,8 +537,23 @@ function MemberCard({ membership, isMe, onClick }) {
             {proLabel}
           </span>
         )}
+        {showFunnel && funnelLabel && membership.funnel_stage !== 'nieuw' && (
+          <span className="member-card__badge" style={{ background: `${funnelColor}14`, color: funnelColor }}>
+            {funnelLabel}
+          </span>
+        )}
         {isNew && <span className="member-card__badge member-card__badge--new">Nieuw</span>}
       </div>
+
+      {commissies.length > 0 && (
+        <div className="member-card__commissies">
+          {commissies.map(c => (
+            <span key={c.id} className="member-card__commissie">
+              <i className="fa-solid fa-users" /> {c.name}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

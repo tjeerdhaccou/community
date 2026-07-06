@@ -3,6 +3,25 @@ import { useUpdateComments } from '../hooks/useUpdates'
 import { useAuth } from '../contexts/AuthContext'
 import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
 import Linkify from './Linkify'
+import { openProjectFile } from '../lib/storage'
+
+function attachmentIcon(fileName = '', fileType = '') {
+  const ext = fileName.split('.').pop()?.toLowerCase()
+  if (fileType?.includes('pdf') || ext === 'pdf') return 'fa-file-pdf'
+  if (['doc', 'docx', 'odt', 'rtf'].includes(ext)) return 'fa-file-word'
+  if (['xls', 'xlsx', 'csv', 'ods'].includes(ext)) return 'fa-file-excel'
+  if (['ppt', 'pptx'].includes(ext)) return 'fa-file-powerpoint'
+  if (['zip', 'rar'].includes(ext)) return 'fa-file-zipper'
+  if (fileType?.startsWith('image/')) return 'fa-file-image'
+  return 'fa-file-lines'
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 export default function UpdateDetail({ update, onClose, onEdit, onReaction, canEdit }) {
   const { profile } = useAuth()
@@ -73,11 +92,36 @@ export default function UpdateDetail({ update, onClose, onEdit, onReaction, canE
             </div>
           </div>
 
-          <div className="post-detail-text"><Linkify text={update.body} /></div>
-
           {update.image_url && (
             <div className="post-detail-image">
               <img src={update.image_url} alt={update.title || ''} />
+            </div>
+          )}
+
+          <div className="post-detail-text"><Linkify text={update.body} /></div>
+
+          {update.attachments && update.attachments.length > 0 && (
+            <div className="update-detail__attachments">
+              <h4 className="update-detail__attachments-title">
+                <i className="fa-solid fa-paperclip" /> Bijlagen ({update.attachments.length})
+              </h4>
+              <div className="update-attachments-list">
+                {update.attachments.map(a => (
+                  <a
+                    key={a.id}
+                    href={a.file_path}
+                    onClick={(e) => { e.preventDefault(); openProjectFile(a.file_path) }}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="update-attachment-row update-attachment-row--link"
+                  >
+                    <i className={`fa-regular ${attachmentIcon(a.file_name, a.file_type)} update-attachment-row__icon`} />
+                    <span className="update-attachment-row__name">{a.file_name}</span>
+                    <span className="update-attachment-row__size">{formatBytes(a.file_size)}</span>
+                    <i className="fa-solid fa-arrow-down update-attachment-row__download" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
 

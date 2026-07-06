@@ -77,7 +77,7 @@ export default function PostDetail({ post, onClose, onLike, onReaction, onFollow
               <span className="feed-card__name">{post.author?.full_name}</span>
               <span className="feed-card__time">{timeAgo(post.created_at)}</span>
             </div>
-            {post.tag && <span className="feed-card__tag" style={{ color: POST_TAG_COLORS[post.tag], background: `${POST_TAG_COLORS[post.tag]}14` }}>{post.tag}</span>}
+            {post.tag && <span className="feed-card__tag" style={{ color: POST_TAG_COLORS[post.tag]?.color, background: POST_TAG_COLORS[post.tag]?.bg }}>{post.tag}</span>}
           </div>
 
           <div className="post-detail-text"><Linkify text={post.text} /></div>

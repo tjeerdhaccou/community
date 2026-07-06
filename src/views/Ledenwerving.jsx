@@ -2,15 +2,17 @@ import { useState, useRef } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { getIntakeUrl, getProjectBaseUrl } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
 import IntakeResponseDetail from '../components/IntakeResponseDetail'
+import ImageCropper from '../components/ImageCropper'
 
 export default function Ledenwerving() {
   const { project } = useProject()
   const { questions, addQuestion, updateQuestion, deleteQuestion, reorderQuestions } = useIntakeQuestions(project?.id)
-  const { responses, pending, invited, joined, rejected, updateStatus } = useIntakeResponses(project?.id, project?.name)
+  const { responses, pending, invited, joined, rejected, updateStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
 
   const [tab, setTab] = useState('responses') // responses | form
   const [selectedResponse, setSelectedResponse] = useState(null)
@@ -20,10 +22,27 @@ export default function Ledenwerving() {
   const [coverPreview, setCoverPreview] = useState(project?.cover_image_url || '')
   const [uploadingCover, setUploadingCover] = useState(false)
   const coverRef = useRef(null)
+  const [cropSrc, setCropSrc] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const intakeUrl = `${window.location.origin}/intake/${project?.id}`
+  const intakeUrl = getIntakeUrl(project)
+
+  async function handleCoverCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setCoverPreview(URL.createObjectURL(blob))
+    setUploadingCover(true)
+    try {
+      const url = await uploadImage(file)
+      setCoverUrl(url)
+    } catch (err) {
+      console.error('Cover upload failed:', err)
+      setCoverPreview(coverUrl || '')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
 
   async function handleSaveSettings() {
     setSaving(true)
@@ -201,20 +220,11 @@ export default function Ledenwerving() {
               ref={coverRef}
               type="file"
               accept="image/*"
-              onChange={async (e) => {
+              onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (!file) return
-                setCoverPreview(URL.createObjectURL(file))
-                setUploadingCover(true)
-                try {
-                  const url = await uploadImage(file)
-                  setCoverUrl(url)
-                } catch (err) {
-                  console.error('Cover upload failed:', err)
-                  setCoverPreview(coverUrl || '')
-                } finally {
-                  setUploadingCover(false)
-                }
+                setCropSrc(URL.createObjectURL(file))
+                e.target.value = ''
               }}
               style={{ display: 'none' }}
             />
@@ -249,11 +259,20 @@ export default function Ledenwerving() {
         </div>
       )}
 
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={16 / 9}
+          round={false}
+          onComplete={handleCoverCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
+
       {selectedResponse && (
         <IntakeResponseDetail
           response={selectedResponse}
           questions={questions}
-          projectId={project?.slug || project?.id}
           onClose={() => setSelectedResponse(null)}
           onInvite={async () => { await updateStatus(selectedResponse.id, 'invited') }}
           onReject={async () => { await updateStatus(selectedResponse.id, 'rejected') }}

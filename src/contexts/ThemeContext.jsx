@@ -3,45 +3,74 @@ import { safeStorage } from '../lib/safeStorage'
 
 const ThemeContext = createContext(null)
 
-export function ThemeProvider({ children, projectBranding }) {
-  const [mode, setMode] = useState(() => {
-    return safeStorage.getItem('theme-mode') || projectBranding?.default_theme || 'light'
+// 's Avonds (19:00–07:00 lokale tijd) standaard donker tonen.
+function isEveningNow() {
+  const hour = new Date().getHours()
+  return hour >= 19 || hour < 7
+}
+
+export function ThemeProvider({ children, projectBranding, scope }) {
+  const storageKey = scope ? `dark-mode-${scope}` : null
+
+  // STIJL-AS (clean ↔ crowdbuilding) komt UITSLUITEND uit de CMS-cascade
+  // (organizations/projects.default_theme, geresolved in ProjectContext).
+  // De gebruiker kiest de stijl niet — alleen licht/donker.
+  const style = projectBranding?.default_theme === 'crowdbuilding' ? 'crowdbuilding' : 'clean'
+
+  // LICHT/DONKER-AS is wél een gebruikerskeuze (knop rechtsboven). Zonder
+  // handmatige keuze 's avonds automatisch donker.
+  const [dark, setDarkState] = useState(() => {
+    if (!storageKey) return false
+    const stored = safeStorage.getItem(storageKey)
+    if (stored === 'dark') return true
+    if (stored === 'light') return false
+    return isEveningNow()
   })
 
-  useEffect(() => {
-    safeStorage.setItem('theme-mode', mode)
-    // Clean Design System uses data-theme for dark mode
-    document.documentElement.setAttribute('data-theme', mode)
-  }, [mode])
+  // Expliciete keuze: opslaan én de avond-automatiek uitschakelen voor deze scope.
+  const setDark = storageKey
+    ? (next) => {
+        safeStorage.setItem(storageKey, next ? 'dark' : 'light')
+        setDarkState(next)
+      }
+    : () => {}
+  const toggleDark = () => setDark(!dark)
+
+  // data-theme = stijl × licht/donker.
+  const dataTheme = !storageKey
+    ? 'light'
+    : style === 'crowdbuilding'
+      ? (dark ? 'crowdbuilding-dark' : 'crowdbuilding')
+      : (dark ? 'dark' : 'warm')
 
   useEffect(() => {
-    // In contrast mode, don't apply project branding — use theme's own colors
-    if (mode === 'contrast') {
-      document.documentElement.style.removeProperty('--accent-primary')
-      document.documentElement.style.removeProperty('--border-focus')
-      document.documentElement.style.removeProperty('--accent-green')
-      return
-    }
+    document.documentElement.setAttribute('data-theme', dataTheme)
+  }, [dataTheme])
 
-    // Apply project branding colors as CSS custom properties
-    if (projectBranding?.brand_primary_color) {
-      document.documentElement.style.setProperty('--accent-primary', projectBranding.brand_primary_color)
-      document.documentElement.style.setProperty('--border-focus', projectBranding.brand_primary_color)
+  // Zonder handmatige keuze het thema bijwerken wanneer het tabblad weer zichtbaar
+  // wordt — zo wordt het 's avonds donker zonder herladen.
+  useEffect(() => {
+    if (!storageKey) return
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const stored = safeStorage.getItem(storageKey)
+      if (stored === 'dark' || stored === 'light') return
+      setDarkState(isEveningNow())
     }
-    if (projectBranding?.brand_accent_color) {
-      document.documentElement.style.setProperty('--accent-green', projectBranding.brand_accent_color)
-    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [storageKey])
 
-    return () => {
-      // Clean up when leaving project
-      document.documentElement.style.removeProperty('--accent-primary')
-      document.documentElement.style.removeProperty('--border-focus')
-      document.documentElement.style.removeProperty('--accent-green')
-    }
-  }, [projectBranding, mode])
+  // Project-merkkleuren (brand_primary_color / brand_accent_color) worden
+  // bewust NIET meer toegepast. Ze overschreven --accent-primary/--accent-green
+  // inline op <html> in zowel licht als donker, waardoor donkere merkkleuren
+  // onleesbaar werden tegen de zwarte dark-mode achtergrond. Het functionele
+  // palet (uit clean-tokens.css) is per thema al op contrast afgestemd, dus
+  // alle projecten gebruiken nu datzelfde palet. Sluit aan op de geparkeerde
+  // merkkleur-kiezer (botste met het functionele palet).
 
   return (
-    <ThemeContext.Provider value={{ mode, setMode }}>
+    <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey }}>
       {children}
     </ThemeContext.Provider>
   )

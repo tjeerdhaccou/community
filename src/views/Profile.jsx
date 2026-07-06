@@ -3,20 +3,42 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { uploadImage } from '../lib/storage'
 import { logAudit } from '../lib/audit'
+import { exportUserData } from '../lib/dataExport'
 import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { getProfileCompleteness } from '../lib/profileCompleteness'
+import { getIntakeField } from '../lib/intakeFields'
+import { useProject } from '../contexts/ProjectContext'
+import MemberProfile from '../components/MemberProfile'
+import ImageCropper from '../components/ImageCropper'
+
+// Het publieke profiel toont alleen lichte, sociale velden. Privé/detailgegevens
+// (adres, telefoon, woonsituatie, inkomen, partner, ...) gaan via het
+// intakeformulier en zijn alleen zichtbaar voor de initiatiefnemers in het CMS.
+const HOUSEHOLD_OPTIONS = getIntakeField('household').options
+
+import {
+  isSupported as browserNotifSupported,
+  getPermission as getBrowserNotifPermission,
+  requestPermission as requestBrowserNotif,
+  getUserPreference as getBrowserNotifPref,
+  setUserPreference as setBrowserNotifPref,
+} from '../lib/browserNotifications'
 
 export default function Profile() {
   const { profile: authProfile, reload } = useAuth()
-  const [fullName, setFullName] = useState('')
+  const { project } = useProject()
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [city, setCity] = useState('')
   const [company, setCompany] = useState('')
   const [companyLogoUrl, setCompanyLogoUrl] = useState(null)
   const [companyLogoPreview, setCompanyLogoPreview] = useState(null)
-  const [phone, setPhone] = useState('')
   const [website, setWebsite] = useState('')
   const [bio, setBio] = useState('')
   const [birthYear, setBirthYear] = useState('')
   const [household, setHousehold] = useState('')
   const [housingDream, setHousingDream] = useState('')
+  const [showPreview, setShowPreview] = useState(false)
   const [photoUrls, setPhotoUrls] = useState([])
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -37,7 +59,39 @@ export default function Profile() {
   })
   const [prefsLoaded, setPrefsLoaded] = useState(false)
 
+  // Desktop notifications: gecombineerde state (user-pref AAN + browser-permission GRANTED)
+  const [desktopNotif, setDesktopNotif] = useState(false)
+  useEffect(() => {
+    if (!browserNotifSupported()) return
+    setDesktopNotif(getBrowserNotifPref() && getBrowserNotifPermission() === 'granted')
+  }, [])
+
+  async function toggleDesktopNotif(enabled) {
+    if (!enabled) {
+      setBrowserNotifPref(false)
+      setDesktopNotif(false)
+      return
+    }
+    const result = await requestBrowserNotif()
+    if (result === 'granted') {
+      setBrowserNotifPref(true)
+      setDesktopNotif(true)
+    } else {
+      setBrowserNotifPref(false)
+      setDesktopNotif(false)
+    }
+  }
+
   const isProfessional = !!authProfile?.professional_type
+
+  // Scroll naar #notif-section als de welkomstkaart daarheen linkt.
+  useEffect(() => {
+    if (window.location.hash !== '#notif-section') return
+    const t = setTimeout(() => {
+      document.getElementById('notif-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 300)
+    return () => clearTimeout(t)
+  }, [])
 
   // Load notification preferences
   useEffect(() => {
@@ -65,11 +119,13 @@ export default function Profile() {
 
   useEffect(() => {
     if (authProfile) {
-      setFullName(authProfile.full_name || '')
+      const nameParts = (authProfile.full_name || '').trim().split(' ')
+      setFirstName(authProfile.first_name || nameParts[0] || '')
+      setLastName(authProfile.last_name || nameParts.slice(1).join(' ') || '')
+      setCity(authProfile.city || '')
       setCompany(authProfile.company || '')
       setCompanyLogoUrl(authProfile.company_logo_url || null)
       setCompanyLogoPreview(authProfile.company_logo_url || null)
-      setPhone(authProfile.phone || '')
       setWebsite(authProfile.website || '')
       setBio(authProfile.bio || '')
       setBirthYear(authProfile.birth_year || '')
@@ -81,10 +137,19 @@ export default function Profile() {
     }
   }, [authProfile])
 
-  async function handleAvatarSelect(e) {
+  const [cropSrc, setCropSrc] = useState(null)
+
+  function handleAvatarSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setAvatarPreview(URL.createObjectURL(file))
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  async function handleAvatarCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setAvatarPreview(URL.createObjectURL(blob))
     setUploading(true)
     try {
       const url = await uploadImage(file)
@@ -135,37 +200,8 @@ export default function Profile() {
   async function handleExportData() {
     setExporting(true)
     try {
-      const userId = authProfile.id
-      const [profileRes, membershipsRes, postsRes, commentsRes, updatesRes] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, email, bio, company, phone, website, birth_year, household, housing_dream, created_at').eq('id', userId).single(),
-        supabase.from('memberships').select('role, joined_at, projects(name)').eq('profile_id', userId),
-        supabase.from('posts').select('text, tag, post_type, created_at').eq('author_id', userId).order('created_at', { ascending: false }),
-        supabase.from('comments').select('text, created_at').eq('author_id', userId).order('created_at', { ascending: false }),
-        supabase.from('updates').select('title, body, tag, is_public, created_at').eq('author_id', userId).order('created_at', { ascending: false }),
-      ])
-
-      const exportData = {
-        exported_at: new Date().toISOString(),
-        profile: profileRes.data,
-        memberships: (membershipsRes.data || []).map(m => ({
-          project: m.projects?.name,
-          role: m.role,
-          joined_at: m.joined_at,
-        })),
-        posts: postsRes.data || [],
-        comments: commentsRes.data || [],
-        updates: updatesRes.data || [],
-      }
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `mijn-gegevens-${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-
-      logAudit('user.data_exported', 'profile', { resourceId: userId })
+      await exportUserData(authProfile.id)
+      logAudit('user.data_exported', 'profile', { resourceId: authProfile.id })
     } catch (err) {
       console.error('Export failed:', err)
       alert('Data exporteren mislukt. Probeer het opnieuw.')
@@ -206,16 +242,22 @@ export default function Profile() {
     setSaving(true)
     setSaved(false)
     try {
+      const fn = firstName.trim()
+      const ln = lastName.trim()
+      // Alleen de publieke profielvelden. Privé/detailgegevens (adres, telefoon,
+      // woonprofiel) worden hier bewust NIET aangeraakt — die lopen via intake.
       const updates = {
-        full_name: fullName.trim() || null,
+        first_name: fn || null,
+        last_name: ln || null,
+        full_name: `${fn} ${ln}`.trim() || null,
+        city: city.trim() || null,
         avatar_url: avatarUrl,
         company: company.trim() || null,
         company_logo_url: companyLogoUrl,
-        phone: phone.trim() || null,
         website: website.trim() || null,
         bio: bio.trim() || null,
         birth_year: birthYear ? parseInt(birthYear, 10) : null,
-        household: household.trim() || null,
+        household: household || null,
         housing_dream: housingDream.trim() || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
       }
@@ -237,15 +279,64 @@ export default function Profile() {
     }
   }
 
+  const fullName = `${firstName} ${lastName}`.trim()
   const initials = (fullName || 'U').split(' ').map(n => n[0]).join('').slice(0, 2)
+
+  // Live voortgang op basis van de huidige formulierwaarden.
+  const completeness = getProfileCompleteness({
+    avatar_url: avatarUrl,
+    first_name: firstName,
+    last_name: lastName,
+    full_name: fullName,
+    bio,
+    birth_year: birthYear,
+    household,
+    city,
+    housing_dream: housingDream,
+  })
   const proColor = PROFESSIONAL_COLORS[authProfile?.professional_type] || '#9ba1b0'
   const proLabel = authProfile?.professional_label || PROFESSIONAL_LABELS[authProfile?.professional_type]
 
   return (
     <div className="view-profile">
       <div className="view-header">
-        <h1>Mijn profiel</h1>
-        <p className="view-header__subtitle">Beheer je persoonlijke gegevens</p>
+        <h1>Mijn publieke profiel</h1>
+        <p className="view-header__subtitle">
+          Dit zien andere leden{project?.name ? ` van ${project.name}` : ''}.
+        </p>
+      </div>
+
+      <div className="profile-public-note">
+        <i className="fa-solid fa-eye" />
+        <div>
+          <p>Alles op deze pagina is zichtbaar voor andere leden. Alle velden zijn optioneel.</p>
+          <p className="profile-public-note__sub">
+            Wil je meer privé delen? De initiatiefnemers kunnen je apart om aanvullende
+            gegevens vragen via een intakeformulier — die zijn niet zichtbaar voor medeleden.
+          </p>
+        </div>
+        <button type="button" className="btn-secondary btn-sm" onClick={() => setShowPreview(true)}>
+          <i className="fa-solid fa-user-group" /> Bekijk als ander lid
+        </button>
+      </div>
+
+      <div className="profile-progress">
+        <div className="profile-progress__head">
+          <span className="profile-progress__label">
+            {completeness.pct === 100
+              ? 'Je profiel is compleet 🎉'
+              : `Je profiel is ${completeness.pct}% compleet`}
+          </span>
+          <span className="profile-progress__pct">{completeness.pct}%</span>
+        </div>
+        <div className="profile-progress__track">
+          <div className="profile-progress__bar" style={{ width: `${completeness.pct}%` }} />
+        </div>
+        {completeness.missing.length > 0 && (
+          <p className="profile-progress__hint">
+            Nog aan te vullen: {completeness.missing.map(m => m.label).join(', ')}.
+          </p>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="profile-form">
@@ -259,6 +350,12 @@ export default function Profile() {
             )}
             <div className="profile-avatar-info">
               <h3>{fullName || 'Naam instellen'}</h3>
+              {authProfile?.email && (
+                <p className="profile-avatar-info__email" style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-body-sm)', margin: '2px 0 8px' }}>
+                  <i className="fa-regular fa-envelope" style={{ marginRight: 6 }} />
+                  {authProfile.email}
+                </p>
+              )}
               {isProfessional && proLabel && (
                 <span className="pro-badge" style={{ background: `${proColor}14`, color: proColor }}>{proLabel}</span>
               )}
@@ -273,23 +370,37 @@ export default function Profile() {
         {/* Basic info */}
         <div className="profile-section">
           <h3 className="profile-section__title">Persoonlijk</h3>
-          <div className="form-group">
-            <label htmlFor="prof-name">Naam</label>
-            <input id="prof-name" type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Je volledige naam" />
+          <div className="form-row">
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-first">Voornaam</label>
+              <input id="prof-first" type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Voornaam" />
+            </div>
+            <div className="form-group form-group--half">
+              <label htmlFor="prof-last">Achternaam</label>
+              <input id="prof-last" type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Achternaam" />
+            </div>
           </div>
           <div className="form-group">
-            <label htmlFor="prof-bio">Bio</label>
+            <label htmlFor="prof-bio">Over mij</label>
             <textarea id="prof-bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="Vertel iets over jezelf..." rows={3} />
           </div>
           <div className="form-row">
             <div className="form-group form-group--half">
               <label htmlFor="prof-birth-year">Geboortejaar</label>
               <input id="prof-birth-year" type="number" value={birthYear} onChange={e => setBirthYear(e.target.value)} placeholder="bijv. 1985" min="1920" max={new Date().getFullYear()} />
+              <p className="form-hint" style={{ margin: '2px 0 0' }}>Andere leden zien alleen je leeftijd.</p>
             </div>
             <div className="form-group form-group--half">
-              <label htmlFor="prof-household">Gezinssamenstelling</label>
-              <input id="prof-household" type="text" value={household} onChange={e => setHousehold(e.target.value)} placeholder="bijv. Stel met 2 kinderen" />
+              <label htmlFor="prof-household">Huishouden</label>
+              <select id="prof-household" value={household} onChange={e => setHousehold(e.target.value)}>
+                <option value="">Kies…</option>
+                {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
+          </div>
+          <div className="form-group">
+            <label htmlFor="prof-city">Woonplaats</label>
+            <input id="prof-city" type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="bijv. Amsterdam" />
           </div>
         </div>
 
@@ -320,28 +431,19 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Contact */}
-        <div className="profile-section">
-          <h3 className="profile-section__title">Contact</h3>
-          <div className="form-row">
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-phone">Telefoon</label>
-              <input id="prof-phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+31 6..." />
-            </div>
-            <div className="form-group form-group--half">
-              <label htmlFor="prof-website">Website</label>
-              <input id="prof-website" type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..." />
-            </div>
-          </div>
-        </div>
-
         {/* Professional section — only for adviseurs */}
         {isProfessional && (
           <div className="profile-section">
             <h3 className="profile-section__title">Bedrijf</h3>
-            <div className="form-group">
-              <label htmlFor="prof-company">Bedrijfsnaam</label>
-              <input id="prof-company" type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="Bedrijfsnaam" />
+            <div className="form-row">
+              <div className="form-group form-group--half">
+                <label htmlFor="prof-company">Bedrijfsnaam</label>
+                <input id="prof-company" type="text" value={company} onChange={e => setCompany(e.target.value)} placeholder="Bedrijfsnaam" />
+              </div>
+              <div className="form-group form-group--half">
+                <label htmlFor="prof-website">Website</label>
+                <input id="prof-website" type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..." />
+              </div>
             </div>
             <div className="form-group">
               <label>Bedrijfslogo</label>
@@ -374,7 +476,7 @@ export default function Profile() {
           </h3>
 
           {[
-            { key: 'pref_updates', label: 'Updates', icon: 'fa-solid fa-bullhorn', desc: 'Nieuwe project updates' },
+            { key: 'pref_updates', label: 'Projectnieuws', icon: 'fa-solid fa-bullhorn', desc: 'Nieuwe aankondigingen vanuit het projectteam' },
             { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-comments', desc: 'Reacties en likes op je berichten' },
             { key: 'pref_events', label: 'Events', icon: 'fa-solid fa-calendar-check', desc: 'Nieuwe events en herinneringen' },
             { key: 'pref_documents', label: 'Documenten', icon: 'fa-solid fa-folder-open', desc: 'Nieuwe documenten' },
@@ -397,6 +499,29 @@ export default function Profile() {
               </select>
             </div>
           ))}
+
+          {browserNotifSupported() && (
+            <div className="notif-pref-row">
+              <div className="notif-pref-row__info">
+                <i className="fa-solid fa-desktop" />
+                <div>
+                  <span className="notif-pref-row__label">Desktop-meldingen</span>
+                  <span className="notif-pref-row__desc">
+                    {getBrowserNotifPermission() === 'denied'
+                      ? 'Geblokkeerd in browser — pas dit aan via je browser-instellingen'
+                      : 'Pop-up in je browser bij nieuwe activiteit (tab moet open zijn)'}
+                  </span>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={desktopNotif}
+                disabled={getBrowserNotifPermission() === 'denied'}
+                onChange={e => toggleDesktopNotif(e.target.checked)}
+                style={{ width: 20, height: 20, cursor: 'pointer' }}
+              />
+            </div>
+          )}
 
           <div className="notif-pref-row notif-pref-row--mute">
             <div className="notif-pref-row__info">
@@ -494,6 +619,25 @@ export default function Profile() {
           </button>
         </div>
       </form>
+
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={1}
+          round={true}
+          onComplete={handleAvatarCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
+
+      {showPreview && authProfile?.id && (
+        <MemberProfile
+          profileId={authProfile.id}
+          isMe
+          canManage={false}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
     </div>
   )
 }

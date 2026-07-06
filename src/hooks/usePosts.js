@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
 import { logAudit } from '../lib/audit'
+import { dispatchNotification } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 
@@ -24,6 +25,7 @@ export function usePosts() {
       .select(`
         *,
         author:profiles!author_id(id, full_name, avatar_url),
+        workgroup:workgroups(name),
         comments(count),
         post_likes(profile_id),
         post_follows(profile_id),
@@ -59,6 +61,7 @@ export function usePosts() {
 
         return {
           ...p,
+          workgroup_name: p.workgroup?.name || null,
           comment_count: p.comments?.[0]?.count || 0,
           like_count: p.post_likes?.length || 0,
           is_liked: p.post_likes?.some(l => l.profile_id === user?.id) || false,
@@ -97,7 +100,8 @@ export function usePosts() {
     return () => { supabase.removeChannel(channel); clearTimeout(debounceRef.current) }
   }, [projectId, fetchPosts])
 
-  async function createPost({ text, tag, image_url, post_type, poll_options }) {
+  async function createPost({ text, tag, audience, workgroup_id, image_url, post_type, poll_options }) {
+    const resolvedAudience = audience || 'members'
     const { data, error } = await supabase
       .from('posts')
       .insert({
@@ -105,6 +109,8 @@ export function usePosts() {
         author_id: user.id,
         text,
         tag: tag || null,
+        audience: resolvedAudience,
+        workgroup_id: resolvedAudience === 'workgroup' ? (workgroup_id || null) : null,
         image_url: image_url || null,
         post_type: post_type || 'post',
       })
@@ -128,6 +134,7 @@ export function usePosts() {
       await supabase.from('post_follows').upsert({ profile_id: user.id, post_id: data.id }, { onConflict: 'profile_id,post_id' })
     } catch (e) { /* ignore */ }
     logAudit('post.created', 'post', { resourceId: data.id, projectId, metadata: { post_type: post_type || 'post' } })
+    if (data?.id) dispatchNotification({ projectId, type: 'new_post', referenceId: data.id, actorId: user.id })
     fetchPosts()
     return data
   }
@@ -293,10 +300,16 @@ export function useComments(postId) {
         reply_to_id: replyToId || null,
         reply_to_name: replyToName || null,
       })
-      .select('*, author:profiles(id, full_name, avatar_url)')
+      .select('*, author:profiles(id, full_name, avatar_url), post:posts(project_id)')
       .single()
     if (error) { logger.error('useComments.addComment', error); throw new Error(friendlyError(error)) }
     setComments(prev => [...prev, data])
+    const projectId = data?.post?.project_id
+    if (data?.id && projectId) {
+      // Reply op andermans comment → notify die persoon. Anders: notify followers van de post.
+      const type = replyToId ? 'new_reply' : 'new_comment'
+      dispatchNotification({ projectId, type, referenceId: data.id, actorId: user.id })
+    }
     return data
   }
 

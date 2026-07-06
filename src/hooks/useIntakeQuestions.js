@@ -31,6 +31,7 @@ export default function useIntakeQuestions(projectId) {
       question_type: question.question_type || 'text',
       options: question.options || null,
       required: question.required ?? true,
+      profile_field_key: question.profile_field_key || null,
       sort_order: maxOrder + 1,
     }).select().single()
 

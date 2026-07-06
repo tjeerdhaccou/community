@@ -2,10 +2,13 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
+import { getIntakeUrl, getPublicSiteUrl, getProjectBaseUrl, navigateToSubdomain } from '../lib/subdomain'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from './IntakeQuestionEditor'
+import ImageCropper from './ImageCropper'
+import { onboardingEnabled } from '../lib/constants'
 
-export default function ProjectDashboardCard({ project, onSaved }) {
+export default function ProjectDashboardCard({ project, onSaved, isLight = false }) {
   const navigate = useNavigate()
   const [editing, setEditing] = useState(false)
 
@@ -13,7 +16,7 @@ export default function ProjectDashboardCard({ project, onSaved }) {
 
   return (
     <div className="org-project-card">
-      <div className="org-project-card__body" onClick={() => navigate(`/p/${project.slug || project.project_id}`)}>
+      <div className="org-project-card__body" onClick={() => setEditing(!editing)}>
         {/* Section 1: Header — logo, naam, locatie + actions rechtsboven */}
         <div className="org-project-card__top">
           <div className="org-project-card__header">
@@ -42,7 +45,7 @@ export default function ProjectDashboardCard({ project, onSaved }) {
             <button className="org-project-card__action-btn" onClick={() => setEditing(!editing)} title="Instellingen">
               <i className="fa-solid fa-gear" />
             </button>
-            <button className="org-project-card__action-btn" onClick={() => navigate(`/p/${project.slug || project.project_id}`)} title="Naar project">
+            <button className="org-project-card__action-btn" onClick={() => navigateToSubdomain(getProjectBaseUrl({ ...project, id: project.project_id }))} title="Naar project">
               <i className="fa-solid fa-arrow-right" />
             </button>
           </div>
@@ -69,7 +72,7 @@ export default function ProjectDashboardCard({ project, onSaved }) {
           )}
           <div className="org-project-card__stats">
             <Stat icon="fa-solid fa-users" color="var(--accent-primary)" value={project.member_count} trend={project.new_members_week} label="Leden" />
-            <Stat icon="fa-solid fa-bullhorn" color="var(--accent-yellow)" value={project.update_count} trend={project.new_updates_week} label="Updates" />
+            <Stat icon="fa-solid fa-bullhorn" color="var(--accent-yellow)" value={project.update_count} trend={project.new_updates_week} label="Nieuws" />
             <Stat icon="fa-solid fa-comments" color="var(--accent-green)" value={project.post_count} trend={project.new_posts_week} label="Posts" />
             <Stat icon="fa-solid fa-helmet-safety" color="var(--accent-orange)" value={project.advisor_count} label="Adviseurs" />
           </div>
@@ -112,64 +115,190 @@ function ProjectEditForm({ project, onClose, onSaved }) {
   const [uploadingCover, setUploadingCover] = useState(false)
   const [intakeEnabled, setIntakeEnabled] = useState(project.intake_enabled || false)
   const [intakeIntro, setIntakeIntro] = useState(project.intake_intro_text || '')
+  const [features, setFeatures] = useState(() => ({
+    updates: true, board: true, events: true, roadmap: true,
+    members: true, documents: true, team: true,
+    page_builder: true, ledenwerving: true,
+    ...(project.features || {}),
+  }))
   const [isPublic, setIsPublic] = useState(project.is_public || false)
   const [slug, setSlug] = useState(project.slug || '')
   const [publicDescription, setPublicDescription] = useState(project.public_description || '')
   const [publicContactEmail, setPublicContactEmail] = useState(project.public_contact_email || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleteError, setDeleteError] = useState(null)
+  const [teamMembers, setTeamMembers] = useState([])
+  const [teamLoading, setTeamLoading] = useState(false)
+  const [addEmail, setAddEmail] = useState('')
+  const [addingMember, setAddingMember] = useState(false)
   const logoRef = useRef(null)
   const coverRef = useRef(null)
-  const { questions, addQuestion, updateQuestion, deleteQuestion, reorderQuestions } = useIntakeQuestions(project.project_id)
 
-  async function handleLogoSelect(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setLogoPreview(URL.createObjectURL(file))
-    setUploadingLogo(true)
-    try {
-      const url = await uploadImage(file)
-      setLogoUrl(url)
-    } catch (err) {
-      console.error('Logo upload failed:', err)
-      setLogoPreview(logoUrl || '')
-    } finally {
-      setUploadingLogo(false)
+  // Load team members (admins + moderators)
+  useState(() => {
+    async function loadTeam() {
+      setTeamLoading(true)
+      const { data } = await supabase
+        .from('memberships')
+        .select('id, role, profile:profiles(id, full_name, avatar_url, email)')
+        .eq('project_id', project.project_id)
+        .in('role', ['admin', 'moderator'])
+      setTeamMembers(data || [])
+      setTeamLoading(false)
+    }
+    loadTeam()
+  })
+
+  async function handleRoleChange(membershipId, newRole) {
+    const { error } = await supabase.from('memberships').update({ role: newRole }).eq('id', membershipId)
+    if (!error) {
+      setTeamMembers(prev => prev.map(m => m.id === membershipId ? { ...m, role: newRole } : m))
     }
   }
 
-  async function handleCoverSelect(e) {
+  async function handleAddAdmin() {
+    if (!addEmail.trim()) return
+    setAddingMember(true)
+    // Find profile by email
+    const { data: profile } = await supabase.from('profiles').select('id').eq('email', addEmail.trim().toLowerCase()).single()
+    if (!profile) {
+      alert('Geen gebruiker gevonden met dit e-mailadres')
+      setAddingMember(false)
+      return
+    }
+    // Check existing membership
+    const { data: existing } = await supabase.from('memberships').select('id, role').eq('project_id', project.project_id).eq('profile_id', profile.id).single()
+    if (existing) {
+      // Upgrade to admin
+      await supabase.from('memberships').update({ role: 'admin' }).eq('id', existing.id)
+    } else {
+      // Create admin membership
+      await supabase.from('memberships').insert({ profile_id: profile.id, project_id: project.project_id, role: 'admin' })
+    }
+    // Reload team
+    const { data } = await supabase.from('memberships').select('id, role, profile:profiles(id, full_name, avatar_url, email)').eq('project_id', project.project_id).in('role', ['admin', 'moderator'])
+    setTeamMembers(data || [])
+    setAddEmail('')
+    setAddingMember(false)
+  }
+  const { questions, addQuestion, updateQuestion, deleteQuestion, reorderQuestions } = useIntakeQuestions(project.project_id)
+
+  const [cropSrc, setCropSrc] = useState(null)
+  const [cropAspect, setCropAspect] = useState(1)
+  const [cropRound, setCropRound] = useState(false)
+  const [cropTarget, setCropTarget] = useState(null)
+
+  function handleLogoSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setCoverPreview(URL.createObjectURL(file))
-    setUploadingCover(true)
-    try {
-      const url = await uploadImage(file)
-      setCoverImageUrl(url)
-    } catch (err) {
-      console.error('Cover upload failed:', err)
-      setCoverPreview(coverImageUrl || '')
-    } finally {
-      setUploadingCover(false)
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(1)
+    setCropRound(false)
+    setCropTarget('logo')
+    e.target.value = ''
+  }
+
+  function handleCoverSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCropSrc(URL.createObjectURL(file))
+    setCropAspect(16 / 9)
+    setCropRound(false)
+    setCropTarget('cover')
+    e.target.value = ''
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+
+    if (cropTarget === 'logo') {
+      setLogoPreview(URL.createObjectURL(blob))
+      setUploadingLogo(true)
+      try {
+        const url = await uploadImage(file)
+        setLogoUrl(url)
+      } catch (err) {
+        console.error('Logo upload failed:', err)
+        setLogoPreview(logoUrl || '')
+      } finally {
+        setUploadingLogo(false)
+      }
+    } else if (cropTarget === 'cover') {
+      setCoverPreview(URL.createObjectURL(blob))
+      setUploadingCover(true)
+      try {
+        const url = await uploadImage(file)
+        setCoverImageUrl(url)
+      } catch (err) {
+        console.error('Cover upload failed:', err)
+        setCoverPreview(coverImageUrl || '')
+      } finally {
+        setUploadingCover(false)
+      }
     }
+  }
+
+  async function handleDelete() {
+    if (deleteConfirm.trim() !== project.project_name) return
+    setDeleting(true)
+    setDeleteError(null)
+    const { data, error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', project.project_id)
+      .select('id')
+    if (error) {
+      setDeleteError(error.message || 'Verwijderen mislukt.')
+      setDeleting(false)
+      return
+    }
+    if (!data || data.length === 0) {
+      setDeleteError('Geen rechten om dit project te verwijderen. Check of dit project onder jouw organisatie valt.')
+      setDeleting(false)
+      return
+    }
+    onSaved?.()
+    onClose?.()
   }
 
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
+
+    // Only write fields whose value actually changed — prevents stale state from
+    // silently overwriting things the user never touched (e.g. is_public flipping
+    // to false when only the Modules toggles were changed).
+    const update = {}
+    const cleanedSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null
+
+    if (name !== (project.project_name || '')) update.name = name
+    if (tagline !== (project.project_tagline || '')) update.tagline = tagline
+    if (location !== (project.project_location || '')) update.location = location
+    if (description !== (project.project_description || '')) update.description = description
+    if ((logoUrl || null) !== (project.project_logo_url || null)) update.logo_url = logoUrl || null
+    if ((coverImageUrl || null) !== (project.project_cover_image_url || null)) update.cover_image_url = coverImageUrl || null
+    if (intakeEnabled !== !!project.intake_enabled) update.intake_enabled = intakeEnabled
+    if ((intakeIntro.trim() || null) !== (project.intake_intro_text || null)) update.intake_intro_text = intakeIntro.trim() || null
+    if (isPublic !== !!project.is_public) update.is_public = isPublic
+    if (cleanedSlug !== (project.slug || null)) update.slug = cleanedSlug
+    if ((publicDescription.trim() || null) !== (project.public_description || null)) update.public_description = publicDescription.trim() || null
+    if ((publicContactEmail.trim() || null) !== (project.public_contact_email || null)) update.public_contact_email = publicContactEmail.trim() || null
+    if (JSON.stringify(features) !== JSON.stringify(project.features || {})) update.features = features
+
+    if (Object.keys(update).length === 0) {
+      setSaved(true)
+      setTimeout(() => { setSaved(false); onSaved?.() }, 1500)
+      setSaving(false)
+      return
+    }
+
     const { error } = await supabase
       .from('projects')
-      .update({
-        name, tagline, location, description,
-        logo_url: logoUrl || null,
-        cover_image_url: coverImageUrl || null,
-        intake_enabled: intakeEnabled,
-        intake_intro_text: intakeIntro.trim() || null,
-        is_public: isPublic,
-        slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null,
-        public_description: publicDescription.trim() || null,
-        public_contact_email: publicContactEmail.trim() || null,
-      })
+      .update(update)
       .eq('id', project.project_id)
 
     if (error) {
@@ -181,7 +310,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
     setSaving(false)
   }
 
-  const intakeUrl = `${window.location.origin}/intake/${project.project_id}`
+  const intakeUrl = getIntakeUrl({ ...project, id: project.project_id })
 
   return (
     <form className="org-project-card__edit" onSubmit={handleSave}>
@@ -205,6 +334,39 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             <label>Beschrijving</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} placeholder="Uitgebreide beschrijving" />
           </div>
+        </div>
+      </div>
+
+      {/* Features (modules) */}
+      <div className="org-edit__section">
+        <h4 className="org-edit__title"><i className="fa-solid fa-toggle-on" style={{ color: 'var(--accent-primary)' }} /> Modules</h4>
+        <p className="form-hint" style={{ marginBottom: 12 }}>
+          Bepaal welke onderdelen voor dit project zichtbaar zijn. Dashboard en Instellingen staan altijd aan.
+        </p>
+        <div className="modules-grid">
+          {[
+            { key: 'updates', label: 'Projectnieuws', icon: 'fa-solid fa-bullhorn' },
+            { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-comments' },
+            { key: 'events', label: 'Events', icon: 'fa-solid fa-calendar-check' },
+            { key: 'roadmap', label: 'Roadmap', icon: 'fa-solid fa-road' },
+            { key: 'members', label: 'Leden', icon: 'fa-solid fa-users' },
+            { key: 'ledenwerving', label: 'Ledenwerving', icon: 'fa-solid fa-clipboard-list' },
+            { key: 'documents', label: 'Documenten', icon: 'fa-solid fa-folder-open' },
+            { key: 'team', label: 'Team', icon: 'fa-solid fa-helmet-safety' },
+            { key: 'page_builder', label: 'Pagina bouwer', icon: 'fa-solid fa-wand-magic-sparkles' },
+            // "Aan de slag" volgt een eigen default (aan voor light, uit voor pro/MO).
+            { key: 'onboarding', label: 'Aan de slag', icon: 'fa-solid fa-rocket' },
+          ].map(f => (
+            <label key={f.key} className="modules-tile">
+              <input
+                type="checkbox"
+                checked={f.key === 'onboarding' ? onboardingEnabled(features, isLight) : features[f.key] !== false}
+                onChange={e => setFeatures(prev => ({ ...prev, [f.key]: e.target.checked }))}
+              />
+              <i className={`modules-tile__icon ${f.icon}`} />
+              <span className="modules-tile__label">{f.label}</span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -343,20 +505,116 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             {slug && (
               <p style={{ gridColumn: '1 / -1', fontSize: 13, color: 'var(--text-tertiary)' }}>
                 <i className="fa-solid fa-link" style={{ marginRight: 6 }} />
-                Pagina zichtbaar op: <strong>{window.location.origin}/project/{slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')}</strong>
+                Pagina zichtbaar op: <strong>{getPublicSiteUrl({ ...project, slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-') })}</strong>
               </p>
             )}
           </div>
         )}
       </div>
 
+      {/* Team beheer */}
+      <div className="org-edit__section">
+        <h4 className="org-edit__title"><i className="fa-solid fa-user-shield" style={{ color: 'var(--accent-purple)' }} /> Projectbeheerders</h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+          {teamMembers.map(m => (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg-hover)', borderRadius: 'var(--radius-sm)' }}>
+              {m.profile?.avatar_url ? (
+                <img src={m.profile.avatar_url} alt={m.profile.full_name} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-active)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  {(m.profile?.full_name || '?')[0]}
+                </div>
+              )}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>{m.profile?.full_name}</div>
+                {m.profile?.email && <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{m.profile.email}</div>}
+              </div>
+              <select
+                value={m.role}
+                onChange={e => handleRoleChange(m.id, e.target.value)}
+                style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}
+              >
+                <option value="admin">Admin</option>
+                <option value="moderator">Moderator</option>
+                <option value="member">Lid</option>
+              </select>
+            </div>
+          ))}
+          {teamMembers.length === 0 && !teamLoading && (
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Geen beheerders gevonden</p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="email"
+            value={addEmail}
+            onChange={e => setAddEmail(e.target.value)}
+            placeholder="E-mailadres van nieuwe admin"
+            style={{ flex: 1, fontSize: 13, padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}
+            onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddAdmin())}
+          />
+          <button type="button" className="btn-primary btn-sm" onClick={handleAddAdmin} disabled={addingMember || !addEmail.trim()}>
+            {addingMember ? 'Toevoegen...' : 'Toevoegen'}
+          </button>
+        </div>
+      </div>
+
+      {/* Danger zone */}
+      <div
+        className="org-edit__section"
+        style={{
+          marginTop: 24,
+          padding: 16,
+          borderRadius: 'var(--radius-md)',
+          background: 'rgba(220, 38, 38, 0.06)',
+        }}
+      >
+        <h4 style={{ margin: 0, marginBottom: 8, color: 'var(--accent-red)', fontSize: 14 }}>
+          <i className="fa-solid fa-triangle-exclamation" /> Gevarenzone
+        </h4>
+        <p style={{ margin: 0, marginBottom: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
+          Verwijdert dit project en alle bijbehorende data (posts, updates, events, leden, comments).
+          Deze actie kan niet ongedaan gemaakt worden. Typ <strong>{project.project_name}</strong> ter bevestiging.
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="text"
+            value={deleteConfirm}
+            onChange={e => setDeleteConfirm(e.target.value)}
+            placeholder={project.project_name}
+            style={{ flex: 1, fontSize: 13, padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}
+          />
+          <button
+            type="button"
+            className="btn-primary btn-primary--danger"
+            onClick={handleDelete}
+            disabled={deleting || deleteConfirm.trim() !== project.project_name}
+          >
+            {deleting ? 'Verwijderen...' : 'Verwijder project'}
+          </button>
+        </div>
+        {deleteError && (
+          <p style={{ marginTop: 8, marginBottom: 0, fontSize: 13, color: 'var(--accent-red)' }}>{deleteError}</p>
+        )}
+      </div>
+
       {/* Actions */}
       <div className="org-edit__footer">
         <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
-        <button type="submit" className="btn-primary" disabled={saving || uploadingCover}>
+        <button type="submit" className="btn-primary" disabled={saving || uploadingCover || uploadingLogo}>
           {saving ? 'Opslaan...' : saved ? '✓ Opgeslagen' : 'Wijzigingen opslaan'}
         </button>
       </div>
+
+      {cropSrc && (
+        <ImageCropper
+          imageSrc={cropSrc}
+          aspect={cropAspect}
+          round={cropRound}
+          onComplete={handleCropComplete}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </form>
   )
 }

@@ -24,6 +24,9 @@
      COLORS — Accent & Status
      ────────────────────────────────────────────────────────────────────────── */
   --accent-primary:      #4A90D9;   /* Primary actions, links, FAB */
+  --accent-cta:          var(--accent-primary);  /* Filled CTA buttons. Defaults to primary; a theme can split it off (zie crowdbuilding-thema) */
+  --accent-blue:         #4A90D9;   /* Info/link-blauw als token zodat een thema het kan vervangen */
+  --accent-blue-rgb:     74, 144, 217;  /* Zelfde blauw als rgb-triplet voor rgba(var(--accent-blue-rgb), x) tints */
   --accent-yellow:       #F4B400;   /* Stars, highlights, financial */
   --accent-red:          #E74C3C;   /* Deadlines, overdue, destructive */
   --accent-green:        #3BD269;   /* Success, completion, positive */
@@ -31,15 +34,25 @@
   --accent-orange:       #F09020;   /* Warnings, secondary warm */
   --accent-purple:       #9B59B6;   /* Tags, categories, decorative */
 
+  /* Notificatie-bolletjes (telling-badges in sidebar + pagina's). Eén vaste
+     kleur, kleurt NIET mee met de branding: rood in Clean, coral in CrowdBuilding. */
+  --notif-bg:            var(--accent-red);
+  --notif-text:          #fff;
+
   /* ──────────────────────────────────────────────────────────────────────────
      COLORS — Neutrals (Light Theme)
      Clean uses a warm, barely-there gray background with pure white cards.
      ────────────────────────────────────────────────────────────────────────── */
-  --bg-page:             #F7F8FA;   /* App background — warm gray */
+  --bg-page:             #F3F1ED;   /* App background — neutrale warme tint, gelijk aan [data-theme="warm"].
+                                        Bewust NIET de gelere cream #FBF7EE: die werd zichtbaar als flits vóór
+                                        de paint (data-theme wordt pas in een effect gezet) en blijvend op
+                                        non-scoped/light-pagina's zoals het intakeformulier. */
   --bg-surface:          #FFFFFF;   /* Cards, sidebar, modals, sheets */
-  --bg-hover:            #F2F3F6;   /* Hover state on list items */
-  --bg-active:           #EBEDF2;   /* Active/pressed state */
-  --bg-selected:         #E8EDF5;   /* Selected item background */
+  --bg-hover:            #F3EEE2;   /* Hover state on list items */
+  --bg-active:           #EBE4D5;   /* Active/pressed state */
+  --bg-selected:         #EFE7D6;   /* Selected item background */
+  /* Doodle-achtergrond: zachte scribble-tegel achter de pagina (zie index.css) */
+  --doodle-pattern:      url('/doodle-pattern.svg');
 
   --text-primary:        #1A1A2E;   /* Headings, primary content — near-black with blue hint */
   --text-secondary:      #5A5F72;   /* Body text, descriptions */
@@ -69,6 +82,21 @@
   --tag-purple-text:     #8544A3;
   --tag-orange-bg:       rgba(240, 144, 32, 0.14);
   --tag-orange-text:     #C47718;
+
+  /* ──────────────────────────────────────────────────────────────────────────
+     ROADMAP — semantische kleuren zodat een thema (zie crowdbuilding) ze kan
+     herschilderen, uitsluitend via bestaande DS-tokens. In clean blijven de
+     fase-badges hun losse CMS-kleur (phase.color) houden; een thema kan ze via
+     --rm-phase-N-bg/-fg overschrijven.
+     ────────────────────────────────────────────────────────────────────────── */
+  --rm-dot-step:         var(--accent-blue);
+  --rm-dot-milestone:    var(--accent-orange);
+  --rm-dot-key:          var(--accent-pink);
+  --rm-dot-special:      var(--accent-green);
+
+  --rm-status-done:      var(--accent-green);
+  --rm-status-active:    var(--accent-blue);
+  --rm-status-pending:   var(--text-tertiary);
 
   /* ──────────────────────────────────────────────────────────────────────────
      TYPOGRAPHY
@@ -142,6 +170,7 @@
   --radius-lg:           16px;      /* Large cards, panels */
   --radius-xl:           20px;      /* Modals, sheets, expanded cards */
   --radius-full:         9999px;    /* Pills, avatars, circular buttons */
+  --btn-radius:          var(--radius-md);  /* Knop-radius; een thema kan dit pill-vormig maken */
 
   /* ──────────────────────────────────────────────────────────────────────────
      SHADOWS
@@ -270,6 +299,7 @@
    ============================================================================ */
 
 [data-theme="dark"] {
+  --doodle-pattern:      none;   /* geen scribble-achtergrond in dark mode */
   --bg-page:             #1C1C1E;
   --bg-surface:          #2C2C2E;
   --bg-hover:            #3A3A3C;
@@ -297,275 +327,197 @@
 }
 
 /* ============================================================================
-   HIGH CONTRAST THEME TOKENS
-   Optimized for elderly users and low-vision accessibility (WCAG AAA).
-   Maximized contrast, larger text, visible borders, prominent focus.
+   CROWDBUILDING THEME TOKENS
+   Variant B — hybride: Invested Blue als structuurkleur (links, actieve nav,
+   rank-badges, focus), Rebellious Coral (--accent-cta) voor primaire CTA's.
+   Lettertypes blijven die van buuur — dit is puur een kleur-shift.
+   Bron: crowdbuilding-brand (Momkai V2).
    ============================================================================ */
 
-[data-theme="contrast"] {
-  --bg-page:             #EDF1F5;
-  --bg-surface:          #FFFFFF;
-  --bg-hover:            #E0E0E0;
-  --bg-active:           #D9D9D9;
-  --bg-selected:         #D0E0F0;
+[data-theme="crowdbuilding"] {
+  --bg-page:             #F3F0EB;   /* Inspiring Off-White */
+  --bg-surface:          #FFFFFF;   /* Welcoming White */
+  --bg-hover:            #ECE8E1;
+  --bg-active:           #E5E0D7;   /* Steady Stone */
+  --bg-selected:         #EDE8E0;
 
-  --text-primary:        #000000;
-  --text-secondary:      #222222;
-  --text-tertiary:       #444444;
-  --text-faint:          #555555;
-  --text-disabled:       #767676;
+  --text-primary:        #130F33;   /* Invested Blue — nooit puur zwart */
+  --text-secondary:      #57536A;
+  --text-tertiary:       #918DA0;
+  --text-faint:          #B3AFC0;
+  --text-disabled:       #CFC9D6;
 
-  --border-default:      #666666;
-  --border-subtle:       #888888;
+  --border-default:      #ECE8E1;
+  --border-subtle:       #E5E0D7;   /* Steady Stone */
+  --border-focus:        #130F33;
 
-  --accent-primary:      #000000;
-  --accent-cta:          #E74C3C;
-  --accent-yellow:       #856400;
-  --accent-red:          #C00000;
-  --accent-green:        #007A2B;
-  --accent-pink:         #B80050;
-  --accent-orange:       #A05000;
-  --accent-purple:       #6A2D8A;
+  /* Structuurkleur = Invested Blue, CTA = Rebellious Coral */
+  --accent-primary:      #130F33;
+  --accent-cta:          #FF5C54;
 
-  --tag-blue-bg:         rgba(0, 80, 160, 0.15);
-  --tag-blue-text:       #003870;
-  --tag-yellow-bg:       rgba(133, 100, 0, 0.15);
-  --tag-yellow-text:     #5A4400;
-  --tag-red-bg:          rgba(192, 0, 0, 0.15);
-  --tag-red-text:        #900000;
-  --tag-green-bg:        rgba(0, 122, 43, 0.15);
-  --tag-green-text:      #005A1F;
-  --tag-pink-bg:         rgba(184, 0, 80, 0.15);
-  --tag-pink-text:       #800038;
-  --tag-purple-bg:       rgba(106, 45, 138, 0.15);
-  --tag-purple-text:     #4A1D62;
-  --tag-orange-bg:       rgba(160, 80, 0, 0.15);
-  --tag-orange-text:     #703800;
+  /* Notificatie-bolletjes → Rebellious Coral (los van --accent-cta gehouden) */
+  --notif-bg:            #FF5C54;
 
-  /* Flat design: no soft shadows, use borders instead */
-  --shadow-xs:           none;
-  --shadow-sm:           none;
-  --shadow-md:           none;
-  --shadow-lg:           none;
-  --shadow-xl:           none;
+  /* Al het lichtblauw → Invested Blue (sidebar-inbox-icoon, info/link-blauw en tints) */
+  --clean-inbox:         #130F33;
+  --accent-blue:         #130F33;
+  --accent-blue-rgb:     19, 15, 51;
 
-  /* Larger base sizing */
-  --font-size-base:      19px;
-  --radius-md:           10px;
-  --radius-sm:           6px;
+  /* Pill-knoppen — kenmerkende CrowdBuilding-vorm */
+  --btn-radius:          var(--radius-full);
+
+  /* Frisse accent-aanvulling (live van crowdbuilding.com) */
+  --accent-green:        #7AD491;   /* Semantic Green — volwaardig accent */
+  --accent-periwinkle:   #9598B4;   /* Koel info/categorie-accent */
+
+  /* Tags → volledig CB-palet, zodat álle tags binnen de huisstijl vallen */
+  --tag-blue-bg:         rgba(19, 15, 51, 0.10);    /* navy: info/structuur, geen CTA */
+  --tag-blue-text:       #130F33;
+  --tag-green-bg:        rgba(122, 212, 145, 0.24);
+  --tag-green-text:      #2E7D4A;
+  --tag-yellow-bg:       rgba(255, 202, 69, 0.22);
+  --tag-yellow-text:     #8C6F00;
+  --tag-orange-bg:       rgba(231, 176, 149, 0.35); /* warme peach (CB kent geen los oranje) */
+  --tag-orange-text:     #B5621F;
+  --tag-pink-bg:         rgba(255, 203, 225, 0.50);
+  --tag-pink-text:       #C04C7D;
+  --tag-purple-bg:       rgba(149, 152, 180, 0.30); /* periwinkle (CB kent geen paars) */
+  --tag-purple-text:     #414570;
+  --tag-red-bg:          rgba(255, 59, 48, 0.12);
+  --tag-red-text:        #C0291F;
+
+  /* Roadmap — fase-badges krijgen de nav-bubbel-look (zachte tint + donkere
+     glyph), exact dezelfde tokens als de sidebar-icon-bubbels. Geen losse
+     kleuren: alles verwijst naar bestaande DS-tokens. */
+  --rm-phase-0-bg:       var(--nav-bub-indigo-bg);      --rm-phase-0-fg: var(--nav-bub-indigo-glyph);
+  --rm-phase-1-bg:       var(--nav-bub-coral-bg);       --rm-phase-1-fg: var(--nav-bub-coral-glyph);
+  --rm-phase-2-bg:       var(--nav-bub-green-bg);       --rm-phase-2-fg: var(--nav-bub-green-glyph);
+  --rm-phase-3-bg:       var(--nav-bub-amber-bg);       --rm-phase-3-fg: var(--nav-bub-amber-glyph);
+  --rm-phase-4-bg:       var(--nav-bub-periwinkle-bg);  --rm-phase-4-fg: var(--nav-bub-periwinkle-glyph);
+  --rm-phase-5-bg:       var(--nav-bub-pink-bg);        --rm-phase-5-fg: var(--nav-bub-pink-glyph);
+
+  --rm-dot-step:         var(--accent-blue);
+  --rm-dot-milestone:    var(--tag-orange-text);
+  --rm-dot-key:          var(--tag-pink-text);
+  --rm-dot-special:      var(--tag-green-text);
+
+  --rm-status-done:      var(--tag-green-text);
+  --rm-status-active:    var(--accent-primary);   /* structuur = Invested Blue */
+  --rm-status-pending:   var(--text-tertiary);
+
+  /* Sidebar icon-bubbels — zachte tint + donkere glyph in dezelfde familie.
+     Geconsumeerd door clean-components.css ALLEEN onder dit thema. */
+  --nav-bub-navy-bg:        #DBDCE7; --nav-bub-navy-glyph:        #130F33;
+  --nav-bub-coral-bg:       #FFDAD7; --nav-bub-coral-glyph:       #D84B41;
+  --nav-bub-green-bg:       #DCF0E2; --nav-bub-green-glyph:       #2E7D4A;
+  --nav-bub-amber-bg:       #FFF0CA; --nav-bub-amber-glyph:       #A77E0A;
+  --nav-bub-periwinkle-bg:  #E7E9EE; --nav-bub-periwinkle-glyph:  #4A4E73;
+  --nav-bub-pink-bg:        #FFE2EE; --nav-bub-pink-glyph:        #C04C7D;
+  --nav-bub-indigo-bg:      #E3E4F0; --nav-bub-indigo-glyph:      #2E2F5C;
+  --nav-bub-stone-bg:       #EFEAE0; --nav-bub-stone-glyph:       #8A7E68;
+  --nav-bub-peach-bg:       #FCE3D3; --nav-bub-peach-glyph:       #C56A2A;
+  --nav-bub-terracotta-bg:  #FBD9D6; --nav-bub-terracotta-glyph:  #B23A33;
+  --nav-bub-teal-bg:        #E2EEF5; --nav-bub-teal-glyph:        #2E6E8E;
+  --nav-bub-neutral-bg:     #EFEDE8; --nav-bub-neutral-glyph:     #7C7868;
+
+  /* Blauw-getinte schaduwen (CB s1–s3) i.p.v. de neutrale */
+  --shadow-xs:           0 1px 2px rgba(19, 15, 51, 0.04);
+  --shadow-sm:           0 2px 8px rgba(19, 15, 51, 0.05),
+                         0 1px 2px rgba(19, 15, 51, 0.03);
+  --shadow-md:           0 6px 20px rgba(19, 15, 51, 0.08),
+                         0 1px 3px rgba(19, 15, 51, 0.04);
+  --shadow-lg:           0 12px 40px rgba(19, 15, 51, 0.12),
+                         0 4px 12px rgba(19, 15, 51, 0.06);
+  --shadow-xl:           0 20px 60px rgba(19, 15, 51, 0.16),
+                         0 8px 20px rgba(19, 15, 51, 0.08);
 }
 
-/* High contrast global overrides */
-[data-theme="contrast"] body {
-  font-size: 19px;
-  line-height: 1.65;
-}
+/* ============================================================================
+   CROWDBUILDING DARK — eigen donkere modus binnen de CrowdBuilding-stijl.
+   Invested Blue-familie als achtergrond; coral CTA en gele focus blijven.
+   Aparte selector (erft niets van het lichte CB-thema), dus de CB-specifieke
+   tokens — pill-knoppen, tags en nav-bubbels — staan hier opnieuw.
+   ============================================================================ */
 
-/* Always visible link underlines */
-[data-theme="contrast"] a {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
+[data-theme="crowdbuilding-dark"] {
+  --doodle-pattern:      none;
+  --bg-page:             #130F33;   /* Invested Blue */
+  --bg-surface:          #211B4D;
+  --bg-hover:            #2B2459;
+  --bg-active:           #352D6B;
+  --bg-selected:         #2E2858;
 
-/* Prominent focus indicators */
-[data-theme="contrast"] *:focus-visible {
-  outline: 3px solid #000000 !important;
-  outline-offset: 2px !important;
-}
+  --text-primary:        #F3F0EB;   /* Inspiring Off-White */
+  --text-secondary:      #A8A4C0;
+  --text-tertiary:       #7C779A;
+  --text-faint:          #5C577E;
+  --text-disabled:       #423D63;
 
-/* Larger minimum click targets (WCAG 2.5.8 Target Size) */
-[data-theme="contrast"] button,
-[data-theme="contrast"] [role="button"],
-[data-theme="contrast"] select,
-[data-theme="contrast"] input[type="checkbox"],
-[data-theme="contrast"] input[type="radio"] {
-  min-height: 44px;
-  min-width: 44px;
-}
+  --border-default:      #2B2459;
+  --border-subtle:       #3A3470;
+  --border-focus:        #FFCA45;   /* gele focus leest op donker beter dan navy */
 
-/* Flat design: ALL cards get solid 1px outline, no shadows */
-/* Cards: white on gray page, no shadow, stroke on hover */
-[data-theme="contrast"] .cl-card,
-[data-theme="contrast"] .cl-card--elevated,
-[data-theme="contrast"] .dash-card,
-[data-theme="contrast"] .dash-stat,
-[data-theme="contrast"] .cl-stat-card,
-[data-theme="contrast"] .feed-card,
-[data-theme="contrast"] .project-card,
-[data-theme="contrast"] .modal-card,
-[data-theme="contrast"] .post-detail-card,
-[data-theme="contrast"] .update-card,
-[data-theme="contrast"] .pro-update-card,
-[data-theme="contrast"] .event-card,
-[data-theme="contrast"] .roadmap-phase,
-[data-theme="contrast"] .doc-row,
-[data-theme="contrast"] .member-card,
-[data-theme="contrast"] .member-row,
-[data-theme="contrast"] .adviseur-card,
-[data-theme="contrast"] .feed-composer-prompt {
-  background: #FFFFFF;
-  border: 1px solid transparent;
-  box-shadow: none;
-  transition: border-color 150ms;
-}
+  /* Structuur licht op donker; CTA blijft coral */
+  --accent-primary:      #CFCBE6;
+  --accent-cta:          #FF5C54;
 
-/* Roadmap items inside a phase: subtle dividers */
-[data-theme="contrast"] .roadmap-phase .roadmap-item {
-  background: transparent;
-  border: none;
-  border-top: 1px solid #CCCCCC;
-  border-radius: 0;
-  box-shadow: none;
-}
+  /* Notificatie-bolletjes → Rebellious Coral, ook op donker */
+  --notif-bg:            #FF5C54;
+  --clean-inbox:         #CFCBE6;
+  --accent-blue:         #CFCBE6;
+  --accent-blue-rgb:     207, 203, 230;
+  --accent-green:        #7AD491;
 
-[data-theme="contrast"] .roadmap-phase .roadmap-item:first-child {
-  border-top: none;
-}
+  /* Pill-knoppen — CrowdBuilding-signatuur */
+  --btn-radius:          var(--radius-full);
 
-/* Flat buttons: solid border, no shadow */
-[data-theme="contrast"] .cl-btn {
-  border: 1px solid #000000;
-  box-shadow: none;
-}
+  /* Tags — lichtere tekst op donkere tint, leesbaar op donkere kaarten */
+  --tag-blue-bg:         rgba(149, 152, 180, 0.20); --tag-blue-text:   #CFCBE6;
+  --tag-green-bg:        rgba(122, 212, 145, 0.18); --tag-green-text:  #8FE0A6;
+  --tag-yellow-bg:       rgba(255, 202, 69, 0.18);  --tag-yellow-text: #FFD773;
+  --tag-orange-bg:       rgba(231, 176, 149, 0.20); --tag-orange-text: #E7B095;
+  --tag-pink-bg:         rgba(255, 203, 225, 0.16); --tag-pink-text:   #FFC2DC;
+  --tag-purple-bg:       rgba(149, 152, 180, 0.22); --tag-purple-text: #C3C4DC;
+  --tag-red-bg:          rgba(255, 92, 84, 0.20);   --tag-red-text:    #FF9A93;
 
-/* CTA buttons: red */
-[data-theme="contrast"] .btn-primary,
-[data-theme="contrast"] .cl-btn--primary {
-  background: var(--accent-cta);
-  border-color: var(--accent-cta);
-  color: #FFFFFF;
-}
+  /* Roadmap — zelfde nav-bubbel-tokens als de lichte stijl; ze blijven als
+     lichte chips leesbaar op de donkere kaarten (net als de sidebar-bubbels). */
+  --rm-phase-0-bg:       var(--nav-bub-indigo-bg);      --rm-phase-0-fg: var(--nav-bub-indigo-glyph);
+  --rm-phase-1-bg:       var(--nav-bub-coral-bg);       --rm-phase-1-fg: var(--nav-bub-coral-glyph);
+  --rm-phase-2-bg:       var(--nav-bub-green-bg);       --rm-phase-2-fg: var(--nav-bub-green-glyph);
+  --rm-phase-3-bg:       var(--nav-bub-amber-bg);       --rm-phase-3-fg: var(--nav-bub-amber-glyph);
+  --rm-phase-4-bg:       var(--nav-bub-periwinkle-bg);  --rm-phase-4-fg: var(--nav-bub-periwinkle-glyph);
+  --rm-phase-5-bg:       var(--nav-bub-pink-bg);        --rm-phase-5-fg: var(--nav-bub-pink-glyph);
 
-[data-theme="contrast"] .btn-primary:hover,
-[data-theme="contrast"] .cl-btn--primary:hover {
-  opacity: 1;
-  background: #C0392B;
-  border-color: #C0392B;
-}
+  --rm-dot-step:         var(--accent-blue);
+  --rm-dot-milestone:    var(--tag-orange-text);
+  --rm-dot-key:          var(--tag-pink-text);
+  --rm-dot-special:      var(--tag-green-text);
 
-/* Count badges: red */
-[data-theme="contrast"] .events-tab__count,
-[data-theme="contrast"] .tag-filter__count,
-[data-theme="contrast"] .tag-filter__badge,
-[data-theme="contrast"] .doc-tab__count,
-[data-theme="contrast"] .doc-tab--active .doc-tab__count {
-  background: var(--accent-cta);
-  color: #FFFFFF;
-}
+  --rm-status-done:      var(--tag-green-text);
+  --rm-status-active:    var(--accent-primary);
+  --rm-status-pending:   var(--text-tertiary);
 
-/* Events/docs toggle tabs: outlined pill style */
-[data-theme="contrast"] .events-tab {
-  border: 1px solid #000000;
-  border-radius: 999px;
-}
+  /* Sidebar icon-bubbels — identiek aan de lichte stijl (lichte tint + donkere
+     glyph); als lichte chips op de donkere sidebar blijven ze goed leesbaar. */
+  --nav-bub-navy-bg:        #DBDCE7; --nav-bub-navy-glyph:        #130F33;
+  --nav-bub-coral-bg:       #FFDAD7; --nav-bub-coral-glyph:       #D84B41;
+  --nav-bub-green-bg:       #DCF0E2; --nav-bub-green-glyph:       #2E7D4A;
+  --nav-bub-amber-bg:       #FFF0CA; --nav-bub-amber-glyph:       #A77E0A;
+  --nav-bub-periwinkle-bg:  #E7E9EE; --nav-bub-periwinkle-glyph:  #4A4E73;
+  --nav-bub-pink-bg:        #FFE2EE; --nav-bub-pink-glyph:        #C04C7D;
+  --nav-bub-indigo-bg:      #E3E4F0; --nav-bub-indigo-glyph:      #2E2F5C;
+  --nav-bub-stone-bg:       #EFEAE0; --nav-bub-stone-glyph:       #8A7E68;
+  --nav-bub-peach-bg:       #FCE3D3; --nav-bub-peach-glyph:       #C56A2A;
+  --nav-bub-terracotta-bg:  #FBD9D6; --nav-bub-terracotta-glyph:  #B23A33;
+  --nav-bub-teal-bg:        #E2EEF5; --nav-bub-teal-glyph:        #2E6E8E;
+  --nav-bub-neutral-bg:     #EFEDE8; --nav-bub-neutral-glyph:     #7C7868;
 
-[data-theme="contrast"] .events-tab--active {
-  background: #000000;
-  color: #FFFFFF;
-  box-shadow: none;
-}
-
-/* Doc tabs: match events tab style */
-[data-theme="contrast"] .doc-tabs {
-  border-bottom: none;
-  gap: 4px;
-}
-
-[data-theme="contrast"] .doc-tab {
-  border: 1px solid #000000;
-  border-radius: 999px;
-  padding: 6px 14px;
-}
-
-[data-theme="contrast"] .doc-tab--active {
-  background: #000000;
-  color: #FFFFFF;
-  border-color: #000000;
-}
-
-/* Remove divider above comments in post detail */
-[data-theme="contrast"] .post-detail-comments {
-  border-top: none;
-}
-
-/* Active phase dot: red fill */
-[data-theme="contrast"] .dash-stepper__dot--active {
-  background: var(--accent-cta);
-  border-color: var(--accent-cta);
-}
-
-/* Tags: subtle border, keep original shape */
-[data-theme="contrast"] .cl-tag,
-[data-theme="contrast"] .tag,
-[data-theme="contrast"] .roadmap-item__tag,
-[data-theme="contrast"] .event-card__type-tag,
-[data-theme="contrast"] .doc-row__source,
-[data-theme="contrast"] .doc-row__badge,
-[data-theme="contrast"] .sidebar-badge {
-  border: 1px solid currentColor;
-}
-
-/* Filter buttons: pill shape with thicker stroke */
-[data-theme="contrast"] .tag-filter__pill,
-[data-theme="contrast"] .filter-tag {
-  border-radius: 999px;
-  border-width: 1px;
-  border-color: #000000;
-}
-
-/* Stronger input borders */
-[data-theme="contrast"] input,
-[data-theme="contrast"] textarea,
-[data-theme="contrast"] select {
-  border: 1px solid #000000;
-  box-shadow: none;
-}
-
-/* Hover: black stroke instead of shadow lift */
-[data-theme="contrast"] .cl-card:hover,
-[data-theme="contrast"] .cl-card--elevated:hover,
-[data-theme="contrast"] .dash-card:hover,
-[data-theme="contrast"] .dash-stat:hover,
-[data-theme="contrast"] .feed-card:hover,
-[data-theme="contrast"] .project-card:hover,
-[data-theme="contrast"] .update-card:hover,
-[data-theme="contrast"] .event-card:hover,
-[data-theme="contrast"] .member-card:hover,
-[data-theme="contrast"] .adviseur-card:hover,
-[data-theme="contrast"] .feed-composer-prompt:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: #000000;
-}
-
-/* Larger icon buttons */
-[data-theme="contrast"] .btn-icon,
-[data-theme="contrast"] .btn-icon-sm {
-  min-width: 44px;
-  min-height: 44px;
-  font-size: 18px;
-}
-
-/* Flat popups/dropdowns/modals */
-[data-theme="contrast"] .sidebar-user-menu,
-[data-theme="contrast"] .cl-modal,
-[data-theme="contrast"] .cl-dropdown {
-  border: 1px solid #000000;
-  box-shadow: none;
-}
-
-/* Sidebar: white on gray page, no border */
-[data-theme="contrast"] .cl-sidebar {
-  background: #FFFFFF;
-  border-right: none;
-}
-
-[data-theme="contrast"] .sidebar-project-header {
-  border-bottom: none;
-}
-
-[data-theme="contrast"] .sidebar-footer {
-  border-top: none;
+  --shadow-xs:           0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm:           0 2px 8px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-md:           0 6px 20px rgba(0, 0, 0, 0.40), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-lg:           0 12px 40px rgba(0, 0, 0, 0.50), 0 4px 12px rgba(0, 0, 0, 0.30);
+  --shadow-xl:           0 20px 60px rgba(0, 0, 0, 0.60), 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 /* ============================================================================

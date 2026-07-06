@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { uploadPostImage } from '../hooks/usePosts'
-import { EVENT_TYPES, EVENT_VISIBILITY } from '../lib/constants'
+import { EVENT_TYPES, isTouchDevice } from '../lib/constants'
+import AudienceSelector from './AudienceSelector'
 import { useToast } from './Toast'
 
 const DRAFT_KEY = 'ev-draft-new'
 
-export default function EventModal({ event, onSave, onClose }) {
+export default function EventModal({ event, onSave, onClose, onDelete }) {
   const isEdit = !!event
 
   // Parse existing event data for edit mode
@@ -145,7 +146,7 @@ export default function EventModal({ event, onSave, onClose }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
             <label>Titel</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het event" required autoFocus />
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het event" required autoFocus={!isTouchDevice} />
           </div>
 
           <div className="form-group">
@@ -157,14 +158,8 @@ export default function EventModal({ event, onSave, onClose }) {
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Zichtbaarheid</label>
-            <select value={visibility} onChange={e => setVisibility(e.target.value)}>
-              {EVENT_VISIBILITY.map(v => (
-                <option key={v.key} value={v.key}>{v.label}</option>
-              ))}
-            </select>
-          </div>
+          <AudienceSelector value={visibility} onChange={setVisibility} />
+
 
           <div className="form-group">
             <label>Beschrijving</label>
@@ -235,6 +230,16 @@ export default function EventModal({ event, onSave, onClose }) {
           <input ref={fileRef} type="file" accept="image/*" onChange={handleImageSelect} style={{ display: 'none' }} />
 
           <div className="modal-actions">
+            {isEdit && onDelete && (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => onDelete(event)}
+                style={{ marginRight: 'auto' }}
+              >
+                <i className="fa-solid fa-trash" /> Verwijderen
+              </button>
+            )}
             <button type="button" className="btn-secondary" onClick={handleCancel}>Annuleren</button>
             <button type="submit" className="btn-primary" disabled={saving || !title.trim() || !date}>
               {saving ? 'Opslaan...' : isEdit ? 'Opslaan' : 'Aanmaken'}

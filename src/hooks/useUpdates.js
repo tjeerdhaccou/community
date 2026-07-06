@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
 import { logAudit } from '../lib/audit'
+import { dispatchNotification } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
+import { uploadFile, toStoragePath } from '../lib/storage'
 
 export function useUpdates() {
   const { user } = useAuth()
@@ -20,15 +22,16 @@ export function useUpdates() {
     // Try with reactions/comments, fall back to basic query if tables don't exist yet
     let query = supabase
       .from('updates')
-      .select('*, author:profiles(id, full_name, avatar_url), update_reactions(id, emoji, profile_id), update_comments(id)')
+      .select('*, author:profiles(id, full_name, avatar_url), update_reactions(id, emoji, profile_id), update_comments(id), update_attachments(id, file_name, file_path, file_size, file_type, uploaded_by, created_at)')
       .eq('project_id', projectId)
       .order('created_at', { ascending: false })
 
     let { data, error } = await query
 
     if (error) {
-      // Fallback: tables may not exist yet
-      logger.warn('useUpdates.fetch', 'Fetching with reactions failed, falling back: ' + error.message)
+      // Fallback: tables may not exist yet (attachments require migration 042;
+      // reactions/comments table can also be missing on older installs).
+      logger.warn('useUpdates.fetch', 'Fetching with joins failed, falling back: ' + error.message)
       const fallback = await supabase
         .from('updates')
         .select('*, author:profiles(id, full_name, avatar_url)')
@@ -54,6 +57,8 @@ export function useUpdates() {
           myReactions,
           totalReactions: Object.values(reactionCounts).reduce((s, c) => s + c, 0),
           comment_count: u.update_comments?.length || 0,
+          attachments: u.update_attachments || [],
+          attachment_count: u.update_attachments?.length || 0,
         }
       })
       setUpdates(transformed)
@@ -107,6 +112,7 @@ export function useUpdates() {
     logAudit('update.created', 'update', { resourceId: data?.id, projectId, metadata: { is_public: is_public || false } })
     // Optimistic: add to local state immediately
     if (data) setUpdates(prev => [data, ...prev])
+    if (data?.id) dispatchNotification({ projectId, type: 'new_update', referenceId: data.id, actorId: user.id })
     return data
   }
 
@@ -158,10 +164,50 @@ export function useUpdates() {
       .eq('id', id)
 
     if (error) { logger.error('useUpdates.deleteUpdate', error); throw new Error(friendlyError(error)) }
+    // Optimistic remove — don't wait for realtime
+    setUpdates(prev => prev.filter(u => u.id !== id))
     logAudit('update.deleted', 'update', { resourceId: id, projectId })
   }
 
-  return { updates, loading, createUpdate, editUpdate, deleteUpdate, toggleReaction, refetch: fetchUpdates }
+  async function addAttachment(updateId, file) {
+    const { path } = await uploadFile(file, 'project-files')
+    const { data, error } = await supabase
+      .from('update_attachments')
+      .insert({
+        update_id: updateId,
+        file_name: file.name,
+        file_path: path,
+        file_size: file.size,
+        file_type: file.type,
+        uploaded_by: user.id,
+      })
+      .select('*')
+      .single()
+    if (error) { logger.error('useUpdates.addAttachment', error); throw new Error(friendlyError(error)) }
+    setUpdates(prev => prev.map(u => {
+      if (u.id !== updateId) return u
+      const next = [...(u.attachments || []), data]
+      return { ...u, attachments: next, attachment_count: next.length }
+    }))
+    return data
+  }
+
+  async function removeAttachment(updateId, attachmentId, filePath) {
+    // Strip storage path from public URL so we can also clean up the file itself.
+    const storagePath = toStoragePath(filePath)
+    if (storagePath) {
+      await supabase.storage.from('project-files').remove([storagePath])
+    }
+    const { error } = await supabase.from('update_attachments').delete().eq('id', attachmentId)
+    if (error) { logger.error('useUpdates.removeAttachment', error); throw new Error(friendlyError(error)) }
+    setUpdates(prev => prev.map(u => {
+      if (u.id !== updateId) return u
+      const next = (u.attachments || []).filter(a => a.id !== attachmentId)
+      return { ...u, attachments: next, attachment_count: next.length }
+    }))
+  }
+
+  return { updates, loading, createUpdate, editUpdate, deleteUpdate, toggleReaction, addAttachment, removeAttachment, refetch: fetchUpdates }
 }
 
 export function useUpdateComments(updateId) {
@@ -193,10 +239,14 @@ export function useUpdateComments(updateId) {
         reply_to_id: replyToId || null,
         reply_to_name: replyToName || null,
       })
-      .select('*, author:profiles(id, full_name, avatar_url)')
+      .select('*, author:profiles(id, full_name, avatar_url), update:updates(project_id)')
       .single()
     if (error) { logger.error('useUpdateComments.addComment', error); throw new Error(friendlyError(error)) }
     setComments(prev => [...prev, data])
+    const projectId = data?.update?.project_id
+    if (data?.id && projectId) {
+      dispatchNotification({ projectId, type: 'new_update_comment', referenceId: data.id, actorId: user.id })
+    }
     return data
   }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { uploadImage, uploadFile } from '../lib/storage'
-import { formatFileSize, PROJECT_PHASES } from '../lib/constants'
+import { formatFileSize, PROJECT_PHASES, isTouchDevice } from '../lib/constants'
+import ImageCropper from './ImageCropper'
 
 export default function ProfessionalUpdateModal({ update, activePhase, onSave, onClose }) {
   const isEdit = !!update?.id
@@ -14,6 +15,7 @@ export default function ProfessionalUpdateModal({ update, activePhase, onSave, o
   const [saving, setSaving] = useState(false)
   const imageRef = useRef(null)
   const fileRef = useRef(null)
+  const [cropSrc, setCropSrc] = useState(null)
 
   useEffect(() => {
     if (update) {
@@ -25,10 +27,17 @@ export default function ProfessionalUpdateModal({ update, activePhase, onSave, o
     }
   }, [update, activePhase])
 
-  async function handleImageSelect(e) {
+  function handleImageSelect(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setImagePreview(URL.createObjectURL(file))
+    setCropSrc(URL.createObjectURL(file))
+    e.target.value = ''
+  }
+
+  async function handleCropComplete(blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' })
+    setCropSrc(null)
+    setImagePreview(URL.createObjectURL(blob))
     setUploading(true)
     try {
       const url = await uploadImage(file)
@@ -65,9 +74,9 @@ export default function ProfessionalUpdateModal({ update, activePhase, onSave, o
 
     for (const item of additions) {
       try {
-        const { publicUrl } = await uploadFile(item.file)
+        const { path } = await uploadFile(item.file)
         setPendingFiles(prev =>
-          prev.map(f => f.id === item.id ? { ...f, uploading: false, file_path: publicUrl } : f)
+          prev.map(f => f.id === item.id ? { ...f, uploading: false, file_path: path } : f)
         )
       } catch (err) {
         console.error('File upload failed:', err)
@@ -153,7 +162,7 @@ export default function ProfessionalUpdateModal({ update, activePhase, onSave, o
               onChange={e => setTitle(e.target.value)}
               placeholder="Titel van de update"
               required
-              autoFocus
+              autoFocus={!isTouchDevice}
             />
           </div>
 
@@ -216,6 +225,16 @@ export default function ProfessionalUpdateModal({ update, activePhase, onSave, o
             </div>
           </div>
         </form>
+
+        {cropSrc && (
+          <ImageCropper
+            imageSrc={cropSrc}
+            aspect={16 / 9}
+            round={false}
+            onComplete={handleCropComplete}
+            onCancel={() => setCropSrc(null)}
+          />
+        )}
       </div>
     </div>
   )
