@@ -25,6 +25,13 @@ export default function SupportWidget() {
     if (params.has('support')) setOpen(true)
   }, [])
 
+  // Open vanuit de notificatie-bell (klik op een support-melding).
+  useEffect(() => {
+    const openWidget = () => setOpen(true)
+    window.addEventListener('buuur:open-support', openWidget)
+    return () => window.removeEventListener('buuur:open-support', openWidget)
+  }, [])
+
   // Scroll naar onderaan bij nieuwe berichten / openen.
   useEffect(() => {
     if (open && bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
