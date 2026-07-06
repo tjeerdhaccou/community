@@ -4,6 +4,7 @@ import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
+import SupportWidget from './SupportChat/SupportWidget'
 import { useTheme } from '../contexts/ThemeContext'
 
 function ThemeToggle() {
@@ -37,6 +38,7 @@ export default function Layout() {
         </Suspense>
       </main>
       <BottomNav />
+      <SupportWidget />
     </div>
   )
 }
