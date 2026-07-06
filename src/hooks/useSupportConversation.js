@@ -77,9 +77,9 @@ export function useSupportConversation() {
     return () => supabase.removeChannel(channel)
   }, [conversation?.id])
 
-  async function sendMessage(body) {
+  async function sendMessage(body, file = null) {
     const text = (body || '').trim()
-    if (!text || !userId || sending) return
+    if ((!text && !file) || !userId || sending) return
     setSending(true)
     try {
       let conv = conversation
@@ -98,10 +98,22 @@ export function useSupportConversation() {
         setConversation(conv)
       }
 
+      // Optionele bijlage (afbeelding/PDF) uploaden naar de private bucket.
+      let attachment = {}
+      if (file) {
+        const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const path = `${conv.id}/${Date.now()}_${safe}`
+        const { error: upErr } = await supabase.storage
+          .from('support-attachments')
+          .upload(path, file, { contentType: file.type })
+        if (upErr) throw upErr
+        attachment = { attachment_path: path, attachment_name: file.name, attachment_type: file.type }
+      }
+
       // sender_role wordt server-side door een trigger gezet.
       const { data: msg, error: msgErr } = await supabase
         .from('support_messages')
-        .insert({ conversation_id: conv.id, sender_id: userId, body: text })
+        .insert({ conversation_id: conv.id, sender_id: userId, body: text, ...attachment })
         .select()
         .single()
       if (msgErr) throw msgErr

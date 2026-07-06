@@ -176,10 +176,43 @@
 /* ── Composer ────────────────────────────────────────────────────────────── */
 .sc-foot {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   padding: 12px 14px 14px;
   background: var(--bg-surface);
+}
+.sc-inputrow { display: flex; align-items: center; gap: 6px; }
+.sc-icon {
+  flex: none; width: 34px; height: 34px; border: none; background: transparent;
+  color: var(--text-tertiary); border-radius: var(--radius-full); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  transition: var(--transition-color);
+}
+.sc-icon:hover { background: var(--bg-hover); color: var(--text-secondary); }
+.sc-filechip {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary);
+  background: var(--bg-page); border-radius: var(--radius-sm); padding: 7px 10px;
+}
+.sc-filechip__name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-filechip button { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; padding: 2px; }
+.sc-emoji {
+  display: flex; flex-wrap: wrap; gap: 2px; background: var(--bg-page);
+  border-radius: var(--radius-md); padding: 6px;
+}
+.sc-emoji button {
+  border: none; background: transparent; font-size: 20px; cursor: pointer;
+  width: 34px; height: 34px; border-radius: var(--radius-sm); line-height: 1;
+}
+.sc-emoji button:hover { background: var(--bg-hover); }
+.sc-bubble__text { white-space: pre-wrap; }
+.sc-att {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px;
+  color: inherit; text-decoration: underline; word-break: break-all;
+}
+.sc-att--loading { opacity: .7; text-decoration: none; }
+.sc-att-img {
+  max-width: 100%; max-height: 220px; border-radius: 10px; display: block;
+  margin-bottom: 4px;
 }
 .sc-input {
   flex: 1;
