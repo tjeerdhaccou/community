@@ -133,13 +133,12 @@ Templates: nieuwe transactionele mail in `send-member-email`-stijl (Resend), met
 ## 9. Gebouwd na v1 (juli 2026)
 
 - **Notificaties** — lid krijgt agent-antwoorden via 3 kanalen: bolletje op de bubbel, belletje-bovenin (migratie 081: `notifications`-trigger + type/related_type verbreed; klik opent widget), en e-mail met debounce (edge-function `support-notify-email` + pg_cron elke 5 min, migratie 082; mailt na 10 min ongelezen, idempotent via `notification_log`).
-- **Agent-kant:** unread-badge op de Support-nav in de CMS.
+- **Agent-kant:** unread-badge op de Support-nav in de CMS + e-mail naar org-admins bij een onbeantwoorde lid-vraag (zelfde cron/debounce, link naar CMS-inbox).
 - **Bijlagen** (afbeelding/PDF) — migratie 083: kolommen op `support_messages` + private bucket `support-attachments` met RLS; upload + weergave (signed URL) in beide apps.
 - **Emoji** — picker in beide composers.
 
 ## 10. Nog open / later
 
-- Agent-kant **e-mail** naar dienstdoende (nu alleen in-app nav-badge).
 - AI-deflectie: auto-antwoord uit FAQ (via AI Gateway). Pas bij volume.
 - Toewijzing/SLA, interne notities, gesprekslabels.
 - Anonieme/publieke bezoekers met e-mailcapture.
