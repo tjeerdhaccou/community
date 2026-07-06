@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { checkInvitedEmail, sendOtpCode, verifyOtpCode } from '../lib/auth'
 import { supabase } from '../lib/supabase'
-import { getProjectSlugFromSubdomain } from '../lib/subdomain'
+import { getProjectSlugFromSubdomain, isProductionHost } from '../lib/subdomain'
 import { redirectByRole } from '../lib/loginRedirect'
 
 export default function Login() {
@@ -73,8 +73,10 @@ export default function Login() {
           console.warn('Could not link intake response:', linkErr)
         }
 
-        // On a subdomain, just go to the root (project or org context handles it)
-        if (getProjectSlugFromSubdomain()) {
+        // Op een subdomein óf een niet-productie-host (preview/localhost): blijf
+        // path-based lokaal. redirectByRole bouncet naar hardcoded buuur.nl-domeinen
+        // en zou een preview/lokale sessie naar productie sturen.
+        if (getProjectSlugFromSubdomain() || !isProductionHost()) {
           let saved
           try { saved = localStorage.getItem('redirectAfterLogin'); localStorage.removeItem('redirectAfterLogin') } catch {}
           navigate(saved || '/', { replace: true })

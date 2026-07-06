@@ -9,6 +9,16 @@ export function getSubdomain() {
   return sub
 }
 
+/**
+ * True alleen op de echte productie-host (buuur.nl of een *.buuur.nl subdomein).
+ * Op previews (*.vercel.app) en localhost → false, zodat login/navigatie daar
+ * path-based lokaal blijft i.p.v. naar het hardcoded productiedomein te bouncen.
+ */
+export function isProductionHost() {
+  const h = window.location.hostname
+  return h === MAIN_DOMAIN || h.endsWith(`.${MAIN_DOMAIN}`)
+}
+
 export function isOrgDomain() {
   return getSubdomain() === 'my'
 }
