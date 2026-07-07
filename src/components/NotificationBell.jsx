@@ -35,7 +35,6 @@ export default function NotificationBell() {
 
     // Navigate to related content
     const { related_type, related_id } = notification
-    if (related_type === 'support') { window.dispatchEvent(new CustomEvent('buuur:open-support')); return }
     if (related_type === 'post') navigate(`${basePath}/community`)
     else if (related_type === 'update') navigate(`${basePath}/updates`)
     else if (related_type === 'event') navigate(`${basePath}/events`)
