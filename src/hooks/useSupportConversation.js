@@ -127,36 +127,24 @@ export function useSupportConversation() {
     }
   }
 
-  // Markeer agent-berichten als gelezen (onderdrukt de e-mail-nudge + bubbel-badge)
-  // én houd de bel in sync: de bijbehorende support-meldingen worden ook gelezen,
-  // zodat bel en bubbel niet uit elkaar lopen.
+  // Markeer agent-berichten als gelezen (onderdrukt de e-mail-nudge + bubbel-badge).
   const markRead = useCallback(async () => {
     const convId = conversation?.id
-    if (!convId || !userId) return
+    if (!convId) return
+    const hasUnread = messages.some(m => m.sender_role === 'agent' && !m.read_at)
+    if (!hasUnread) return
 
     const now = new Date().toISOString()
-    const hasUnread = messages.some(m => m.sender_role === 'agent' && !m.read_at)
-    if (hasUnread) {
-      setMessages(prev => prev.map(m =>
-        m.sender_role === 'agent' && !m.read_at ? { ...m, read_at: now } : m
-      ))
-      await supabase
-        .from('support_messages')
-        .update({ read_at: now })
-        .eq('conversation_id', convId)
-        .eq('sender_role', 'agent')
-        .is('read_at', null)
-    }
-
-    // Bel-meldingen voor dit gesprek ook als gelezen markeren.
+    setMessages(prev => prev.map(m =>
+      m.sender_role === 'agent' && !m.read_at ? { ...m, read_at: now } : m
+    ))
     await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('recipient_id', userId)
-      .eq('type', 'new_support_message')
-      .eq('related_id', convId)
-      .eq('is_read', false)
-  }, [conversation?.id, messages, userId])
+      .from('support_messages')
+      .update({ read_at: now })
+      .eq('conversation_id', convId)
+      .eq('sender_role', 'agent')
+      .is('read_at', null)
+  }, [conversation?.id, messages])
 
   const unreadCount = messages.filter(m => m.sender_role === 'agent' && !m.read_at).length
 
