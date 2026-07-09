@@ -165,8 +165,8 @@ export default function Login() {
             <input
               type="text"
               value={otpCode}
-              onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
-              placeholder="00000000"
+              onChange={e => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
               required
               autoFocus
               className="login-otp-input"
@@ -177,7 +177,7 @@ export default function Login() {
 
           {error && <p className="login-error">{error}</p>}
 
-          <button type="submit" className="cl-btn cl-btn--primary login-submit-btn" disabled={loading || otpCode.length < 8}>
+          <button type="submit" className="cl-btn cl-btn--primary login-submit-btn" disabled={loading || otpCode.length < 6}>
             {loading ? 'Verifiëren...' : 'Inloggen'}
           </button>
         </form>
