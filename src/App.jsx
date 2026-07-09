@@ -405,6 +405,17 @@ function OrgSubdomainApp({ orgSlug }) {
       .then(({ data }) => { setOrgId(data?.id || null); setOrgLoading(false) })
   }, [orgSlug])
 
+  // Check if user is admin of THIS org
+  const isAdminOfOrg = orgId && orgMemberships.some(om => om.organization_id === orgId && om.role === 'admin')
+
+  // Org subdomain redirects to CMS — moet vóór alle early returns staan zodat
+  // de hook-volgorde per render gelijk blijft (React error #310 anders).
+  useEffect(() => {
+    if (isAdminOfOrg && orgSlug) {
+      window.location.href = `https://admin.buuur.nl/org/${orgSlug}`
+    }
+  }, [isAdminOfOrg, orgSlug])
+
   if (loading || orgLoading) return <div className="loading-page"><p>Laden...</p></div>
   if (!user) return (
     <Routes>
@@ -414,10 +425,7 @@ function OrgSubdomainApp({ orgSlug }) {
     </Routes>
   )
 
-  // Check if user is admin of THIS org
-  const isAdminOfOrg = orgId && orgMemberships.some(om => om.organization_id === orgId && om.role === 'admin')
   if (!isAdminOfOrg) {
-    // Redirect root to /admin info page, but non-admins can't access
     return (
       <div className="error-boundary">
         <div className="error-boundary__card">
@@ -428,12 +436,6 @@ function OrgSubdomainApp({ orgSlug }) {
       </div>
     )
   }
-  // Org subdomain redirects to CMS
-  useEffect(() => {
-    if (isAdminOfOrg && orgSlug) {
-      window.location.href = `https://admin.buuur.nl/org/${orgSlug}`
-    }
-  }, [isAdminOfOrg, orgSlug])
 
   return (
     <ThemeProvider scope={`org-${orgId}`}>
