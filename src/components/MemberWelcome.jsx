@@ -48,7 +48,7 @@ export default function MemberWelcome() {
     {
       key: 'prikbord',
       done: !!stepDone.prikbord,
-      icon: 'fa-solid fa-comments',
+      icon: 'fa-solid fa-thumbtack',
       title: 'Stel je voor op het prikbord',
       desc: 'Een kort berichtje breekt het ijs.',
       path: `${basePath}/community`,

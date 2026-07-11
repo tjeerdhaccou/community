@@ -266,7 +266,7 @@ export default function Dashboard() {
         {feed.latestPosts.length > 0 && (
           <div className="dash-card dash-card--posts" onClick={() => navigate(`${basePath}/community`)} role="button" tabIndex={0}>
             <div className="dash-card__content">
-              <span className="dash-card__label"><i className="fa-solid fa-comments" style={{ color: '#3BD269' }} /> Prikbord</span>
+              <span className="dash-card__label"><i className="fa-solid fa-thumbtack" style={{ color: '#3BD269' }} /> Prikbord</span>
               <div className="dash-posts-list">
                 {feed.latestPosts.map(p => (
                   <div key={p.id} className="dash-post-item">

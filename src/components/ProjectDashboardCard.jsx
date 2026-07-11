@@ -346,7 +346,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         <div className="modules-grid">
           {[
             { key: 'updates', label: 'Projectnieuws', icon: 'fa-solid fa-bullhorn' },
-            { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-comments' },
+            { key: 'board', label: 'Prikbord', icon: 'fa-solid fa-thumbtack' },
             { key: 'events', label: 'Events', icon: 'fa-solid fa-calendar-check' },
             { key: 'roadmap', label: 'Roadmap', icon: 'fa-solid fa-road' },
             { key: 'members', label: 'Leden', icon: 'fa-solid fa-users' },

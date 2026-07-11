@@ -83,7 +83,7 @@ const FEATURES = [
     soft: 'var(--lp-coral-soft)',
   },
   {
-    icon: 'fa-solid fa-comments',
+    icon: 'fa-solid fa-thumbtack',
     title: 'Prikbord',
     desc: 'Een plek waar toekomstige bewoners vragen stellen, ideeën delen en elkaar leren kennen.',
     color: 'var(--lp-green)',

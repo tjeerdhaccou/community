@@ -477,7 +477,7 @@ export default function Profile() {
 
           {[
             { key: 'pref_updates', label: 'Projectnieuws', icon: 'fa-solid fa-bullhorn', desc: 'Nieuwe aankondigingen vanuit het projectteam' },
-            { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-comments', desc: 'Reacties en likes op je berichten' },
+            { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-thumbtack', desc: 'Reacties en likes op je berichten' },
             { key: 'pref_events', label: 'Events', icon: 'fa-solid fa-calendar-check', desc: 'Nieuwe events en herinneringen' },
             { key: 'pref_documents', label: 'Documenten', icon: 'fa-solid fa-folder-open', desc: 'Nieuwe documenten' },
           ].map(cat => (
