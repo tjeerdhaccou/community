@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useEvents } from '../hooks/useEvents'
+import { markSeen } from '../hooks/useUnreadIndicators'
 import { canDo } from '../lib/permissions'
 import { EVENT_TYPES } from '../lib/constants'
 import EventCard from '../components/EventCard'
@@ -58,8 +59,13 @@ function groupByDate(events) {
 }
 
 export default function Events() {
-  const { role } = useProject()
+  const { project, role } = useProject()
   const { user } = useAuth()
+
+  // Sidebar-dot uitschakelen zodra het lid deze pagina heeft geopend.
+  useEffect(() => {
+    if (project?.id) markSeen(project.id, 'events')
+  }, [project?.id])
   const { upcoming, past, loading, createEvent, updateEvent, deleteEvent, rsvp } = useEvents()
   const [searchParams, setSearchParams] = useSearchParams()
   // Re-open modal automatically if there's a saved draft (user navigated away mid-edit)
@@ -162,7 +168,7 @@ export default function Events() {
             Aankomend {visibleUpcoming.length > 0 && <span className="seg-tab__count">{visibleUpcoming.length}</span>}
           </button>
           <button className={`seg-tab ${tab === 'past' ? 'seg-tab--active' : ''}`} onClick={() => setTab('past')}>
-            Afgelopen {visiblePast.length > 0 && <span className="seg-tab__count">{visiblePast.length}</span>}
+            Afgelopen
           </button>
         </div>
 
