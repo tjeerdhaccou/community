@@ -24,10 +24,10 @@ const NAV_SECTIONS = [
     label: 'Voor jou',
     items: [
       { to: 'mijn-dossier', icon: 'fa-solid fa-file-shield', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Mijn dossier', membersOnly: true },
-      // Support is een globale chat-widget die rechtsonder floats. De nav-link
-      // dispatch een custom event dat de widget kan openen — als de widget nog
-      // niet is gemount, valt de klik stil.
-      { dispatchEvent: 'open-support-chat', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Chat' },
+      // Chat opent nu een volwaardige pagina (gesprekkenlijst + zoeken + thread).
+      // Het zwevende widget blijft bestaan voor snelle toegang overal; beide delen
+      // dezelfde support_*-data.
+      { to: 'chat', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Chat' },
     ]
   },
   {
@@ -199,7 +199,7 @@ export default function Sidebar() {
         {item.to === 'mijn-dossier' && documentenActionCount > 0 && (
           <span className="sidebar-badge">{documentenActionCount}</span>
         )}
-        {item.dispatchEvent === 'open-support-chat' && chatUnread > 0 && (
+        {item.to === 'chat' && chatUnread > 0 && (
           <span className="sidebar-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>
         )}
         {item.to === 'community' && hasNewBoard && (
