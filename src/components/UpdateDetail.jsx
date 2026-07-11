@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { useUpdateComments } from '../hooks/useUpdates'
 import { useAuth } from '../contexts/AuthContext'
 import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
@@ -30,6 +30,14 @@ export default function UpdateDetail({ update, onClose, onEdit, onReaction, canE
   const [replyTo, setReplyTo] = useState(null)
   const [sending, setSending] = useState(false)
   const [showReactions, setShowReactions] = useState(false)
+  const textareaRef = useRef(null)
+
+  useLayoutEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px'
+  }, [replyText])
 
   async function handleReply(e) {
     e.preventDefault()
@@ -43,6 +51,13 @@ export default function UpdateDetail({ update, onClose, onEdit, onReaction, canE
       console.error('Error posting comment:', err)
     }
     setSending(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      handleReply(e)
+    }
   }
 
   const tagColors = UPDATE_TAG_COLORS[update.tag]
@@ -230,10 +245,12 @@ export default function UpdateDetail({ update, onClose, onEdit, onReaction, canE
                   {(profile?.full_name || 'U')[0]}
                 </div>
               )}
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
+                rows={1}
                 value={replyText}
                 onChange={e => setReplyText(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder={replyTo ? `Reageer op ${replyTo.name}...` : 'Schrijf een reactie...'}
                 disabled={sending}
                 aria-label="Reactie"

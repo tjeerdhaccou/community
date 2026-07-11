@@ -2120,6 +2120,8 @@ select.input {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .post-card__text a {
@@ -2179,6 +2181,7 @@ select.input {
   color: var(--text-primary);
   margin: 16px 0;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .post-detail-text a {
@@ -2273,6 +2276,8 @@ select.input {
   font-size: 16px;
   color: var(--text-secondary);
   line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .comment-text a {
@@ -2285,24 +2290,38 @@ select.input {
 
 .reply-input-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
 }
 
-.reply-input-row input {
+.reply-input-row textarea {
   flex: 1;
   padding: 10px 14px;
   border: 1px solid var(--border-default);
-  border-radius: 24px;
+  border-radius: 20px;
   background: var(--bg-page);
   color: var(--text-primary);
   font-size: 16px;
   font-family: inherit;
+  line-height: 1.5;
+  resize: none;
+  min-height: 40px;
+  max-height: 140px;
+  overflow-y: auto;
+  display: block;
 }
 
-.reply-input-row input:focus {
+.reply-input-row textarea:focus {
   outline: none;
   border-color: var(--accent-primary);
+}
+
+.reply-input-row .comment-avatar {
+  margin-bottom: 8px;
+}
+
+.reply-input-row .reply-submit {
+  margin-bottom: 2px;
 }
 
 .reply-submit {
@@ -2617,7 +2636,8 @@ select.input {
   line-height: 1.6;
   color: var(--text-primary);
   margin-bottom: 12px;
-  word-break: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .feed-card__image {
