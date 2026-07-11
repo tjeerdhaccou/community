@@ -8,6 +8,7 @@ import { uploadFile } from '../lib/storage'
 import { labelForValue } from '../lib/intakeFields'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdminDocumentRequests } from '../hooks/useDocumentRequests'
+import { useUnreviewedMemberUploads } from '../hooks/useUnreviewedMemberUploads'
 import ConfirmModal from './ConfirmModal'
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
@@ -27,6 +28,17 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
   const navigate = useNavigate()
   const { project } = useProject()
   const { user } = useAuth()
+  const { hasUnreviewed: hasUnreviewedUploads, markReviewed: markUploadsReviewed } = useUnreviewedMemberUploads()
+  const showDossierDot = canManage && !isMe && hasUnreviewedUploads(profileId)
+
+  // Zodra de admin het Dossier-tab opent, alle ongelezen zelf-uploads van dit
+  // lid markeren als gezien. Dot verdwijnt daarna in sidebar + ledenlijst.
+  useEffect(() => {
+    if (activeTab === 'dossier' && canManage && !isMe && hasUnreviewedUploads(profileId)) {
+      markUploadsReviewed(profileId)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, profileId])
 
   useEffect(() => {
     if (!profileId) return
@@ -168,6 +180,13 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                   onClick={() => setActiveTab('dossier')}
                 >
                   <i className="fa-solid fa-folder-open" /> Dossier
+                  {showDossierDot && (
+                    <span
+                      className="member-profile__dossier-dot"
+                      aria-label="Nieuwe uploads"
+                      title="Nieuwe uploads"
+                    />
+                  )}
                 </button>
               </div>
             )}

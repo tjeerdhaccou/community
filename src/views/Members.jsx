@@ -13,6 +13,7 @@ import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 import MemberProfile from '../components/MemberProfile'
 import RejectModal from '../components/RejectModal'
 import IntakeResponseDetail from '../components/IntakeResponseDetail'
+import { useUnreviewedMemberUploads } from '../hooks/useUnreviewedMemberUploads'
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
 
@@ -33,6 +34,7 @@ export default function Members() {
   const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
   const { allWorkgroups, workgroupIdsByProfile, workgroupsForProfile } = useWorkgroups()
+  const { hasUnreviewed: hasUnreviewedUploads, markReviewed: markUploadsReviewed } = useUnreviewedMemberUploads()
   const commissies = allWorkgroups.filter(wg => wg.type === 'commissie')
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -198,6 +200,7 @@ export default function Members() {
                 onClick={canViewProfile ? () => setSelectedMember(m) : undefined}
                 showFunnel={canDo(role, 'assign_roles')}
                 commissies={workgroupsForProfile(m.profile_id, 'commissie')}
+                hasUnreviewedUploads={hasUnreviewedUploads(m.profile_id)}
               />
             )
           })}
@@ -495,7 +498,7 @@ function OpenLinkInvite({ projectName, project }) {
   )
 }
 
-function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [] }) {
+function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [], hasUnreviewedUploads }) {
   const p = membership.profile
   const roleColor = ROLE_COLORS[membership.role] || '#9ba1b0'
   const proLabel = PROFESSIONAL_LABELS[p?.professional_type]
@@ -522,6 +525,13 @@ function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [] }) 
       <h3 className="member-card__name">
         {p?.full_name || 'Onbekend'}
         {isMe && <span className="member-card__you">jij</span>}
+        {hasUnreviewedUploads && (
+          <span
+            className="member-card__upload-dot"
+            title="Nieuwe uploads in dossier"
+            aria-label="Nieuwe uploads in dossier"
+          />
+        )}
       </h3>
 
       {p?.company && (

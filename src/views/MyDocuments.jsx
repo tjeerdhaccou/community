@@ -6,6 +6,7 @@ import { useSignatureRequests } from '../hooks/useSignatureRequests'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { useToast } from '../components/Toast'
+import ConfirmModal from '../components/ConfirmModal'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
@@ -44,14 +45,17 @@ export default function MyDocuments() {
   const { basePath } = useProject()
   const navigate = useNavigate()
   const toast = useToast()
-  const { files, loading: filesLoading, download, upload } = useMyDocuments()
+  const { files, loading: filesLoading, download, upload, remove } = useMyDocuments()
   const { requests, loading: requestsLoading, submitResponse, markReviewed } = useDocumentRequests()
   const { requests: signatures, loading: signaturesLoading } = useSignatureRequests()
   const [uploading, setUploading] = useState(null)
+  const [ownUploading, setOwnUploading] = useState(false)
   const requestFileRef = useRef(null)
+  const ownFileRef = useRef(null)
   const [activeRequestId, setActiveRequestId] = useState(null)
   const [detailRequest, setDetailRequest] = useState(null)
   const [detailFile, setDetailFile] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null) // { id, name }
   const [tab, setTab] = useState('verzoeken')
 
   const loading = filesLoading || requestsLoading || signaturesLoading
@@ -67,7 +71,9 @@ export default function MyDocuments() {
   const submittedRequests = requests.filter(r => r.status === 'submitted')
   const completedRequests = requests.filter(r => r.status === 'approved' || r.status === 'rejected')
 
-  const teamFiles = files.filter(f => !f.request_id && f.uploaded_by !== user?.id)
+  // Documenten-tab toont zowel wat het team geüpload heeft als eigen uploads.
+  // Alleen antwoorden op een verzoek (request_id) horen thuis in Verzoeken.
+  const docFiles = files.filter(f => !f.request_id)
 
   async function handleRequestUpload(e) {
     const file = e.target.files?.[0]
@@ -89,6 +95,38 @@ export default function MyDocuments() {
   function triggerRequestUpload(requestId) {
     setActiveRequestId(requestId)
     setTimeout(() => requestFileRef.current?.click(), 0)
+  }
+
+  function triggerOwnUpload() {
+    ownFileRef.current?.click()
+  }
+
+  async function handleOwnUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setOwnUploading(true)
+    try {
+      await upload(file)
+      toast.success('Document toegevoegd')
+    } catch (err) {
+      toast.error(err.message || 'Upload mislukt')
+    } finally {
+      setOwnUploading(false)
+      if (ownFileRef.current) ownFileRef.current.value = ''
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) return
+    const { id } = confirmDelete
+    setConfirmDelete(null)
+    try {
+      await remove(id)
+      toast.success('Document verwijderd')
+      if (detailFile?.id === id) setDetailFile(null)
+    } catch (err) {
+      toast.error(err.message || 'Verwijderen mislukt')
+    }
   }
 
   async function handleMarkReviewed(requestId) {
@@ -114,7 +152,7 @@ export default function MyDocuments() {
   }
 
   const requestCount = requests.length
-  const docCount = teamFiles.length
+  const docCount = docFiles.length
   const signatureCount = activeSignatures.length
   const pendingSignatureCount = pendingSignatures.length
 
@@ -146,6 +184,7 @@ export default function MyDocuments() {
       </div>
 
       <input ref={requestFileRef} type="file" onChange={handleRequestUpload} style={{ display: 'none' }} />
+      <input ref={ownFileRef} type="file" onChange={handleOwnUpload} style={{ display: 'none' }} />
 
       {tab === 'verzoeken' && (
         <RequestsTab
@@ -171,8 +210,12 @@ export default function MyDocuments() {
 
       {tab === 'documenten' && (
         <DocumentsTab
-          files={teamFiles}
+          files={docFiles}
+          currentUserId={user?.id}
+          uploading={ownUploading}
+          onUpload={triggerOwnUpload}
           onOpenDetail={setDetailFile}
+          onDelete={(file) => setConfirmDelete({ id: file.id, name: file.title || file.file_name })}
         />
       )}
 
@@ -190,8 +233,20 @@ export default function MyDocuments() {
       {detailFile && (
         <FileDetailModal
           file={detailFile}
+          isOwn={detailFile.uploaded_by === user?.id && !detailFile.request_id}
           onClose={() => setDetailFile(null)}
           onDownload={download}
+          onDelete={() => setConfirmDelete({ id: detailFile.id, name: detailFile.title || detailFile.file_name })}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          message={`Weet je zeker dat je "${confirmDelete.name}" wilt verwijderen?`}
+          confirmLabel="Verwijderen"
+          danger
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
     </div>
@@ -451,27 +506,46 @@ function SignedDownloadButton({ signedPath, fileName }) {
   )
 }
 
-function DocumentsTab({ files, onOpenDetail }) {
+function DocumentsTab({ files, currentUserId, uploading, onUpload, onOpenDetail, onDelete }) {
+  const uploadButton = (
+    <button className="btn-primary" onClick={onUpload} disabled={uploading}>
+      <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-upload'}`} />
+      {uploading ? 'Uploaden...' : 'Document toevoegen'}
+    </button>
+  )
+
   if (files.length === 0) {
     return (
-      <div className="empty-inline">
-        <i className="fa-solid fa-folder-open" />
-        <h3 className="empty-inline__title">Geen documenten</h3>
-        <p>Het projectteam heeft nog geen documenten voor je klaargezet.</p>
-      </div>
+      <>
+        <div className="my-docs__toolbar">{uploadButton}</div>
+        <div className="empty-inline">
+          <i className="fa-solid fa-folder-open" />
+          <h3 className="empty-inline__title">Geen documenten</h3>
+          <p>Er staan nog geen documenten voor je klaar. Voeg zelf iets toe met de knop hierboven.</p>
+        </div>
+      </>
     )
   }
 
   return (
-    <div className="my-docs__cards">
-      {files.map(file => (
-        <TeamFileCard key={file.id} file={file} onOpen={() => onOpenDetail(file)} />
-      ))}
-    </div>
+    <>
+      <div className="my-docs__toolbar">{uploadButton}</div>
+      <div className="my-docs__cards">
+        {files.map(file => (
+          <DocumentFileCard
+            key={file.id}
+            file={file}
+            isOwn={file.uploaded_by === currentUserId}
+            onOpen={() => onOpenDetail(file)}
+            onDelete={() => onDelete(file)}
+          />
+        ))}
+      </div>
+    </>
   )
 }
 
-function TeamFileCard({ file, onOpen }) {
+function DocumentFileCard({ file, isOwn, onOpen, onDelete }) {
   const icon = fileIcon(file.file_type || file.file_name)
   const iconColor = fileIconColor(file.file_type || file.file_name)
 
@@ -481,6 +555,11 @@ function TeamFileCard({ file, onOpen }) {
         <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(var(--accent-blue-rgb), 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
           {CATEGORY_LABELS[file.category] || file.category || 'Document'}
         </span>
+        {isOwn && (
+          <span className="request-card__type" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}>
+            <i className="fa-solid fa-user" /> Zelf toegevoegd
+          </span>
+        )}
         {file.file_size > 0 && (
           <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{formatFileSize(file.file_size)}</span>
         )}
@@ -495,9 +574,20 @@ function TeamFileCard({ file, onOpen }) {
       </div>
 
       <div className="request-card__footer">
-        <div className="request-card__meta">
+        <div className="request-card__meta" style={{ flex: 1 }}>
           <span>{timeAgo(file.created_at)}</span>
         </div>
+        {isOwn && (
+          <button
+            type="button"
+            className="my-docs__card-delete"
+            onClick={(e) => { e.stopPropagation(); onDelete() }}
+            aria-label="Verwijderen"
+            title="Verwijderen"
+          >
+            <i className="fa-solid fa-trash" />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -668,7 +758,7 @@ function RequestDetailModal({ request, uploading, onClose, onDownload, onUpload,
   )
 }
 
-function FileDetailModal({ file, onClose, onDownload }) {
+function FileDetailModal({ file, isOwn, onClose, onDownload, onDelete }) {
   const icon = fileIcon(file.file_type || file.file_name)
   const iconColor = fileIconColor(file.file_type || file.file_name)
   const isImage = file.file_type?.startsWith('image/')
@@ -679,9 +769,16 @@ function FileDetailModal({ file, onClose, onDownload }) {
       <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
         <div className="modal-header">
           <h2>{file.title}</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Sluiten">
-            <i className="fa-solid fa-xmark" />
-          </button>
+          <div style={{ display: 'flex', gap: 2 }}>
+            {isOwn && (
+              <button className="modal-close my-docs__modal-delete" onClick={onDelete} aria-label="Verwijderen" title="Verwijderen">
+                <i className="fa-solid fa-trash" />
+              </button>
+            )}
+            <button className="modal-close" onClick={onClose} aria-label="Sluiten">
+              <i className="fa-solid fa-xmark" />
+            </button>
+          </div>
         </div>
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
