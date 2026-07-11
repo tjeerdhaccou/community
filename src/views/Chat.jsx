@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, Fragment } from 'react'
 import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { useSupportChat } from '../hooks/useSupportChat'
@@ -254,7 +254,7 @@ export default function Chat() {
               const showDay = !prev || new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
               const isLast = i === selected.messages.length - 1
               return (
-                <div key={m.id}>
+                <Fragment key={m.id}>
                   {showDay && <div className="chat-datesep">{dayLabel(m.created_at)}</div>}
                   <div id={`chat-msg-${m.id}`} className={`chat-msg ${mine ? 'chat-msg--out' : 'chat-msg--in'}`}>
                     <div className={`chat-bubble ${mine ? 'chat-bubble--out' : 'chat-bubble--in'} ${highlightId === m.id ? 'chat-bubble--hit' : ''}`}>
@@ -266,7 +266,7 @@ export default function Chat() {
                       {mine && isLast && m.read_at ? ' · Gelezen' : ''}
                     </div>
                   </div>
-                </div>
+                </Fragment>
               )
             })
           )}
