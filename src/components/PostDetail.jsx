@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { useComments } from '../hooks/usePosts'
 import { useAuth } from '../contexts/AuthContext'
 import { POST_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
@@ -12,9 +12,17 @@ export default function PostDetail({ post, onClose, onLike, onReaction, onFollow
   const [sending, setSending] = useState(false)
   const [followToast, setFollowToast] = useState(null)
   const [showReactions, setShowReactions] = useState(false)
+  const textareaRef = useRef(null)
   const isPoll = post.post_type === 'poll'
   const isAuthor = post.author_id === profile?.id
   const canManage = isAuthor || canModerate
+
+  useLayoutEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px'
+  }, [replyText])
 
   async function handleReply(e) {
     e.preventDefault()
@@ -28,6 +36,13 @@ export default function PostDetail({ post, onClose, onLike, onReaction, onFollow
       console.error('Error posting comment:', err)
     }
     setSending(false)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      handleReply(e)
+    }
   }
 
   function handleFollow() {
@@ -231,10 +246,12 @@ export default function PostDetail({ post, onClose, onLike, onReaction, onFollow
                   {(profile?.full_name || 'U')[0]}
                 </div>
               )}
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
+                rows={1}
                 value={replyText}
                 onChange={e => setReplyText(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder={replyTo ? `Reageer op ${replyTo.name}...` : 'Schrijf een reactie...'}
                 disabled={sending}
                 aria-label="Reactie"
