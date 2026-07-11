@@ -9,6 +9,7 @@ import { isProjectDomain } from '../lib/subdomain'
 import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
 import { useUnreviewedMemberUploads } from '../hooks/useUnreviewedMemberUploads'
 import { useUnreadIndicators } from '../hooks/useUnreadIndicators'
+import { useSupportConversation } from '../hooks/useSupportConversation'
 
 const NAV_SECTIONS = [
   {
@@ -87,6 +88,7 @@ export default function Sidebar() {
   const signatureRequestCount = useSignatureRequestCount()
   const { memberCount: unreviewedMemberUploads } = useUnreviewedMemberUploads()
   const { hasNewBoard, hasNewUpdates } = useUnreadIndicators(project?.id)
+  const { unreadCount: chatUnread } = useSupportConversation()
   // Eén badge op 'Documenten' voor alle openstaande acties van de user:
   // documentverzoeken (upload/ter inzage/tekenen-via-doc-request) + nieuwe
   // tekenverzoeken (signature_requests).
@@ -166,9 +168,16 @@ export default function Sidebar() {
     // (voor niet-route items zoals Support).
     const key = item.to ?? item.dispatchEvent ?? item.label
     const handleClick = () => {
+      if (item.dispatchEvent === 'open-support-chat') {
+        // Sync via URL: '?support=1' opent de widget en is bookmark/deelbaar.
+        // Widget luistert ook op het event voor snelle open (SSR-veilig).
+        const url = new URL(window.location.href)
+        url.searchParams.set('support', '1')
+        window.history.pushState({}, '', url)
+        window.dispatchEvent(new CustomEvent('open-support-chat'))
+        return
+      }
       if (item.dispatchEvent) {
-        // Custom event zodat globale widgets (bv. Support-chat rechtsonder) hierop
-        // kunnen luisteren. Als geen listener → geen effect.
         window.dispatchEvent(new CustomEvent(item.dispatchEvent))
         return
       }
@@ -189,6 +198,9 @@ export default function Sidebar() {
         )}
         {item.to === 'mijn-dossier' && documentenActionCount > 0 && (
           <span className="sidebar-badge">{documentenActionCount}</span>
+        )}
+        {item.dispatchEvent === 'open-support-chat' && chatUnread > 0 && (
+          <span className="sidebar-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>
         )}
         {item.to === 'community' && hasNewBoard && (
           <span className="sidebar-dot" aria-label="Nieuwe berichten" title="Nieuwe berichten" />
