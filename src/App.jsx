@@ -344,6 +344,7 @@ function NormalRoutes() {
         <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
         <Route path="documenten" element={<DocumentenHub />} />
         <Route path="mijn-documenten" element={<MyDocuments />} />
+        <Route path="mijn-dossier" element={<MyDocuments />} />
         <Route path="tekenen/:id" element={<Tekenen />} />
         <Route path="pro-updates" element={<ProfessionalUpdates />} />
         <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />

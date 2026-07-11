@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useUpdates } from '../hooks/useUpdates'
+import { markSeen } from '../hooks/useUnreadIndicators'
 import { canDo } from '../lib/permissions'
 import UpdateCard from '../components/UpdateCard'
 import UpdateModal from '../components/UpdateModal'
@@ -15,9 +16,14 @@ import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...UPDATE_TAGS]
 
 export default function Updates() {
-  const { role } = useProject()
+  const { project, role } = useProject()
   const { user } = useAuth()
-  const { updates, loading, createUpdate, editUpdate, deleteUpdate, toggleReaction, addAttachment, removeAttachment } = useUpdates()
+  const { updates, loading, createUpdate, editUpdate, deleteUpdate, togglePin, toggleReaction, addAttachment, removeAttachment } = useUpdates()
+
+  // Markeer 'Projectnieuws' als gezien zodra je hier bent en bij nieuwe updates.
+  useEffect(() => {
+    if (project?.id) markSeen(project.id, 'updates')
+  }, [project?.id, updates.length])
   const [activeTag, setActiveTag] = useState('Alles')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUpdate, setEditingUpdate] = useState(null)
@@ -75,6 +81,15 @@ export default function Updates() {
   function handleDeleteRequest(update) {
     setEditingUpdate(null)
     setConfirmDelete(update)
+  }
+
+  async function handleTogglePin(update) {
+    try {
+      await togglePin(update.id, !!update.is_pinned)
+      toast.success(update.is_pinned ? 'Update losgemaakt' : 'Update vastgepind')
+    } catch (err) {
+      toast.error(err.message || 'Vastpinnen mislukt')
+    }
   }
 
   async function confirmDeleteUpdate() {
@@ -136,6 +151,7 @@ export default function Updates() {
               update={update}
               featured={i === 0 && !!update.image_url}
               onEdit={canDo(role, 'publish_update') ? handleEdit : undefined}
+              onTogglePin={canDo(role, 'publish_update') ? handleTogglePin : undefined}
               onReaction={toggleReaction}
               onClick={() => setSelectedUpdate(update)}
             />
@@ -159,6 +175,7 @@ export default function Updates() {
           update={activeSelected}
           onClose={() => setSelectedUpdate(null)}
           onEdit={handleEdit}
+          onTogglePin={canDo(role, 'publish_update') ? handleTogglePin : undefined}
           onReaction={toggleReaction}
           canEdit={canDo(role, 'publish_update')}
         />
