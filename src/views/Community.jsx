@@ -152,7 +152,7 @@ export default function Community() {
           ) : filtered.length === 0 ? (
             <div className="feed-empty">
               <div className="feed-empty__icon">
-                <i className="fa-solid fa-comments" />
+                <i className="fa-solid fa-thumbtack" />
               </div>
               <h3>
                 {activeTag === 'Alles'
