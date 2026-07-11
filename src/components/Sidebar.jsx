@@ -26,7 +26,7 @@ const NAV_SECTIONS = [
       // Support is een globale chat-widget die rechtsonder floats. De nav-link
       // dispatch een custom event dat de widget kan openen — als de widget nog
       // niet is gemount, valt de klik stil.
-      { dispatchEvent: 'open-support-chat', icon: 'fa-solid fa-life-ring', color: 'var(--clean-upcoming, #F09020)', bubble: 'amber', label: 'Support' },
+      { dispatchEvent: 'open-support-chat', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Chat' },
     ]
   },
   {

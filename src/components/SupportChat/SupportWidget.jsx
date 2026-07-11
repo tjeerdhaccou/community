@@ -59,6 +59,14 @@ export default function SupportWidget() {
     if (params.has('support')) setOpen(true)
   }, [])
 
+  // 'open-support-chat' event vanuit de sidebar (Voor jou → Chat) — zo hoeft
+  // die nav-knop geen route te openen; hij triggert direct de widget.
+  useEffect(() => {
+    const openHandler = () => setOpen(true)
+    window.addEventListener('open-support-chat', openHandler)
+    return () => window.removeEventListener('open-support-chat', openHandler)
+  }, [])
+
   // Toon het "Chat met ons"-label kort na binnenkomst, verberg daarna weer.
   useEffect(() => {
     const t = setTimeout(() => setLabelVisible(false), 60_000)
