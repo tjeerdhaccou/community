@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSupportConversation } from '../../hooks/useSupportConversation'
 import { useToast } from '../Toast'
@@ -50,8 +51,13 @@ export default function SupportWidget() {
   const [labelVisible, setLabelVisible] = useState(true)
   const { messages, loading, sending, sendMessage, markRead, unreadCount } = useSupportConversation()
   const toast = useToast()
+  const location = useLocation()
   const bodyRef = useRef(null)
   const fileRef = useRef(null)
+
+  // Op de volwaardige Chat-pagina is het zwevende widget overbodig — en het
+  // bubbeltje overlapt daar de verstuur-knop. Verberg 'm dus op /chat.
+  const onChatPage = location.pathname.endsWith('/chat')
 
   // Deeplink: ?support opent de widget (gebruikt door notificatie-mails).
   useEffect(() => {
@@ -128,6 +134,9 @@ export default function SupportWidget() {
     setFile(f)
     if (fileRef.current) fileRef.current.value = ''
   }
+
+  // Na alle hooks: op de Chat-pagina renderen we niets (widget verbergen).
+  if (onChatPage) return null
 
   if (!open) {
     return (
