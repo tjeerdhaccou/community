@@ -78,13 +78,11 @@ export function openSubdomainInNewTab(targetUrl) {
  */
 export function getProjectBaseUrl(project) {
   if (!project) return window.location.origin
-  const domain = project.custom_domain
-  if (domain) return `https://${domain}`
+  // Alleen op productie naar het custom_domain (bv. vlinderhaven.buuur.nl);
+  // op previews/localhost blijven we in dezelfde omgeving via /p/<slug>.
+  if (isProductionHost() && project.custom_domain) return `https://${project.custom_domain}`
   const slug = project.slug || project.id
-  // On a subdomain, link to the main domain for /p/ routes
-  const mainDomain = import.meta.env.VITE_MAIN_DOMAIN
-  const origin = mainDomain ? `https://${mainDomain}` : window.location.origin
-  return `${origin}/p/${slug}`
+  return `${getMainOrigin()}/p/${slug}`
 }
 
 /**
@@ -92,7 +90,7 @@ export function getProjectBaseUrl(project) {
  */
 export function getIntakeUrl(project) {
   if (!project) return ''
-  if (project.custom_domain) return `https://${project.custom_domain}/intake`
+  if (isProductionHost() && project.custom_domain) return `https://${project.custom_domain}/intake`
   return `${getMainOrigin()}/intake/${project.slug || project.id}`
 }
 
@@ -101,11 +99,15 @@ export function getIntakeUrl(project) {
  */
 export function getPublicSiteUrl(project) {
   if (!project) return ''
-  if (project.custom_domain) return `https://${project.custom_domain}/public`
+  if (isProductionHost() && project.custom_domain) return `https://${project.custom_domain}/public`
   return `${getMainOrigin()}/project/${project.slug || project.id}`
 }
 
 function getMainOrigin() {
+  // Op previews/localhost in dezelfde omgeving blijven i.p.v. naar het hardcoded
+  // productiedomein (buuur.nl) te springen — anders "komt de preview weer uit
+  // bij de productie-URL".
+  if (!isProductionHost()) return window.location.origin
   return MAIN_DOMAIN ? `https://${MAIN_DOMAIN}` : window.location.origin
 }
 
