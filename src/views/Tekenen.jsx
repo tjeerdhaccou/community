@@ -323,18 +323,10 @@ export default function Tekenen() {
         .eq('id', signer.signer_id)
       if (updateErr) throw new Error(friendlyError(updateErr))
 
-      // Check of alle signers van dit request klaar zijn → request status completed
-      const { data: remaining } = await supabase
-        .from('signature_request_signers')
-        .select('id')
-        .eq('request_id', signer.request_id)
-        .neq('status', 'signed')
-      if ((remaining ?? []).length === 0) {
-        await supabase
-          .from('signature_requests')
-          .update({ status: 'completed' })
-          .eq('id', signer.request_id)
-      }
+      // signature_requests → 'completed' wordt server-side door een trigger
+      // (sig_maybe_complete_request) afgehandeld. Als signer hebben we geen
+      // schrijfrechten op signature_requests, dus een client-side update
+      // zou hier stil falen.
 
       toast.success('Document getekend')
       navigate(`${basePath}/mijn-documenten`)
