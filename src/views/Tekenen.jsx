@@ -24,6 +24,18 @@ export default function Tekenen() {
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
+  // NAW-velden — worden zowel op het handtekening-blok gerenderd, op de
+  // audit-pagina, opgeslagen als snapshot op de signer-rij, én bij submit
+  // teruggeschreven naar het profiel zodat het lid het maar één keer hoeft
+  // in te vullen (volgende tekenverzoeken zijn direct compleet).
+  const [naw, setNaw] = useState({
+    street_address: '',
+    postal_code: '',
+    city: '',
+    date_of_birth: '',
+    phone: '',
+  })
+
   // Weigeren-modal
   const [declining, setDeclining] = useState(false)
   const [declineReason, setDeclineReason] = useState('')
@@ -100,8 +112,16 @@ export default function Tekenen() {
           .eq('id', data.id)
       }
 
-      // Plaats voor-invullen vanuit profiel als beschikbaar
+      // Plaats + NAW voor-invullen vanuit profiel — lid ziet meteen wat we
+      // hebben en hoeft alleen aan te vullen wat ontbreekt.
       if (profile?.city) setPlace(profile.city)
+      setNaw({
+        street_address: profile?.street_address ?? '',
+        postal_code: profile?.postal_code ?? '',
+        city: profile?.city ?? '',
+        date_of_birth: profile?.date_of_birth ?? '',
+        phone: profile?.phone ?? '',
+      })
 
       // Origineel PDF downloaden (signed URL want bucket is private)
       const { data: urlData, error: urlErr } = await supabase.storage
@@ -221,6 +241,9 @@ export default function Tekenen() {
   const onSign = useCallback(async () => {
     if (!signer || !pdfBytes) return
     if (!place.trim()) { toast.error('Vul je plaats in.'); return }
+    if (!naw.street_address.trim()) { toast.error('Vul je adres in.'); return }
+    if (!naw.postal_code.trim()) { toast.error('Vul je postcode in.'); return }
+    if (!naw.city.trim()) { toast.error('Vul je woonplaats in.'); return }
     if (!agreed) { toast.error('Vink eerst het akkoord aan.'); return }
     if (signer.request_status !== 'open') { toast.error('Dit verzoek is niet meer actief.'); return }
 
@@ -237,15 +260,44 @@ export default function Tekenen() {
         logger.error('get-client-ip mislukt', e)
       }
 
+      // NAW-snapshot voor rendering + audit + DB
+      const nawSnapshot = {
+        street_address: naw.street_address.trim(),
+        postal_code: naw.postal_code.trim(),
+        city: naw.city.trim(),
+        date_of_birth: naw.date_of_birth || null,
+        phone: naw.phone.trim() || null,
+      }
+
       // Defensief: kopie maken zodat eventuele toekomstige transfers door
       // pdf-lib of crypto.subtle de bron-bytes niet kunnen detachen.
       const { signedBytes } = await renderSignedPdf({
         originalPdf: pdfBytes.slice(),
         signature: signer,
         signer: { full_name: profile?.full_name ?? user?.email ?? 'Onbekend', email: user?.email ?? null },
+        naw: nawSnapshot,
         place: place.trim(),
         signedIp,
       })
+
+      // Profiel bijwerken met de NAW die het lid nu heeft ingevuld — zo hoeft
+      // het bij volgende tekenverzoeken niet opnieuw. Alleen velden die
+      // afwijken van de profielwaarde overschrijven we niet nodeloos; supabase
+      // update overschrijft alleen wat we meesturen.
+      const profileUpdates = {}
+      if (nawSnapshot.street_address !== (profile?.street_address ?? '')) profileUpdates.street_address = nawSnapshot.street_address
+      if (nawSnapshot.postal_code   !== (profile?.postal_code   ?? '')) profileUpdates.postal_code   = nawSnapshot.postal_code
+      if (nawSnapshot.city          !== (profile?.city          ?? '')) profileUpdates.city          = nawSnapshot.city
+      if (nawSnapshot.date_of_birth && nawSnapshot.date_of_birth !== profile?.date_of_birth) profileUpdates.date_of_birth = nawSnapshot.date_of_birth
+      if (nawSnapshot.phone && nawSnapshot.phone !== profile?.phone) profileUpdates.phone = nawSnapshot.phone
+      if (Object.keys(profileUpdates).length > 0) {
+        const { error: profErr } = await supabase
+          .from('profiles')
+          .update(profileUpdates)
+          .eq('id', user.id)
+        if (profErr) logger.error('Profiel-update mislukt', profErr)
+        // Faalt stil: teken-flow gaat door zelfs als profile-write faalt.
+      }
 
       // Upload signed PDF
       const signedPath = `${signer.org_id}/${signer.request_id}/signed-${signer.signer_id}.pdf`
@@ -265,6 +317,7 @@ export default function Tekenen() {
           signed_full_name: profile?.full_name ?? null,
           signed_email: user?.email ?? null,
           signed_place: place.trim(),
+          signed_naw_snapshot: nawSnapshot,
           signed_file_path: signedPath,
         })
         .eq('id', signer.signer_id)
@@ -290,7 +343,7 @@ export default function Tekenen() {
       toast.error(err.message || 'Tekenen mislukt. Probeer opnieuw.')
       setSubmitting(false)
     }
-  }, [signer, pdfBytes, place, agreed, profile, user, basePath, navigate, toast])
+  }, [signer, pdfBytes, place, naw, agreed, profile, user, basePath, navigate, toast])
 
   // Download van het originele document (vóór tekenen) — lid wil het rustig
   // kunnen lezen / offline doornemen voordat ze tekenen.
@@ -455,39 +508,79 @@ export default function Tekenen() {
           Download origineel om te lezen
         </button>
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Naam</label>
-          <input
-            type="text"
-            value={profile?.full_name ?? user?.email ?? ''}
-            readOnly
-            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--surface-secondary, #f5f5f7)', fontSize: 14 }}
-          />
-        </div>
+        {/* --- Persoonsgegevens (worden ook naar profiel geschreven) --- */}
+        <SignFormField label="Naam" readOnly value={profile?.full_name ?? user?.email ?? ''} />
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
-            Plaats <span style={{ color: 'var(--accent-red)' }}>*</span>
-          </label>
-          <input
-            type="text"
-            value={place}
-            onChange={(e) => setPlace(e.target.value)}
-            placeholder="Bv. Amsterdam"
+        <SignFormField
+          label="Adres"
+          required
+          value={naw.street_address}
+          onChange={v => setNaw(p => ({ ...p, street_address: v }))}
+          placeholder="Voorbeeldstraat 12"
+          disabled={submitting}
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: 8, marginBottom: 12 }}>
+          <SignFormField
+            label="Postcode"
+            required
+            noMargin
+            value={naw.postal_code}
+            onChange={v => setNaw(p => ({ ...p, postal_code: v }))}
+            placeholder="1234 AB"
             disabled={submitting}
-            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-default)', fontSize: 14 }}
+          />
+          <SignFormField
+            label="Woonplaats"
+            required
+            noMargin
+            value={naw.city}
+            onChange={v => setNaw(p => ({ ...p, city: v }))}
+            placeholder="Amsterdam"
+            disabled={submitting}
           />
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Datum</label>
-          <input
-            type="text"
-            value={new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
-            readOnly
-            style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-default)', background: 'var(--surface-secondary, #f5f5f7)', fontSize: 14 }}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+          <SignFormField
+            label="Geboortedatum"
+            optional
+            noMargin
+            type="date"
+            value={naw.date_of_birth ?? ''}
+            onChange={v => setNaw(p => ({ ...p, date_of_birth: v }))}
+            disabled={submitting}
+          />
+          <SignFormField
+            label="Telefoon"
+            optional
+            noMargin
+            value={naw.phone}
+            onChange={v => setNaw(p => ({ ...p, phone: v }))}
+            placeholder="+31 6 …"
+            disabled={submitting}
           />
         </div>
+
+        <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: -6, marginBottom: 14 }}>
+          Deze gegevens komen op het contract én worden op je profiel opgeslagen zodat je ze niet opnieuw hoeft in te vullen.
+        </p>
+
+        {/* --- Ondertekening --- */}
+        <SignFormField
+          label="Plaats van ondertekening"
+          required
+          value={place}
+          onChange={setPlace}
+          placeholder="Bv. Amsterdam"
+          disabled={submitting}
+        />
+
+        <SignFormField
+          label="Datum"
+          readOnly
+          value={new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}
+        />
 
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, margin: '16px 0', cursor: 'pointer' }}>
           <input
@@ -557,6 +650,47 @@ export default function Tekenen() {
 }
 
 // Knop om de getekende PDF te downloaden (signed URL ophalen, openen in nieuwe tab).
+// Uniform input-veld voor het teken-form. Houdt de JSX beknopt en de styling
+// consistent (Clean DS via var()'s uit index.css).
+function SignFormField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+  required = false,
+  optional = false,
+  readOnly = false,
+  disabled = false,
+  noMargin = false,
+}) {
+  return (
+    <div style={{ marginBottom: noMargin ? 0 : 12 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+        {label}
+        {required && <span style={{ color: 'var(--accent-red)' }}> *</span>}
+        {optional && <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}> (optioneel)</span>}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        placeholder={placeholder}
+        readOnly={readOnly}
+        disabled={disabled}
+        style={{
+          width: '100%',
+          padding: '8px 10px',
+          borderRadius: 6,
+          border: '1px solid var(--border-default)',
+          background: readOnly ? 'var(--surface-secondary, #f5f5f7)' : 'transparent',
+          fontSize: 14,
+        }}
+      />
+    </div>
+  )
+}
+
 function SignedDownloadButton({ signedPath, title }) {
   const [busy, setBusy] = useState(false)
   async function onDownload() {
