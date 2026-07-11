@@ -2,16 +2,16 @@
    de support_*-data met het zwevende widget. Volledig token-gedreven. */
 
 .view-chat {
-  /* Doorbreek de 960px-contentbreedte + padding van .main-content zodat de chat
-     de volledige hoogte en breedte vult. */
-  max-width: none !important;
-  width: auto !important;
-  margin: -16px -32px -32px !important;
-  height: calc(100dvh - 44px);           /* topbar (36) + marge (8) */
+  /* Blijft binnen de normale contentbreedte (zoals andere pagina's, gecentreerd
+     via .main-content > *). Een nette kaart met een vaste hoogte die onder de
+     topbar past; de panelen scrollen intern. */
   display: flex;
+  height: calc(100dvh - 104px);          /* topbar + marges, past onder de topbar */
+  min-height: 460px;
   overflow: hidden;
   background: var(--bg-surface);
-  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Gesprekkenlijst ───────────────────────────────────────────────────── */
@@ -154,10 +154,9 @@
 /* ── Mobiel: twee schermen (lijst → thread met terug-knop) ─────────────── */
 @media (max-width: 768px) {
   .view-chat {
-    margin: -20px -16px 0 !important;
-    height: calc(100dvh - 128px);        /* topbar + safe area + onderbalk */
-    min-height: 380px;
-    box-shadow: none;
+    height: calc(100dvh - 150px);        /* topbar + safe area + onderbalk */
+    min-height: 360px;
+    border-radius: var(--radius-lg);
   }
   .chat-list { width: 100%; border-right: none; }
   .chat-thread { display: none; }
