@@ -8568,6 +8568,7 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  white-space: pre-line;
 }
 .request-card__attachment {
   display: flex;
