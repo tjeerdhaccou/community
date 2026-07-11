@@ -67,6 +67,27 @@ export default function SupportWidget() {
     return () => window.removeEventListener('open-support-chat', openHandler)
   }, [])
 
+  // Back/forward-knop van de browser: synct de open-state met ?support in de URL
+  // zodat de widget dicht gaat als je terug-navigeert nadat je 'm hebt geopend.
+  useEffect(() => {
+    const popHandler = () => {
+      const params = new URLSearchParams(window.location.search)
+      setOpen(params.has('support'))
+    }
+    window.addEventListener('popstate', popHandler)
+    return () => window.removeEventListener('popstate', popHandler)
+  }, [])
+
+  // ?support uit de URL halen bij sluiten (zonder page-reload).
+  function closeAndStripUrl() {
+    setOpen(false)
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('support')) {
+      url.searchParams.delete('support')
+      window.history.replaceState({}, '', url)
+    }
+  }
+
   // Toon het "Chat met ons"-label kort na binnenkomst, verberg daarna weer.
   useEffect(() => {
     const t = setTimeout(() => setLabelVisible(false), 60_000)
@@ -145,7 +166,7 @@ export default function SupportWidget() {
           <div className="sc-head__title">Hulp nodig?</div>
           <div className="sc-head__sub">We reageren meestal binnen één werkdag.</div>
         </div>
-        <button className="sc-head__close" onClick={() => setOpen(false)} aria-label="Sluiten">
+        <button className="sc-head__close" onClick={closeAndStripUrl} aria-label="Sluiten">
           <i className="fa-solid fa-xmark" aria-hidden="true" />
         </button>
       </div>
