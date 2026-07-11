@@ -1497,6 +1497,60 @@ select.input {
 .update-card:hover .update-card__edit { opacity: 1; }
 .update-card__edit:hover { color: var(--accent-primary); }
 
+.update-card__quick-actions {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+}
+.update-card__quick-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  box-shadow: var(--shadow-sm);
+}
+.update-card:hover .update-card__quick-btn { opacity: 1; }
+.update-card__quick-btn:hover { color: var(--accent-primary); }
+.update-card__quick-btn--active {
+  opacity: 1;
+  color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
+.update-card--pinned {
+  background: color-mix(in srgb, var(--accent-primary) 4%, var(--bg-surface));
+}
+
+.update-card__pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+  color: var(--accent-primary);
+}
+
+.modal-detail-actions .modal-detail-actions__btn--active {
+  color: var(--accent-primary);
+  background: color-mix(in srgb, var(--accent-primary) 14%, transparent);
+}
+
 /* Update detail modal */
 .update-detail__header {
   display: flex;

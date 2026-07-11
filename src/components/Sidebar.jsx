@@ -8,11 +8,25 @@ import { supabase } from '../lib/supabase'
 import { isProjectDomain } from '../lib/subdomain'
 import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
 import { useUnreviewedMemberUploads } from '../hooks/useUnreviewedMemberUploads'
+import { useUnreadIndicators } from '../hooks/useUnreadIndicators'
 
 const NAV_SECTIONS = [
   {
     items: [
       { to: '', icon: 'fa-solid fa-house', color: 'var(--clean-inbox, #4A90D9)', bubble: 'navy', label: 'Dashboard', end: true },
+    ]
+  },
+  {
+    // Persoonlijke acties bovenaan — dit is voor het lid de belangrijkste hub
+    // (tekenverzoeken, documentverzoeken, klaargezette bestanden) en verdient
+    // 1-click bereikbaarheid, niet weggemoffeld als tab in Documenten.
+    label: 'Voor jou',
+    items: [
+      { to: 'mijn-dossier', icon: 'fa-solid fa-file-shield', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Mijn dossier', membersOnly: true },
+      // Support is een globale chat-widget die rechtsonder floats. De nav-link
+      // dispatch een custom event dat de widget kan openen — als de widget nog
+      // niet is gemount, valt de klik stil.
+      { dispatchEvent: 'open-support-chat', icon: 'fa-solid fa-life-ring', color: 'var(--clean-upcoming, #F09020)', bubble: 'amber', label: 'Support' },
     ]
   },
   {
@@ -27,10 +41,11 @@ const NAV_SECTIONS = [
     label: 'Project',
     items: [
       { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', bubble: 'periwinkle', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
-      // Documenten bundelt nu projectdocumenten + 'Mijn documenten' (tabs binnen de view).
-      // Geen feature-gate hier: persoonlijke documenten blijven altijd bereikbaar; de
-      // projectdocumenten-tab self-gate't op de 'documents'-feature in DocumentenHub.
-      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', bubble: 'pink', label: 'Documenten', membersOnly: true },
+      // Nu library only: projectdocumenten + adviseur-documenten (geen 'Mijn documenten'
+      // tab meer — die is nu een top-level nav-item onder "Voor jou"). Naam is
+      // ook expliciet "Projectdossier" zodat het lid niet verwacht hier hun eigen
+      // bestanden te vinden.
+      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', bubble: 'pink', label: 'Projectdossier', membersOnly: true },
     ]
   },
   {
@@ -71,6 +86,7 @@ export default function Sidebar() {
   const { user } = useAuth()
   const signatureRequestCount = useSignatureRequestCount()
   const { memberCount: unreviewedMemberUploads } = useUnreviewedMemberUploads()
+  const { hasNewBoard, hasNewUpdates } = useUnreadIndicators(project?.id)
   // Eén badge op 'Documenten' voor alle openstaande acties van de user:
   // documentverzoeken (upload/ter inzage/tekenen-via-doc-request) + nieuwe
   // tekenverzoeken (signature_requests).
@@ -146,11 +162,23 @@ export default function Sidebar() {
     // Uitgezette modules zijn voor iederéén verborgen — ook voor admins. De org
     // beheert de zichtbaarheid centraal via het org-dashboard (Modules-toggle).
     if (item.feature && !featureEnabled(item.feature)) return null
+    // Item-key: 'to' als het een route is, anders 'dispatchEvent' of label
+    // (voor niet-route items zoals Support).
+    const key = item.to ?? item.dispatchEvent ?? item.label
+    const handleClick = () => {
+      if (item.dispatchEvent) {
+        // Custom event zodat globale widgets (bv. Support-chat rechtsonder) hierop
+        // kunnen luisteren. Als geen listener → geen effect.
+        window.dispatchEvent(new CustomEvent(item.dispatchEvent))
+        return
+      }
+      navigate(item.to === '' ? (basePath || '/') : `${basePath}/${item.to}`)
+    }
     return (
       <div
-        key={item.to}
-        className={`cl-nav-item ${isActive(item.to) ? 'cl-nav-item--active' : ''}`}
-        onClick={() => navigate(item.to === '' ? (basePath || '/') : `${basePath}/${item.to}`)}
+        key={key}
+        className={`cl-nav-item ${item.to !== undefined && isActive(item.to) ? 'cl-nav-item--active' : ''}`}
+        onClick={handleClick}
         role="button"
         tabIndex={0}
       >
@@ -159,8 +187,14 @@ export default function Sidebar() {
         {item.to === 'members' && ledenBadgeCount > 0 && (
           <span className="sidebar-badge">{ledenBadgeCount}</span>
         )}
-        {item.to === 'documenten' && documentenActionCount > 0 && (
+        {item.to === 'mijn-dossier' && documentenActionCount > 0 && (
           <span className="sidebar-badge">{documentenActionCount}</span>
+        )}
+        {item.to === 'community' && hasNewBoard && (
+          <span className="sidebar-dot" aria-label="Nieuwe berichten" title="Nieuwe berichten" />
+        )}
+        {item.to === 'updates' && hasNewUpdates && (
+          <span className="sidebar-dot" aria-label="Nieuw projectnieuws" title="Nieuw projectnieuws" />
         )}
       </div>
     )
