@@ -23,7 +23,7 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export default function UpdateDetail({ update, onClose, onEdit, onReaction, canEdit }) {
+export default function UpdateDetail({ update, onClose, onEdit, onTogglePin, onReaction, canEdit }) {
   const { profile } = useAuth()
   const { comments, loading, addComment } = useUpdateComments(update.id)
   const [replyText, setReplyText] = useState('')
@@ -66,6 +66,16 @@ export default function UpdateDetail({ update, onClose, onEdit, onReaction, canE
     <div className="modal-overlay" onClick={onClose}>
       <div className="update-detail-card" onClick={e => e.stopPropagation()}>
         <div className="modal-detail-actions">
+          {onTogglePin && (
+            <button
+              onClick={() => onTogglePin(update)}
+              title={update.is_pinned ? 'Losmaken' : 'Vastpinnen'}
+              aria-label={update.is_pinned ? 'Losmaken' : 'Vastpinnen'}
+              className={update.is_pinned ? 'modal-detail-actions__btn--active' : ''}
+            >
+              <i className="fa-solid fa-thumbtack" />
+            </button>
+          )}
           {canEdit && (
             <button onClick={() => { onEdit?.(update); onClose() }} title="Bewerken" aria-label="Bewerken">
               <i className="fa-solid fa-pen" />
@@ -79,6 +89,11 @@ export default function UpdateDetail({ update, onClose, onEdit, onReaction, canE
         {/* Update content */}
         <div className="post-detail-content">
           <div className="update-detail__header">
+            {update.is_pinned && (
+              <span className="update-card__pinned-badge" title="Vastgepind">
+                <i className="fa-solid fa-thumbtack" /> Vastgepind
+              </span>
+            )}
             {update.tag && tagColors && (
               <span className="update-detail__tag" style={{ background: tagColors.bg, color: tagColors.color }}>
                 {update.tag}

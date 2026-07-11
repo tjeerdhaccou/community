@@ -61,6 +61,11 @@ export function useUpdates() {
           attachment_count: u.update_attachments?.length || 0,
         }
       })
+      // Gepinde updates altijd bovenaan, daarna op datum (gelijk aan CMS-sortering).
+      transformed.sort((a, b) => {
+        if (!!a.is_pinned !== !!b.is_pinned) return a.is_pinned ? -1 : 1
+        return new Date(b.created_at) - new Date(a.created_at)
+      })
       setUpdates(transformed)
     }
     setLoading(false)
@@ -127,6 +132,26 @@ export function useUpdates() {
     if (error) { logger.error('useUpdates.editUpdate', error); throw new Error(friendlyError(error)) }
     if (data) setUpdates(prev => prev.map(u => u.id === id ? data : u))
     return data
+  }
+
+  async function togglePin(id, currentlyPinned) {
+    const next = !currentlyPinned
+    // Optimistic: direct in de lijst zetten zodat de sortering meteen klopt.
+    setUpdates(prev => {
+      const swapped = prev.map(u => u.id === id ? { ...u, is_pinned: next } : u)
+      swapped.sort((a, b) => {
+        if (!!a.is_pinned !== !!b.is_pinned) return a.is_pinned ? -1 : 1
+        return new Date(b.created_at) - new Date(a.created_at)
+      })
+      return swapped
+    })
+    const { error } = await supabase.from('updates').update({ is_pinned: next }).eq('id', id)
+    if (error) {
+      logger.error('useUpdates.togglePin', error)
+      // Rollback bij fout.
+      setUpdates(prev => prev.map(u => u.id === id ? { ...u, is_pinned: currentlyPinned } : u))
+      throw new Error(friendlyError(error))
+    }
   }
 
   async function toggleReaction(updateId, emoji) {
@@ -207,7 +232,7 @@ export function useUpdates() {
     }))
   }
 
-  return { updates, loading, createUpdate, editUpdate, deleteUpdate, toggleReaction, addAttachment, removeAttachment, refetch: fetchUpdates }
+  return { updates, loading, createUpdate, editUpdate, deleteUpdate, togglePin, toggleReaction, addAttachment, removeAttachment, refetch: fetchUpdates }
 }
 
 export function useUpdateComments(updateId) {

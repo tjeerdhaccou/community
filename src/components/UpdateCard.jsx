@@ -3,13 +3,14 @@ import { useProject } from '../contexts/ProjectContext'
 import { canDo } from '../lib/permissions'
 import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
 
-export default function UpdateCard({ update, onEdit, onReaction, onClick, featured = false }) {
+export default function UpdateCard({ update, onEdit, onTogglePin, onReaction, onClick, featured = false }) {
   const { role } = useProject()
   const [showReactions, setShowReactions] = useState(false)
   const tagStyle = UPDATE_TAG_COLORS[update.tag] || { bg: 'var(--bg-hover)', color: 'var(--text-secondary)' }
+  const canManage = canDo(role, 'publish_update')
 
   return (
-    <article className={`update-card${featured ? ' update-card--featured' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
+    <article className={`update-card${featured ? ' update-card--featured' : ''}${update.is_pinned ? ' update-card--pinned' : ''}`} onClick={onClick} style={{ cursor: 'pointer' }}>
       {update.image_url && (
         <div className="update-card__image">
           <img src={update.image_url} alt={update.title || ''} />
@@ -17,6 +18,11 @@ export default function UpdateCard({ update, onEdit, onReaction, onClick, featur
       )}
       <div className="update-card__body">
         <div className="update-card__meta">
+          {update.is_pinned && (
+            <span className="update-card__pinned-badge" title="Vastgepind">
+              <i className="fa-solid fa-thumbtack" /> Vastgepind
+            </span>
+          )}
           {update.tag && (
             <span className="update-tag" style={{ background: tagStyle.bg, color: tagStyle.color }}>
               {update.tag}
@@ -101,10 +107,24 @@ export default function UpdateCard({ update, onEdit, onReaction, onClick, featur
           </div>
         </div>
 
-        {canDo(role, 'publish_update') && onEdit && (
-          <button className="update-card__edit" onClick={(e) => { e.stopPropagation(); onEdit(update) }} aria-label="Bewerken">
-            <i className="fa-solid fa-pen" />
-          </button>
+        {canManage && (onTogglePin || onEdit) && (
+          <div className="update-card__quick-actions" onClick={e => e.stopPropagation()}>
+            {onTogglePin && (
+              <button
+                className={`update-card__quick-btn${update.is_pinned ? ' update-card__quick-btn--active' : ''}`}
+                onClick={() => onTogglePin(update)}
+                aria-label={update.is_pinned ? 'Losmaken' : 'Vastpinnen'}
+                title={update.is_pinned ? 'Losmaken' : 'Vastpinnen'}
+              >
+                <i className="fa-solid fa-thumbtack" />
+              </button>
+            )}
+            {onEdit && (
+              <button className="update-card__quick-btn" onClick={() => onEdit(update)} aria-label="Bewerken" title="Bewerken">
+                <i className="fa-solid fa-pen" />
+              </button>
+            )}
+          </div>
         )}
       </div>
     </article>
