@@ -50,6 +50,7 @@ const Tekenen = lazy(() => import('./views/Tekenen'))
 const Leden = lazy(() => import('./views/Leden'))
 const Organisatie = lazy(() => import('./views/Organisatie'))
 const DocumentenHub = lazy(() => import('./views/DocumentenHub'))
+const Chat = lazy(() => import('./views/Chat'))
 const PlatformAdmin = lazy(() => import('./views/PlatformAdmin'))
 const OrgOnboarding = lazy(() => import('./views/OrgOnboarding'))
 const Landing = lazy(() => import('./views/Landing'))
@@ -371,6 +372,7 @@ function NormalRoutes() {
         <Route index element={<Dashboard />} />
         <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
         <Route path="documenten" element={<DocumentenHub />} />
+        <Route path="chat" element={<Chat />} />
         <Route path="mijn-documenten" element={<MyDocuments />} />
         <Route path="mijn-dossier" element={<MyDocuments />} />
         <Route path="tekenen/:id" element={<Tekenen />} />
@@ -471,6 +473,7 @@ function ProjectSubdomainApp({ slug, initialProject }) {
           <Route index element={<Dashboard />} />
           <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
           <Route path="documenten" element={<DocumentenHub />} />
+        <Route path="chat" element={<Chat />} />
           <Route path="mijn-documenten" element={<MyDocuments />} />
           <Route path="mijn-dossier" element={<MyDocuments />} />
           <Route path="tekenen/:id" element={<Tekenen />} />
