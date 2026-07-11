@@ -151,8 +151,13 @@ export default function MyDocuments() {
     )
   }
 
-  const requestCount = requests.length
-  const docCount = docFiles.length
+  // Alleen tellen wat actie vraagt / nieuw is voor de lid:
+  //  - Verzoeken: pending (nog niet ingediend) — submitted/approved/rejected
+  //    liggen bij de admin ter beoordeling, geen actie meer voor lid.
+  //  - Documenten: alleen door team klaargezette bestanden (eigen uploads
+  //    zijn geen "notificatie" — die weet lid zelf).
+  const requestCount = pendingRequests.length
+  const docCount = docFiles.filter(f => f.uploaded_by !== user?.id).length
   const signatureCount = activeSignatures.length
   const pendingSignatureCount = pendingSignatures.length
 

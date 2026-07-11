@@ -87,7 +87,7 @@ export default function Sidebar() {
   const { user } = useAuth()
   const signatureRequestCount = useSignatureRequestCount()
   const { memberCount: unreviewedMemberUploads } = useUnreviewedMemberUploads()
-  const { hasNewBoard, hasNewUpdates } = useUnreadIndicators(project?.id)
+  const { hasNewBoard, hasNewUpdates, hasNewEvents } = useUnreadIndicators(project?.id)
   const { unreadCount: chatUnread } = useSupportConversation()
   // Eén badge op 'Documenten' voor alle openstaande acties van de user:
   // documentverzoeken (upload/ter inzage/tekenen-via-doc-request) + nieuwe
@@ -207,6 +207,9 @@ export default function Sidebar() {
         )}
         {item.to === 'updates' && hasNewUpdates && (
           <span className="sidebar-dot" aria-label="Nieuw projectnieuws" title="Nieuw projectnieuws" />
+        )}
+        {item.to === 'events' && hasNewEvents && (
+          <span className="sidebar-dot" aria-label="Nieuwe events" title="Nieuwe events" />
         )}
       </div>
     )
