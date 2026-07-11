@@ -3,26 +3,25 @@
 
 .view-chat {
   /* Blijft binnen de normale contentbreedte (zoals andere pagina's, gecentreerd
-     via .main-content > *). Een nette kaart met een vaste hoogte die onder de
-     topbar past; de panelen scrollen intern. */
+     via .main-content > *). Twee losse kaarten (lijst + thread) met tussenruimte;
+     elk scrollt intern. Vaste hoogte die onder de topbar past. */
   display: flex;
-  height: calc(100dvh - 104px);          /* topbar + marges, past onder de topbar */
+  gap: 16px;
+  height: calc(100dvh - 104px);
   min-height: 460px;
-  overflow: hidden;
-  background: var(--bg-surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-sm);
 }
 
 /* ── Gesprekkenlijst ───────────────────────────────────────────────────── */
 .chat-list {
-  width: 300px;
+  width: 292px;
   flex: none;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-right: 1px solid var(--border-default);
   background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 .chat-list__search { padding: 14px 14px 10px; }
 .chat-search {
@@ -82,10 +81,16 @@
 .chat-result__txt { font-size: 13px; color: var(--text-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* ── Thread ────────────────────────────────────────────────────────────── */
-.chat-thread { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg-page); }
+.chat-thread {
+  flex: 1; display: flex; flex-direction: column; min-width: 0;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
 .chat-head {
-  display: flex; align-items: center; gap: 13px; padding: 15px 22px; background: var(--bg-surface);
-  box-shadow: var(--shadow-xs); position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 13px; padding: 15px 20px; background: var(--bg-surface);
+  position: relative; z-index: 1;
 }
 .chat-head__back { display: none; border: none; background: transparent; color: var(--text-secondary); font-size: 17px; cursor: pointer; padding: 4px; }
 .chat-head__av {
@@ -96,7 +101,10 @@
 .chat-head__title { font-size: 15.5px; font-weight: var(--weight-bold); color: var(--text-primary); }
 .chat-head__sub { font-size: 12.5px; color: var(--text-tertiary); margin-top: 2px; }
 
-.chat-body { flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; }
+/* Beige chatvenster ingekaderd in de witte thread-kaart: witte rand links/rechts/
+   onder → duidelijke scheiding met de pagina-achtergrond, inkomende (witte)
+   bubbels blijven contrasteren. */
+.chat-body { flex: 1; overflow-y: auto; margin: 0 14px 14px; padding: 18px; background: var(--bg-page); border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 8px; }
 .chat-hint { text-align: center; font-size: 13px; color: var(--text-tertiary); margin: auto; }
 .chat-datesep {
   align-self: center; font-size: 11.5px; color: var(--text-tertiary); background: var(--bg-surface);
