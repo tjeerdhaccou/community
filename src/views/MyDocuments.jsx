@@ -122,7 +122,7 @@ export default function MyDocuments() {
     <div className="view-mydocuments">
       <div className="view-header">
         <div>
-          <h1>Mijn documenten</h1>
+          <h1>Mijn dossier</h1>
           <p className="view-header__subtitle">Documenten en verzoeken van het projectteam</p>
         </div>
       </div>

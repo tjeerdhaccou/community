@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
 import { usePosts } from '../hooks/usePosts'
 import { useWorkgroups } from '../hooks/useWorkgroups'
+import { markSeen } from '../hooks/useUnreadIndicators'
 import { canDo } from '../lib/permissions'
 import PostCard from '../components/PostCard'
 import PostModal from '../components/PostModal'
@@ -14,7 +15,7 @@ import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...POST_TAGS]
 
 export default function Community() {
-  const { role } = useProject()
+  const { project, role } = useProject()
   const { profile } = useAuth()
   const { posts, loading, createPost, toggleLike, toggleReaction, toggleFollow, votePoll, deletePost, updatePost, togglePin } = usePosts()
   const { myWorkgroups } = useWorkgroups()
@@ -37,14 +38,15 @@ export default function Community() {
     ? (myWorkgroups.find(wg => `wg:${wg.id}` === activeTag)?.name ?? 'deze groep')
     : activeTag
 
-  // Count unread per tag (posts from last 7 days)
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-  const tagCounts = {}
-  POST_TAGS.forEach(tag => {
-    tagCounts[tag] = posts.filter(p => p.tag === tag && new Date(p.created_at) > weekAgo).length
-  })
+  // Markeer 'Prikbord' als gezien wanneer de gebruiker hier is en zodra er
+  // een nieuwe post bij komt terwijl die hier is — voorkomt dat een dot in
+  // de sidebar verschijnt voor je eigen net-geposte bericht.
+  useEffect(() => {
+    if (project?.id) markSeen(project.id, 'board')
+  }, [project?.id, posts.length])
 
   // Trending: top 3 posts by engagement this week
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
   const trending = [...posts]
     .filter(p => new Date(p.created_at) > weekAgo && !p.is_pinned)
     .sort((a, b) => (b.totalReactions + b.comment_count + b.like_count) - (a.totalReactions + a.comment_count + a.like_count))
@@ -114,7 +116,8 @@ export default function Community() {
         </div>
       )}
 
-      {/* Tag filters with unread badges */}
+      {/* Tag filters — geen per-tag teller meer; 'nieuw'-signaal staat nu
+          in de sidebar (zie useUnreadIndicators) en verdwijnt bij bezoek. */}
       <CollapsibleTagFilter>
         {FILTER_TAGS.map(tag => (
           <button
@@ -123,9 +126,6 @@ export default function Community() {
             onClick={() => setActiveTag(tag)}
           >
             {tag}
-            {tag !== 'Alles' && tagCounts[tag] > 0 && (
-              <span className="tag-filter__badge">{tagCounts[tag]}</span>
-            )}
           </button>
         ))}
         {myWorkgroups.length > 0 && (
