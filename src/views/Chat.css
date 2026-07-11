@@ -27,7 +27,7 @@
 .chat-search {
   display: flex; align-items: center; gap: 9px; height: 40px; padding: 0 13px;
   border-radius: var(--radius-full); background: var(--bg-page);
-  border: 1.5px solid var(--border-default); transition: border-color 150ms, box-shadow 150ms;
+  border: 1px solid var(--border-default); transition: border-color 150ms, box-shadow 150ms;
 }
 .chat-search > i { color: var(--text-tertiary); font-size: 14px; }
 .chat-search input {
@@ -35,7 +35,7 @@
   font-family: inherit; font-size: 14px; color: var(--text-primary);
 }
 .chat-search input::placeholder { color: var(--text-faint); }
-.chat-search--active { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.15); }
+.chat-search--active { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.12); }
 .chat-search__clear { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; padding: 2px; }
 
 .chat-convs { flex: 1; overflow-y: auto; }
@@ -145,11 +145,11 @@
 .chat-emoji button:hover { background: var(--bg-hover); }
 .chat-input {
   flex: 1; min-height: 44px; max-height: 132px; resize: none; background: var(--bg-page);
-  border: 1.5px solid var(--border-default); border-radius: 22px; padding: 11px 18px;
+  border: 1px solid var(--border-default); border-radius: 22px; padding: 11px 18px;
   font-family: inherit; font-size: 14.5px; color: var(--text-primary); outline: none; line-height: 1.4;
   transition: border-color 150ms, box-shadow 150ms;
 }
-.chat-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.15); }
+.chat-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.12); }
 .chat-input::placeholder { color: var(--text-faint); }
 .chat-send {
   flex: none; width: 44px; height: 44px; border: none; border-radius: var(--radius-full);
