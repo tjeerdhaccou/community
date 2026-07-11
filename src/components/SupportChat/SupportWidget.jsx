@@ -47,6 +47,7 @@ export default function SupportWidget() {
   const [draft, setDraft] = useState('')
   const [file, setFile] = useState(null)
   const [showEmoji, setShowEmoji] = useState(false)
+  const [labelVisible, setLabelVisible] = useState(true)
   const { messages, loading, sending, sendMessage, markRead, unreadCount } = useSupportConversation()
   const toast = useToast()
   const bodyRef = useRef(null)
@@ -56,6 +57,12 @@ export default function SupportWidget() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.has('support')) setOpen(true)
+  }, [])
+
+  // Toon het "Chat met ons"-label kort na binnenkomst, verberg daarna weer.
+  useEffect(() => {
+    const t = setTimeout(() => setLabelVisible(false), 60_000)
+    return () => clearTimeout(t)
   }, [])
 
   // Scroll naar onderaan bij nieuwe berichten / openen.
@@ -95,16 +102,27 @@ export default function SupportWidget() {
 
   if (!open) {
     return (
-      <button
-        className="sc-fab"
-        onClick={() => setOpen(true)}
-        aria-label="Hulp nodig? Open de support-chat"
-      >
-        <i className="fa-regular fa-comment-dots" aria-hidden="true" />
-        {unreadCount > 0 && (
-          <span className="sc-fab__badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-        )}
-      </button>
+      <div className="sc-fab-wrap">
+        <button
+          type="button"
+          className={`sc-fab-label ${labelVisible ? '' : 'sc-fab-label--hidden'}`}
+          onClick={() => setOpen(true)}
+          tabIndex={-1}
+          aria-hidden="true"
+        >
+          Chat met ons
+        </button>
+        <button
+          className="sc-fab"
+          onClick={() => setOpen(true)}
+          aria-label="Hulp nodig? Open de support-chat"
+        >
+          <i className="fa-regular fa-comment-dots" aria-hidden="true" />
+          {unreadCount > 0 && (
+            <span className="sc-fab__badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+          )}
+        </button>
+      </div>
     )
   }
 

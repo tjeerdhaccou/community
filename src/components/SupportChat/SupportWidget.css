@@ -1,7 +1,7 @@
 /* Support-chat widget — lid-kant. Volledig token-gedreven, kleurt mee met
    ThemeContext (blauw op default, coral op crowdbuilding, + dark mode). */
 
-.sc-fab,
+.sc-fab-wrap,
 .sc-panel {
   position: fixed;
   right: 24px;
@@ -9,7 +9,38 @@
   z-index: 250; /* boven content/sticky, onder modals (400) en overlays (300) */
 }
 
-/* ── FAB ─────────────────────────────────────────────────────────────────── */
+/* ── FAB + label ─────────────────────────────────────────────────────────── */
+.sc-fab-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sc-fab-label {
+  border: none;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: var(--weight-semibold);
+  padding: 10px 16px;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+  cursor: pointer;
+  animation: sc-label-in 300ms var(--ease-spring) both;
+  transition: opacity 300ms var(--ease-default), transform 300ms var(--ease-default);
+}
+.sc-fab-label--hidden {
+  opacity: 0;
+  transform: translateX(10px) scale(0.96);
+  pointer-events: none;
+}
+@keyframes sc-label-in {
+  from { opacity: 0; transform: translateX(10px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
 .sc-fab {
   width: 56px;
   height: 56px;
@@ -256,7 +287,8 @@
 
 /* ── Mobiel: boven de bottom-nav, bijna volledige breedte ────────────────── */
 @media (max-width: 768px) {
-  .sc-fab { bottom: 84px; }
+  .sc-fab-wrap { bottom: 84px; }
+  .sc-fab-label { display: none; }
   .sc-panel {
     right: 12px;
     left: 12px;
