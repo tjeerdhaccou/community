@@ -51,6 +51,7 @@ const Leden = lazy(() => import('./views/Leden'))
 const Organisatie = lazy(() => import('./views/Organisatie'))
 const DocumentenHub = lazy(() => import('./views/DocumentenHub'))
 const Chat = lazy(() => import('./views/Chat'))
+const PaymentRequestView = lazy(() => import('./views/PaymentRequestView'))
 const PlatformAdmin = lazy(() => import('./views/PlatformAdmin'))
 const OrgOnboarding = lazy(() => import('./views/OrgOnboarding'))
 const Landing = lazy(() => import('./views/Landing'))
@@ -348,6 +349,8 @@ function NormalRoutes() {
       <Route path="/project/:slug" element={<PublicProject />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/intake/:projectId" element={<IntakeForm />} />
+      {/* Betaalverzoek — public, wordt intern gescoped via magic-link token OR auth */}
+      <Route path="/verzoeken/:id" element={<PaymentRequestView />} />
 
       <Route path="/" element={<Landing />} />
       <Route path="/start" element={<Start />} />
@@ -458,6 +461,7 @@ function ProjectSubdomainApp({ slug, initialProject }) {
         {/* Public — no auth */}
         <Route path="/public" element={<PublicProject slugOverride={slug} />} />
         <Route path="/intake" element={<IntakeForm slugOverride={slug} />} />
+        <Route path="/verzoeken/:id" element={<PaymentRequestView />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         {/* Juridische pagina's moeten leesbaar zijn zonder login */}
