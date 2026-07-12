@@ -11118,3 +11118,64 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   color: var(--accent-primary);
   text-decoration: underline;
 }
+
+/* ── Betalingen (Mollie-koppeling) in org-instellingen ─────────────── */
+.payment-account {
+  padding: 16px;
+  background: var(--bg-hover, #F2F3F6);
+  border-radius: var(--radius-md, 10px);
+}
+.payment-account--empty {
+  padding: 20px;
+  text-align: left;
+}
+.payment-account__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.payment-account__icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-primary, #fff);
+  color: var(--text-secondary);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.payment-account__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.payment-account__label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.payment-account__status {
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.payment-account__status--active { color: #3BD269; }
+.payment-account__status--error  { color: var(--accent-red); }
+.payment-account__meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.payment-account__meta code {
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-secondary);
+}

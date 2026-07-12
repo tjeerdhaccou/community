@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase'
 import { uploadImage } from '../lib/storage'
 import { getProjectSlugFromSubdomain } from '../lib/subdomain'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../components/Toast'
+import { buildMollieAuthorizeUrl, isMollieConfigured } from '../lib/mollie'
 import ImageCropper from '../components/ImageCropper'
 import ProfileEditModal from '../components/ProfileEditModal'
 import ConfirmModal from '../components/ConfirmModal'
@@ -16,8 +18,13 @@ export default function OrgSettings({ orgId: orgIdProp }) {
   const orgId = orgIdProp
   const navigate = useNavigate()
   const { user, profile, isPlatformAdmin, reload: reloadAuth } = useAuth()
+  const toast = useToast()
   const [editingProfile, setEditingProfile] = useState(false)
   const [adminToRemove, setAdminToRemove] = useState(null)
+  const [paymentAccount, setPaymentAccount] = useState(null)
+  const [connectingMollie, setConnectingMollie] = useState(false)
+  const [disconnectingMollie, setDisconnectingMollie] = useState(false)
+  const [confirmDisconnectMollie, setConfirmDisconnectMollie] = useState(false)
   const backPath = getProjectSlugFromSubdomain() ? '/admin' : `/org/${orgSlug || orgId}`
   const [org, setOrg] = useState(null)
   const [name, setName] = useState('')
@@ -63,9 +70,33 @@ export default function OrgSettings({ orgId: orgIdProp }) {
       }
       setAdmins(adminsRes.data || [])
       setPendingInvites(invitesRes.data || [])
+
+      const { data: pa } = await supabase
+        .from('org_payment_accounts')
+        .select('id, provider, status, mollie_organization_id, mollie_profile_id, connected_at, last_error')
+        .eq('organization_id', resolvedId)
+        .maybeSingle()
+      setPaymentAccount(pa || null)
     }
     load()
   }, [orgId, orgSlug])
+
+  // OAuth-redirect afhandelen: toon toast + verwijder query params uit URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const mollie    = params.get('mollie')
+    const mollieErr = params.get('mollie_error')
+    if (!mollie && !mollieErr) return
+
+    if (mollie === 'connected')  toast.success('Mollie succesvol gekoppeld.')
+    else if (mollieErr)          toast.error(`Koppelen mislukt (${mollieErr}).`)
+
+    params.delete('mollie')
+    params.delete('mollie_error')
+    const q = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (q ? `?${q}` : ''))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [cropSrc, setCropSrc] = useState(null)
 
@@ -194,6 +225,46 @@ export default function OrgSettings({ orgId: orgIdProp }) {
     }
     setAdmins(prev => prev.filter(a => a.id !== adminRow.id))
     setAdminToRemove(null)
+  }
+
+  async function handleConnectMollie() {
+    const resolvedOrgId = org?.id || orgId
+    if (!resolvedOrgId) return
+    if (!isMollieConfigured()) {
+      toast.error('Mollie is nog niet geconfigureerd voor deze omgeving.')
+      return
+    }
+    setConnectingMollie(true)
+    try {
+      const { data: state, error } = await supabase.rpc('create_mollie_oauth_state', {
+        p_org_id: resolvedOrgId,
+        p_redirect_to: window.location.origin + window.location.pathname,
+      })
+      if (error || !state) throw error || new Error('geen state')
+      window.location.href = buildMollieAuthorizeUrl(state)
+    } catch (err) {
+      console.error('Mollie connect failed:', err)
+      toast.error('Koppelen mislukt.')
+      setConnectingMollie(false)
+    }
+  }
+
+  async function handleDisconnectMollie() {
+    const resolvedOrgId = org?.id || orgId
+    if (!resolvedOrgId) return
+    setDisconnectingMollie(true)
+    try {
+      const { error } = await supabase.rpc('disconnect_mollie_account', { p_org_id: resolvedOrgId })
+      if (error) throw error
+      setPaymentAccount(pa => pa ? { ...pa, status: 'disconnected', mollie_organization_id: null, mollie_profile_id: null, connected_at: null } : null)
+      toast.success('Mollie ontkoppeld.')
+    } catch (err) {
+      console.error('Mollie disconnect failed:', err)
+      toast.error('Ontkoppelen mislukt.')
+    } finally {
+      setDisconnectingMollie(false)
+      setConfirmDisconnectMollie(false)
+    }
   }
 
   async function handleSave(e) {
@@ -375,6 +446,80 @@ export default function OrgSettings({ orgId: orgIdProp }) {
             </div>
           </div>
 
+          <div className="profile-section">
+            <h3 className="profile-section__title">Betalingen</h3>
+            <p className="form-hint" style={{ marginBottom: 16 }}>
+              Koppel jullie Mollie-account om betaalverzoeken te kunnen versturen aan leden.
+              Betalingen komen rechtstreeks binnen op jullie eigen bankrekening — buuur zit nooit in de geldstroom.
+            </p>
+
+            {paymentAccount && paymentAccount.status === 'active' ? (
+              <div className="payment-account">
+                <div className="payment-account__row">
+                  <i className="fa-brands fa-cc-visa payment-account__icon" aria-hidden />
+                  <div className="payment-account__info">
+                    <span className="payment-account__label">Mollie</span>
+                    <span className="payment-account__status payment-account__status--active">
+                      <i className="fa-solid fa-circle-check" /> Gekoppeld
+                    </span>
+                    {paymentAccount.mollie_organization_id && (
+                      <span className="payment-account__meta">
+                        Mollie-organisatie: <code>{paymentAccount.mollie_organization_id}</code>
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-secondary btn-sm"
+                    onClick={() => setConfirmDisconnectMollie(true)}
+                    disabled={disconnectingMollie}
+                  >
+                    {disconnectingMollie ? 'Ontkoppelen...' : 'Ontkoppelen'}
+                  </button>
+                </div>
+              </div>
+            ) : paymentAccount && paymentAccount.status === 'error' ? (
+              <div className="payment-account payment-account--error">
+                <div className="payment-account__row">
+                  <i className="fa-solid fa-triangle-exclamation payment-account__icon" aria-hidden />
+                  <div className="payment-account__info">
+                    <span className="payment-account__label">Mollie</span>
+                    <span className="payment-account__status payment-account__status--error">Koppeling gaf een fout</span>
+                    {paymentAccount.last_error && (
+                      <span className="payment-account__meta">{paymentAccount.last_error.slice(0, 200)}</span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-primary btn-sm"
+                    onClick={handleConnectMollie}
+                    disabled={connectingMollie}
+                  >
+                    {connectingMollie ? 'Bezig...' : 'Opnieuw koppelen'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="payment-account payment-account--empty">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleConnectMollie}
+                  disabled={connectingMollie}
+                >
+                  {connectingMollie
+                    ? <>Doorverwijzen naar Mollie...</>
+                    : <><i className="fa-solid fa-link" /> Koppel Mollie</>}
+                </button>
+                <p className="form-hint" style={{ marginTop: 12 }}>
+                  Nog geen Mollie-account? Maak er eerst een aan op{' '}
+                  <a href="https://www.mollie.com/signup" target="_blank" rel="noreferrer">mollie.com</a>.
+                  Verificatie duurt meestal 1-2 dagen.
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="profile-actions">
             <button type="submit" className="btn-primary" disabled={saving || uploading}>
               {saving ? 'Opslaan...' : saved ? '✓ Opgeslagen' : 'Wijzigingen opslaan'}
@@ -413,6 +558,16 @@ export default function OrgSettings({ orgId: orgIdProp }) {
             danger
             onConfirm={() => handleRemoveAdmin(adminToRemove)}
             onCancel={() => setAdminToRemove(null)}
+          />
+        )}
+
+        {confirmDisconnectMollie && (
+          <ConfirmModal
+            message="Weet je zeker dat je Mollie wilt ontkoppelen? Nieuwe betaalverzoeken werken daarna niet meer totdat je opnieuw koppelt."
+            confirmLabel="Ontkoppelen"
+            danger
+            onConfirm={handleDisconnectMollie}
+            onCancel={() => setConfirmDisconnectMollie(false)}
           />
         )}
       </main>
