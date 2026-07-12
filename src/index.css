@@ -11232,3 +11232,218 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   color: var(--accent-primary);
   text-decoration: underline;
 }
+
+/* ── Betaalverzoek lid-view (/verzoeken/:id) ───────────────────────── */
+.pr-page {
+  min-height: 100vh;
+  background: var(--bg-secondary, #F5F6F8);
+  padding: var(--space-6, 24px) var(--space-4, 16px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.pr-page--loading {
+  justify-content: center;
+  color: var(--text-tertiary);
+}
+.pr-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 640px;
+  margin-bottom: var(--space-5, 20px);
+}
+.pr-header__logo {
+  width: 44px; height: 44px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #fff;
+}
+.pr-header__org {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.pr-header__project {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.pr-card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--bg-primary, #fff);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.06));
+}
+.pr-card--error {
+  text-align: center;
+  color: var(--text-secondary);
+}
+.pr-card--error i {
+  font-size: 32px;
+  color: var(--accent-red);
+  margin-bottom: 12px;
+}
+.pr-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+.pr-description {
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 24px;
+}
+.pr-amount {
+  background: var(--bg-hover, #F2F3F6);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 24px 0;
+}
+.pr-amount__label {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+.pr-amount__value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+.pr-amount__ref {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.pr-amount__ref code {
+  font-family: var(--font-mono, monospace);
+  background: var(--bg-primary, #fff);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+.pr-agreement {
+  margin: 24px 0;
+}
+.pr-agreement__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pr-agreement__body {
+  background: var(--bg-hover, #F2F3F6);
+  border-radius: 10px;
+  padding: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.pr-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-hover, #F2F3F6);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  margin: 20px 0;
+}
+.pr-consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.pr-pay-btn {
+  display: block;
+  width: 100%;
+  background: var(--text-primary, #1a1a1a);
+  color: #fff;
+  border: 0;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease;
+}
+.pr-pay-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.pr-pay-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pr-error {
+  background: color-mix(in oklch, var(--accent-red) 12%, transparent);
+  color: var(--accent-red);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin: 16px 0;
+}
+.pr-state {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  margin: 24px 0;
+  align-items: flex-start;
+}
+.pr-state i {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.pr-state strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.pr-state p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.pr-state--success {
+  background: color-mix(in oklch, #3BD269 14%, transparent);
+  color: #1a1a1a;
+}
+.pr-state--success i { color: #3BD269; }
+.pr-state--warn {
+  background: color-mix(in oklch, #D9A73B 14%, transparent);
+  color: #1a1a1a;
+}
+.pr-state--warn i { color: #B87F1F; }
+.pr-state--info {
+  background: color-mix(in oklch, var(--accent-primary) 12%, transparent);
+  color: var(--text-primary);
+}
+.pr-state--info i { color: var(--accent-primary); }
+.pr-footer {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin: 24px 0 0;
+  line-height: 1.5;
+}
+@media (max-width: 640px) {
+  .pr-card { padding: 20px; }
+  .pr-title { font-size: 20px; }
+  .pr-amount__value { font-size: 26px; }
+}
