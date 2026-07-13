@@ -184,7 +184,7 @@ serve(async (req) => {
         id, project_id, status, amount_cents, currency, title, reference,
         recipient_name, recipient_email, recipient_profile_id, agreed_at, agreed_ip, agreement_template_id,
         project:projects(id, name, slug, logo_url, organization_id,
-                          organization:organizations(id, name, slug, logo_url))
+                          organization:organizations(id, name, slug, logo_url, from_display_name, reply_to_email))
       )
     `)
     .eq('provider_payment_id', molliePaymentId)
@@ -299,16 +299,21 @@ serve(async (req) => {
               </p>
             </div>
           `
+          const orgDisplay = (org?.from_display_name || '').trim() || org?.name || FROM_NAME
+          const fromName = `${orgDisplay} via buuur`
+          const mailBody: Record<string, unknown> = {
+            from: `${fromName} <${FROM_EMAIL}>`,
+            to: [pr.recipient_email],
+            subject: `Betaling ontvangen: ${pr.title}`,
+            html,
+            attachments: [attachment],
+          }
+          if (org?.reply_to_email) mailBody.reply_to = [org.reply_to_email]
+
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: `${FROM_NAME} <${FROM_EMAIL}>`,
-              to: [pr.recipient_email],
-              subject: `Betaling ontvangen: ${pr.title}`,
-              html,
-              attachments: [attachment],
-            }),
+            body: JSON.stringify(mailBody),
           }).catch((e) => console.error('[mollie-webhook] resend failed', e))
         }
       }

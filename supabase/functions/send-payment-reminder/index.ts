@@ -47,7 +47,7 @@ serve(async (req) => {
   const { data: pr } = await admin
     .from('payment_requests')
     .select(`id, title, amount_cents, recipient_email, recipient_name, access_token, status,
-              project:projects(name, slug, organization:organizations(name))`)
+              project:projects(name, slug, organization:organizations(name, from_display_name, reply_to_email))`)
     .eq('id', body.payment_request_id)
     .maybeSingle()
 
@@ -89,15 +89,20 @@ serve(async (req) => {
     </div>
   `
 
+  const orgDisplay = (org?.from_display_name || '').trim() || org?.name || FROM_NAME
+  const fromName = `${orgDisplay} via buuur`
+  const mailBody: Record<string, unknown> = {
+    from: `${fromName} <${FROM_EMAIL}>`,
+    to: [pr.recipient_email],
+    subject,
+    html,
+  }
+  if (org?.reply_to_email) mailBody.reply_to = [org.reply_to_email]
+
   const mailRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: [pr.recipient_email],
-      subject,
-      html,
-    }),
+    body: JSON.stringify(mailBody),
   })
   if (!mailRes.ok) {
     const errBody = await mailRes.text().catch(() => '')
