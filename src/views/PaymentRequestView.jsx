@@ -208,8 +208,14 @@ export default function PaymentRequestView() {
   const isAgreed  = ['agreed', 'paid'].includes(ctx.status)
   const orgLogo   = ctx.organization_logo_url || ctx.project_logo_url
 
+  // Theme: project-thema wint over org-thema (project kan overschrijven).
+  // Waarden komen uit projects.default_theme / organizations.default_theme:
+  // 'crowdbuilding' | 'warm' | 'light' | null
+  const theme = ctx.project_default_theme || ctx.organization_default_theme || 'warm'
+  const themeAttr = theme === 'crowdbuilding' ? 'crowdbuilding' : theme === 'warm' ? 'warm' : undefined
+
   return (
-    <div className="pr-page">
+    <div className="pr-page" data-theme={themeAttr}>
       <div className="pr-header">
         {orgLogo ? (
           <img src={orgLogo} alt={ctx.organization_name || ''} className="pr-header__logo" />

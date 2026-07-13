@@ -11234,13 +11234,12 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 }
 
 /* ── Betaalverzoek lid-view (/verzoeken/:id) ───────────────────────── */
-/* Deze pagina staat buiten de ThemeProvider (public magic-link route), dus
-   theme-tokens vallen soms terug op warm-defaults. Kleuren worden hier
-   expliciet gezet om een consistente clean-look te tonen ongeacht projectthema. */
+/* Gebruikt design-tokens die per data-theme wisselen (crowdbuilding / warm).
+   Attribuut komt uit organizations.default_theme (of project override). */
 .pr-page {
   min-height: 100vh;
-  background: #F4F5F7;
-  color: #1a1a1a;
+  background: var(--bg-page, #F3F1ED);
+  color: var(--text-primary, #1A1A2E);
   padding: 40px 16px 24px;
   display: flex;
   flex-direction: column;
@@ -11248,7 +11247,7 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 }
 .pr-page--loading {
   justify-content: center;
-  color: #7B7F87;
+  color: var(--text-tertiary, #9BA1B0);
 }
 .pr-header {
   display: flex;
@@ -11262,7 +11261,7 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   width: 56px; height: 56px;
   border-radius: 12px;
   object-fit: contain;
-  background: #fff;
+  background: var(--bg-surface, #FFFFFF);
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   padding: 6px;
 }
@@ -11273,8 +11272,8 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   padding: 0;
   font-weight: 700;
   font-size: 22px;
-  color: #7B7F87;
-  background: #E9EAEE;
+  color: var(--text-tertiary, #9BA1B0);
+  background: var(--bg-hover, #F3EEE2);
 }
 .pr-header__meta {
   display: flex;
@@ -11284,69 +11283,69 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 .pr-header__org {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary, #1A1A2E);
 }
 .pr-header__project {
   font-size: 13px;
-  color: #7B7F87;
+  color: var(--text-tertiary, #9BA1B0);
 }
 .pr-card {
   width: 100%;
   max-width: 640px;
-  background: #ffffff;
+  background: var(--bg-surface, #FFFFFF);
   border-radius: 16px;
   padding: 32px;
   box-shadow: 0 4px 20px rgba(20, 30, 60, 0.06);
 }
 .pr-card--error {
   text-align: center;
-  color: #55585F;
+  color: var(--text-secondary, #5A5F72);
 }
 .pr-card--error i {
   font-size: 32px;
-  color: #E5484D;
+  color: var(--accent-red, #E74C3C);
   margin-bottom: 12px;
 }
 .pr-title {
   font-size: 24px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-primary, #1A1A2E);
   margin: 0 0 8px;
   letter-spacing: -0.2px;
 }
 .pr-description {
-  color: #55585F;
+  color: var(--text-secondary, #5A5F72);
   line-height: 1.55;
   margin: 0 0 24px;
 }
 .pr-amount {
-  background: #F4F5F7;
+  background: var(--bg-hover, #F3EEE2);
   border-radius: 12px;
   padding: 20px;
   margin: 24px 0;
 }
 .pr-amount__label {
   font-size: 13px;
-  color: #7B7F87;
+  color: var(--text-tertiary, #9BA1B0);
   margin-bottom: 4px;
 }
 .pr-amount__value {
   font-size: 32px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary, #1A1A2E);
   letter-spacing: -0.5px;
 }
 .pr-amount__ref {
   margin-top: 8px;
   font-size: 13px;
-  color: #55585F;
+  color: var(--text-secondary, #5A5F72);
 }
 .pr-amount__ref code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  background: #ffffff;
+  background: var(--bg-surface, #FFFFFF);
   padding: 2px 6px;
   border-radius: 4px;
-  color: #1a1a1a;
+  color: var(--text-primary, #1A1A2E);
   font-size: 12px;
 }
 .pr-agreement {
@@ -11355,19 +11354,19 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 .pr-agreement__title {
   font-size: 12px;
   font-weight: 600;
-  color: #7B7F87;
+  color: var(--text-tertiary, #9BA1B0);
   margin: 0 0 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .pr-agreement__body {
-  background: #FAFAFB;
-  border: 1px solid #EDEEF1;
+  background: var(--bg-hover, #F3EEE2);
+  border: 1px solid var(--border-subtle, #E8E9EE);
   border-radius: 10px;
   padding: 20px;
   font-size: 14px;
   line-height: 1.6;
-  color: #1a1a1a;
+  color: var(--text-primary, #1A1A2E);
   white-space: pre-wrap;
   max-height: 340px;
   overflow-y: auto;
@@ -11377,13 +11376,13 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   align-items: flex-start;
   gap: 12px;
   padding: 16px;
-  background: #FAFAFB;
-  border: 1px solid #EDEEF1;
+  background: var(--bg-hover, #F3EEE2);
+  border: 1px solid var(--border-subtle, #E8E9EE);
   border-radius: 10px;
   cursor: pointer;
   font-size: 14px;
   line-height: 1.5;
-  color: #1a1a1a;
+  color: var(--text-primary, #1A1A2E);
   margin: 20px 0;
 }
 .pr-consent input[type="checkbox"] {
@@ -11392,24 +11391,24 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   margin-top: 2px;
   flex-shrink: 0;
   cursor: pointer;
-  accent-color: #1a1a1a;
+  accent-color: var(--accent-cta, var(--accent-primary, #4A90D9));
 }
 .pr-pay-btn {
   display: block;
   width: 100%;
-  background: #1a1a1a;
+  background: var(--accent-cta, var(--accent-primary, #4A90D9));
   color: #fff;
   border: 0;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--btn-radius, 12px);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 150ms ease, opacity 150ms ease, background 150ms ease;
+  transition: transform 150ms ease, opacity 150ms ease, filter 150ms ease;
 }
 .pr-pay-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: #000;
+  filter: brightness(0.94);
 }
 .pr-pay-btn:disabled {
   opacity: 0.4;
@@ -11417,7 +11416,7 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 }
 .pr-error {
   background: rgba(229, 72, 77, 0.10);
-  color: #C03A3F;
+  color: var(--accent-red, #C03A3F);
   padding: 12px 14px;
   border-radius: 8px;
   font-size: 14px;
@@ -11441,32 +11440,32 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   display: block;
   font-size: 15px;
   margin-bottom: 4px;
-  color: #1a1a1a;
+  color: var(--text-primary, #1A1A2E);
 }
 .pr-state p {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
-  color: #55585F;
+  color: var(--text-secondary, #5A5F72);
 }
 .pr-state--success {
   background: rgba(59, 210, 105, 0.10);
   border-color: rgba(59, 210, 105, 0.25);
 }
-.pr-state--success i { color: #2AA35A; }
+.pr-state--success i { color: var(--accent-green, #2AA35A); }
 .pr-state--warn {
-  background: rgba(217, 167, 59, 0.10);
-  border-color: rgba(217, 167, 59, 0.25);
+  background: rgba(244, 180, 0, 0.10);
+  border-color: rgba(244, 180, 0, 0.25);
 }
-.pr-state--warn i { color: #B87F1F; }
+.pr-state--warn i { color: var(--accent-yellow, #B87F1F); }
 .pr-state--info {
   background: rgba(74, 144, 217, 0.10);
   border-color: rgba(74, 144, 217, 0.25);
 }
-.pr-state--info i { color: #4A90D9; }
+.pr-state--info i { color: var(--accent-blue, #4A90D9); }
 .pr-footer {
   font-size: 12px;
-  color: #7B7F87;
+  color: var(--text-tertiary, #9BA1B0);
   text-align: center;
   margin: 24px 0 0;
   line-height: 1.5;
