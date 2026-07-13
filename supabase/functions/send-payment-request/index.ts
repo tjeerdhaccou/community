@@ -234,7 +234,7 @@ serve(async (req) => {
       id, project_id, recipient_email, recipient_name, title, description,
       amount_cents, currency, reference, status, agreement_template_id,
       project:projects(id, name, slug, logo_url, organization_id,
-                        organization:organizations(id, name, slug, logo_url)),
+                        organization:organizations(id, name, slug, logo_url, reply_to_email, from_display_name)),
       template:agreement_templates(id, title, content_markdown, version)
     `)
     .eq('id', requestId)
@@ -347,27 +347,36 @@ serve(async (req) => {
     content: base64FromBytes(pdfBytes),
   }
 
+  // Afzendernaam en reply-to per org instelbaar. From-adres blijft altijd het
+  // Resend-verified adres (noreply@buuur.nl); de display-name wordt "Org via buuur"
+  // en de reply-to = org.reply_to_email zodat antwoorden direct bij de org komen.
+  const orgDisplay = org?.from_display_name?.trim() || org?.name || FROM_NAME
+  const fromName = `${orgDisplay} via buuur`
+  const replyTo = org?.reply_to_email || null
+
   if (!RESEND_API_KEY) {
     console.log('[send-payment-request] no RESEND_API_KEY — mail zou naar', req0.recipient_email, 'gaan')
   } else {
+    const mailBody: Record<string, unknown> = {
+      from: `${fromName} <${FROM_EMAIL}>`,
+      to: [req0.recipient_email],
+      subject,
+      html,
+      attachments: [attachment],
+    }
+    if (replyTo) mailBody.reply_to = [replyTo]
+
     const mailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: `${FROM_NAME} <${FROM_EMAIL}>`,
-        to: [req0.recipient_email],
-        subject,
-        html,
-        attachments: [attachment],
-      }),
+      body: JSON.stringify(mailBody),
     })
     if (!mailRes.ok) {
       const errBody = await mailRes.text().catch(() => '')
       console.error('[send-payment-request] resend failed', mailRes.status, errBody)
-      // niet fataal: markeer sent maar log de fout
     }
   }
 
