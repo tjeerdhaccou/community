@@ -9,6 +9,7 @@ import { labelForValue } from '../lib/intakeFields'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdminDocumentRequests } from '../hooks/useDocumentRequests'
 import { useUnreviewedMemberUploads } from '../hooks/useUnreviewedMemberUploads'
+import { useFileRemovalRequests } from '../hooks/useFileRemovalRequests'
 import ConfirmModal from './ConfirmModal'
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
@@ -521,6 +522,9 @@ function MemberDossier({ profileId, projectId }) {
 
   return (
     <div className="member-dossier">
+      {/* AVG verwijderingsverzoeken van deze member — hoogste prio, dus bovenaan. */}
+      <DossierRemovalRequests profileId={profileId} onFileRemoved={fetchDossier} />
+
       {/* Document requests section */}
       <DossierRequests profileId={profileId} projectId={projectId} />
 
@@ -823,6 +827,134 @@ function DossierRequests({ profileId, projectId }) {
               </div>
             )
           })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Sectie in het admin-dossier: pending AVG-verwijderingsverzoeken van deze
+// member. Approve = file wordt echt weg (storage + DB); reject vereist een
+// notitie zodat de member weet waarom (audit trail bewaard).
+function DossierRemovalRequests({ profileId, onFileRemoved }) {
+  const { requests, approve, reject } = useFileRemovalRequests({ scope: 'project' })
+  const [rejectTarget, setRejectTarget] = useState(null) // request row
+  const [rejectNote, setRejectNote] = useState('')
+  const [busy, setBusy] = useState(null) // request.id
+
+  const pending = requests.filter(r => r.requested_by === profileId && r.status === 'pending')
+  if (pending.length === 0) return null
+
+  async function handleApprove(req) {
+    setBusy(req.id)
+    try {
+      await approve(req, null)
+      onFileRemoved?.()
+    } catch (err) {
+      alert('Goedkeuren mislukt: ' + (err.message || err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function handleReject() {
+    if (!rejectTarget || !rejectNote.trim()) return
+    setBusy(rejectTarget.id)
+    try {
+      await reject(rejectTarget, rejectNote)
+      setRejectTarget(null)
+      setRejectNote('')
+    } catch (err) {
+      alert('Afwijzen mislukt: ' + (err.message || err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div className="member-dossier__section">
+      <div className="member-dossier__section-header">
+        <h4><i className="fa-solid fa-trash-can" style={{ color: 'var(--accent-orange)' }} /> Verwijderingsverzoeken ({pending.length})</h4>
+      </div>
+      <div className="member-dossier__removal-list">
+        {pending.map(req => (
+          <div key={req.id} className="member-dossier__removal-row">
+            <div className="member-dossier__removal-info">
+              <div className="member-dossier__removal-file">
+                <i className="fa-solid fa-file" />
+                <span>{req.member_file?.title || req.member_file?.file_name || 'Bestand niet meer beschikbaar'}</span>
+              </div>
+              {req.reason && (
+                <div className="member-dossier__removal-reason">
+                  <strong>Reden:</strong> {req.reason}
+                </div>
+              )}
+              <div className="member-dossier__removal-meta">
+                Aangevraagd door {req.requester?.full_name || 'onbekend'} · {new Date(req.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </div>
+            </div>
+            <div className="member-dossier__removal-actions">
+              <button
+                type="button"
+                className="btn-sm btn-sm--danger"
+                onClick={() => handleApprove(req)}
+                disabled={busy === req.id || !req.member_file_id}
+                title={!req.member_file_id ? 'Bestand is al verwijderd' : 'Goedkeuren en bestand verwijderen'}
+              >
+                <i className={`fa-solid ${busy === req.id ? 'fa-spinner fa-spin' : 'fa-check'}`} />
+                Goedkeuren
+              </button>
+              <button
+                type="button"
+                className="btn-sm"
+                onClick={() => setRejectTarget(req)}
+                disabled={busy === req.id}
+              >
+                <i className="fa-solid fa-xmark" /> Afwijzen
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {rejectTarget && (
+        <div className="modal-overlay" onClick={() => setRejectTarget(null)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <div className="modal-header">
+              <h2>Verzoek afwijzen</h2>
+              <button className="modal-close" onClick={() => setRejectTarget(null)} aria-label="Sluiten">
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+            <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
+                Leg uit waarom je dit verwijderingsverzoek afwijst. De member ziet deze uitleg.
+              </p>
+              <div className="form-group">
+                <label htmlFor="reject-note">Toelichting <span style={{ color: 'var(--accent-red)' }}>*</span></label>
+                <textarea
+                  id="reject-note"
+                  value={rejectNote}
+                  onChange={e => setRejectNote(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  autoFocus
+                  placeholder="Bijv. 'Dit document is nodig voor onze administratie en mag conform de bewaartermijn niet worden verwijderd.'"
+                />
+              </div>
+              <div className="modal-actions" style={{ justifyContent: 'flex-end', gap: 8 }}>
+                <button type="button" className="btn-secondary" onClick={() => setRejectTarget(null)}>Annuleren</button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleReject}
+                  disabled={!rejectNote.trim() || busy === rejectTarget.id}
+                >
+                  Verzoek afwijzen
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
