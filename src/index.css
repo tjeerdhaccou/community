@@ -8536,6 +8536,57 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   justify-content: flex-end;
   margin-bottom: 16px;
 }
+.my-docs__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.my-docs__section-heading {
+  margin: 0 0 4px;
+  font-size: var(--text-h3, 18px);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.my-docs__section-sub {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-tertiary);
+  max-width: 60ch;
+}
+.my-docs__preview-image-link {
+  display: block;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-hover);
+}
+.my-docs__preview-image {
+  display: block;
+  width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+  background: var(--bg-hover);
+}
+.my-docs__preview-pdf {
+  width: 100%;
+  height: 520px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-hover);
+}
+.my-docs__preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px;
+  background: var(--bg-hover);
+  border-radius: 8px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+}
 .my-docs__card-delete {
   width: 32px;
   height: 32px;

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMyDocuments } from '../hooks/useMyDocuments'
 import { useDocumentRequests } from '../hooks/useDocumentRequests'
@@ -519,10 +519,21 @@ function DocumentsTab({ files, currentUserId, uploading, onUpload, onOpenDetail,
     </button>
   )
 
+  // Sectie-header met titel + knop, zodat de knop niet los rechts hangt.
+  const header = (
+    <div className="my-docs__section-header">
+      <div>
+        <h2 className="my-docs__section-heading">Jouw documenten</h2>
+        <p className="my-docs__section-sub">Bestanden die het team met je heeft gedeeld en documenten die je zelf hebt toegevoegd.</p>
+      </div>
+      {uploadButton}
+    </div>
+  )
+
   if (files.length === 0) {
     return (
       <>
-        <div className="my-docs__toolbar">{uploadButton}</div>
+        {header}
         <div className="empty-inline">
           <i className="fa-solid fa-folder-open" />
           <h3 className="empty-inline__title">Geen documenten</h3>
@@ -534,7 +545,7 @@ function DocumentsTab({ files, currentUserId, uploading, onUpload, onOpenDetail,
 
   return (
     <>
-      <div className="my-docs__toolbar">{uploadButton}</div>
+      {header}
       <div className="my-docs__cards">
         {files.map(file => (
           <DocumentFileCard
@@ -560,11 +571,13 @@ function DocumentFileCard({ file, isOwn, onOpen, onDelete }) {
         <span className="request-card__type" style={{ background: 'var(--accent-primary-light, rgba(var(--accent-blue-rgb), 0.12))', color: 'var(--accent-primary, #4A90D9)' }}>
           {CATEGORY_LABELS[file.category] || file.category || 'Document'}
         </span>
-        {isOwn && (
-          <span className="request-card__type" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}>
-            <i className="fa-solid fa-user" /> Zelf toegevoegd
-          </span>
-        )}
+        <span className="request-card__type" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}>
+          {isOwn ? (
+            <><i className="fa-solid fa-user" /> Zelf toegevoegd</>
+          ) : (
+            <><i className="fa-solid fa-users" /> Door team toegevoegd</>
+          )}
+        </span>
         {file.file_size > 0 && (
           <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{formatFileSize(file.file_size)}</span>
         )}
@@ -767,11 +780,29 @@ function FileDetailModal({ file, isOwn, onClose, onDownload, onDelete }) {
   const icon = fileIcon(file.file_type || file.file_name)
   const iconColor = fileIconColor(file.file_type || file.file_name)
   const isImage = file.file_type?.startsWith('image/')
-  const isPdf = file.file_type === 'application/pdf' || file.file_name?.endsWith('.pdf')
+  const isPdf = file.file_type === 'application/pdf' || file.file_name?.toLowerCase().endsWith('.pdf')
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [previewError, setPreviewError] = useState(false)
+
+  // Signed URL laden voor images/PDF's; anders geen preview. Bucket = private,
+  // dus we hebben een tijdelijke URL nodig (5 min ruim genoeg voor kijken).
+  useEffect(() => {
+    if (!isImage && !isPdf) return
+    let cancelled = false
+    supabase.storage
+      .from('member-files')
+      .createSignedUrl(file.file_path, 300)
+      .then(({ data, error }) => {
+        if (cancelled) return
+        if (error || !data?.signedUrl) { setPreviewError(true); return }
+        setPreviewUrl(data.signedUrl)
+      })
+    return () => { cancelled = true }
+  }, [file.file_path, isImage, isPdf])
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 720 }}>
         <div className="modal-header">
           <h2>{file.title}</h2>
           <div style={{ display: 'flex', gap: 2 }}>
@@ -802,10 +833,21 @@ function FileDetailModal({ file, isOwn, onClose, onDownload, onDelete }) {
             </p>
           )}
 
-          {(isImage || isPdf) && (
-            <div style={{ background: 'var(--bg-hover)', borderRadius: 8, padding: 16, textAlign: 'center', fontSize: 14, color: 'var(--text-secondary)' }}>
-              <i className={icon} style={{ fontSize: 32, color: iconColor, display: 'block', marginBottom: 8 }} />
-              {isImage ? 'Afbeelding' : 'PDF-document'} — klik hieronder om te openen
+          {isImage && previewUrl && !previewError && (
+            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="my-docs__preview-image-link">
+              <img src={previewUrl} alt={file.title} className="my-docs__preview-image" />
+            </a>
+          )}
+          {isPdf && previewUrl && !previewError && (
+            <iframe
+              src={previewUrl}
+              title={file.title}
+              className="my-docs__preview-pdf"
+            />
+          )}
+          {(isImage || isPdf) && !previewUrl && !previewError && (
+            <div className="my-docs__preview-placeholder">
+              <i className="fa-solid fa-spinner fa-spin" /> Preview laden...
             </div>
           )}
 
