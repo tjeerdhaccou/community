@@ -135,7 +135,7 @@ Triggered from `NewProjectCard.jsx` after project insert. Requires Supabase secr
 
 - All tables have RLS enabled with policies using helper functions: `is_platform_admin()`, `has_membership(project_id, min_role)`, `is_org_admin(org_id)`
 - `has_membership()` grants org admins implicit access via OR clause (no physical membership row needed)
-- Migrations are in `supabase/migrations/` (001-016), run manually in Supabase SQL Editor
+- Migrations are in `supabase/migrations/` — apply via the Supabase MCP (`apply_migration` on project `czgsqmbejsmcjusigwhp` = "Community", eu-central-1). Fallback: SQL Editor.
 
 ## Design System: Clean DS
 

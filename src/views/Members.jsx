@@ -34,7 +34,8 @@ export default function Members() {
   const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
   const { allWorkgroups, workgroupIdsByProfile, workgroupsForProfile } = useWorkgroups()
-  const { hasUnreviewed: hasUnreviewedUploads, markReviewed: markUploadsReviewed } = useUnreviewedMemberUploads()
+  const { hasUnreviewed: hasUnreviewedUploads, markReviewed: markUploadsReviewed, memberCount: unreviewedUploadCount } = useUnreviewedMemberUploads()
+  const canReviewUploads = canDo(role, 'assign_roles')
   const commissies = allWorkgroups.filter(wg => wg.type === 'commissie')
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -52,6 +53,7 @@ export default function Members() {
 
   const filtered = (filter === 'all' ? active
     : filter === 'pending' ? guests
+    : filter === 'uploads' ? active.filter(m => hasUnreviewedUploads(m.profile_id))
     : filter.startsWith('wg:') ? active.filter(m => (workgroupIdsByProfile[m.profile_id] || new Set()).has(filter.slice(3)))
     : active.filter(m => m.role === filter)
   ).filter(m => {
@@ -101,6 +103,7 @@ export default function Members() {
         {[
           { key: 'all', label: `Alle (${active.length})` },
           ...(guests.length > 0 && canDo(role, 'invite_members') ? [{ key: 'pending', label: `Geïnteresseerden (${guests.length})` }] : []),
+          ...(unreviewedUploadCount > 0 && canReviewUploads ? [{ key: 'uploads', label: `Nieuwe uploads (${unreviewedUploadCount})` }] : []),
           { key: 'admin', label: 'Admins' },
           { key: 'moderator', label: 'Moderators' },
           { key: 'member', label: 'Leden' },
@@ -137,6 +140,18 @@ export default function Members() {
           <i className="fa-solid fa-user-clock" />
           <span>{guests.length} {guests.length === 1 ? 'geïnteresseerde' : 'geïnteresseerden'} in dit project</span>
           <button className="members-pending-banner__btn" onClick={() => setFilter('pending')}>
+            Bekijk <i className="fa-solid fa-arrow-right" />
+          </button>
+        </div>
+      )}
+
+      {/* Nieuwe uploads banner — spiegelt de geïnteresseerden-banner. Zorgt dat
+          admins de sidebar-badge in twee klikken herleiden naar het juiste lid. */}
+      {filter !== 'uploads' && unreviewedUploadCount > 0 && canReviewUploads && (
+        <div className="members-pending-banner">
+          <i className="fa-solid fa-file-arrow-up" />
+          <span>{unreviewedUploadCount} {unreviewedUploadCount === 1 ? 'lid heeft' : 'leden hebben'} nieuwe dossier-uploads</span>
+          <button className="members-pending-banner__btn" onClick={() => setFilter('uploads')}>
             Bekijk <i className="fa-solid fa-arrow-right" />
           </button>
         </div>
