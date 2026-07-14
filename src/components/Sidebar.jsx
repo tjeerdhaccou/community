@@ -4,12 +4,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { canDo } from '../lib/permissions'
 import { signOut } from '../lib/auth'
-import { supabase } from '../lib/supabase'
 import { isProjectDomain } from '../lib/subdomain'
-import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
-import { useUnreviewedMemberUploads } from '../hooks/useUnreviewedMemberUploads'
-import { useUnreadIndicators } from '../hooks/useUnreadIndicators'
-import { useSupportConversation } from '../hooks/useSupportConversation'
+import { useSidebarSignals } from '../hooks/useSidebarSignals'
 
 const NAV_SECTIONS = [
   {
@@ -82,55 +78,10 @@ export default function Sidebar() {
   const [openSections, setOpenSections] = useState({})
   const menuRef = useRef(null)
   const isProfessional = role === 'professional'
-  const [intakePendingCount, setIntakePendingCount] = useState(0)
-  const [docRequestCount, setDocRequestCount] = useState(0)
-  const { user } = useAuth()
-  const signatureRequestCount = useSignatureRequestCount()
-  const { memberCount: unreviewedMemberUploads } = useUnreviewedMemberUploads()
-  const { hasNewBoard, hasNewUpdates, hasNewEvents } = useUnreadIndicators(project?.id)
-  const { unreadCount: chatUnread } = useSupportConversation()
-  // Eén badge op 'Documenten' voor alle openstaande acties van de user:
-  // documentverzoeken (upload/ter inzage/tekenen-via-doc-request) + nieuwe
-  // tekenverzoeken (signature_requests).
-  const documentenActionCount = docRequestCount + signatureRequestCount
-  // Eén badge op 'Leden' voor admin-signalen: intake-aanmeldingen +
-  // leden met ongelezen zelf-uploads in hun dossier.
-  const ledenBadgeCount = intakePendingCount + unreviewedMemberUploads
-
-  useEffect(() => {
-    // Geen aanmeldingen-badge als ledenwerving-door-de-community uit staat.
-    if (!project?.id || !canDo(role, 'manage_intake') || !featureEnabled('ledenwerving')) return
-    supabase
-      .from('intake_responses')
-      .select('id', { count: 'exact', head: true })
-      .eq('project_id', project.id)
-      .eq('status', 'pending')
-      .then(({ count }) => setIntakePendingCount(count || 0))
-  }, [project?.id, role])
-
-  useEffect(() => {
-    if (!project?.id || !user?.id || isProfessional) return
-    function fetchCount() {
-      supabase
-        .from('document_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('project_id', project.id)
-        .eq('profile_id', user.id)
-        .eq('status', 'pending')
-        .then(({ count }) => setDocRequestCount(count || 0))
-    }
-    fetchCount()
-    const channel = supabase
-      .channel(`sidebar-doc-req-${project.id}-${user.id}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'document_requests',
-        filter: `profile_id=eq.${user.id}`,
-      }, fetchCount)
-      .subscribe()
-    return () => supabase.removeChannel(channel)
-  }, [project?.id, user?.id, isProfessional])
+  // Sidebar heeft twee soorten signalen (zie useSidebarSignals):
+  //   actions.*  → rood cijfer, "jij moet iets doen"
+  //   unread.*   → blauwe dot, "nieuw sinds vorige keer"
+  const { actions, unread } = useSidebarSignals()
 
   function isActive(to) {
     if (to === '') return location.pathname === (basePath || '/') || location.pathname === basePath + '/'
@@ -193,22 +144,22 @@ export default function Sidebar() {
       >
         <i className={`cl-nav-item__icon ${item.icon}`} style={{ '--nav-c': item.color, '--nav-bub-bg': `var(--nav-bub-${item.bubble}-bg)`, '--nav-bub-glyph': `var(--nav-bub-${item.bubble}-glyph)` }} />
         <span>{item.label}</span>
-        {item.to === 'members' && ledenBadgeCount > 0 && (
-          <span className="sidebar-badge">{ledenBadgeCount}</span>
+        {item.to === 'members' && actions.leden > 0 && (
+          <span className="sidebar-badge">{actions.leden}</span>
         )}
-        {item.to === 'mijn-dossier' && documentenActionCount > 0 && (
-          <span className="sidebar-badge">{documentenActionCount}</span>
+        {item.to === 'mijn-dossier' && actions.dossier > 0 && (
+          <span className="sidebar-badge">{actions.dossier}</span>
         )}
-        {item.to === 'chat' && chatUnread > 0 && (
-          <span className="sidebar-badge">{chatUnread > 9 ? '9+' : chatUnread}</span>
+        {item.to === 'chat' && actions.chat > 0 && (
+          <span className="sidebar-badge">{actions.chat > 9 ? '9+' : actions.chat}</span>
         )}
-        {item.to === 'community' && hasNewBoard && (
+        {item.to === 'community' && unread.board && (
           <span className="sidebar-dot" aria-label="Nieuwe berichten" title="Nieuwe berichten" />
         )}
-        {item.to === 'updates' && hasNewUpdates && (
+        {item.to === 'updates' && unread.updates && (
           <span className="sidebar-dot" aria-label="Nieuw projectnieuws" title="Nieuw projectnieuws" />
         )}
-        {item.to === 'events' && hasNewEvents && (
+        {item.to === 'events' && unread.events && (
           <span className="sidebar-dot" aria-label="Nieuwe events" title="Nieuwe events" />
         )}
       </div>
