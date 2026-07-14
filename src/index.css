@@ -4778,6 +4778,51 @@ select.input {
   justify-content: space-between;
 }
 
+.member-dossier__removal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.member-dossier__removal-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  background: rgba(245, 166, 35, 0.08);
+  border-radius: 8px;
+}
+.member-dossier__removal-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.member-dossier__removal-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.member-dossier__removal-file i {
+  color: var(--text-tertiary);
+}
+.member-dossier__removal-reason {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.member-dossier__removal-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.member-dossier__removal-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .member-dossier__empty {
   font-size: 13px;
   color: var(--text-tertiary);
@@ -8606,6 +8651,36 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
 .my-docs__modal-delete:hover {
   color: var(--accent-red);
   background: rgba(231, 76, 60, 0.08);
+}
+.my-docs__removal-status {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.my-docs__removal-status i {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.my-docs__removal-status strong {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+.my-docs__removal-status--pending {
+  background: rgba(245, 166, 35, 0.10);
+  color: var(--accent-orange, #F5A623);
+}
+.my-docs__removal-status--rejected {
+  background: rgba(231, 76, 60, 0.08);
+  color: var(--accent-red, #E53E3E);
+}
+.my-docs__removal-request-btn {
+  align-self: flex-start;
 }
 
 /* Request card */

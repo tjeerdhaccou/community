@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMyDocuments } from '../hooks/useMyDocuments'
 import { useDocumentRequests } from '../hooks/useDocumentRequests'
 import { useSignatureRequests } from '../hooks/useSignatureRequests'
+import { useFileRemovalRequests } from '../hooks/useFileRemovalRequests'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { useToast } from '../components/Toast'
@@ -48,6 +49,7 @@ export default function MyDocuments() {
   const { files, loading: filesLoading, download, upload, remove } = useMyDocuments()
   const { requests, loading: requestsLoading, submitResponse, markReviewed } = useDocumentRequests()
   const { requests: signatures, loading: signaturesLoading } = useSignatureRequests()
+  const { request: requestRemoval, pendingForFile: pendingRemovalFor, latestForFile: latestRemovalFor } = useFileRemovalRequests({ scope: 'own' })
   const [uploading, setUploading] = useState(null)
   const [ownUploading, setOwnUploading] = useState(false)
   const requestFileRef = useRef(null)
@@ -56,6 +58,7 @@ export default function MyDocuments() {
   const [detailRequest, setDetailRequest] = useState(null)
   const [detailFile, setDetailFile] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState(null) // { id, name }
+  const [removalTarget, setRemovalTarget] = useState(null) // { id, name } — voor 'Vraag verwijdering aan' modal
   const [tab, setTab] = useState('verzoeken')
 
   const loading = filesLoading || requestsLoading || signaturesLoading
@@ -239,9 +242,29 @@ export default function MyDocuments() {
         <FileDetailModal
           file={detailFile}
           isOwn={detailFile.uploaded_by === user?.id && !detailFile.request_id}
+          removalRequest={latestRemovalFor(detailFile.id)}
+          hasPendingRemoval={!!pendingRemovalFor(detailFile.id)}
           onClose={() => setDetailFile(null)}
           onDownload={download}
           onDelete={() => setConfirmDelete({ id: detailFile.id, name: detailFile.title || detailFile.file_name })}
+          onRequestRemoval={() => setRemovalTarget({ id: detailFile.id, name: detailFile.title || detailFile.file_name })}
+        />
+      )}
+
+      {removalTarget && (
+        <RequestRemovalModal
+          fileName={removalTarget.name}
+          onClose={() => setRemovalTarget(null)}
+          onSubmit={async (reason) => {
+            try {
+              await requestRemoval(removalTarget.id, reason)
+              toast.success('Verzoek verstuurd — het projectteam ontvangt een melding')
+              setRemovalTarget(null)
+              setDetailFile(null)
+            } catch (err) {
+              toast.error(err.message || 'Verzoek versturen mislukt')
+            }
+          }}
         />
       )}
 
@@ -776,7 +799,7 @@ function RequestDetailModal({ request, uploading, onClose, onDownload, onUpload,
   )
 }
 
-function FileDetailModal({ file, isOwn, onClose, onDownload, onDelete }) {
+function FileDetailModal({ file, isOwn, removalRequest, hasPendingRemoval, onClose, onDownload, onDelete, onRequestRemoval }) {
   const icon = fileIcon(file.file_type || file.file_name)
   const iconColor = fileIconColor(file.file_type || file.file_name)
   const isImage = file.file_type?.startsWith('image/')
@@ -860,7 +883,86 @@ function FileDetailModal({ file, isOwn, onClose, onDownload, onDelete }) {
             {file.file_size > 0 && <span className="request-card__attachment-size">{formatFileSize(file.file_size)}</span>}
             <i className="fa-solid fa-download" />
           </button>
+
+          {/* Verwijderingsverzoek-flow voor team-uploaded files (AVG art. 17).
+              Zelf-uploads krijgen de directe delete-knop bovenin. */}
+          {!isOwn && removalRequest?.status === 'rejected' && (
+            <div className="my-docs__removal-status my-docs__removal-status--rejected">
+              <i className="fa-solid fa-circle-xmark" />
+              <div>
+                <strong>Verwijderingsverzoek afgewezen</strong>
+                {removalRequest.decision_note && <div>{removalRequest.decision_note}</div>}
+              </div>
+            </div>
+          )}
+          {!isOwn && hasPendingRemoval && (
+            <div className="my-docs__removal-status my-docs__removal-status--pending">
+              <i className="fa-solid fa-hourglass-half" />
+              <div>
+                <strong>Verwijderingsverzoek loopt</strong>
+                <div>Het projectteam beoordeelt je aanvraag.</div>
+              </div>
+            </div>
+          )}
+          {!isOwn && !hasPendingRemoval && (
+            <button
+              className="btn-secondary my-docs__removal-request-btn"
+              onClick={onRequestRemoval}
+              type="button"
+            >
+              <i className="fa-solid fa-trash-can" />
+              Vraag verwijdering aan
+            </button>
+          )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function RequestRemovalModal({ fileName, onClose, onSubmit }) {
+  const [reason, setReason] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSubmitting(true)
+    try { await onSubmit(reason) } finally { setSubmitting(false) }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        <div className="modal-header">
+          <h2>Verwijdering aanvragen</h2>
+          <button className="modal-close" onClick={onClose} aria-label="Sluiten">
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            Je vraagt het projectteam om <strong>{fileName}</strong> te verwijderen uit je dossier. Het team beoordeelt je verzoek en beslist. Je krijgt bericht zodra er een besluit is.
+          </p>
+          <div className="form-group">
+            <label htmlFor="removal-reason">Reden <span style={{ color: 'var(--text-tertiary)', fontWeight: 'normal' }}>(optioneel)</span></label>
+            <textarea
+              id="removal-reason"
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+              placeholder="Bijv. 'Dit document bevat verouderde persoonsgegevens'"
+              rows={3}
+              maxLength={500}
+              autoFocus
+            />
+          </div>
+          <div className="modal-actions" style={{ justifyContent: 'flex-end', gap: 8 }}>
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={submitting}>Annuleren</button>
+            <button type="submit" className="btn-primary" disabled={submitting}>
+              <i className={`fa-solid ${submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} />
+              {submitting ? 'Versturen...' : 'Verzoek versturen'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
