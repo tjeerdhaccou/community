@@ -14,9 +14,16 @@ import { useAuth } from '../contexts/AuthContext'
 
 const PLACEHOLDER_REGEX = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g
 
-// iDEAL banken — bank-picker embedded in het betaalscherm. Als user niets
-// selecteert, sturen we alleen method='ideal' mee en toont Mollie z'n eigen
-// bank-hub (nog steeds netter dan de methode-picker).
+// Betaalmethodes — inline pickers zoals bij een webshop-checkout. iDEAL is
+// default omdat het NL-first is. Creditcard voor buitenland/geen NL-bank.
+const PAYMENT_METHODS = [
+  { id: 'ideal',      name: 'iDEAL',      subtitle: 'Betaal via je eigen bank' },
+  { id: 'creditcard', name: 'Creditcard', subtitle: 'Visa, Mastercard' },
+]
+
+// iDEAL banken — pas zichtbaar als user iDEAL heeft gekozen én de picker
+// openklapt. Als geen bank gekozen wordt sturen we alleen method='ideal' →
+// Mollie toont dan zelf de bank-hub.
 const IDEAL_ISSUERS = [
   { id: 'ideal_ABNANL2A', name: 'ABN AMRO' },
   { id: 'ideal_INGBNL2A', name: 'ING' },
@@ -58,7 +65,9 @@ export default function PaymentRequestView() {
   const [error, setError] = useState(null)
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [issuerId, setIssuerId] = useState('') // gekozen iDEAL bank
+  const [method, setMethod] = useState('ideal') // default iDEAL
+  const [issuerId, setIssuerId] = useState('')  // gekozen iDEAL bank
+  const [banksOpen, setBanksOpen] = useState(false) // uitgeklapte bank-picker
 
   useEffect(() => {
     if (authLoading) return
@@ -207,8 +216,8 @@ export default function PaymentRequestView() {
         body: JSON.stringify({
           payment_request_id: ctx.id,
           access_token: token || undefined,
-          method: 'ideal',
-          issuer: issuerId || undefined,
+          method,
+          issuer: method === 'ideal' && issuerId ? issuerId : undefined,
         }),
       })
       const body = await res.json().catch(() => ({}))
@@ -336,29 +345,64 @@ export default function PaymentRequestView() {
               </div>
             ) : (
               <>
-                <div className="pr-banks">
-                  <div className="pr-banks__label">Kies je bank</div>
-                  <div className="pr-banks__grid">
-                    {IDEAL_ISSUERS.map((b) => (
+                <div className="pr-methods">
+                  <div className="pr-methods__label">Betaalmethode</div>
+                  <div className="pr-methods__grid">
+                    {PAYMENT_METHODS.map((m) => (
                       <button
-                        key={b.id}
+                        key={m.id}
                         type="button"
-                        className={`pr-bank${issuerId === b.id ? ' pr-bank--selected' : ''}`}
-                        onClick={() => setIssuerId(issuerId === b.id ? '' : b.id)}
+                        className={`pr-method${method === m.id ? ' pr-method--selected' : ''}`}
+                        onClick={() => { setMethod(m.id); if (m.id !== 'ideal') { setIssuerId(''); setBanksOpen(false) } }}
                       >
-                        <span className="pr-bank__name">{b.name}</span>
-                        {issuerId === b.id && (
-                          <i className="fa-solid fa-circle-check pr-bank__check" />
-                        )}
+                        <span className={`pr-method__logo pr-method__logo--${m.id}`} aria-hidden />
+                        <span className="pr-method__body">
+                          <span className="pr-method__name">{m.name}</span>
+                          <span className="pr-method__subtitle">{m.subtitle}</span>
+                        </span>
+                        {method === m.id && <i className="fa-solid fa-circle-check pr-method__check" />}
                       </button>
                     ))}
                   </div>
-                  <p className="pr-banks__hint">
-                    {issuerId
-                      ? 'Je gaat direct door naar deze bank.'
-                      : 'Optioneel — kies je bank vooraf, of ga zonder keuze via de bank-selectie van Mollie.'}
-                  </p>
                 </div>
+
+                {method === 'ideal' && (
+                  <div className="pr-banks">
+                    <button
+                      type="button"
+                      className="pr-banks__toggle"
+                      onClick={() => setBanksOpen(!banksOpen)}
+                      aria-expanded={banksOpen}
+                    >
+                      <span>
+                        {issuerId
+                          ? IDEAL_ISSUERS.find(b => b.id === issuerId)?.name
+                          : 'Kies je bank (optioneel)'}
+                      </span>
+                      <i className={`fa-solid fa-chevron-${banksOpen ? 'up' : 'down'}`} />
+                    </button>
+                    {banksOpen && (
+                      <div className="pr-banks__grid">
+                        {IDEAL_ISSUERS.map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            className={`pr-bank${issuerId === b.id ? ' pr-bank--selected' : ''}`}
+                            onClick={() => { setIssuerId(issuerId === b.id ? '' : b.id); setBanksOpen(false) }}
+                          >
+                            <span className="pr-bank__name">{b.name}</span>
+                            {issuerId === b.id && (
+                              <i className="fa-solid fa-circle-check pr-bank__check" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {!banksOpen && !issuerId && (
+                      <p className="pr-banks__hint">Zonder keuze toont Mollie een bank-selectie.</p>
+                    )}
+                  </div>
+                )}
 
                 <label className="pr-consent">
                   <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
@@ -380,10 +424,13 @@ export default function PaymentRequestView() {
             >
               {(() => {
                 const bankName = IDEAL_ISSUERS.find(b => b.id === issuerId)?.name
+                const methodLabel = method === 'creditcard'
+                  ? 'creditcard'
+                  : bankName || 'iDEAL'
                 if (submitting) return 'Doorverwijzen…'
                 if (isPaidReturn && !isPaid && isAgreed) return 'Betaling wordt verwerkt…'
-                if (isAgreed) return bankName ? `Doorgaan naar ${bankName}` : 'Doorgaan met iDEAL'
-                return bankName ? `Akkoord en betalen via ${bankName}` : 'Akkoord en betalen via iDEAL'
+                if (isAgreed) return `Doorgaan naar ${methodLabel}`
+                return `Akkoord en betalen via ${methodLabel}`
               })()}
             </button>
           </>
