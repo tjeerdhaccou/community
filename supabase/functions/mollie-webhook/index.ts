@@ -345,6 +345,23 @@ serve(async (req) => {
     } catch (e) {
       console.error('[mollie-webhook] notification insert failed', e)
     }
+
+    // Ruim de "wacht op mij"-notificatie voor het lid op — verzoek is klaar.
+    // Ook als het lid via de e-mail-link betaalde (dus zonder ingelogd te zijn
+    // in de community-app), verdwijnt zo de bel-badge bij eerstvolgende login.
+    try {
+      if (pr.recipient_profile_id) {
+        await admin
+          .from('notifications')
+          .delete()
+          .eq('recipient_id', pr.recipient_profile_id)
+          .eq('related_type', 'payment_request')
+          .eq('related_id', pr.id)
+          .eq('type', 'payment_request_sent')
+      }
+    } catch (e) {
+      console.error('[mollie-webhook] cleanup member notification failed', e)
+    }
   }
 
   return new Response('ok', { status: 200 })
