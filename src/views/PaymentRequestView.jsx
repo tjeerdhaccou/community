@@ -115,15 +115,28 @@ export default function PaymentRequestView() {
     return () => { cancelled = true }
   }, [id, token, user, authLoading])
 
-  // Bij ?paid=1 refresh status na 1.5s (webhook heeft dan meestal gepusht)
+  // Bij ?paid=1 pollen we de status tot 'paid' — Mollie webhook kan een paar
+  // seconden nodig hebben. Elke 2s, max 20s. Stopt zodra status paid/refunded is.
   useEffect(() => {
-    if (!isPaidReturn || !ctx?.id || !token) return
-    const t = setTimeout(async () => {
-      const { data } = await supabase.rpc('get_payment_request_by_token', { p_token: token })
-      if (data?.[0]) setCtx(data[0])
-    }, 1500)
-    return () => clearTimeout(t)
-  }, [isPaidReturn, ctx?.id, token])
+    if (!isPaidReturn || !ctx?.id) return
+    if (['paid', 'refunded'].includes(ctx.status)) return
+    let cancelled = false
+    let attempts = 0
+    const maxAttempts = 10
+    const tick = async () => {
+      if (cancelled) return
+      attempts++
+      const { data } = token
+        ? await supabase.rpc('get_payment_request_by_token', { p_token: token })
+        : await supabase.from('payment_requests').select('*').eq('id', ctx.id).limit(1)
+      const next = data?.[0]
+      if (next && !cancelled) setCtx((prev) => ({ ...prev, ...next }))
+      if (next && ['paid', 'refunded'].includes(next.status)) return
+      if (attempts < maxAttempts) setTimeout(tick, 2000)
+    }
+    const t = setTimeout(tick, 1500)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [isPaidReturn, ctx?.id, ctx?.status, token])
 
   const renderedContract = useMemo(() => {
     if (!ctx?.agreement_text) return ''
@@ -284,7 +297,15 @@ export default function PaymentRequestView() {
               </div>
             )}
 
-            {isAgreed && !isPaid ? (
+            {isPaidReturn && isAgreed && !isPaid ? (
+              <div className="pr-state pr-state--info">
+                <i className="fa-solid fa-spinner fa-spin" />
+                <div>
+                  <strong>Betaling wordt verwerkt…</strong>
+                  <p>Een moment geduld terwijl we de bevestiging van Mollie ophalen.</p>
+                </div>
+              </div>
+            ) : isAgreed && !isPaid ? (
               <div className="pr-state pr-state--info">
                 <i className="fa-solid fa-hourglass-half" />
                 <div>
@@ -308,13 +329,15 @@ export default function PaymentRequestView() {
               type="button"
               className="pr-pay-btn"
               onClick={handlePay}
-              disabled={submitting || (!isAgreed && !agreed)}
+              disabled={submitting || (isPaidReturn && !isPaid && isAgreed) || (!isAgreed && !agreed)}
             >
               {submitting
                 ? 'Doorverwijzen…'
-                : isAgreed
-                  ? 'Doorgaan met iDEAL'
-                  : 'Akkoord en betalen via iDEAL'}
+                : isPaidReturn && !isPaid && isAgreed
+                  ? 'Betaling wordt verwerkt…'
+                  : isAgreed
+                    ? 'Doorgaan met iDEAL'
+                    : 'Akkoord en betalen via iDEAL'}
             </button>
           </>
         )}
