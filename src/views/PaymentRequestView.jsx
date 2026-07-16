@@ -173,7 +173,16 @@ export default function PaymentRequestView() {
 
       if (!res.ok || !body.checkout_url) {
         console.error('[PaymentRequestView] initiate failed', res.status, body)
-        setError('Betaling starten mislukt. Probeer het opnieuw of neem contact op.')
+        const mollieDetail = body?.detail?.detail || body?.detail?.title || body?.detail?.error
+        const summary =
+          body?.error === 'org_not_connected'
+            ? 'Mollie is niet gekoppeld aan deze organisatie.'
+            : body?.error === 'invalid_state'
+              ? 'Verzoek is al betaald of niet meer geldig.'
+              : mollieDetail
+                ? `Mollie: ${mollieDetail}`
+                : 'Betaling starten mislukt. Probeer het opnieuw of neem contact op.'
+        setError(summary)
         setSubmitting(false)
         return
       }
