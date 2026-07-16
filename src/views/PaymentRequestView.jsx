@@ -140,17 +140,25 @@ export default function PaymentRequestView() {
   }, [ctx])
 
   async function handlePay() {
-    if (!agreed || !ctx) return
+    if (!ctx) return
+    // Bij een nieuwe akkoord-flow moet de checkbox aangevinkt zijn. Bij een
+    // retry (status is al 'agreed') hoeft dat niet — akkoord staat al vast.
+    const alreadyAgreed = ['agreed', 'paid'].includes(ctx.status)
+    if (!alreadyAgreed && !agreed) return
+
     setSubmitting(true)
     setError(null)
     try {
-      const { error: agreeErr } = await supabase.rpc('agree_payment_request', {
-        p_request_id: ctx.id,
-        p_token: token || null,
-        p_ip: null,
-        p_user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : null),
-      })
-      if (agreeErr) throw agreeErr
+      // Sla agree over als 't al gebeurd is (retry na gefaalde initiate).
+      if (!alreadyAgreed) {
+        const { error: agreeErr } = await supabase.rpc('agree_payment_request', {
+          p_request_id: ctx.id,
+          p_token: token || null,
+          p_ip: null,
+          p_user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : null),
+        })
+        if (agreeErr) throw agreeErr
+      }
 
       const { data: sess } = await supabase.auth.getSession()
       const jwt = sess?.session?.access_token
@@ -173,7 +181,16 @@ export default function PaymentRequestView() {
 
       if (!res.ok || !body.checkout_url) {
         console.error('[PaymentRequestView] initiate failed', res.status, body)
-        setError('Betaling starten mislukt. Probeer het opnieuw of neem contact op.')
+        const mollieDetail = body?.detail?.detail || body?.detail?.title || body?.detail?.error
+        const summary =
+          body?.error === 'org_not_connected'
+            ? 'Mollie is niet gekoppeld aan deze organisatie.'
+            : body?.error === 'invalid_state'
+              ? 'Verzoek is al betaald of niet meer geldig.'
+              : mollieDetail
+                ? `Mollie: ${mollieDetail}`
+                : 'Betaling starten mislukt. Probeer het opnieuw of neem contact op.'
+        setError(summary)
         setSubmitting(false)
         return
       }
@@ -271,8 +288,8 @@ export default function PaymentRequestView() {
               <div className="pr-state pr-state--info">
                 <i className="fa-solid fa-hourglass-half" />
                 <div>
-                  <strong>Wachten op betaling</strong>
-                  <p>Je hebt akkoord gegeven. Rond de betaling af om het verzoek te voltooien.</p>
+                  <strong>Je hebt akkoord gegeven</strong>
+                  <p>Rond de betaling af via iDEAL om het verzoek te voltooien.</p>
                 </div>
               </div>
             ) : (
@@ -291,9 +308,13 @@ export default function PaymentRequestView() {
               type="button"
               className="pr-pay-btn"
               onClick={handlePay}
-              disabled={!agreed || submitting || isAgreed}
+              disabled={submitting || (!isAgreed && !agreed)}
             >
-              {submitting ? 'Doorverwijzen…' : isAgreed ? 'Wachten op betaling…' : 'Akkoord en betalen via iDEAL'}
+              {submitting
+                ? 'Doorverwijzen…'
+                : isAgreed
+                  ? 'Doorgaan met iDEAL'
+                  : 'Akkoord en betalen via iDEAL'}
             </button>
           </>
         )}
