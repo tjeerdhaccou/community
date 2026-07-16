@@ -18,15 +18,58 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const SUPABASE_URL   = Deno.env.get('SUPABASE_URL') || ''
-const APP_BASE_URL   = Deno.env.get('APP_BASE_URL') || 'https://buuur.nl'
-const _explicit      = Deno.env.get('SB_SECRET_KEY') || ''
+const SUPABASE_URL       = Deno.env.get('SUPABASE_URL') || ''
+const APP_BASE_URL       = Deno.env.get('APP_BASE_URL') || 'https://buuur.nl'
+const MOLLIE_CLIENT_ID     = Deno.env.get('MOLLIE_CLIENT_ID') || ''
+const MOLLIE_CLIENT_SECRET = Deno.env.get('MOLLIE_CLIENT_SECRET') || ''
+const _explicit          = Deno.env.get('SB_SECRET_KEY') || ''
 const SERVICE_ROLE_KEY =
   (Deno.env.get('SUPABASE_SECRET_KEYS') || '').match(/sb_secret_[A-Za-z0-9_-]+/)?.[0] ||
   (_explicit.startsWith('sb_secret_') ? _explicit : '') ||
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 const MOLLIE_API = 'https://api.mollie.com'
+
+// Refresh: Mollie access-tokens verlopen na ~1 uur. We verversen proactief als
+// expires_at binnen 60s zit én reactief als Mollie 401 antwoordt.
+async function refreshMollieAccessToken(
+  admin: any,
+  orgId: string,
+  accessSecretId: string,
+  refreshSecretId: string | null,
+): Promise<string | null> {
+  if (!refreshSecretId || !MOLLIE_CLIENT_ID || !MOLLIE_CLIENT_SECRET) return null
+
+  const { data: refreshToken } = await admin.rpc('vault_read_secret', { p_secret_id: refreshSecretId })
+  if (!refreshToken) return null
+
+  const res = await fetch(`${MOLLIE_API}/oauth2/tokens`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ' + btoa(`${MOLLIE_CLIENT_ID}:${MOLLIE_CLIENT_SECRET}`),
+    },
+    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }).toString(),
+  })
+  const tokens = await res.json().catch(() => ({}))
+  if (!res.ok || !tokens.access_token) {
+    console.error('[initiate-payment] refresh failed', res.status, tokens)
+    return null
+  }
+
+  await admin.rpc('vault_update_secret', { p_secret_id: accessSecretId, p_secret: tokens.access_token })
+  if (tokens.refresh_token) {
+    await admin.rpc('vault_update_secret', { p_secret_id: refreshSecretId, p_secret: tokens.refresh_token })
+  }
+  const expiresAt = tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null
+  await admin.from('org_payment_accounts').update({
+    access_token_expires_at: expiresAt,
+    status: 'active',
+    last_error: null,
+  }).eq('organization_id', orgId)
+
+  return tokens.access_token
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -107,7 +150,7 @@ serve(async (req) => {
   // Access token uit vault
   const { data: account, error: accErr } = await admin
     .from('org_payment_accounts')
-    .select('access_token_secret_id, mollie_profile_id, status')
+    .select('access_token_secret_id, refresh_token_secret_id, access_token_expires_at, mollie_profile_id, status')
     .eq('organization_id', orgId)
     .maybeSingle()
 
@@ -115,12 +158,20 @@ serve(async (req) => {
     return json(400, { error: 'org_not_connected' })
   }
 
-  const { data: mollieToken, error: vaultErr } = await admin.rpc('vault_read_secret', {
-    p_secret_id: account.access_token_secret_id,
-  })
-  if (vaultErr || !mollieToken) {
-    console.error('[initiate-payment] vault read failed', vaultErr)
-    return json(500, { error: 'vault_read_failed' })
+  // Proactieve refresh: als expires_at binnen 60 seconden verloopt of al voorbij is.
+  const expiresAt = account.access_token_expires_at ? new Date(account.access_token_expires_at).getTime() : 0
+  const needsRefresh = !expiresAt || expiresAt < Date.now() + 60_000
+
+  let mollieToken: string | null = null
+  if (needsRefresh) {
+    mollieToken = await refreshMollieAccessToken(
+      admin, orgId, account.access_token_secret_id, account.refresh_token_secret_id,
+    )
+    if (!mollieToken) return json(401, { error: 'token_refresh_failed', hint: 'Mollie opnieuw koppelen in Instellingen.' })
+  } else {
+    const { data: fresh } = await admin.rpc('vault_read_secret', { p_secret_id: account.access_token_secret_id })
+    mollieToken = fresh || null
+    if (!mollieToken) return json(500, { error: 'vault_read_failed' })
   }
 
   // Webhook URL — self-referential naar mollie-webhook edge fn
@@ -154,14 +205,24 @@ serve(async (req) => {
     molliePayload.profileId = account.mollie_profile_id
   }
 
-  const mollieRes = await fetch(`${MOLLIE_API}/v2/payments`, {
+  const callMollie = (token: string) => fetch(`${MOLLIE_API}/v2/payments`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${mollieToken}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(molliePayload),
   })
+
+  let mollieRes = await callMollie(mollieToken)
+  // Reactieve retry: als Mollie 401 zegt terwijl wij dachten dat de token OK was
+  // (bv. expires_at was misleidend), refresh en probeer opnieuw.
+  if (mollieRes.status === 401 && !needsRefresh) {
+    const fresh = await refreshMollieAccessToken(
+      admin, orgId, account.access_token_secret_id, account.refresh_token_secret_id,
+    )
+    if (fresh) {
+      mollieToken = fresh
+      mollieRes = await callMollie(fresh)
+    }
+  }
 
   const mollieBody = await mollieRes.json().catch(() => ({}))
 
