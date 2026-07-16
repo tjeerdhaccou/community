@@ -14,6 +14,24 @@ import { useAuth } from '../contexts/AuthContext'
 
 const PLACEHOLDER_REGEX = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g
 
+// iDEAL banken — bank-picker embedded in het betaalscherm. Als user niets
+// selecteert, sturen we alleen method='ideal' mee en toont Mollie z'n eigen
+// bank-hub (nog steeds netter dan de methode-picker).
+const IDEAL_ISSUERS = [
+  { id: 'ideal_ABNANL2A', name: 'ABN AMRO' },
+  { id: 'ideal_INGBNL2A', name: 'ING' },
+  { id: 'ideal_RABONL2U', name: 'Rabobank' },
+  { id: 'ideal_BUNQNL2A', name: 'bunq' },
+  { id: 'ideal_KNABNL2H', name: 'Knab' },
+  { id: 'ideal_SNSBNL2A', name: 'SNS' },
+  { id: 'ideal_ASNBNL21', name: 'ASN Bank' },
+  { id: 'ideal_RBRBNL21', name: 'RegioBank' },
+  { id: 'ideal_TRIONL2U', name: 'Triodos Bank' },
+  { id: 'ideal_REVOLT21', name: 'Revolut' },
+  { id: 'ideal_NNBANL2G', name: 'Nationale-Nederlanden' },
+  { id: 'ideal_FVLBNL22', name: 'Van Lanschot' },
+]
+
 function formatEuro(cents) {
   return (cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
 }
@@ -40,6 +58,7 @@ export default function PaymentRequestView() {
   const [error, setError] = useState(null)
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [issuerId, setIssuerId] = useState('') // gekozen iDEAL bank
 
   useEffect(() => {
     if (authLoading) return
@@ -188,6 +207,8 @@ export default function PaymentRequestView() {
         body: JSON.stringify({
           payment_request_id: ctx.id,
           access_token: token || undefined,
+          method: 'ideal',
+          issuer: issuerId || undefined,
         }),
       })
       const body = await res.json().catch(() => ({}))
@@ -314,13 +335,39 @@ export default function PaymentRequestView() {
                 </div>
               </div>
             ) : (
-              <label className="pr-consent">
-                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-                <span>
-                  Ik heb de overeenkomst gelezen en ga akkoord met de voorwaarden en betaling van{' '}
-                  <strong>{formatEuro(ctx.amount_cents)}</strong>.
-                </span>
-              </label>
+              <>
+                <div className="pr-banks">
+                  <div className="pr-banks__label">Kies je bank</div>
+                  <div className="pr-banks__grid">
+                    {IDEAL_ISSUERS.map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        className={`pr-bank${issuerId === b.id ? ' pr-bank--selected' : ''}`}
+                        onClick={() => setIssuerId(issuerId === b.id ? '' : b.id)}
+                      >
+                        <span className="pr-bank__name">{b.name}</span>
+                        {issuerId === b.id && (
+                          <i className="fa-solid fa-circle-check pr-bank__check" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="pr-banks__hint">
+                    {issuerId
+                      ? 'Je gaat direct door naar deze bank.'
+                      : 'Optioneel — kies je bank vooraf, of ga zonder keuze via de bank-selectie van Mollie.'}
+                  </p>
+                </div>
+
+                <label className="pr-consent">
+                  <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+                  <span>
+                    Ik heb de overeenkomst gelezen en ga akkoord met de voorwaarden en betaling van{' '}
+                    <strong>{formatEuro(ctx.amount_cents)}</strong>.
+                  </span>
+                </label>
+              </>
             )}
 
             {error && <div className="pr-error">{error}</div>}
@@ -331,13 +378,13 @@ export default function PaymentRequestView() {
               onClick={handlePay}
               disabled={submitting || (isPaidReturn && !isPaid && isAgreed) || (!isAgreed && !agreed)}
             >
-              {submitting
-                ? 'Doorverwijzen…'
-                : isPaidReturn && !isPaid && isAgreed
-                  ? 'Betaling wordt verwerkt…'
-                  : isAgreed
-                    ? 'Doorgaan met iDEAL'
-                    : 'Akkoord en betalen via iDEAL'}
+              {(() => {
+                const bankName = IDEAL_ISSUERS.find(b => b.id === issuerId)?.name
+                if (submitting) return 'Doorverwijzen…'
+                if (isPaidReturn && !isPaid && isAgreed) return 'Betaling wordt verwerkt…'
+                if (isAgreed) return bankName ? `Doorgaan naar ${bankName}` : 'Doorgaan met iDEAL'
+                return bankName ? `Akkoord en betalen via ${bankName}` : 'Akkoord en betalen via iDEAL'
+              })()}
             </button>
           </>
         )}

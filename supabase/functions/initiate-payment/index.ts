@@ -107,11 +107,19 @@ serve(async (req) => {
       })
     : null
 
-  let body: { payment_request_id?: string; access_token?: string; return_url?: string } = {}
+  let body: {
+    payment_request_id?: string
+    access_token?: string
+    return_url?: string
+    method?: string
+    issuer?: string
+  } = {}
   try { body = await req.json() } catch {}
   const requestId    = body.payment_request_id
   const providedToken = body.access_token
   const returnUrl    = body.return_url
+  const method       = body.method
+  const issuer       = body.issuer
 
   if (!requestId) return json(400, { error: 'payment_request_id required' })
 
@@ -203,6 +211,17 @@ serve(async (req) => {
 
   if (account.mollie_profile_id) {
     molliePayload.profileId = account.mollie_profile_id
+  }
+
+  // Betaalmethode + iDEAL-issuer (bank) inline gekozen op het betaalscherm.
+  // Als issuer meegestuurd wordt gaat Mollie direct naar die bank; anders
+  // toont Mollie een bank-hub. Als method leeg is toont Mollie de volledige
+  // methode-picker (fallback).
+  if (method) {
+    molliePayload.method = method
+    if (issuer) {
+      molliePayload.issuer = issuer
+    }
   }
 
   const callMollie = (token: string) => fetch(`${MOLLIE_API}/v2/payments`, {
