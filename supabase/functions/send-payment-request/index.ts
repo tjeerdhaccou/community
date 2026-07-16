@@ -231,7 +231,7 @@ serve(async (req) => {
   const { data: req0, error: reqErr } = await admin
     .from('payment_requests')
     .select(`
-      id, project_id, recipient_email, recipient_name, title, description,
+      id, project_id, recipient_profile_id, recipient_email, recipient_name, title, description,
       amount_cents, currency, reference, status, agreement_template_id,
       project:projects(id, name, slug, logo_url, organization_id,
                         organization:organizations(id, name, slug, logo_url, reply_to_email, from_display_name)),
@@ -391,6 +391,23 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'mark_sent_failed' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+  }
+
+  // In-app notificatie voor het lid (als het een bekend lid is met profile-id).
+  // Voor externe e-mails zonder account is er niets om naar in-app te sturen —
+  // de mail is dan de enige melding. NotificationBell routet klik naar /verzoeken/:id.
+  if (req0.recipient_profile_id) {
+    const { error: notifErr } = await admin.from('notifications').insert({
+      recipient_id: req0.recipient_profile_id,
+      type: 'payment_request_sent',
+      title: `Nieuw betaalverzoek: ${formatEuro(req0.amount_cents)}`,
+      body: `${org?.name || 'Er'} vraagt je om "${req0.title}" af te ronden.`,
+      related_id: req0.id,
+      related_type: 'payment_request',
+      project_id: req0.project_id,
+      is_read: false,
+    })
+    if (notifErr) console.warn('[send-payment-request] notif insert failed', notifErr)
   }
 
   return new Response(JSON.stringify({ ok: true, access_token: accessToken, member_view_url: memberViewUrl }), {

@@ -131,6 +131,8 @@ export const NOTIFICATION_CONFIG = {
   new_document:         { icon: 'fa-solid fa-folder-open',   color: '#7B5EA7' },
   document_request:     { icon: 'fa-solid fa-file-circle-question', color: '#2D8CFF' },
   document_request_submitted: { icon: 'fa-solid fa-file-circle-check', color: '#3BD269' },
+  payment_request_sent: { icon: 'fa-solid fa-euro-sign',     color: '#F09020' },
+  payment_request_paid: { icon: 'fa-solid fa-circle-check',  color: '#3BD269' },
 }
 
 // ===== Event types =====
