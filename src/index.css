@@ -11363,10 +11363,11 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 /* Gebruikt design-tokens die per data-theme wisselen (crowdbuilding / warm).
    Attribuut komt uit organizations.default_theme (of project override). */
 .pr-page {
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
   background: var(--bg-page, #F3F1ED);
   color: var(--text-primary, #1A1A2E);
-  padding: 40px 16px 64px;
+  padding: 40px 16px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11422,6 +11423,7 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   border-radius: 16px;
   padding: 32px;
   box-shadow: 0 4px 20px rgba(20, 30, 60, 0.06);
+  margin-bottom: 64px;
 }
 .pr-card--error {
   text-align: center;
@@ -11806,8 +11808,8 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   line-height: 1.5;
 }
 @media (max-width: 640px) {
-  .pr-page { padding: 24px 12px; }
-  .pr-card { padding: 20px; }
+  .pr-page { padding: 24px 12px 0; }
+  .pr-card { padding: 20px; margin-bottom: 32px; }
   .pr-title { font-size: 20px; }
   .pr-amount__value { font-size: 26px; }
   .pr-header__logo { width: 48px; height: 48px; }
