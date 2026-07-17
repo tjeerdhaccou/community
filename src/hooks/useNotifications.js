@@ -69,6 +69,16 @@ export function useNotifications() {
           prev.map(n => n.id === payload.new.id ? { ...n, ...payload.new } : n)
         )
       })
+      // DELETE-events: notif kan server-side verwijderd worden (bv. mollie-webhook
+      // ruimt de 'payment_request_sent'-melding op zodra betaling binnen is).
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `recipient_id=eq.${userId}`,
+      }, (payload) => {
+        setNotifications(prev => prev.filter(n => n.id !== payload.old.id))
+      })
       .subscribe()
 
     return () => supabase.removeChannel(channel)
