@@ -14,29 +14,29 @@ import { useAuth } from '../contexts/AuthContext'
 
 const PLACEHOLDER_REGEX = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g
 
-// Betaalmethodes — inline pickers zoals bij een webshop-checkout. iDEAL is
-// default omdat het NL-first is. Creditcard voor buitenland/geen NL-bank.
-const PAYMENT_METHODS = [
-  { id: 'ideal',      name: 'iDEAL',      subtitle: 'Betaal via je eigen bank' },
-  { id: 'creditcard', name: 'Creditcard', subtitle: 'Visa, Mastercard' },
-]
+// Korte subtitles per methode. Mollie's `description` is alleen "iDEAL" e.d.,
+// dus we vullen zelf een korte hint aan zodat de tegels iets meer context hebben.
+const METHOD_SUBTITLES = {
+  ideal:        'Betaal via je eigen bank',
+  creditcard:   'Visa, Mastercard, Amex',
+  bancontact:   'Betaal met Bancontact',
+  wero:         'Nieuwe Europese betaalmethode',
+  paypal:       'Betaal via PayPal',
+  applepay:     'Betaal met Apple Pay',
+  banktransfer: 'Handmatige overboeking',
+  sofort:       'Betaal met SOFORT',
+  eps:          'Betaal met EPS',
+  giropay:      'Betaal met giropay',
+  belfius:      'Betaal met Belfius',
+  kbc:          'Betaal met KBC/CBC',
+}
 
-// iDEAL banken — pas zichtbaar als user iDEAL heeft gekozen én de picker
-// openklapt. Als geen bank gekozen wordt sturen we alleen method='ideal' →
-// Mollie toont dan zelf de bank-hub.
-const IDEAL_ISSUERS = [
-  { id: 'ideal_ABNANL2A', name: 'ABN AMRO' },
-  { id: 'ideal_INGBNL2A', name: 'ING' },
-  { id: 'ideal_RABONL2U', name: 'Rabobank' },
-  { id: 'ideal_BUNQNL2A', name: 'bunq' },
-  { id: 'ideal_KNABNL2H', name: 'Knab' },
-  { id: 'ideal_SNSBNL2A', name: 'SNS' },
-  { id: 'ideal_ASNBNL21', name: 'ASN Bank' },
-  { id: 'ideal_RBRBNL21', name: 'RegioBank' },
-  { id: 'ideal_TRIONL2U', name: 'Triodos Bank' },
-  { id: 'ideal_REVOLT21', name: 'Revolut' },
-  { id: 'ideal_NNBANL2G', name: 'Nationale-Nederlanden' },
-  { id: 'ideal_FVLBNL22', name: 'Van Lanschot' },
+// Fallback als de Mollie-fetch faalt of trager is dan snelle klikkers. Zonder
+// logo's, want zonder Mollie-fetch weten we niet welke methoden de org actief
+// heeft. Blijft functioneel: user kan gewoon iDEAL/creditcard kiezen.
+const FALLBACK_METHODS = [
+  { id: 'ideal',      name: 'iDEAL',      image: null },
+  { id: 'creditcard', name: 'Creditcard', image: null },
 ]
 
 function formatEuro(cents) {
@@ -68,6 +68,7 @@ export default function PaymentRequestView() {
   const [method, setMethod] = useState('ideal') // default iDEAL
   const [issuerId, setIssuerId] = useState('')  // gekozen iDEAL bank
   const [banksOpen, setBanksOpen] = useState(false) // uitgeklapte bank-picker
+  const [methods, setMethods] = useState(null)   // van Mollie via edge fn; null = loading, [] = geen actief
 
   useEffect(() => {
     if (authLoading) return
@@ -165,6 +166,89 @@ export default function PaymentRequestView() {
     const t = setTimeout(tick, 1500)
     return () => { cancelled = true; clearTimeout(t) }
   }, [isPaidReturn, ctx?.id, ctx?.status, token])
+
+  // Haal Mollie-methodes op zodra we een geldig verzoek hebben en er nog
+  // betaald moet worden. Zelfde auth-model als initiate-payment: token OR JWT.
+  // Cache in sessionStorage per verzoek zodat een refresh instant is.
+  useEffect(() => {
+    if (!ctx?.id) return
+    if (['paid', 'refunded', 'expired'].includes(ctx.status)) return
+
+    const cacheKey = `pr_methods_${ctx.id}`
+    try {
+      const cached = sessionStorage.getItem(cacheKey)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed && Array.isArray(parsed.methods) && parsed.expiresAt > Date.now()) {
+          setMethods(parsed.methods)
+          return // vers genoeg — sla netwerk-call over
+        }
+      }
+    } catch {}
+
+    let cancelled = false
+    async function fetchMethods() {
+      try {
+        const { data: sess } = await supabase.auth.getSession()
+        const jwt = sess?.session?.access_token
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const anonKey     = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+        const res = await fetch(`${supabaseUrl}/functions/v1/list-payment-methods`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': anonKey,
+            ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+          },
+          body: JSON.stringify({
+            payment_request_id: ctx.id,
+            access_token: token || undefined,
+          }),
+        })
+        const body = await res.json().catch(() => ({}))
+        if (cancelled) return
+
+        if (res.ok && Array.isArray(body.methods)) {
+          setMethods(body.methods)
+          try {
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              methods: body.methods,
+              expiresAt: Date.now() + 30 * 60 * 1000,
+            }))
+          } catch {}
+        } else {
+          console.warn('[PaymentRequestView] methods fetch failed', res.status, body)
+          setMethods(FALLBACK_METHODS)
+        }
+      } catch (e) {
+        if (cancelled) return
+        console.warn('[PaymentRequestView] methods fetch error', e)
+        setMethods(FALLBACK_METHODS)
+      }
+    }
+
+    fetchMethods()
+    return () => { cancelled = true }
+  }, [ctx?.id, ctx?.status, token])
+
+  // Als de gekozen methode niet (meer) in de lijst voorkomt, val terug op de
+  // eerste beschikbare. Voorkomt dat we 'ideal' proberen te sturen naar een
+  // org die alleen creditcard heeft.
+  useEffect(() => {
+    if (!methods || methods.length === 0) return
+    if (!methods.find(m => m.id === method)) {
+      setMethod(methods[0].id)
+      setIssuerId('')
+    }
+  }, [methods, method])
+
+  const selectedMethod = useMemo(
+    () => (methods || []).find(m => m.id === method) || null,
+    [methods, method],
+  )
+  const issuers = selectedMethod?.issuers || []
+  const selectedIssuer = issuers.find(i => i.id === issuerId) || null
 
   const renderedContract = useMemo(() => {
     if (!ctx?.agreement_text) return ''
@@ -348,17 +432,26 @@ export default function PaymentRequestView() {
                 <div className="pr-methods">
                   <div className="pr-methods__label">Betaalmethode</div>
                   <div className="pr-methods__grid">
-                    {PAYMENT_METHODS.map((m) => (
+                    {methods === null ? (
+                      <>
+                        <div className="pr-method pr-method--skeleton" aria-hidden />
+                        <div className="pr-method pr-method--skeleton" aria-hidden />
+                      </>
+                    ) : (methods.length === 0 ? FALLBACK_METHODS : methods).map((m) => (
                       <button
                         key={m.id}
                         type="button"
                         className={`pr-method${method === m.id ? ' pr-method--selected' : ''}`}
                         onClick={() => { setMethod(m.id); if (m.id !== 'ideal') { setIssuerId(''); setBanksOpen(false) } }}
                       >
-                        <span className={`pr-method__logo pr-method__logo--${m.id}`} aria-hidden />
+                        <span className="pr-method__logo">
+                          {m.image
+                            ? <img src={m.image} alt="" loading="lazy" />
+                            : <span className={`pr-method__logo-fallback pr-method__logo-fallback--${m.id}`} aria-hidden />}
+                        </span>
                         <span className="pr-method__body">
                           <span className="pr-method__name">{m.name}</span>
-                          <span className="pr-method__subtitle">{m.subtitle}</span>
+                          <span className="pr-method__subtitle">{METHOD_SUBTITLES[m.id] || ''}</span>
                         </span>
                         {method === m.id && <i className="fa-solid fa-circle-check pr-method__check" />}
                       </button>
@@ -366,7 +459,7 @@ export default function PaymentRequestView() {
                   </div>
                 </div>
 
-                {method === 'ideal' && (
+                {issuers.length > 0 && (
                   <div className="pr-banks">
                     <button
                       type="button"
@@ -374,23 +467,29 @@ export default function PaymentRequestView() {
                       onClick={() => setBanksOpen(!banksOpen)}
                       aria-expanded={banksOpen}
                     >
-                      <span>
-                        {issuerId
-                          ? IDEAL_ISSUERS.find(b => b.id === issuerId)?.name
-                          : 'Kies je bank (optioneel)'}
+                      <span className="pr-banks__toggle-label">
+                        {selectedIssuer?.image && (
+                          <img src={selectedIssuer.image} alt="" className="pr-banks__toggle-logo" />
+                        )}
+                        <span>{selectedIssuer ? selectedIssuer.name : 'Kies je bank (optioneel)'}</span>
                       </span>
                       <i className={`fa-solid fa-chevron-${banksOpen ? 'up' : 'down'}`} />
                     </button>
                     {banksOpen && (
                       <div className="pr-banks__grid">
-                        {IDEAL_ISSUERS.map((b) => (
+                        {issuers.map((b) => (
                           <button
                             key={b.id}
                             type="button"
                             className={`pr-bank${issuerId === b.id ? ' pr-bank--selected' : ''}`}
                             onClick={() => { setIssuerId(issuerId === b.id ? '' : b.id); setBanksOpen(false) }}
+                            title={b.name}
                           >
-                            <span className="pr-bank__name">{b.name}</span>
+                            {b.image ? (
+                              <img src={b.image} alt={b.name} className="pr-bank__logo" loading="lazy" />
+                            ) : (
+                              <span className="pr-bank__name">{b.name}</span>
+                            )}
                             {issuerId === b.id && (
                               <i className="fa-solid fa-circle-check pr-bank__check" />
                             )}
@@ -423,10 +522,9 @@ export default function PaymentRequestView() {
               disabled={submitting || (isPaidReturn && !isPaid && isAgreed) || (!isAgreed && !agreed)}
             >
               {(() => {
-                const bankName = IDEAL_ISSUERS.find(b => b.id === issuerId)?.name
-                const methodLabel = method === 'creditcard'
-                  ? 'creditcard'
-                  : bankName || 'iDEAL'
+                const methodLabel = selectedIssuer?.name
+                  || selectedMethod?.name
+                  || (method === 'creditcard' ? 'creditcard' : 'iDEAL')
                 if (submitting) return 'Doorverwijzen…'
                 if (isPaidReturn && !isPaid && isAgreed) return 'Betaling wordt verwerkt…'
                 if (isAgreed) return `Doorgaan naar ${methodLabel}`

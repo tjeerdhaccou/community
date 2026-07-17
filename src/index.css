@@ -11536,21 +11536,53 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent-cta, var(--accent-primary, #4A90D9)) 18%, transparent);
 }
 .pr-method__logo {
-  width: 40px;
-  height: 28px;
+  width: 44px;
+  height: 32px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.pr-method__logo img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+/* Fallbacks als Mollie (nog) geen logo levert of fetch faalt. */
+.pr-method__logo-fallback {
+  width: 100%;
+  height: 100%;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   border-radius: 4px;
 }
-.pr-method__logo--ideal {
+.pr-method__logo-fallback--ideal {
   background-color: #CC0066;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'><text x='50%' y='58%' fill='white' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='22'>iDEAL</text></svg>");
 }
-.pr-method__logo--creditcard {
+.pr-method__logo-fallback--creditcard {
   background-color: #1F2937;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 20'><rect x='2' y='4' width='28' height='2.5' fill='%23F59E0B'/><rect x='2' y='8' width='6' height='4' rx='1' fill='%23F59E0B'/></svg>");
+}
+.pr-method--skeleton {
+  min-height: 64px;
+  background: linear-gradient(90deg, var(--bg-hover, #F3EEE2) 0%, var(--bg-surface, #FFFFFF) 50%, var(--bg-hover, #F3EEE2) 100%);
+  background-size: 200% 100%;
+  animation: pr-skeleton-shimmer 1.4s ease-in-out infinite;
+  border: 1.5px solid var(--border-subtle, #E8E9EE);
+  border-radius: 12px;
+  cursor: default;
+  pointer-events: none;
+}
+@keyframes pr-skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 .pr-method__body {
   display: flex;
@@ -11586,6 +11618,7 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 12px 16px;
   background: var(--bg-hover, #F3EEE2);
   border: 1px solid var(--border-subtle, #E8E9EE);
@@ -11603,6 +11636,18 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   font-size: 12px;
   color: var(--text-tertiary, #9BA1B0);
 }
+.pr-banks__toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.pr-banks__toggle-logo {
+  width: 28px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
 .pr-banks__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -11618,7 +11663,7 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   align-items: center;
   justify-content: center;
   padding: 10px 8px;
-  min-height: 44px;
+  min-height: 56px;
   background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border-subtle, #E8E9EE);
   border-radius: 10px;
@@ -11637,6 +11682,14 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   border-color: var(--accent-cta, var(--accent-primary, #4A90D9));
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent-cta, var(--accent-primary, #4A90D9)) 22%, transparent);
   background: color-mix(in oklch, var(--accent-cta, var(--accent-primary, #4A90D9)) 6%, var(--bg-surface, #FFFFFF));
+}
+.pr-bank__logo {
+  max-width: 100%;
+  max-height: 32px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 .pr-bank__name { line-height: 1.2; }
 .pr-bank__check {
