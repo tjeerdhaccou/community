@@ -76,6 +76,39 @@ export default function Dashboard() {
     return () => { stale = true }
   }, [project?.id])
 
+  // Realtime: verwijder een betaalverzoek-banner zodra 'ie paid/refunded/cancelled/expired
+  // wordt (bv. Mollie webhook update de status). Zonder deze subscription bleef
+  // de banner staan tot page-refresh.
+  useEffect(() => {
+    if (!project?.id || !profile?.id) return
+    const channel = supabase
+      .channel(`dash-payments:${profile.id}:${project.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'payment_requests',
+        filter: `recipient_profile_id=eq.${profile.id}`,
+      }, (payload) => {
+        const next = payload.new
+        setFeed(prev => {
+          const open = ['sent', 'viewed', 'agreed'].includes(next.status)
+          if (open) {
+            // Insert of update-in-place
+            const idx = prev.paymentRequests.findIndex(p => p.id === next.id)
+            const updated = { ...next }
+            const list = idx >= 0
+              ? prev.paymentRequests.map(p => p.id === next.id ? { ...p, ...updated } : p)
+              : [updated, ...prev.paymentRequests]
+            return { ...prev, paymentRequests: list }
+          }
+          // Niet meer open → drop uit lijst
+          return { ...prev, paymentRequests: prev.paymentRequests.filter(p => p.id !== next.id) }
+        })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [project?.id, profile?.id])
+
   if (loading) return <Skeleton.Page rows={5} />
   if (!project) return <div className="empty-state"><p>Project niet gevonden</p></div>
 
