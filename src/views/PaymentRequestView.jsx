@@ -480,11 +480,10 @@ export default function PaymentRequestView() {
                             onClick={() => { setIssuerId(issuerId === b.id ? '' : b.id); setBanksOpen(false) }}
                             title={b.name}
                           >
-                            {b.image ? (
-                              <img src={b.image} alt={b.name} className="pr-bank__logo" loading="lazy" />
-                            ) : (
-                              <span className="pr-bank__name">{b.name}</span>
+                            {b.image && (
+                              <img src={b.image} alt="" className="pr-bank__logo" loading="lazy" />
                             )}
+                            <span className="pr-bank__name">{b.name}</span>
                             {issuerId === b.id && (
                               <i className="fa-solid fa-circle-check pr-bank__check" />
                             )}
