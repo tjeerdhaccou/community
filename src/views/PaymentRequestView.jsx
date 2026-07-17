@@ -283,6 +283,9 @@ export default function PaymentRequestView() {
           p_user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : null),
         })
         if (agreeErr) throw agreeErr
+        // Update lokaal zodat een retry na een gefaalde initiate niet opnieuw
+        // probeert te agreen (dat zou de RPC afwijzen met invalid_state).
+        setCtx((prev) => prev ? { ...prev, status: 'agreed' } : prev)
       }
 
       const { data: sess } = await supabase.auth.getSession()
@@ -419,14 +422,6 @@ export default function PaymentRequestView() {
                   <p>Een moment geduld terwijl we de bevestiging van Mollie ophalen.</p>
                 </div>
               </div>
-            ) : isAgreed && !isPaid ? (
-              <div className="pr-state pr-state--info">
-                <i className="fa-solid fa-hourglass-half" />
-                <div>
-                  <strong>Je hebt akkoord gegeven</strong>
-                  <p>Rond de betaling af via iDEAL om het verzoek te voltooien.</p>
-                </div>
-              </div>
             ) : (
               <>
                 <div className="pr-methods">
@@ -503,13 +498,23 @@ export default function PaymentRequestView() {
                   </div>
                 )}
 
-                <label className="pr-consent">
-                  <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
-                  <span>
-                    Ik heb de overeenkomst gelezen en ga akkoord met de voorwaarden en betaling van{' '}
-                    <strong>{formatEuro(ctx.amount_cents)}</strong>.
-                  </span>
-                </label>
+                {isAgreed ? (
+                  <div className="pr-state pr-state--info">
+                    <i className="fa-solid fa-circle-check" />
+                    <div>
+                      <strong>Je hebt akkoord gegeven</strong>
+                      <p>Kies je betaalmethode hierboven om het verzoek af te ronden.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="pr-consent">
+                    <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+                    <span>
+                      Ik heb de overeenkomst gelezen en ga akkoord met de voorwaarden en betaling van{' '}
+                      <strong>{formatEuro(ctx.amount_cents)}</strong>.
+                    </span>
+                  </label>
+                )}
               </>
             )}
 
