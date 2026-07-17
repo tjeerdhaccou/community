@@ -136,14 +136,30 @@ serve(async (req) => {
 
   if (prErr || !pr) return json(404, { error: 'not_found' })
 
-  // Autorisatie: ofwel access_token match, ofwel ingelogd als recipient
+  // Autorisatie: token-match, óf ingelogd met matching profile-id, óf ingelogd
+  // met matching e-mail. Die laatste is nodig omdat recipient_profile_id
+  // nullable is (niet-leden krijgen alleen naam+email), waardoor betalen vanuit
+  // de app anders altijd 403 gaf. We gebruiken getUser() ipv getClaims() omdat
+  // die met Bearer-only clients (zonder persisted session) betrouwbaar werkt.
   let authorized = false
   if (providedToken && pr.access_token && providedToken === pr.access_token) {
     authorized = true
   } else if (userClient) {
-    const { data: claims } = await userClient.auth.getClaims()
-    const uid = claims?.claims?.sub
-    if (uid && uid === pr.recipient_profile_id) authorized = true
+    const { data: userRes } = await userClient.auth.getUser()
+    const uid = userRes?.user?.id
+    const email = typeof userRes?.user?.email === 'string' ? userRes.user.email.toLowerCase() : null
+    const recipientEmail = typeof pr.recipient_email === 'string' ? pr.recipient_email.toLowerCase() : null
+    if (uid && pr.recipient_profile_id && uid === pr.recipient_profile_id) {
+      authorized = true
+    } else if (uid && email && recipientEmail && email === recipientEmail) {
+      authorized = true
+      // Backfill recipient_profile_id zodat volgende requests via de snelle
+      // id-match gaan én RLS-policies (die op recipient_profile_id checken)
+      // vanaf nu ook werken voor deze user.
+      if (!pr.recipient_profile_id) {
+        await admin.from('payment_requests').update({ recipient_profile_id: uid }).eq('id', pr.id)
+      }
+    }
   }
   if (!authorized) return json(403, { error: 'forbidden' })
 
