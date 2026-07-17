@@ -11663,8 +11663,9 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 10px 8px;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
   min-height: 56px;
   background: var(--bg-surface, #FFFFFF);
   border: 1px solid var(--border-subtle, #E8E9EE);
@@ -11674,7 +11675,8 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   font-weight: 500;
   color: var(--text-primary, #1A1A2E);
   transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
-  text-align: center;
+  text-align: left;
+  overflow: hidden;
 }
 .pr-bank:hover {
   border-color: var(--accent-cta, var(--accent-primary, #4A90D9));
@@ -11686,14 +11688,20 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   background: color-mix(in oklch, var(--accent-cta, var(--accent-primary, #4A90D9)) 6%, var(--bg-surface, #FFFFFF));
 }
 .pr-bank__logo {
-  max-width: 100%;
-  max-height: 32px;
-  width: auto;
-  height: auto;
+  width: 32px;
+  height: 24px;
   object-fit: contain;
   display: block;
+  flex-shrink: 0;
 }
-.pr-bank__name { line-height: 1.2; }
+.pr-bank__name {
+  line-height: 1.2;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pr-bank__check {
   position: absolute;
   top: 6px;
