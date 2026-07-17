@@ -30,7 +30,7 @@ export default function Dashboard() {
   }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
   const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
   const signatureCount = useSignatureRequestCount()
-  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, stats: { members: 0, updates: 0 } })
+  const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, paymentRequests: [], stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
 
   useEffect(() => {
@@ -48,9 +48,15 @@ export default function Dashboard() {
         supabase.from('intake_responses').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('status', 'pending'),
         profile?.id ? supabase.from('document_requests').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'pending') : Promise.resolve({ count: 0 }),
         profile?.id ? supabase.from('profile_intake_requests').select('token').eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'open').order('sent_at', { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
+        profile?.id ? supabase.from('payment_requests')
+          .select('id, title, amount_cents, currency, reference, status, expires_at, access_token')
+          .eq('project_id', project.id)
+          .eq('recipient_profile_id', profile.id)
+          .in('status', ['sent', 'viewed', 'agreed'])
+          .order('sent_at', { ascending: false }) : Promise.resolve({ data: [] }),
       ]
 
-      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes, docReqRes, intakeReqRes] = await Promise.all(queries)
+      const [eventRes, updateRes, postsRes, membersRes, memberCount, updateCount, intakeRes, docReqRes, intakeReqRes, payReqRes] = await Promise.all(queries)
       if (stale) return
 
       setFeed({
@@ -61,6 +67,7 @@ export default function Dashboard() {
         intakePending: intakeRes.count || 0,
         docRequests: docReqRes.count || 0,
         intakeRequest: intakeReqRes.data?.[0] || null,
+        paymentRequests: payReqRes.data || [],
         stats: { members: memberCount.count || 0, updates: updateCount.count || 0 },
       })
     }
@@ -117,6 +124,26 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Openstaande betaalverzoeken — prominent bovenaan want actie nodig */}
+      {feed.paymentRequests.map((pr) => {
+        const isAgreed = pr.status === 'agreed'
+        const href = `/verzoeken/${pr.id}${pr.access_token ? `?t=${pr.access_token}` : ''}`
+        return (
+          <div key={pr.id} className="dash-intake-alert" onClick={() => { window.location.href = href }} role="button" tabIndex={0}>
+            <div className="dash-intake-alert__icon" style={{ background: 'rgba(240,144,32,0.14)', color: '#F09020' }}>
+              <i className="fa-solid fa-euro-sign" />
+            </div>
+            <div className="dash-intake-alert__text">
+              <strong>
+                {isAgreed ? 'Rond je betaling af' : 'Openstaand betaalverzoek'}: {(pr.amount_cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: pr.currency || 'EUR' })}
+              </strong>
+              <span>{pr.title}{pr.reference ? ` · ref ${pr.reference}` : ''}</span>
+            </div>
+            <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+          </div>
+        )
+      })}
 
       {/* Open intake-verzoek van de initiatiefnemer */}
       {feed.intakeRequest && (
