@@ -142,7 +142,7 @@ serve(async (req) => {
   const { data: pr, error: prErr } = await admin
     .from('payment_requests')
     .select(`
-      id, recipient_profile_id, access_token,
+      id, recipient_profile_id, recipient_email, access_token,
       project:projects(id, organization_id)
     `)
     .eq('id', requestId)
@@ -150,14 +150,22 @@ serve(async (req) => {
 
   if (prErr || !pr) return json(404, { error: 'not_found' })
 
-  // Autorisatie: token-match OR ingelogd als recipient
+  // Autorisatie: token-match, profile-id match, of e-mail match. Zelfde logica
+  // als initiate-payment — e-mail-fallback voor requests zonder profile_id,
+  // getUser() ipv getClaims() zodat Bearer-only clients werken.
   let authorized = false
   if (providedToken && pr.access_token && providedToken === pr.access_token) {
     authorized = true
   } else if (userClient) {
-    const { data: claims } = await userClient.auth.getClaims()
-    const uid = claims?.claims?.sub
-    if (uid && uid === pr.recipient_profile_id) authorized = true
+    const { data: userRes } = await userClient.auth.getUser()
+    const uid = userRes?.user?.id
+    const email = typeof userRes?.user?.email === 'string' ? userRes.user.email.toLowerCase() : null
+    const recipientEmail = typeof pr.recipient_email === 'string' ? pr.recipient_email.toLowerCase() : null
+    if (uid && pr.recipient_profile_id && uid === pr.recipient_profile_id) {
+      authorized = true
+    } else if (uid && email && recipientEmail && email === recipientEmail) {
+      authorized = true
+    }
   }
   if (!authorized) return json(403, { error: 'forbidden' })
 
