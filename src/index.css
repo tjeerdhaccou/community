@@ -11363,7 +11363,8 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 /* Gebruikt design-tokens die per data-theme wisselen (crowdbuilding / warm).
    Attribuut komt uit organizations.default_theme (of project override). */
 .pr-page {
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
   background: var(--bg-page, #F3F1ED);
   color: var(--text-primary, #1A1A2E);
   padding: 40px 16px 64px;
