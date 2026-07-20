@@ -544,7 +544,12 @@ export default function PublicProject({ slugOverride }) {
   const activeCtaBtnColor = previewTheme?.ctaBtnColor ?? project.cta_btn_color
 
   const fonts = FONT_MAP[activeFontTheme] || FONT_MAP.clean
-  const palette = COLOR_THEMES[activeColorTheme] || COLOR_THEMES.clean
+  // Custom thema: gebruik het opgeslagen palet (of preview-override), met
+  // 'clean' als fallback voor ontbrekende kleurrollen.
+  const activeCustomColors = previewTheme?.customColors || project.custom_colors
+  const palette = activeColorTheme === 'custom' && activeCustomColors
+    ? { ...COLOR_THEMES.clean, ...activeCustomColors }
+    : (COLOR_THEMES[activeColorTheme] || COLOR_THEMES.clean)
   const heroSection = sections.find(s => s.section_type === 'hero')
   const ctaSection = sections.find(s => s.section_type === 'cta')
   const contentSections = sections.filter(s => s.section_type !== 'hero' && s.section_type !== 'cta')
