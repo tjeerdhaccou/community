@@ -453,6 +453,24 @@ export default function PageBuilder() {
       <div className="pb-theme-section">
         <div className="pb-theme-section__label">Kleurenthema</div>
         <div className="pb-color-theme-picker">
+          {colorTheme === 'custom' && (
+            <button
+              type="button"
+              className="pb-color-theme-chip pb-color-theme-chip--active"
+              title="Aangepast palet — beheer je in het CMS (projectinstellingen)"
+            >
+              <div className="pb-color-theme-chip__swatches">
+                {['primary', 'secondary', 'accent', 'muted', 'background'].map((k) => (
+                  <span
+                    key={k}
+                    className="pb-color-theme-chip__dot"
+                    style={{ background: project?.custom_colors?.[k] || '#ccc' }}
+                  />
+                ))}
+              </div>
+              <span className="pb-color-theme-chip__name">Aangepast</span>
+            </button>
+          )}
           {Object.entries(COLOR_THEMES).map(([key, theme]) => {
             const previewColors = Object.entries(theme).filter(([k]) => k !== 'label').slice(0, 5)
             return (
