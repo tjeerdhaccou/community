@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useEvents } from '../hooks/useEvents'
 import { markSeen } from '../hooks/useUnreadIndicators'
 import { canDo } from '../lib/permissions'
+import { promptDemoSignup } from '../lib/demo'
 import { EVENT_TYPES } from '../lib/constants'
 import EventCard from '../components/EventCard'
 import EventModal from '../components/EventModal'
@@ -59,7 +60,7 @@ function groupByDate(events) {
 }
 
 export default function Events() {
-  const { project, role } = useProject()
+  const { project, role, readOnly } = useProject()
   const { user } = useAuth()
 
   // Sidebar-dot uitschakelen zodra het lid deze pagina heeft geopend.
@@ -67,6 +68,8 @@ export default function Events() {
     if (project?.id) markSeen(project.id, 'events')
   }, [project?.id])
   const { upcoming, past, loading, createEvent, updateEvent, deleteEvent, rsvp } = useEvents()
+  // In de demo is RSVP'en read-only: toon in plaats daarvan de prompt.
+  const onRsvp = readOnly ? () => promptDemoSignup() : rsvp
   const [searchParams, setSearchParams] = useSearchParams()
   // Re-open modal automatically if there's a saved draft (user navigated away mid-edit)
   const [modalOpen, setModalOpen] = useState(() => {
@@ -207,7 +210,7 @@ export default function Events() {
                   <EventCard
                     key={event.id}
                     event={event}
-                    onRsvp={rsvp}
+                    onRsvp={onRsvp}
                     onClick={() => setSelectedEvent(event)}
                   />
                 ))}

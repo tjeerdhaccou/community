@@ -7,9 +7,11 @@ import { CONSENT_VERSION } from '../lib/constants'
 import ImageCropper from './ImageCropper'
 
 export default function ProfileCompletionGuard({ children }) {
-  const { profile, reload } = useAuth()
+  const { user, profile, reload } = useAuth()
   const [completed, setCompleted] = useState(false)
 
+  // Demo-bezoeker (anonieme wegwerp-sessie) hoeft geen profiel aan te maken.
+  if (user?.is_anonymous) return children
   if (completed || !profile) return children
 
   // Bewust minimaal: we vragen alleen voor- en achternaam, zodat niemand

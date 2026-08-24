@@ -12,6 +12,7 @@ import { ToastProvider } from './components/Toast'
 import CookieConsent from './components/CookieConsent'
 import ProfileCompletionGuard from './components/ProfileCompletionGuard'
 import { getProjectSlugFromSubdomain } from './lib/subdomain'
+import { signInToDemo } from './lib/auth'
 
 const Login = lazy(() => import('./views/Login'))
 const AuthCallback = lazy(() => import('./views/AuthCallback'))
@@ -243,6 +244,18 @@ function SubdomainLookup({ slug }) {
     return () => { cancelled = true }
   }, [slug, authLoading, user?.id])
 
+  // Klik-demo: bezoekt iemand een is_demo-project zonder sessie, dan starten we
+  // stil een anonieme wegwerp-sessie. Zo passeert de bezoeker AuthGuard en kan
+  // 'ie read-only rondkijken zonder account. Eén poging per lookup.
+  const [demoSignInTried, setDemoSignInTried] = useState(false)
+  useEffect(() => {
+    if (authLoading || user || demoSignInTried) return
+    if (type === 'project' && project?.is_demo) {
+      setDemoSignInTried(true)
+      signInToDemo().catch(err => console.error('Demo sign-in mislukt', err))
+    }
+  }, [authLoading, user, type, project?.is_demo, demoSignInTried])
+
   // Auth callback must work before the DB lookup resolves — session tokens
   // arrive via URL hash and need to be set before the org becomes readable
   // under RLS. After AuthCallback navigates to returnPath, location changes,
@@ -279,6 +292,11 @@ function SubdomainLookup({ slug }) {
   }
 
   if (loading || authLoading) return <div className="loading-page"><p>Laden...</p></div>
+  // Demo zonder sessie: wacht tot de anonieme sessie er is, anders zou AuthGuard
+  // even naar /login flitsen voor de wegwerp-sessie klaarstaat.
+  if (type === 'project' && project?.is_demo && !user) {
+    return <div className="loading-page"><p>Demo laden...</p></div>
+  }
   if (type === 'project') return <ProjectSubdomainApp slug={slug} initialProject={project} />
   if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
   // Anonieme bezoekers kunnen de org niet zien door RLS — stuur naar login

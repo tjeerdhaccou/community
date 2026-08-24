@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { useSupportChat } from '../hooks/useSupportChat'
 import { useToast } from '../components/Toast'
+import { promptDemoSignup } from '../lib/demo'
 import './Chat.css'
 
 const EMOJI = ['👍', '🙏', '😊', '🎉', '❤️', '👋', '😅', '🤔', '👌', '🙌', '✅', '🚀']
@@ -51,7 +52,7 @@ function dayLabel(iso) {
 }
 
 export default function Chat() {
-  const { project } = useProject()
+  const { project, readOnly } = useProject()
   const { conversations, loading, sending, sendMessage, markRead, search } = useSupportChat()
   const toast = useToast()
 
@@ -128,6 +129,7 @@ export default function Chat() {
 
   async function handleSend(e) {
     e.preventDefault()
+    if (readOnly) { promptDemoSignup(); return }
     const text = draft.trim()
     if (!text && !file) return
     const sentFile = file

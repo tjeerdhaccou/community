@@ -80,6 +80,18 @@ export async function signOut() {
   if (error) throw error
 }
 
+// Anonieme wegwerp-sessie voor de klik-demo. Een mogelijke klant kan zo een
+// is_demo-project bekijken zonder account. De sessie krijgt géén membership,
+// dus alle write-RLS blijft weigeren (read-only). Opruimen gebeurt via
+// cleanup_anonymous_users() (zie migratie 097).
+export async function signInToDemo() {
+  const { data, error } = await supabase.auth.signInAnonymously({
+    options: { data: { full_name: 'Demo-bezoeker' } },
+  })
+  if (error) throw error
+  return data
+}
+
 export function onAuthStateChange(callback) {
   return supabase.auth.onAuthStateChange((_event, session) => {
     callback(session)

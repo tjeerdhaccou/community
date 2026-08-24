@@ -24,7 +24,17 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
   const isOrgAdminOfProject = isOrgAdmin && project?.organization_id &&
     orgMemberships.some(om => om.organization_id === project.organization_id && om.role === 'admin')
 
-  const role = membership?.role || (isOrgAdminOfProject || isPlatformAdmin ? 'admin' : 'guest')
+  // Klik-demo: een is_demo-project mag door een anonieme bezoeker (zonder
+  // membership) worden bekeken. Die krijgt 'member'-rol zodat alle interne
+  // content zichtbaar is, maar `readOnly` schermt alle schrijfacties af — en
+  // omdat er geen membership is, weigert de write-RLS server-side sowieso.
+  const isDemo = !!project?.is_demo
+  const isDemoVisitor = isDemo && !membership && !isOrgAdminOfProject && !isPlatformAdmin
+
+  const role = membership?.role
+    || (isOrgAdminOfProject || isPlatformAdmin ? 'admin'
+    : (isDemoVisitor ? 'member' : 'guest'))
+  const readOnly = isDemoVisitor
 
   useEffect(() => {
     if (!slug || !user) return
@@ -113,7 +123,7 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
   const onboardingActive = onboardingEnabled(project?.features, isLightProject)
 
   return (
-    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain, featureEnabled, isLightProject, onboardingActive }}>
+    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain, featureEnabled, isLightProject, onboardingActive, isDemo, readOnly }}>
       {children}
     </ProjectContext.Provider>
   )

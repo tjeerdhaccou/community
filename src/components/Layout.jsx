@@ -5,7 +5,9 @@ import BottomNav from './BottomNav'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
 import SupportWidget from './SupportChat/SupportWidget'
+import DemoBanner from './DemoBanner'
 import { useTheme } from '../contexts/ThemeContext'
+import { useProject } from '../contexts/ProjectContext'
 
 function ThemeToggle() {
   const { dark, toggleDark } = useTheme()
@@ -23,11 +25,13 @@ function ThemeToggle() {
 }
 
 export default function Layout() {
+  const { readOnly } = useProject()
   return (
-    <div className="app-layout">
+    <div className={`app-layout ${readOnly ? 'app-layout--demo' : ''}`}>
       <a href="#main-content" className="skip-link">Ga naar inhoud</a>
       <Sidebar />
       <main className="main-content" role="main" id="main-content">
+        {readOnly && <DemoBanner />}
         <div className="main-topbar">
           <GlobalSearch />
           <ThemeToggle />
@@ -38,7 +42,8 @@ export default function Layout() {
         </Suspense>
       </main>
       <BottomNav />
-      <SupportWidget />
+      {/* Support-chat is niet zinvol in de demo (en zou tegen RLS aanlopen). */}
+      {!readOnly && <SupportWidget />}
     </div>
   )
 }
