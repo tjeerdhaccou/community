@@ -13,6 +13,7 @@ import GroupInfoModal from '../components/Chat/GroupInfoModal'
 import Avatar from '../components/Chat/Avatar'
 import PushBanner from '../components/Chat/PushBanner'
 import { lockBodyScroll, isNarrowScreen } from '../lib/scrollLock'
+import { promptDemoSignup } from '../lib/demo'
 import './Chat.css'
 
 const EMOJI = ['👍', '🙏', '😊', '🎉', '❤️', '👋', '😅', '🤔', '👌', '🙌', '✅', '🚀']
@@ -119,7 +120,7 @@ function normalizeSupport(c, teamName) {
 
 export default function Chat() {
   const { user } = useAuth()
-  const { project, role, featureEnabled } = useProject()
+  const { project, role, featureEnabled, readOnly } = useProject()
   const toast = useToast()
   const me = user?.id
 
@@ -302,6 +303,7 @@ export default function Chat() {
 
   async function handleSend(e) {
     e.preventDefault()
+    if (readOnly) { promptDemoSignup(); return }
     const text = draft.trim()
     if (!text && !file) return
     const sentFile = file
@@ -331,6 +333,13 @@ export default function Chat() {
   async function handleJoin(threadId) {
     try { await chat.joinGroup(threadId); openThread(threadId); toast.success('Je bent aangesloten bij de groep.') }
     catch (err) { toast.error(err.message) }
+  }
+
+  // Nieuwe gesprekken starten kan niet in de demo: de RLS zou het toch weigeren,
+  // dus vragen we meteen om aan te melden i.p.v. een foutmelding te tonen.
+  function openChatModal(name) {
+    if (readOnly) { promptDemoSignup(); return }
+    setModal(name)
   }
 
   async function handleStartDirect(otherId) {
@@ -480,12 +489,12 @@ export default function Chat() {
               </button>
               {showNewMenu && (
                 <div className="chat-new__menu" role="menu">
-                  <button type="button" role="menuitem" onClick={() => { setShowNewMenu(false); setModal('direct') }}>
+                  <button type="button" role="menuitem" onClick={() => { setShowNewMenu(false); openChatModal('direct') }}>
                     <span className="chat-new__ic"><i className="fa-regular fa-user" aria-hidden="true" /></span>
                     <span><b>Bericht aan een lid</b><small>Kies iemand uit het project</small></span>
                   </button>
                   {canCreateGroup && (
-                    <button type="button" role="menuitem" onClick={() => { setShowNewMenu(false); setModal('group') }}>
+                    <button type="button" role="menuitem" onClick={() => { setShowNewMenu(false); openChatModal('group') }}>
                       <span className="chat-new__ic"><i className="fa-solid fa-user-group" aria-hidden="true" /></span>
                       <span><b>Nieuwe groep</b><small>Rond een thema, open of besloten</small></span>
                     </button>

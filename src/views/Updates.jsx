@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUpdates } from '../hooks/useUpdates'
 import { markSeen } from '../hooks/useUnreadIndicators'
 import { canDo } from '../lib/permissions'
+import { promptDemoSignup } from '../lib/demo'
 import UpdateCard from '../components/UpdateCard'
 import UpdateModal from '../components/UpdateModal'
 import UpdateDetail from '../components/UpdateDetail'
@@ -16,9 +17,11 @@ import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...UPDATE_TAGS]
 
 export default function Updates() {
-  const { project, role } = useProject()
+  const { project, role, readOnly } = useProject()
   const { user } = useAuth()
   const { updates, loading, createUpdate, editUpdate, deleteUpdate, togglePin, toggleReaction, addAttachment, removeAttachment } = useUpdates()
+  // In de demo is reageren read-only: toon in plaats daarvan de prompt.
+  const onReaction = readOnly ? () => promptDemoSignup() : toggleReaction
 
   // Markeer 'Projectnieuws' als gezien zodra je hier bent en bij nieuwe updates.
   useEffect(() => {
@@ -152,7 +155,7 @@ export default function Updates() {
               featured={i === 0 && !!update.image_url}
               onEdit={canDo(role, 'publish_update') ? handleEdit : undefined}
               onTogglePin={canDo(role, 'publish_update') ? handleTogglePin : undefined}
-              onReaction={toggleReaction}
+              onReaction={onReaction}
               onClick={() => setSelectedUpdate(update)}
             />
           ))}
