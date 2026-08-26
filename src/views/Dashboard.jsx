@@ -231,29 +231,18 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Guest banner */}
+      {/* Guest/aspirant statusstrip — passieve info, compact zodat het niet
+          concurreert met de actie-sectie eronder. */}
       {role === 'guest' && (
-        <div className="dash-guest-banner">
-          <div className="dash-guest-banner__icon">
-            <i className="fa-solid fa-clock" />
-          </div>
-          <div className="dash-guest-banner__text">
-            <h3>Je aanvraag wordt beoordeeld</h3>
-            <p>Een beheerder beoordeelt je aanvraag. In de tussentijd kun je publieke updates en documenten bekijken.</p>
-          </div>
+        <div className="dash-status-strip">
+          <i className="fa-solid fa-clock dash-status-strip__icon" />
+          <span>Je aanvraag wordt beoordeeld. Publieke updates en documenten kun je alvast bekijken.</span>
         </div>
       )}
-
-      {/* Aspirant banner */}
       {role === 'aspirant' && (
-        <div className="dash-guest-banner">
-          <div className="dash-guest-banner__icon" style={{ background: 'rgba(59,210,105,0.1)', color: '#3BD269' }}>
-            <i className="fa-solid fa-seedling" />
-          </div>
-          <div className="dash-guest-banner__text">
-            <h3>Welkom als aspirant-lid!</h3>
-            <p>Je bent goedgekeurd om de community te leren kennen. Je hebt toegang tot vrijwel alles. Na de kennismakingsperiode kun je volledig lid worden.</p>
-          </div>
+        <div className="dash-status-strip">
+          <i className="fa-solid fa-seedling dash-status-strip__icon" style={{ color: '#3BD269' }} />
+          <span>Welkom als aspirant-lid. Kijk rond; na de kennismakingsperiode word je volledig lid.</span>
         </div>
       )}
 

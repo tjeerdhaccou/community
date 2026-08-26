@@ -745,6 +745,23 @@ select.input {
   color: var(--text-primary);
 }
 
+.dash-status-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-hover, rgba(0, 0, 0, 0.03));
+  border-radius: var(--radius-md);
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-5);
+}
+.dash-status-strip__icon {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
 .dash-actions {
   margin-bottom: var(--space-5);
 }

@@ -74,6 +74,11 @@ export default function MemberWelcome() {
   const doneCount = steps.filter(s => s.done).length
   const allDone = doneCount === steps.length
 
+  // Als alle stappen klaar zijn: helemaal niet renderen — geen ruis op het
+  // dashboard. Zodra een stap weer 'open' komt (bv. profiel-completeness zakt
+  // omdat een verplicht veld weer leeg is), komt de checklist vanzelf terug.
+  if (allDone) return null
+
   function markStepDone(key) {
     if (key === 'profile') return // wordt automatisch berekend
     const next = { ...stepDone, [key]: true }
