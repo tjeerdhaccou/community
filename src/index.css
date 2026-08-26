@@ -725,6 +725,25 @@ select.input {
   color: var(--text-faint);
   font-size: var(--text-body);
 }
+.dash-intake-alert__dismiss {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 150ms, color 150ms;
+}
+.dash-intake-alert__dismiss:hover {
+  background: var(--bg-hover, rgba(0, 0, 0, 0.04));
+  color: var(--text-primary);
+}
 
 .dash-guest-banner {
   display: flex;

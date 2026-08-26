@@ -10,6 +10,8 @@ import { safeStorage } from '../lib/safeStorage'
 import Skeleton from '../components/Skeleton'
 import MemberWelcome from '../components/MemberWelcome'
 import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
+import { useToast } from '../components/Toast'
+import { friendlyError } from '../lib/logger'
 
 export default function Dashboard() {
   const { project, role, loading, basePath, onboardingActive } = useProject()
@@ -30,8 +32,18 @@ export default function Dashboard() {
   }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
   const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
   const signatureCount = useSignatureRequestCount()
+  const toast = useToast()
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, paymentRequests: [], stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
+
+  async function dismissPaymentRequest(id) {
+    setFeed(prev => ({ ...prev, paymentRequests: prev.paymentRequests.filter(p => p.id !== id) }))
+    const { error } = await supabase.rpc('dismiss_payment_request', { request_id: id })
+    if (error) {
+      // Rollback: RPC afgeslagen (bv. RLS / netwerk). Nieuwe fetch trekt de rij weer terug.
+      toast.error(friendlyError(error))
+    }
+  }
 
   useEffect(() => {
     if (!project?.id) return
@@ -49,10 +61,11 @@ export default function Dashboard() {
         profile?.id ? supabase.from('document_requests').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'pending') : Promise.resolve({ count: 0 }),
         profile?.id ? supabase.from('profile_intake_requests').select('token').eq('project_id', project.id).eq('profile_id', profile.id).eq('status', 'open').order('sent_at', { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
         profile?.id ? supabase.from('payment_requests')
-          .select('id, title, amount_cents, currency, reference, status, expires_at, access_token')
+          .select('id, title, amount_cents, currency, reference, status, expires_at, access_token, dismissed_by_recipient_at')
           .eq('project_id', project.id)
           .eq('recipient_profile_id', profile.id)
           .in('status', ['sent', 'viewed', 'agreed'])
+          .is('dismissed_by_recipient_at', null)
           .order('sent_at', { ascending: false }) : Promise.resolve({ data: [] }),
       ]
 
@@ -91,7 +104,7 @@ export default function Dashboard() {
       }, (payload) => {
         const next = payload.new
         setFeed(prev => {
-          const open = ['sent', 'viewed', 'agreed'].includes(next.status)
+          const open = ['sent', 'viewed', 'agreed'].includes(next.status) && !next.dismissed_by_recipient_at
           if (open) {
             // Insert of update-in-place
             const idx = prev.paymentRequests.findIndex(p => p.id === next.id)
@@ -101,7 +114,7 @@ export default function Dashboard() {
               : [updated, ...prev.paymentRequests]
             return { ...prev, paymentRequests: list }
           }
-          // Niet meer open → drop uit lijst
+          // Niet meer open (of weggeklikt door lid) → drop uit lijst
           return { ...prev, paymentRequests: prev.paymentRequests.filter(p => p.id !== next.id) }
         })
       })
@@ -173,6 +186,15 @@ export default function Dashboard() {
               </strong>
               <span>{pr.title}{pr.reference ? ` · ref ${pr.reference}` : ''}</span>
             </div>
+            <button
+              type="button"
+              className="dash-intake-alert__dismiss"
+              onClick={(e) => { e.stopPropagation(); dismissPaymentRequest(pr.id) }}
+              aria-label="Verzoek verbergen"
+              title="Verbergen"
+            >
+              <i className="fa-solid fa-xmark" />
+            </button>
             <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
           </div>
         )
