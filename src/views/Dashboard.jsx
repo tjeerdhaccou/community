@@ -30,7 +30,7 @@ export default function Dashboard() {
     if (safeStorage.getItem(`buuur-onboarding-skip-${project.id}`)) return
     navigate(`${basePath}/aan-de-slag`, { replace: true })
   }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
-  const { phases, activePhase, doneCount, totalCount, progressPct } = useRoadmap(project?.id)
+  const { activePhase } = useRoadmap(project?.id)
   const signatureCount = useSignatureRequestCount()
   const toast = useToast()
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, paymentRequests: [], stats: { members: 0, updates: 0 } })
@@ -207,6 +207,30 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Stats row — meteen onder de header voor projectcontext in één oogopslag */}
+      <div className="dash-stats">
+        <div className="dash-stat" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
+          <i className="fa-solid fa-user-tag dash-stat__icon" style={{ color: '#4A90D9' }} />
+          <span className="dash-stat__value">{ROLE_LABELS[role] || role}</span>
+          <span className="dash-stat__label">Jouw rol</span>
+        </div>
+        <div className="dash-stat" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
+          <i className="fa-solid fa-users dash-stat__icon" style={{ color: '#F09020' }} />
+          <span className="dash-stat__value">{feed.stats.members}</span>
+          <span className="dash-stat__label">Leden</span>
+        </div>
+        <div className="dash-stat" onClick={() => navigate(`${basePath}/updates`)} role="button" tabIndex={0}>
+          <i className="fa-solid fa-bullhorn dash-stat__icon" style={{ color: '#F23578' }} />
+          <span className="dash-stat__value">{feed.stats.updates}</span>
+          <span className="dash-stat__label">Nieuws</span>
+        </div>
+        <div className="dash-stat" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
+          <i className="fa-solid fa-road dash-stat__icon" style={{ color: '#7B5EA7' }} />
+          <span className="dash-stat__value">{activePhase?.subtitle || activePhase?.name || '—'}</span>
+          <span className="dash-stat__label">Fase</span>
+        </div>
+      </div>
+
       {/* Guest banner */}
       {role === 'guest' && (
         <div className="dash-guest-banner">
@@ -280,55 +304,6 @@ export default function Dashboard() {
 
       {/* Welkomststappen voor nieuwe leden (profiel afmaken, prikbord, roadmap) */}
       <MemberWelcome />
-
-      {/* Stepper dots progress (reads from roadmap_phases) */}
-      {phases.length > 0 && (
-        <div className="dash-stepper" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
-          <div className="dash-stepper__header">
-            <span className="dash-stepper__phase">{activePhase?.subtitle || activePhase?.name || 'Onbekend'}</span>
-            <span className="dash-stepper__count">Fase {phases.findIndex(p => p.status === 'active') + 1} van {phases.length}</span>
-          </div>
-          <div className="dash-stepper__track">
-            {phases.map((p, i) => (
-              <div key={p.id} className="dash-stepper__item">
-                {i > 0 && <div className={`dash-stepper__line ${p.status === 'done' || p.status === 'active' ? 'dash-stepper__line--filled' : ''}`} />}
-                <div className={`dash-stepper__dot dash-stepper__dot--${p.status}`} />
-              </div>
-            ))}
-          </div>
-          <div className="dash-stepper__labels">
-            {phases.map(p => (
-              <span key={p.id} className={`dash-stepper__label dash-stepper__label--${p.status}`}>
-                {p.subtitle || p.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Stats row — clickable */}
-      <div className="dash-stats">
-        <div className="dash-stat" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-user-tag dash-stat__icon" style={{ color: '#4A90D9' }} />
-          <span className="dash-stat__value">{ROLE_LABELS[role] || role}</span>
-          <span className="dash-stat__label">Jouw rol</span>
-        </div>
-        <div className="dash-stat" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-users dash-stat__icon" style={{ color: '#F09020' }} />
-          <span className="dash-stat__value">{feed.stats.members}</span>
-          <span className="dash-stat__label">Leden</span>
-        </div>
-        <div className="dash-stat" onClick={() => navigate(`${basePath}/updates`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-bullhorn dash-stat__icon" style={{ color: '#F23578' }} />
-          <span className="dash-stat__value">{feed.stats.updates}</span>
-          <span className="dash-stat__label">Nieuws</span>
-        </div>
-        <div className="dash-stat" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-road dash-stat__icon" style={{ color: '#7B5EA7' }} />
-          <span className="dash-stat__value">{activePhase?.subtitle || activePhase?.name || '—'}</span>
-          <span className="dash-stat__label">Fase</span>
-        </div>
-      </div>
 
       {/* Activity feed grid */}
       <div className="dash-feed">
