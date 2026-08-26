@@ -35,6 +35,7 @@ export default function Dashboard() {
   const toast = useToast()
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, paymentRequests: [], stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
+  const [showAllActions, setShowAllActions] = useState(false)
 
   async function dismissPaymentRequest(id) {
     setFeed(prev => ({ ...prev, paymentRequests: prev.paymentRequests.filter(p => p.id !== id) }))
@@ -127,6 +128,67 @@ export default function Dashboard() {
 
   const MONTHS_SHORT = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
 
+  // Alle "actie vereist" items in één geordende lijst zodat ze samen bovenaan
+  // renderen. Volgorde = urgentie: geld eerst, dan profiel/documenten, dan
+  // admin-taken.
+  const actionItems = []
+  feed.paymentRequests.forEach((pr) => {
+    const isAgreed = pr.status === 'agreed'
+    const href = `/verzoeken/${pr.id}${pr.access_token ? `?t=${pr.access_token}` : ''}`
+    actionItems.push({
+      id: `pay-${pr.id}`,
+      iconClass: 'fa-euro-sign',
+      iconStyle: { background: 'rgba(240,144,32,0.14)', color: '#F09020' },
+      title: `${isAgreed ? 'Rond je betaling af' : 'Openstaand betaalverzoek'}: ${(pr.amount_cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: pr.currency || 'EUR' })}`,
+      subtitle: `${pr.title}${pr.reference ? ` · ref ${pr.reference}` : ''}`,
+      onClick: () => { window.location.href = href },
+      onDismiss: () => dismissPaymentRequest(pr.id),
+    })
+  })
+  if (feed.intakeRequest) {
+    actionItems.push({
+      id: 'intake-req',
+      iconClass: 'fa-clipboard-user',
+      iconStyle: { background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' },
+      title: 'Vul je gegevens aan',
+      subtitle: 'De initiatiefnemers vragen je een paar profielvelden in te vullen',
+      onClick: () => navigate(`${basePath}/profiel-intake/${feed.intakeRequest.token}`),
+    })
+  }
+  if (feed.docRequests > 0) {
+    actionItems.push({
+      id: 'doc-req',
+      iconClass: 'fa-file-circle-question',
+      iconStyle: { background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' },
+      title: `${feed.docRequests} ${feed.docRequests === 1 ? 'documentverzoek' : 'documentverzoeken'}`,
+      subtitle: 'wacht op jouw actie',
+      onClick: () => navigate(`${basePath}/documenten?tab=mijn`),
+    })
+  }
+  if (signatureCount > 0) {
+    actionItems.push({
+      id: 'sig-req',
+      iconClass: 'fa-signature',
+      iconStyle: { background: 'rgba(245, 166, 35, 0.12)', color: 'var(--accent-orange, #F5A623)' },
+      title: `${signatureCount} ${signatureCount === 1 ? 'tekenverzoek' : 'tekenverzoeken'}`,
+      subtitle: 'wacht op jouw handtekening',
+      onClick: () => navigate(`${basePath}/documenten?tab=mijn`),
+    })
+  }
+  if (feed.intakePending > 0 && canDo(role, 'manage_intake')) {
+    actionItems.push({
+      id: 'admin-intake',
+      iconClass: 'fa-clipboard-list',
+      iconStyle: null,
+      title: `${feed.intakePending} nieuwe ${feed.intakePending === 1 ? 'aanmelding' : 'aanmeldingen'}`,
+      subtitle: 'via het intake formulier',
+      onClick: () => navigate(`${basePath}/members?tab=werving`),
+    })
+  }
+  const COLLAPSE_THRESHOLD = 3
+  const visibleActions = showAllActions ? actionItems : actionItems.slice(0, COLLAPSE_THRESHOLD)
+  const hiddenCount = actionItems.length - COLLAPSE_THRESHOLD
+
   return (
     <div className="view-dashboard">
       {/* Header with project info */}
@@ -171,46 +233,48 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Openstaande betaalverzoeken — prominent bovenaan want actie nodig */}
-      {feed.paymentRequests.map((pr) => {
-        const isAgreed = pr.status === 'agreed'
-        const href = `/verzoeken/${pr.id}${pr.access_token ? `?t=${pr.access_token}` : ''}`
-        return (
-          <div key={pr.id} className="dash-intake-alert" onClick={() => { window.location.href = href }} role="button" tabIndex={0}>
-            <div className="dash-intake-alert__icon" style={{ background: 'rgba(240,144,32,0.14)', color: '#F09020' }}>
-              <i className="fa-solid fa-euro-sign" />
+      {/* Alle "actie vereist" items in één sectie zodat het dashboard rustiger
+          leest. Volgorde staat in actionItems hierboven; > COLLAPSE_THRESHOLD
+          items wordt de rest ingeklapt achter "Toon alle". */}
+      {actionItems.length > 0 && (
+        <div className="dash-actions">
+          <div className="dash-actions__header">
+            <h3 className="dash-actions__title">Wat wacht op jou</h3>
+            <span className="dash-actions__count">{actionItems.length}</span>
+          </div>
+          {visibleActions.map((item) => (
+            <div key={item.id} className="dash-intake-alert" onClick={item.onClick} role="button" tabIndex={0}>
+              <div className="dash-intake-alert__icon" style={item.iconStyle || undefined}>
+                <i className={`fa-solid ${item.iconClass}`} />
+              </div>
+              <div className="dash-intake-alert__text">
+                <strong>{item.title}</strong>
+                <span>{item.subtitle}</span>
+              </div>
+              {item.onDismiss && (
+                <button
+                  type="button"
+                  className="dash-intake-alert__dismiss"
+                  onClick={(e) => { e.stopPropagation(); item.onDismiss() }}
+                  aria-label="Verzoek verbergen"
+                  title="Verbergen"
+                >
+                  <i className="fa-solid fa-xmark" />
+                </button>
+              )}
+              <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
             </div>
-            <div className="dash-intake-alert__text">
-              <strong>
-                {isAgreed ? 'Rond je betaling af' : 'Openstaand betaalverzoek'}: {(pr.amount_cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: pr.currency || 'EUR' })}
-              </strong>
-              <span>{pr.title}{pr.reference ? ` · ref ${pr.reference}` : ''}</span>
-            </div>
-            <button
-              type="button"
-              className="dash-intake-alert__dismiss"
-              onClick={(e) => { e.stopPropagation(); dismissPaymentRequest(pr.id) }}
-              aria-label="Verzoek verbergen"
-              title="Verbergen"
-            >
-              <i className="fa-solid fa-xmark" />
+          ))}
+          {!showAllActions && hiddenCount > 0 && (
+            <button className="dash-actions__more" onClick={() => setShowAllActions(true)}>
+              <i className="fa-solid fa-chevron-down" /> Toon alle {actionItems.length}
             </button>
-            <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
-          </div>
-        )
-      })}
-
-      {/* Open intake-verzoek van de initiatiefnemer */}
-      {feed.intakeRequest && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/profiel-intake/${feed.intakeRequest.token}`)} role="button" tabIndex={0}>
-          <div className="dash-intake-alert__icon" style={{ background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' }}>
-            <i className="fa-solid fa-clipboard-user" />
-          </div>
-          <div className="dash-intake-alert__text">
-            <strong>Vul je gegevens aan</strong>
-            <span>De initiatiefnemers vragen je een paar profielvelden in te vullen</span>
-          </div>
-          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
+          )}
+          {showAllActions && actionItems.length > COLLAPSE_THRESHOLD && (
+            <button className="dash-actions__more" onClick={() => setShowAllActions(false)}>
+              <i className="fa-solid fa-chevron-up" /> Toon minder
+            </button>
+          )}
         </div>
       )}
 
@@ -265,50 +329,6 @@ export default function Dashboard() {
           <span className="dash-stat__label">Fase</span>
         </div>
       </div>
-
-      {/* Intake alert for admins */}
-      {feed.intakePending > 0 && canDo(role, 'manage_intake') && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/members?tab=werving`)} role="button" tabIndex={0}>
-          <div className="dash-intake-alert__icon">
-            <i className="fa-solid fa-clipboard-list" />
-          </div>
-          <div className="dash-intake-alert__text">
-            <strong>{feed.intakePending} nieuwe {feed.intakePending === 1 ? 'aanmelding' : 'aanmeldingen'}</strong>
-            <span>via het intake formulier</span>
-          </div>
-          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
-        </div>
-      )}
-
-      {/* Document request alert for members */}
-      {feed.docRequests > 0 && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/documenten?tab=mijn`)} role="button" tabIndex={0}>
-          <div className="dash-intake-alert__icon" style={{ background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' }}>
-            <i className="fa-solid fa-file-circle-question" />
-          </div>
-          <div className="dash-intake-alert__text">
-            <strong>{feed.docRequests} {feed.docRequests === 1 ? 'documentverzoek' : 'documentverzoeken'}</strong>
-            <span>wacht op jouw actie</span>
-          </div>
-          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
-        </div>
-      )}
-
-      {/* Signature request alert — eigen card omdat tekenen visueel anders is dan
-          documentverzoek (oranje accent + ander icoon) en uit de DB-tabel
-          signature_request_signers komt i.p.v. document_requests. */}
-      {signatureCount > 0 && (
-        <div className="dash-intake-alert" onClick={() => navigate(`${basePath}/documenten?tab=mijn`)} role="button" tabIndex={0}>
-          <div className="dash-intake-alert__icon" style={{ background: 'rgba(245, 166, 35, 0.12)', color: 'var(--accent-orange, #F5A623)' }}>
-            <i className="fa-solid fa-signature" />
-          </div>
-          <div className="dash-intake-alert__text">
-            <strong>{signatureCount} {signatureCount === 1 ? 'tekenverzoek' : 'tekenverzoeken'}</strong>
-            <span>wacht op jouw handtekening</span>
-          </div>
-          <i className="fa-solid fa-arrow-right dash-intake-alert__arrow" />
-        </div>
-      )}
 
       {/* Activity feed grid */}
       <div className="dash-feed">
