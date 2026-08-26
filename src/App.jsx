@@ -461,6 +461,8 @@ function ProjectSubdomainApp({ slug, initialProject }) {
         {/* Public — no auth */}
         <Route path="/public" element={<PublicProject slugOverride={slug} />} />
         <Route path="/intake" element={<IntakeForm slugOverride={slug} />} />
+        {/* Oude/gedeelde links met project-id erachter blijven werken */}
+        <Route path="/intake/:projectId" element={<IntakeForm slugOverride={slug} />} />
         <Route path="/verzoeken/:id" element={<PaymentRequestView />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />

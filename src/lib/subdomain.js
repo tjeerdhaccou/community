@@ -95,6 +95,17 @@ export function getIntakeUrl(project) {
 }
 
 /**
+ * Intake-pad voor <Link> binnen dezelfde app-omgeving.
+ * Op een projectsubdomein bestaat alleen /intake (het project volgt uit de host);
+ * op het hoofddomein/preview/localhost is het /intake/<id>.
+ */
+export function getIntakePath(project) {
+  if (isProjectDomain()) return '/intake'
+  if (!project) return '/intake'
+  return `/intake/${project.id || project.slug}`
+}
+
+/**
  * Get the public site URL for a project.
  */
 export function getPublicSiteUrl(project) {

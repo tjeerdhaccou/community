@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { timeAgo, MONTHS_SHORT, MONTHS_LONG, DAYS_LONG } from '../lib/constants'
 import { COLOR_THEMES } from './PageBuilder'
 import { loadFonts } from '../lib/fonts'
+import { getIntakePath } from '../lib/subdomain'
 
 const FONT_MAP = {
   clean: { heading: 'Inter, sans-serif', body: 'Inter, sans-serif' },
@@ -78,7 +79,7 @@ function PublicEventModal({ event, project, onClose }) {
             )}
             {project.intake_enabled && (
               <Link
-                to={`/intake/${project.id}`}
+                to={getIntakePath(project)}
                 className="cl-btn cl-btn--primary"
                 style={project.cta_btn_color ? { background: project.cta_btn_color, borderColor: project.cta_btn_color } : undefined}
               >
@@ -605,7 +606,7 @@ export default function PublicProject({ slugOverride }) {
           <div className="pub-cta-banner__inner">
             {ctaSection.title && <p className="pub-cta-banner__text">{ctaSection.title}</p>}
             <Link
-              to={`/intake/${project.id}`}
+              to={getIntakePath(project)}
               className="cl-btn cl-btn--primary cl-btn--lg"
               style={{ background: activeCtaBtnColor || '#ffffff', color: activeCtaBtnColor ? '#fff' : ctaBg }}
             >
@@ -632,7 +633,7 @@ export default function PublicProject({ slugOverride }) {
         <section className="pub-block">
           <div className="pub-block__inner pub-cta-footer">
             {project.intake_enabled && !ctaSection && (
-              <Link to={`/intake/${project.id}`} className="cl-btn cl-btn--primary">
+              <Link to={getIntakePath(project)} className="cl-btn cl-btn--primary">
                 {project.cta_text || 'Schrijf je in'}
               </Link>
             )}
