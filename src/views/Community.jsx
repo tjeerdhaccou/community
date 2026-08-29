@@ -5,6 +5,7 @@ import { usePosts } from '../hooks/usePosts'
 import { useWorkgroups } from '../hooks/useWorkgroups'
 import { markSeen } from '../hooks/useUnreadIndicators'
 import { canDo } from '../lib/permissions'
+import { promptDemoSignup } from '../lib/demo'
 import PostCard from '../components/PostCard'
 import PostModal from '../components/PostModal'
 import PostDetail from '../components/PostDetail'
@@ -15,9 +16,11 @@ import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...POST_TAGS]
 
 export default function Community() {
-  const { project, role } = useProject()
+  const { project, role, readOnly } = useProject()
   const { profile } = useAuth()
   const { posts, loading, createPost, toggleLike, toggleReaction, toggleFollow, votePoll, deletePost, updatePost, togglePin } = usePosts()
+  // In de demo zijn schrijfacties read-only: toon in plaats daarvan de prompt.
+  const guard = (fn) => readOnly ? () => promptDemoSignup() : fn
   const { myWorkgroups } = useWorkgroups()
   const [activeTag, setActiveTag] = useState('Alles')
   const [modalOpen, setModalOpen] = useState(false)
@@ -99,7 +102,7 @@ export default function Community() {
       </div>
 
       {/* Inline composer prompt */}
-      {canDo(role, 'post_on_board') && (
+      {canDo(role, 'post_on_board') && !readOnly && (
         <div className="feed-composer-prompt" onClick={() => { setEditPost(null); setModalOpen(true) }}>
           {profile?.avatar_url ? (
             <img src={profile.avatar_url} alt="" className="feed-composer-prompt__avatar" />
@@ -170,7 +173,7 @@ export default function Community() {
                     : 'Wees de eerste die iets deelt in deze categorie!'
                 }
               </p>
-              {canDo(role, 'post_on_board') && (
+              {canDo(role, 'post_on_board') && !readOnly && (
                 <button className="btn-primary" onClick={() => setModalOpen(true)}>
                   <i className="fa-solid fa-pen" /> Eerste bericht plaatsen
                 </button>
@@ -182,9 +185,9 @@ export default function Community() {
                 <PostCard
                   key={post.id}
                   post={post}
-                  onReaction={toggleReaction}
-                  onFollow={toggleFollow}
-                  onVotePoll={votePoll}
+                  onReaction={guard(toggleReaction)}
+                  onFollow={guard(toggleFollow)}
+                  onVotePoll={guard(votePoll)}
                   onDelete={handleDelete}
                   onEdit={handleEdit}
                   onPin={togglePin}
@@ -236,10 +239,10 @@ export default function Community() {
         <PostDetail
           post={selectedPost}
           onClose={() => setSelectedPostId(null)}
-          onLike={toggleLike}
-          onReaction={toggleReaction}
-          onFollow={toggleFollow}
-          onVotePoll={votePoll}
+          onLike={guard(toggleLike)}
+          onReaction={guard(toggleReaction)}
+          onFollow={guard(toggleFollow)}
+          onVotePoll={guard(votePoll)}
           onDelete={handleDelete}
           onEdit={handleEdit}
           onPin={togglePin}
