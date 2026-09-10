@@ -29,6 +29,18 @@ const GENDER_OPTIONS = [
   { value: 'zeg-ik-liever-niet', label: 'Zeg ik liever niet' },
 ]
 
+// Gewenst oppervlak als bandbreedte: een exact aantal m² weet vrijwel niemand,
+// en een bandbreedte matcht beter met wat projecten aanbieden.
+const AREA_RANGE_OPTIONS = [
+  { value: 'tot-50', label: 'Tot 50 m²' },
+  { value: '50-75', label: '50 tot 75 m²' },
+  { value: '75-100', label: '75 tot 100 m²' },
+  { value: '100-125', label: '100 tot 125 m²' },
+  { value: '125-150', label: '125 tot 150 m²' },
+  { value: 'vanaf-150', label: 'Meer dan 150 m²' },
+  { value: 'weet-ik-niet', label: 'Weet ik nog niet' },
+]
+
 export const INTAKE_FIELDS = [
   // Persoonlijk
   { key: 'first_name', label: 'Voornaam', type: 'text', column: 'first_name', group: 'Persoonlijk' },
@@ -89,7 +101,8 @@ export const INTAKE_FIELDS = [
   { key: 'max_budget', label: 'Budget', type: 'text', column: 'max_budget', group: 'Wonen',
     help: 'Een indicatie helpt bij het matchen. Bijv. €1.200/maand of €350.000 koop.' },
   { key: 'desired_rooms', label: 'Gewenst aantal kamers', type: 'number', column: 'desired_rooms', group: 'Wonen' },
-  { key: 'desired_area_m2', label: 'Gewenst oppervlak (m²)', type: 'number', column: 'desired_area_m2', group: 'Wonen' },
+  { key: 'desired_area_m2', label: 'Gewenst oppervlak', type: 'select', column: 'desired_area_m2', group: 'Wonen',
+    help: 'Kies de bandbreedte die het beste past.', options: AREA_RANGE_OPTIONS },
   { key: 'parking_needed', label: 'Parkeerplaats nodig', type: 'boolean', column: 'parking_needed', group: 'Wonen' },
   { key: 'accessibility_needs', label: 'Toegankelijkheidswensen', type: 'textarea', column: 'accessibility_needs', group: 'Wonen',
     help: 'Bijv. gelijkvloers, rolstoeltoegankelijk of geen drempels.' },
