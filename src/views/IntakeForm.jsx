@@ -333,11 +333,23 @@ function renderQuestion(question, field, value, onChange) {
           <textarea id={id} value={value || ''} onChange={e => onChange(e.target.value)} rows={3} required={question.required} />
         )
       case 'boolean':
+        // Ja/Nee als radio's: zo is "nee" een expliciet antwoord en niet
+        // hetzelfde als "nog niet ingevuld" (wat bij een los vinkje wel zo was).
         return (
-          <label className="intake-radio-option">
-            <input type="checkbox" checked={!!value} onChange={e => onChange(e.target.checked)} />
-            <span>Ja</span>
-          </label>
+          <div className="intake-radio-group" role="radiogroup" aria-label={question.question_text}>
+            {[{ val: true, label: 'Ja' }, { val: false, label: 'Nee' }].map(opt => (
+              <label key={opt.label} className="intake-radio-option">
+                <input
+                  type="radio"
+                  name={id}
+                  checked={value === opt.val}
+                  onChange={() => onChange(opt.val)}
+                  required={question.required && value == null}
+                />
+                <span>{opt.label}</span>
+              </label>
+            ))}
+          </div>
         )
       case 'number':
         return (

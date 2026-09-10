@@ -9364,11 +9364,14 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   cursor: pointer;
   padding: var(--space-1) 0;
 }
-.intake-radio-option input[type="radio"] {
+.intake-radio-option input[type="radio"],
+.intake-radio-option input[type="checkbox"] {
   accent-color: var(--accent-primary);
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+  margin: 0;
+  padding: 0;
 }
 
 .intake-consent {
