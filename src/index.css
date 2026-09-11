@@ -11995,10 +11995,16 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
     overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     position: relative !important; inset: auto !important; transform: none !important; margin: 0 !important;
   }
-  /* Kaarten met een eigen binnen-scroller (.modal-card met .modal-form/form): kaart zelf niet scrollen. */
-  .modal-overlay > .modal-card { overflow: hidden; display: flex; flex-direction: column; }
+  /* Kaarten met een eigen binnen-scroller (.modal-card met .modal-form/form als
+     direct kind): kaart zelf niet scrollen, het kind wel. Kaarten zónder zo'n
+     kind (bv. documentdetail, ledenprofiel) scrollen als geheel — de basisregel
+     .modal-card { overflow: hidden } zou anders alles onder de vouw afsnijden. */
+  .modal-overlay > .modal-card { overflow-y: auto; }
+  .modal-overlay > .modal-card:has(> .modal-form, > form) { overflow: hidden; display: flex; flex-direction: column; }
   .modal-overlay > .modal-card > .modal-form,
   .modal-overlay > .modal-card > form { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  /* PDF-preview in een iframe werkt niet op iOS (leeg/eerste pagina); daar tonen we een knop. */
+  .my-docs__preview-pdf { height: 60dvh; }
   /* Sticky actiebalk bovenin detail-modals: geen afgeronde hoeken meer nodig. */
   .modal-overlay .modal-detail-actions { border-radius: 0; }
   /* Bevestigingsdialoog blijft een klein, gecentreerd kaartje. */
