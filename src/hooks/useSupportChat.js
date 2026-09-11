@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger, friendlyError } from '../lib/logger'
 import { useAuth } from '../contexts/AuthContext'
@@ -44,6 +44,7 @@ export function useSupportChat() {
   const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const instanceRef = useRef(Math.random().toString(36).slice(2, 8))
 
   const fetchAll = useCallback(async () => {
     if (!userId) return
@@ -73,13 +74,24 @@ export function useSupportChat() {
   // simpel (geen handmatige merge-logica die uit de pas kan lopen met het widget).
   useEffect(() => {
     if (!userId) return
+    let joinedBefore = false
     const channel = supabase
-      .channel(`support-chat-${userId}`)
+      .channel(`support-chat-${userId}-${instanceRef.current}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, () => fetchAll())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_messages' }, () => fetchAll())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'support_conversations' }, () => fetchAll())
-      .subscribe()
-    return () => supabase.removeChannel(channel)
+      .subscribe((status) => {
+        // Na een reconnect kunnen events gemist zijn → opnieuw ophalen.
+        if (status === 'SUBSCRIBED') { if (joinedBefore) fetchAll(); joinedBefore = true }
+      })
+    function onVisible() { if (document.visibilityState === 'visible') fetchAll() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', fetchAll)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', fetchAll)
+      supabase.removeChannel(channel)
+    }
   }, [userId, fetchAll])
 
   // Verstuur een bericht. Zonder convId (nog geen gesprek) maakt het lid er zelf
