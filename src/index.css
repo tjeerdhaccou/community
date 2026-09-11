@@ -12069,3 +12069,16 @@ html.more-open .sc-fab-wrap { display: none !important; }
   .events-filter-row .tag-filter-wrap--scroll { min-width: 0; width: calc(100% + 32px); }
   .tag-filter-wrap--scroll { min-width: 0; max-width: calc(100% + 32px); }
 }
+
+/* ===== Mobiel: eventdetail als één doorlopende pagina =====
+   Op desktop staan kop en tabs vast en scrolt alleen de inhoud. Op de telefoon
+   is dat krap: kop + tabs nemen de halve hoogte in en de foto verdwijnt eronder.
+   Daar scrolt de hele kaart en staat niets vast. */
+@media (max-width: 768px) {
+  .modal-overlay > .event-detail-card--tabbed { height: 100dvh; display: block; overflow-y: auto; }
+  .event-detail-card--tabbed .modal-detail-actions { position: static; }
+  .event-detail-card--tabbed .event-detail-topbar { padding: 4px 16px 12px; }
+  .event-detail-card--tabbed .event-detail-topbar h2 { font-size: 22px; }
+  .event-detail-card--tabbed .event-tabs { position: static; }
+  .event-detail-card--tabbed .event-detail-content { flex: none; overflow: visible; padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }
+}
