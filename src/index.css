@@ -5766,6 +5766,12 @@ select.input {
     overflow-y: visible;
   }
 
+  /* iOS Safari zoomt automatisch in op invoervelden kleiner dan 16px; dat geeft
+     een "gammel" gevoel en laat de layout uit beeld schuiven. Dubbeltik-zoom uit,
+     pinch-zoom (toegankelijkheid) blijft werken. */
+  input, textarea, select { font-size: max(16px, 1em); }
+  body { touch-action: manipulation; }
+
   .dashboard-cover {
     height: 140px;
   }
