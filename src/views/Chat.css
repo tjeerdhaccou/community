@@ -13,7 +13,9 @@
 
 /* ── Gesprekkenlijst ───────────────────────────────────────────────────── */
 .chat-list {
-  width: 292px;
+  /* Schaalt mee: op middelgrote schermen was 292px te krap voor titels met
+     slot-/dempicoon en badge; op brede schermen mag hij tot 360px. */
+  width: clamp(280px, 34%, 360px);
   flex: none;
   display: flex;
   flex-direction: column;
@@ -327,17 +329,17 @@
 
 /* ── Fase 3: push-banner, @-vermeldingen ──────────────────────────────────── */
 .push-banner {
-  display: flex; align-items: flex-start; gap: 10px; margin: 12px 12px 0; padding: 11px 12px;
+  display: flex; flex-direction: column; gap: 8px; margin: 12px 12px 0; padding: 12px 12px 12px;
   background: rgba(var(--accent-blue-rgb), .10); border-radius: var(--radius-md);
 }
-.push-banner__ic { width: 30px; height: 30px; flex: none; border-radius: var(--radius-full); background: var(--accent-cta); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; }
-.push-banner__txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: var(--text-secondary); line-height: 1.4; }
-.push-banner__txt b { font-size: 13px; color: var(--text-primary); font-weight: var(--weight-semibold); }
+.push-banner__head { display: flex; align-items: center; gap: 9px; }
+.push-banner__head b { flex: 1; min-width: 0; font-size: 13.5px; color: var(--text-primary); font-weight: var(--weight-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.push-banner__ic { width: 28px; height: 28px; flex: none; border-radius: var(--radius-full); background: var(--accent-cta); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.push-banner__txt { margin: 0; font-size: 12.5px; color: var(--text-secondary); line-height: 1.45; }
 .push-banner__txt i { font-size: 11px; }
-.push-banner__actions { display: flex; align-items: center; gap: 2px; flex: none; }
-.push-banner__btn { border: none; background: var(--accent-cta); color: #fff; font-size: 12.5px; font-weight: var(--weight-semibold); padding: 6px 11px; border-radius: var(--radius-full); cursor: pointer; font-family: inherit; }
+.push-banner__btn { align-self: flex-start; border: none; background: var(--accent-cta); color: #fff; font-size: 13px; font-weight: var(--weight-semibold); padding: 7px 14px; border-radius: var(--radius-full); cursor: pointer; font-family: inherit; }
 .push-banner__btn:disabled { opacity: .6; cursor: default; }
-.push-banner__x { border: none; background: transparent; color: var(--text-tertiary); width: 28px; height: 28px; border-radius: var(--radius-full); cursor: pointer; }
+.push-banner__x { flex: none; border: none; background: transparent; color: var(--text-tertiary); width: 28px; height: 28px; border-radius: var(--radius-full); cursor: pointer; margin: -4px -6px -4px 0; }
 .push-banner__x:hover { background: var(--bg-hover); }
 
 .chat-mentions { display: flex; flex-direction: column; background: var(--bg-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-lg, 0 12px 40px rgba(0,0,0,.15)); padding: 4px; max-height: 220px; overflow-y: auto; }
