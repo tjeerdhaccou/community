@@ -7,6 +7,7 @@ import { useUnreviewedMemberUploads } from './useUnreviewedMemberUploads'
 import { useSignatureRequestCount } from './useSignatureRequestCount'
 import { useSupportConversation } from './useSupportConversation'
 import { useMemberChatUnread } from './useMemberChat'
+import { setAppBadge } from '../lib/push'
 import { useUnreadIndicators, markSeen as markSeenLocal } from './useUnreadIndicators'
 
 /**
@@ -85,6 +86,8 @@ export function useSidebarSignals() {
   const { unreadCount: supportUnread } = useSupportConversation()
   const memberChatUnread = useMemberChatUnread(project?.id, featureEnabled('chat') && canDo(role, 'use_member_chat'))
   const chatUnread = supportUnread + memberChatUnread
+  // PWA-appicoon (Android/desktop): aantal ongelezen chatberichten.
+  useEffect(() => { setAppBadge(chatUnread) }, [chatUnread])
 
   // ---- Unread dots: prikbord, projectnieuws, events (cross-device via useUnreadIndicators)
   const { hasNewBoard, hasNewUpdates, hasNewEvents } = useUnreadIndicators(project?.id)
