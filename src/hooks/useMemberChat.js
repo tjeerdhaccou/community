@@ -94,6 +94,10 @@ export function useMemberChat({ enabled = true } = {}) {
   const [sending, setSending] = useState(false)
   const [messagesByThread, setMessagesByThread] = useState({})
   const loadedRef = useRef(new Set())
+  // Uniek per hook-instantie: supabase.channel(topic) geeft een bestaand kanaal
+  // terug bij dezelfde naam, en een tweede subscribe/removeChannel zou dan het
+  // kanaal van een andere component kapen.
+  const instanceRef = useRef(Math.random().toString(36).slice(2, 8))
 
   // ---- Threads + ontdek-lijst + unread in één ronde --------------------------
   const fetchThreads = useCallback(async () => {
@@ -147,11 +151,34 @@ export function useMemberChat({ enabled = true } = {}) {
     setMessagesByThread((prev) => ({ ...prev, [threadId]: (data || []).reverse() }))
   }, [])
 
+  // Alles opnieuw ophalen: lijst + berichten van threads die al geladen zijn.
+  // Nodig na een verbroken websocket (telefoon in slaapstand, tab op de
+  // achtergrond, token-verversing): Realtime levert gemiste events niet na.
+  const resync = useCallback(async () => {
+    await fetchThreads()
+    const ids = [...loadedRef.current]
+    await Promise.all(ids.map((id) => loadMessages(id, { force: true })))
+  }, [fetchThreads, loadMessages])
+
+  useEffect(() => {
+    if (!me || !projectId || !enabled) return
+    function onVisible() { if (document.visibilityState === 'visible') resync() }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', resync)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', resync)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [me, projectId, enabled, resync])
+
   // ---- Realtime -----------------------------------------------------------------
   useEffect(() => {
     if (!me || !projectId || !enabled) return
+    let joinedBefore = false
     const channel = supabase
-      .channel(`member-chat-${projectId}-${me}`)
+      .channel(`member-chat-${projectId}-${me}-${instanceRef.current}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async (payload) => {
         const msg = payload.new
         // Alleen threads die we al open hebben gehad krijgen het bericht erbij;
@@ -178,9 +205,12 @@ export function useMemberChat({ enabled = true } = {}) {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_threads' }, () => fetchThreads())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants' }, () => fetchThreads())
-      .subscribe()
+      .subscribe((status) => {
+        // Bij een hér-join (na reconnect) is er mogelijk iets gemist → resync.
+        if (status === 'SUBSCRIBED') { if (joinedBefore) resync(); joinedBefore = true }
+      })
     return () => supabase.removeChannel(channel)
-  }, [me, projectId, enabled, fetchThreads])
+  }, [me, projectId, enabled, fetchThreads, resync])
 
   // ---- Acties -------------------------------------------------------------------
   async function sendMessage(threadId, body, file = null, mentions = []) {
@@ -347,6 +377,7 @@ export function useMemberChatUnread(projectId, enabled = true) {
   const { user } = useAuth()
   const me = user?.id
   const [total, setTotal] = useState(0)
+  const instanceRef = useRef(Math.random().toString(36).slice(2, 8))
 
   const fetchCount = useCallback(async () => {
     if (!me || !projectId || !enabled) { setTotal(0); return }
@@ -360,11 +391,12 @@ export function useMemberChatUnread(projectId, enabled = true) {
   useEffect(() => {
     if (!me || !projectId || !enabled) return
     const ch = supabase
-      .channel(`member-chat-unread-${projectId}-${me}`)
+      .channel(`member-chat-unread-${projectId}-${me}-${instanceRef.current}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, fetchCount)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_participants', filter: `profile_id=eq.${me}` }, fetchCount)
-      .subscribe()
-    return () => supabase.removeChannel(ch)
+      .subscribe((status) => { if (status === 'SUBSCRIBED') fetchCount() })
+    document.addEventListener('visibilitychange', fetchCount)
+    return () => { document.removeEventListener('visibilitychange', fetchCount); supabase.removeChannel(ch) }
   }, [me, projectId, enabled, fetchCount])
 
   return total
