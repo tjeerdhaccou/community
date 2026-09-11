@@ -12011,3 +12011,12 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 
 /* Meer-sheet open: support-bubbel uit beeld. */
 html.more-open .sc-fab-wrap { display: none !important; }
+
+/* Werkgroep-kaarten (Organisatie › Groepen) op mobiel: tekst over de volle
+   breedte, type-tag en knoppen op een eigen regel eronder. */
+@media (max-width: 768px) {
+  .wg-card__row { flex-wrap: wrap; gap: 10px 12px !important; padding: 14px !important; }
+  .wg-card__text { flex: 1 1 calc(100% - 50px) !important; }
+  .wg-card__type { margin-left: 50px; }
+  .wg-card__row > .btn-sm { margin-left: 0; }
+}

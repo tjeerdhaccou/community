@@ -170,6 +170,16 @@ function safeDownloadName(fileName) {
 export async function downloadProjectFile(pathOrUrl, { bucket = 'project-files', fileName } = {}) {
   const url = await getSignedUrl(pathOrUrl, { bucket, download: safeDownloadName(fileName) || true })
   if (!url) return false
+  // Eerst controleren of het bestand er echt is. Storage kan een URL signen
+  // voor metadata waarvan de onderliggende blob ontbreekt (gezien op prod,
+  // sept 2026); zonder deze check landt het lid op een kale JSON-404-pagina.
+  try {
+    const head = await fetch(url, { method: 'HEAD' })
+    if (!head.ok) { console.error('downloadProjectFile: bestand niet beschikbaar', head.status, pathOrUrl); return false }
+  } catch (err) {
+    console.error('downloadProjectFile: HEAD mislukt', err)
+    return false
+  }
   window.location.href = url
   return true
 }

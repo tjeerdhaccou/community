@@ -4,8 +4,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { logger, friendlyError } from '../lib/logger'
 import { uploadFile, downloadProjectFile } from '../lib/storage'
+import { useToast } from '../components/Toast'
 
 export function useMyDocuments() {
+  const toast = useToast()
   const { user } = useAuth()
   const { project } = useProject()
   const [files, setFiles] = useState([])
@@ -45,7 +47,10 @@ export function useMyDocuments() {
     })
 
     const ok = await downloadProjectFile(filePath, { bucket: 'member-files', fileName })
-    if (!ok) logger.error('download mislukt voor', filePath)
+    if (!ok) {
+      logger.error('download mislukt voor', filePath)
+      toast.error('Dit bestand is niet (meer) beschikbaar. Vraag het team om het opnieuw te uploaden.')
+    }
   }
 
   async function upload(file, requestId = null) {

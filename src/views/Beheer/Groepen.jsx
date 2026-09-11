@@ -184,21 +184,21 @@ function WorkgroupCard({ wg, members, allMembers, expanded, onToggle, onEdit, on
       boxShadow: 'var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08))',
       overflow: 'hidden',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
-        <div style={{
+      <div className="wg-card__row" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 16 }}>
+        <div className="wg-card__icon" style={{
           flexShrink: 0, width: 38, height: 38, borderRadius: '50%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: 'var(--bg-hover)', color: 'var(--accent-primary, #4A90D9)',
         }}>
           <i className={wgIcon(wg.icon)} />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="wg-card__text" style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{wg.name}</div>
           {wg.description && (
             <div style={{ fontSize: 'var(--text-caption)', color: 'var(--text-secondary)', marginTop: 2 }}>{wg.description}</div>
           )}
         </div>
-        <span className="doc-row__source" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)', flexShrink: 0 }}>
+        <span className="doc-row__source wg-card__type" style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)', flexShrink: 0 }}>
           {TYPE_LABELS[wg.type] || wg.type}
         </span>
         <button className="btn-secondary btn-sm" onClick={onToggle} style={{ flexShrink: 0 }}>
