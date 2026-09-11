@@ -24,7 +24,7 @@ const MSG_SELECT =
 
 const THREAD_SELECT = `
   id, project_id, kind, title, topic, emoji, join_policy, archived_at, last_message_at, created_at, created_by,
-  chat_participants(profile_id, role, last_read_at, muted_until, profile:profiles!profile_id(id, full_name, avatar_url)),
+  chat_participants(profile_id, role, last_read_at, muted_until, hidden_at, profile:profiles!profile_id(id, full_name, avatar_url)),
   chat_messages(id, body, created_at, sender_id, deleted_at, attachment_path)
 `
 
@@ -38,6 +38,7 @@ function normalizeThread(row, me, unreadMap) {
     role: p.role,
     last_read_at: p.last_read_at,
     muted_until: p.muted_until,
+    hidden_at: p.hidden_at,
     full_name: p.profile?.full_name ?? null,
     avatar_url: p.profile?.avatar_url ?? null,
   }))
@@ -65,6 +66,8 @@ function normalizeThread(row, me, unreadMap) {
     myRole: mine?.role ?? null,
     isMember: !!mine,
     muted: !!(mine?.muted_until && new Date(mine.muted_until) > new Date()),
+    // Verborgen tot er een nieuwer bericht is dan het moment van verbergen.
+    hidden: !!(mine?.hidden_at && !(row.last_message_at && row.last_message_at > mine.hidden_at)),
     archived: !!row.archived_at,
     joinPolicy: row.join_policy,
     created_by: row.created_by,
@@ -126,7 +129,7 @@ export function useMemberChat({ enabled = true } = {}) {
 
     // RLS geeft ook open groepen (Ontdek) en, voor moderators, alle groepen terug.
     // Mijn lijst = waar ik deelnemer ben; Ontdek = open, niet gearchiveerd, geen deelnemer.
-    setThreads(all.filter((t) => t.isMember && !t.archived))
+    setThreads(all.filter((t) => t.isMember && !t.archived && !t.hidden))
     setDiscover(all.filter((t) => !t.isMember && t.kind === 'group' && t.joinPolicy === 'open' && !t.archived))
     setLoading(false)
   }, [me, projectId, enabled])
@@ -304,6 +307,15 @@ export function useMemberChat({ enabled = true } = {}) {
     await fetchThreads()
   }
 
+  // "Verwijderen" uit mijn lijst: verbergen tot er een nieuw bericht komt. De
+  // ander houdt het gesprek gewoon; bij een DM komt hij terug zodra die iets stuurt.
+  async function hideThread(threadId) {
+    setThreads((prev) => prev.filter((t) => t.id !== threadId))
+    const { error } = await supabase.from('chat_participants').update({ hidden_at: new Date().toISOString() })
+      .eq('thread_id', threadId).eq('profile_id', me)
+    if (error) { logger.error('chat: verbergen mislukt', error); fetchThreads(); throw new Error(friendlyError(error)) }
+  }
+
   async function setMuted(threadId, muted) {
     // Dempen = "voor altijd" (ver in de toekomst); ontdempen = null.
     const until = muted ? '2999-01-01T00:00:00Z' : null
@@ -364,7 +376,7 @@ export function useMemberChat({ enabled = true } = {}) {
     messagesByThread, loadMessages,
     sendMessage, markRead, search,
     startDirect, createGroup, joinGroup, leaveGroup, addMembers, removeMember,
-    setMuted, updateGroup, archiveGroup, deleteMessage,
+    setMuted, updateGroup, archiveGroup, deleteMessage, hideThread,
     refresh: fetchThreads,
   }
 }

@@ -338,6 +338,17 @@ export default function Chat() {
     })
   }
 
+  function askHide(thread) {
+    setConfirm({
+      message: `Gesprek met ${firstName(thread.title)} verwijderen uit je lijst? Stuurt ${firstName(thread.title)} een nieuw bericht, dan komt het gesprek vanzelf terug.`,
+      label: 'Verwijderen',
+      onConfirm: async () => {
+        try { await chat.hideThread(thread.id); setSelectedId(null); setMobileThread(false) }
+        catch (err) { toast.error(err.message) }
+      },
+    })
+  }
+
   function askDeleteMessage(msg) {
     setConfirm({
       message: 'Dit bericht verwijderen? Anderen zien dan "Bericht verwijderd".',
@@ -546,6 +557,13 @@ export default function Chat() {
                 ) : 'Privégesprek · alleen jullie twee kunnen dit lezen'}
             </div>
           </div>
+          {isDirect && (
+            <div className="chat-head__actions">
+              <button type="button" className="chat-icon" onClick={() => askHide(selected)} aria-label="Gesprek verwijderen uit je lijst" title="Verwijderen uit je lijst">
+                <i className="fa-regular fa-trash-can" aria-hidden="true" />
+              </button>
+            </div>
+          )}
           {isGroup && (
             <div className="chat-head__actions">
               <button type="button" className="chat-icon" onClick={() => setModal('info')} aria-label="Groepsinformatie en leden" title="Leden">

@@ -54,30 +54,23 @@ export default function PushBanner() {
 
   return (
     <div className="push-banner" role="status">
-      <span className="push-banner__ic"><i className="fa-solid fa-bell" aria-hidden="true" /></span>
-      <div className="push-banner__txt">
-        {state === 'ios' ? (
-          <>
-            <b>Meldingen op je iPhone?</b>
-            <span>Tik in Safari op <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true" /> Delen en kies <em>Zet op beginscherm</em>. Open buuur daarna vanaf je beginscherm en zet meldingen aan.</span>
-          </>
-        ) : (
-          <>
-            <b>Meldingen op je telefoon</b>
-            <span>Krijg een melding zodra iemand je een bericht stuurt.</span>
-          </>
-        )}
-      </div>
-      <div className="push-banner__actions">
-        {state !== 'ios' && (
-          <button type="button" className="push-banner__btn" onClick={enable} disabled={state === 'busy'}>
-            {state === 'busy' ? 'Even…' : 'Aanzetten'}
-          </button>
-        )}
+      <div className="push-banner__head">
+        <span className="push-banner__ic"><i className="fa-solid fa-bell" aria-hidden="true" /></span>
+        <b>{state === 'ios' ? 'Meldingen op je iPhone' : 'Meldingen op je telefoon'}</b>
         <button type="button" className="push-banner__x" onClick={dismiss} aria-label="Sluiten">
           <i className="fa-solid fa-xmark" aria-hidden="true" />
         </button>
       </div>
+      <p className="push-banner__txt">
+        {state === 'ios'
+          ? <>Tik in Safari op <i className="fa-solid fa-arrow-up-from-bracket" aria-hidden="true" /> Delen, kies <em>Zet op beginscherm</em> en open buuur daarna vanaf je beginscherm.</>
+          : 'Krijg een melding zodra iemand je een bericht stuurt.'}
+      </p>
+      {state !== 'ios' && (
+        <button type="button" className="push-banner__btn" onClick={enable} disabled={state === 'busy'}>
+          {state === 'busy' ? 'Even…' : 'Meldingen aanzetten'}
+        </button>
+      )}
     </div>
   )
 }
