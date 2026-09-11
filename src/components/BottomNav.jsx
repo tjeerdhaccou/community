@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useProject } from '../contexts/ProjectContext'
 import { useSidebarSignals } from '../hooks/useSidebarSignals'
 import { NAV_SECTIONS, ACCOUNT_ITEM, MOBILE_PRIMARY_ORDER, isNavItemVisible } from '../lib/navigation'
+import { useBodyScrollLock } from '../lib/scrollLock'
 
 const PRIMARY_SLOTS = 4 // + "Meer" = 5 items in de balk
 
@@ -65,12 +66,7 @@ export default function BottomNav() {
 
   // Sheet sluiten bij navigatie (bv. via terugknop) en scroll vastzetten zolang hij open is.
   useEffect(() => { setMoreOpen(false) }, [location.pathname])
-  useEffect(() => {
-    if (!moreOpen) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
-  }, [moreOpen])
+  useBodyScrollLock(moreOpen)
 
   // Signalen per item (zelfde semantiek als de sidebar).
   function badgeFor(to) {

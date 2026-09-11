@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMembers } from '../../hooks/useMembers'
 import { ROLE_LABELS } from '../../lib/constants'
 import Avatar from './Avatar'
+import { isNarrowScreen } from '../../lib/scrollLock'
 
 const CHAT_ROLES = ['member', 'moderator', 'admin']
 
@@ -30,7 +31,7 @@ export default function MemberPicker({ mode = 'single', excludeIds = [], selecte
       <div className="chat-search chat-search--modal">
         <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
         <input
-          autoFocus={autoFocus}
+          autoFocus={autoFocus && !isNarrowScreen()}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Zoek op naam…"

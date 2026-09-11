@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import MemberPicker from './MemberPicker'
+import { useBodyScrollLock, isNarrowScreen } from '../../lib/scrollLock'
 
 const EMOJI_CHOICES = ['💬', '🌱', '💶', '🏘️', '🔨', '🚲', '🧒', '🎉', '📐', '⚡', '🌳', '🍽️', '🎨', '📣', '🔒']
 
 /** Nieuwe thema-groep: naam, thema, emoji, open/besloten en optioneel leden. */
 export default function NewGroupModal({ onCreate, onClose }) {
+  useBodyScrollLock(true)
   const { user } = useAuth()
   const [title, setTitle] = useState('')
   const [topic, setTopic] = useState('')
@@ -31,7 +33,7 @@ export default function NewGroupModal({ onCreate, onClose }) {
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay modal-overlay--sheet" onClick={onClose}>
       <div className="modal-card modal-card--chat" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="newgroup-title">
         <div className="modal-header">
           <h2 id="newgroup-title">Nieuwe groep</h2>
@@ -53,7 +55,7 @@ export default function NewGroupModal({ onCreate, onClose }) {
                   </div>
                 )}
               </div>
-              <input id="grp-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Bijv. Duurzaamheid" maxLength={60} required />
+              <input id="grp-title" autoFocus={!isNarrowScreen()} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Bijv. Duurzaamheid" maxLength={60} required />
             </div>
           </div>
 

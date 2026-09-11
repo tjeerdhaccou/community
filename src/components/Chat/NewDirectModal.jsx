@@ -1,9 +1,11 @@
 import MemberPicker from './MemberPicker'
+import { useBodyScrollLock, isNarrowScreen } from '../../lib/scrollLock'
 
 /** Kies één lid → start (of hervat) een 1-op-1-gesprek. */
 export default function NewDirectModal({ excludeIds = [], onPick, onClose }) {
+  useBodyScrollLock(true)
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay modal-overlay--sheet" onClick={onClose}>
       <div className="modal-card modal-card--chat" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="newdirect-title">
         <div className="modal-header">
           <h2 id="newdirect-title">Bericht aan een lid</h2>

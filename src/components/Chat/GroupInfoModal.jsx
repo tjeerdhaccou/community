@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Avatar from './Avatar'
 import MemberPicker from './MemberPicker'
+import { useBodyScrollLock, isNarrowScreen } from '../../lib/scrollLock'
 
 const EMOJI_CHOICES = ['💬', '🌱', '💶', '🏘️', '🔨', '🚲', '🧒', '🎉', '📐', '⚡', '🌳', '🍽️', '🎨', '📣', '🔒']
 
@@ -9,6 +10,7 @@ const EMOJI_CHOICES = ['💬', '🌱', '💶', '🏘️', '🔨', '🚲', '🧒'
  * bewerken, leden toevoegen/verwijderen en archiveren.
  */
 export default function GroupInfoModal({ thread, me, canManage, onAddMembers, onRemoveMember, onUpdate, onToggleMute, onLeave, onArchive, onClose }) {
+  useBodyScrollLock(true)
   const [tab, setTab] = useState('members') // members | add | edit
   const [selected, setSelected] = useState(new Set())
   const [title, setTitle] = useState(thread.title || '')
@@ -42,7 +44,7 @@ export default function GroupInfoModal({ thread, me, canManage, onAddMembers, on
   const sorted = [...owners, ...others].sort((a, b) => (a.role === b.role ? (a.full_name || '').localeCompare(b.full_name || '') : a.role === 'owner' ? -1 : 1))
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay modal-overlay--sheet" onClick={onClose}>
       <div className="modal-card modal-card--chat" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="grpinfo-title">
         <div className="modal-header">
           <div className="grp-head">
