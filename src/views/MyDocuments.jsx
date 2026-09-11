@@ -9,6 +9,8 @@ import { useProject } from '../contexts/ProjectContext'
 import { useToast } from '../components/Toast'
 import ConfirmModal from '../components/ConfirmModal'
 import { supabase } from '../lib/supabase'
+import { isNarrowScreen } from '../lib/scrollLock'
+import { openProjectFile } from '../lib/storage'
 import { logger } from '../lib/logger'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
 
@@ -861,12 +863,22 @@ function FileDetailModal({ file, isOwn, removalRequest, hasPendingRemoval, onClo
               <img src={previewUrl} alt={file.title} className="my-docs__preview-image" />
             </a>
           )}
-          {isPdf && previewUrl && !previewError && (
+          {isPdf && previewUrl && !previewError && !isNarrowScreen() && (
             <iframe
               src={previewUrl}
               title={file.title}
               className="my-docs__preview-pdf"
             />
+          )}
+          {isPdf && previewUrl && !previewError && isNarrowScreen() && (
+            <button
+              type="button"
+              className="btn-secondary"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={() => openProjectFile(file.file_path, 'member-files')}
+            >
+              <i className="fa-solid fa-file-pdf" /> Bekijk PDF
+            </button>
           )}
           {(isImage || isPdf) && !previewUrl && !previewError && (
             <div className="my-docs__preview-placeholder">
