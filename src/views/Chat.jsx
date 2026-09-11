@@ -11,6 +11,7 @@ import NewDirectModal from '../components/Chat/NewDirectModal'
 import NewGroupModal from '../components/Chat/NewGroupModal'
 import GroupInfoModal from '../components/Chat/GroupInfoModal'
 import Avatar from '../components/Chat/Avatar'
+import PushBanner from '../components/Chat/PushBanner'
 import './Chat.css'
 
 const EMOJI = ['👍', '🙏', '😊', '🎉', '❤️', '👋', '😅', '🤔', '👌', '🙌', '✅', '🚀']
@@ -71,6 +72,25 @@ function dayLabel(iso) {
 
 function firstName(name) {
   return (name || '').split(' ')[0] || 'Lid'
+}
+
+function escapeRe(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** Splitst tekst in stukken en licht @Naam van deelnemers uit. */
+function renderWithMentions(text, names) {
+  if (!text || !names || names.length === 0) return text
+  const re = new RegExp(`@(${names.map(escapeRe).join('|')})`, 'g')
+  const out = []
+  let last = 0, m
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index))
+    out.push(<span key={m.index} className="chat-mention">@{m[1]}</span>)
+    last = m.index + m[0].length
+  }
+  if (last < text.length) out.push(text.slice(last))
+  return out
 }
 
 /* ── Support-gesprekken normaliseren naar dezelfde thread-vorm ─────────────── */
@@ -139,6 +159,7 @@ export default function Chat() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [highlightId, setHighlightId] = useState(null)
+  const [mentionIds, setMentionIds] = useState(() => new Set())
 
   const bodyRef = useRef(null)
   const fileRef = useRef(null)
@@ -235,6 +256,7 @@ export default function Chat() {
     setSelectedId(id)
     setMobileThread(true)
     setShowEmoji(false)
+    setMentionIds(new Set())
   }
 
   function openResult(res) {
@@ -255,7 +277,8 @@ export default function Chat() {
         const id = await support.sendMessage(selected?.id ?? null, text, sentFile)
         if (id) openThread(id)
       } else {
-        await chat.sendMessage(selected.id, text, sentFile)
+        await chat.sendMessage(selected.id, text, sentFile, activeMentions(text))
+        setMentionIds(new Set())
       }
     } catch (err) {
       toast.error(err.message)
@@ -321,6 +344,34 @@ export default function Chat() {
   const searching = query.trim().length >= 2
   const isGroup = selected?.kind === 'group'
   const isDirect = selected?.kind === 'direct'
+
+  // @-vermeldingen: alleen in groepen; suggesties op basis van de tekst achter de laatste '@'.
+  const participantNames = useMemo(
+    () => (selected?.source === 'chat' ? (selected.participants || []).map((p) => p.full_name).filter(Boolean) : []),
+    [selected],
+  )
+  const mentionMatch = isGroup ? draft.match(/(?:^|\s)@([^\s@]{0,30})$/) : null
+  const mentionOptions = useMemo(() => {
+    if (!mentionMatch || !selected) return []
+    const q = mentionMatch[1].toLowerCase()
+    return (selected.others || [])
+      .filter((p) => p.full_name && p.full_name.toLowerCase().includes(q))
+      .slice(0, 6)
+  }, [mentionMatch, selected])
+
+  function pickMention(p) {
+    setDraft((d) => d.replace(/@[^\s@]{0,30}$/, `@${p.full_name} `))
+    setMentionIds((prev) => new Set(prev).add(p.id))
+  }
+
+  // Vermeldingen die nog echt in de tekst staan (gebruiker kan ze weer weghalen).
+  function activeMentions(text) {
+    if (!selected || selected.source !== 'chat') return []
+    return [...mentionIds].filter((id) => {
+      const p = selected.participants.find((x) => x.id === id)
+      return p?.full_name && text.includes(`@${p.full_name}`)
+    })
+  }
   const canPost = !!selected && (selected.source === 'support' || (!selected.archived && chatOn))
   const composerPlaceholder = !selected ? 'Stel je vraag aan het team…'
     : selected.source === 'support' ? 'Typ een bericht…'
@@ -360,6 +411,7 @@ export default function Chat() {
     <div className={`view-chat ${mobileThread ? 'view-chat--thread' : ''}`}>
       {/* ── Gesprekkenlijst + zoeken ─────────────────────────────────────── */}
       <aside className="chat-list">
+        {chatOn && <PushBanner />}
         <div className="chat-list__search">
           <div className={`chat-search ${searching ? 'chat-search--active' : ''}`}>
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
@@ -546,7 +598,7 @@ export default function Chat() {
                         ) : (
                           <>
                             {m.attachment && <Attachment {...m.attachment} />}
-                            {m.body && <div className="chat-bubble__text">{m.body}</div>}
+                            {m.body && <div className="chat-bubble__text">{isGroup ? renderWithMentions(m.body, participantNames) : m.body}</div>}
                           </>
                         )}
                         {canDelete && (
@@ -580,6 +632,15 @@ export default function Chat() {
                 </button>
               </div>
             )}
+            {mentionOptions.length > 0 && (
+              <div className="chat-mentions" role="listbox" aria-label="Lid vermelden">
+                {mentionOptions.map((p) => (
+                  <button type="button" key={p.id} role="option" onClick={() => pickMention(p)}>
+                    <Avatar size={24} url={p.avatar_url} name={p.full_name} /> {p.full_name}
+                  </button>
+                ))}
+              </div>
+            )}
             {showEmoji && (
               <div className="chat-emoji">
                 {EMOJI.map((e) => (
@@ -605,7 +666,10 @@ export default function Chat() {
                 className="chat-input"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e) } }}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === 'Tab') && mentionOptions.length > 0) { e.preventDefault(); pickMention(mentionOptions[0]); return }
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e) }
+                }}
                 placeholder={composerPlaceholder}
                 aria-label="Bericht"
                 rows={1}

@@ -18,13 +18,14 @@ const SERVICE_ROLE_KEY =
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET') || ''
 
-const VALID_TYPES = new Set(['pref_updates', 'pref_prikbord', 'pref_events', 'pref_documents'])
+const VALID_TYPES = new Set(['pref_updates', 'pref_prikbord', 'pref_events', 'pref_documents', 'pref_chat'])
 
 const TYPE_LABELS: Record<string, string> = {
   pref_updates: 'Updates',
   pref_prikbord: 'Prikbord',
   pref_events: 'Events',
   pref_documents: 'Documenten',
+  pref_chat: 'Chat',
 }
 
 const corsHeaders = {
@@ -71,6 +72,7 @@ serve(async (req) => {
       pref_prikbord: existing?.pref_prikbord ?? 'all',
       pref_events: existing?.pref_events ?? 'all',
       pref_documents: existing?.pref_documents ?? 'all',
+      pref_chat: existing?.pref_chat ?? 'all',
       mute_until: existing?.mute_until ?? null,
     }
     upd[verified.t] = 'mute'

@@ -20,7 +20,7 @@ import { useProject } from '../contexts/ProjectContext'
  */
 
 const MSG_SELECT =
-  'id, thread_id, sender_id, body, created_at, edited_at, deleted_at, reply_to, attachment_path, attachment_name, attachment_type, sender:profiles!sender_id(id, full_name, avatar_url)'
+  'id, thread_id, sender_id, body, created_at, edited_at, deleted_at, reply_to, mentions, attachment_path, attachment_name, attachment_type, sender:profiles!sender_id(id, full_name, avatar_url)'
 
 const THREAD_SELECT = `
   id, project_id, kind, title, topic, emoji, join_policy, archived_at, last_message_at, created_at, created_by,
@@ -183,7 +183,7 @@ export function useMemberChat({ enabled = true } = {}) {
   }, [me, projectId, enabled, fetchThreads])
 
   // ---- Acties -------------------------------------------------------------------
-  async function sendMessage(threadId, body, file = null) {
+  async function sendMessage(threadId, body, file = null, mentions = []) {
     const text = (body || '').trim()
     if ((!text && !file) || !me || sending) return
     setSending(true)
@@ -200,7 +200,7 @@ export function useMemberChat({ enabled = true } = {}) {
       }
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert({ thread_id: threadId, sender_id: me, body: text, ...attachment })
+        .insert({ thread_id: threadId, sender_id: me, body: text, mentions: mentions || [], ...attachment })
         .select(MSG_SELECT)
         .single()
       if (error) throw error

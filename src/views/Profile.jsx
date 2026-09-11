@@ -55,7 +55,7 @@ export default function Profile() {
 
   // Notification preferences
   const [notifPrefs, setNotifPrefs] = useState({
-    pref_updates: 'all', pref_prikbord: 'all', pref_events: 'all', pref_documents: 'all', mute_until: null,
+    pref_updates: 'all', pref_prikbord: 'all', pref_events: 'all', pref_documents: 'all', pref_chat: 'all', mute_until: null,
   })
   const [prefsLoaded, setPrefsLoaded] = useState(false)
 
@@ -112,6 +112,7 @@ export default function Profile() {
       pref_prikbord: newPrefs.pref_prikbord,
       pref_events: newPrefs.pref_events,
       pref_documents: newPrefs.pref_documents,
+      pref_chat: newPrefs.pref_chat,
       mute_until: newPrefs.mute_until,
     }, { onConflict: 'profile_id' })
     if (error) console.error('Error saving notification preferences:', error)
@@ -480,6 +481,7 @@ export default function Profile() {
             { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-thumbtack', desc: 'Reacties en likes op je berichten' },
             { key: 'pref_events', label: 'Events', icon: 'fa-solid fa-calendar-check', desc: 'Nieuwe events en herinneringen' },
             { key: 'pref_documents', label: 'Documenten', icon: 'fa-solid fa-folder-open', desc: 'Nieuwe documenten' },
+            { key: 'pref_chat', label: 'Chat', icon: 'fa-solid fa-comments', desc: 'Ongelezen privéberichten, @vermeldingen en een dagelijks overzicht van je groepen' },
           ].map(cat => (
             <div key={cat.key} className="notif-pref-row">
               <div className="notif-pref-row__info">
