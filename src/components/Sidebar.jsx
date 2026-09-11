@@ -2,72 +2,10 @@ import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
-import { canDo } from '../lib/permissions'
 import { signOut } from '../lib/auth'
 import { isProjectDomain } from '../lib/subdomain'
 import { useSidebarSignals } from '../hooks/useSidebarSignals'
-
-const NAV_SECTIONS = [
-  {
-    items: [
-      { to: '', icon: 'fa-solid fa-house', color: 'var(--clean-inbox, #4A90D9)', bubble: 'navy', label: 'Dashboard', end: true },
-    ]
-  },
-  {
-    // Persoonlijke acties bovenaan — dit is voor het lid de belangrijkste hub
-    // (tekenverzoeken, documentverzoeken, klaargezette bestanden) en verdient
-    // 1-click bereikbaarheid, niet weggemoffeld als tab in Documenten.
-    label: 'Voor jou',
-    items: [
-      { to: 'mijn-dossier', icon: 'fa-solid fa-file-shield', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Mijn dossier', membersOnly: true },
-      // Chat opent nu een volwaardige pagina (gesprekkenlijst + zoeken + thread).
-      // Het zwevende widget blijft bestaan voor snelle toegang overal; beide delen
-      // dezelfde support_*-data.
-      { to: 'chat', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Chat' },
-    ]
-  },
-  {
-    label: 'Actueel',
-    items: [
-      { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', bubble: 'coral', label: 'Projectnieuws', feature: 'updates' },
-      { to: 'community', icon: 'fa-solid fa-thumbtack', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
-      { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', bubble: 'amber', label: 'Events', feature: 'events' },
-    ]
-  },
-  {
-    label: 'Project',
-    items: [
-      { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', bubble: 'periwinkle', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
-      // Nu library only: projectdocumenten + adviseur-documenten (geen 'Mijn documenten'
-      // tab meer — die is nu een top-level nav-item onder "Voor jou"). Naam is
-      // ook expliciet "Projectdossier" zodat het lid niet verwacht hier hun eigen
-      // bestanden te vinden.
-      { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', bubble: 'pink', label: 'Projectdossier', membersOnly: true },
-    ]
-  },
-  {
-    label: 'Community',
-    items: [
-      // Leden bundelt de ledenlijst + ledenwerving (werving-tab alleen voor moderators+).
-      { to: 'members', icon: 'fa-solid fa-users', color: '#F23578', bubble: 'peach', label: 'Leden', action: 'view_members_list', feature: 'members' },
-      // Organisatie bundelt Team (adviseurs) + Groepen/commissies. Zichtbaar zodra
-      // minstens één tab toegankelijk is.
-      {
-        to: 'organisatie', icon: 'fa-solid fa-people-group', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Organisatie',
-        visible: (ctx) => (canDo(ctx.role, 'view_team') && ctx.featureEnabled('team')) || canDo(ctx.role, 'manage_workgroups'),
-      },
-    ]
-  },
-  {
-    label: 'Beheer',
-    collapsible: true,
-    items: [
-      { to: 'aan-de-slag', icon: 'fa-solid fa-rocket', color: 'var(--accent-green, #3BD269)', bubble: 'green', label: 'Aan de slag', adminOnly: true, visible: (ctx) => ctx.role === 'admin' && ctx.onboardingActive },
-      { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', bubble: 'teal', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
-      { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Instellingen', adminOnly: true },
-    ]
-  },
-]
+import { NAV_SECTIONS, isNavItemVisible } from '../lib/navigation'
 
 export default function Sidebar() {
   const { profile, isOrgAdmin, primaryOrgId, primaryOrgSlug } = useAuth()
@@ -109,12 +47,8 @@ export default function Sidebar() {
   const initials = (profile?.full_name || 'U').split(' ').map(n => n[0]).join('').slice(0, 2)
 
   function renderNavItem(item) {
-    if (item.visible && !item.visible({ role, featureEnabled, onboardingActive })) return null
-    if (item.membersOnly && isProfessional) return null
-    if (item.action && !canDo(role, item.action)) return null
-    // Uitgezette modules zijn voor iederéén verborgen — ook voor admins. De org
-    // beheert de zichtbaarheid centraal via het org-dashboard (Modules-toggle).
-    if (item.feature && !featureEnabled(item.feature)) return null
+    // Zichtbaarheid komt uit één gedeelde bron (lib/navigation.js), ook voor de mobiele onderbalk.
+    if (!isNavItemVisible(item, { role, featureEnabled, onboardingActive })) return null
     // Item-key: 'to' als het een route is, anders 'dispatchEvent' of label
     // (voor niet-route items zoals Support).
     const key = item.to ?? item.dispatchEvent ?? item.label
@@ -191,15 +125,7 @@ export default function Sidebar() {
           // Hide entire section if membersOnly and professional
           if (section.membersOnly && isProfessional) return null
 
-          const visibleItems = section.items.filter(item => {
-            if (item.visible) return item.visible({ role, featureEnabled, onboardingActive })
-            if (item.membersOnly && isProfessional) return false
-            if (item.adminOnly && role !== 'admin') return false
-            if (item.action && !canDo(role, item.action)) return false
-            // Uitgezette modules zijn voor iederéén verborgen, ook voor admins.
-            if (item.feature && !featureEnabled(item.feature)) return false
-            return true
-          })
+          const visibleItems = section.items.filter(item => isNavItemVisible(item, { role, featureEnabled, onboardingActive }))
           if (visibleItems.length === 0) return null
 
           // Inklapbare secties (bv. Beheer): standaard dicht, tenzij een item actief is.
