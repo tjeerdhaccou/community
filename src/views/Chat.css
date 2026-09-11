@@ -402,3 +402,45 @@
      de composer blijft onderaan en de berichten scrollen mee. */
   body.chat-thread-open .chat-foot { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
 }
+
+/* ── Strak scrollen: één scroller per laag, geen scroll-chaining, geen tap-flits ── */
+.chat-convs, .chat-body, .chat-results, .mpick__list, .chat-mentions, .grp-emoji__menu {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.view-chat button, .view-chat .chat-conv, .modal-card--chat button, .bottom-nav button, .bottom-more button {
+  -webkit-tap-highlight-color: transparent;
+}
+.chat-conv, .bottom-nav-item, .bottom-more__item, .mpick__row { user-select: none; -webkit-user-select: none; }
+.chat-input { overflow-y: auto; }
+
+/* Mobiel: modals worden schermvullende sheets met één scroller (de .modal-form),
+   vaste kop en vaste actiebalk. Geen zwevende kaart die met het toetsenbord
+   meebeweegt, geen geneste ledenlijst-scroller. */
+@media (max-width: 768px) {
+  .modal-overlay--sheet { padding: 0; align-items: stretch; background: var(--bg-surface); }
+  .modal-overlay--sheet .modal-card--chat {
+    width: 100%; max-width: none; height: 100dvh; max-height: 100dvh;
+    border-radius: 0; box-shadow: none; display: flex; flex-direction: column;
+  }
+  .modal-overlay--sheet .modal-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border-default); flex-shrink: 0; }
+  .modal-overlay--sheet .modal-header h2 { font-size: 18px; }
+  .modal-overlay--sheet .modal-form {
+    flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  /* Ledenlijst scrolt niet meer apart: de sheet zelf scrolt. */
+  .modal-overlay--sheet .mpick__list { max-height: none; overflow: visible; }
+  /* Actiebalk blijft onderaan zichtbaar. */
+  .modal-overlay--sheet .modal-actions {
+    position: sticky; bottom: calc(-16px - env(safe-area-inset-bottom)); margin: 8px -16px calc(-16px - env(safe-area-inset-bottom));
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--bg-surface); border-top: 1px solid var(--border-default);
+  }
+  .modal-overlay--sheet .modal-actions .btn-primary, .modal-overlay--sheet .modal-actions .btn-secondary { flex: 1; justify-content: center; }
+  .modal-overlay--sheet .grp-actions { flex: 1; }
+  .modal-overlay--sheet .grp-actions .btn-secondary { flex: 1; }
+  .modal-overlay--sheet .grp-emoji__menu { position: fixed; left: 16px; right: 16px; width: auto; top: auto; grid-template-columns: repeat(6, 1fr); }
+}
+
+/* Vergrendelde pagina (sheet/gesprek open): niets mag erachter meescrollen. */
+html.scroll-locked, html.scroll-locked body { overscroll-behavior: none; }

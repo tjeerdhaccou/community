@@ -12,6 +12,7 @@ import NewGroupModal from '../components/Chat/NewGroupModal'
 import GroupInfoModal from '../components/Chat/GroupInfoModal'
 import Avatar from '../components/Chat/Avatar'
 import PushBanner from '../components/Chat/PushBanner'
+import { lockBodyScroll, isNarrowScreen } from '../lib/scrollLock'
 import './Chat.css'
 
 const EMOJI = ['👍', '🙏', '😊', '🎉', '❤️', '👋', '😅', '🤔', '👌', '🙌', '✅', '🚀']
@@ -248,8 +249,34 @@ export default function Chat() {
   // zodat de composer direct boven het toetsenbord zit, zoals in messenger-apps.
   useEffect(() => {
     document.body.classList.toggle('chat-thread-open', mobileThread)
-    return () => document.body.classList.remove('chat-thread-open')
+    // Op mobiel: pagina-scroll vergrendelen zodat alleen de berichtenlijst scrolt
+    // (geen rubber-banding van de hele pagina, geen verspringende composer).
+    const unlock = mobileThread && isNarrowScreen() ? lockBodyScroll() : null
+    return () => { document.body.classList.remove('chat-thread-open'); unlock?.() }
   }, [mobileThread])
+
+  // Toetsenbord open/dicht (visualViewport verandert): onderaan blijven als we daar al waren.
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    function onResize() {
+      const el = bodyRef.current
+      if (!el) return
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 160
+      if (nearBottom) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight })
+    }
+    vv.addEventListener('resize', onResize)
+    return () => vv.removeEventListener('resize', onResize)
+  }, [])
+
+  // Composer groeit mee met de tekst (max-height via CSS), zoals in messenger-apps.
+  const inputRef = useRef(null)
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 132)}px`
+  }, [draft])
 
   // Nieuw-menu sluiten bij klik buiten.
   useEffect(() => {
@@ -689,6 +716,7 @@ export default function Chat() {
                 hidden
               />
               <textarea
+                ref={inputRef}
                 className="chat-input"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
