@@ -387,3 +387,16 @@
   .chat-input { min-height: 40px; padding: 9px 14px; font-size: 15px; }
   .chat-send { width: 40px; height: 40px; }
 }
+
+/* ── Mobiel: geen iOS-autozoom, onderbalk weg zolang een gesprek open is ──── */
+@media (max-width: 768px) {
+  /* iOS zoomt in op velden < 16px. */
+  .chat-input, .chat-search input { font-size: 16px; }
+  .chat-input { min-height: 42px; padding: 10px 14px; }
+
+  body.chat-thread-open .bottom-nav { display: none; }
+  body.chat-thread-open .view-chat { height: 100dvh; }
+  /* Toetsenbord open: het venster krimpt (interactive-widget=resizes-content);
+     de composer blijft onderaan en de berichten scrollen mee. */
+  body.chat-thread-open .chat-foot { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+}

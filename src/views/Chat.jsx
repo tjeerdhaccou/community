@@ -244,6 +244,13 @@ export default function Chat() {
     return () => clearTimeout(t)
   }, [highlightId, selectedId])
 
+  // Mobiel: zodra een gesprek open staat, verdwijnt de onderbalk (zie Chat.css)
+  // zodat de composer direct boven het toetsenbord zit, zoals in messenger-apps.
+  useEffect(() => {
+    document.body.classList.toggle('chat-thread-open', mobileThread)
+    return () => document.body.classList.remove('chat-thread-open')
+  }, [mobileThread])
+
   // Nieuw-menu sluiten bij klik buiten.
   useEffect(() => {
     if (!showNewMenu) return
