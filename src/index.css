@@ -11973,3 +11973,31 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
   background: var(--nav-bub-bg, var(--bg-page)); color: var(--nav-bub-glyph, var(--nav-c, var(--text-secondary))); font-size: 18px;
 }
 .bottom-more__txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+/* ===== Mobiel: elke modal is schermvullend, achtergrond staat vast =====
+   Eén regel voor alle modals (prikbord, nieuws, events, profiel, chat, …):
+   de directe inhoud van .modal-overlay vult het scherm en is de enige scroller.
+   De pagina eronder wordt vergrendeld door <ModalScrollLock/> (html.modal-open).
+   Uitzondering: kleine bevestigingsdialogen blijven gecentreerd. */
+@media (max-width: 768px) {
+  .modal-overlay { padding: 0; align-items: stretch; justify-content: stretch; }
+  .modal-overlay > * {
+    width: 100% !important; max-width: none !important;
+    height: 100dvh; max-height: 100dvh !important;
+    border-radius: 0 !important; box-shadow: none;
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    position: relative !important; inset: auto !important; transform: none !important; margin: 0 !important;
+  }
+  /* Kaarten met een eigen binnen-scroller (.modal-card met .modal-form/form): kaart zelf niet scrollen. */
+  .modal-overlay > .modal-card { overflow: hidden; display: flex; flex-direction: column; }
+  .modal-overlay > .modal-card > .modal-form,
+  .modal-overlay > .modal-card > form { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+  /* Sticky actiebalk bovenin detail-modals: geen afgeronde hoeken meer nodig. */
+  .modal-overlay .modal-detail-actions { border-radius: 0; }
+  /* Bevestigingsdialoog blijft een klein, gecentreerd kaartje. */
+  .modal-overlay:has(> .modal-card--confirm) { padding: 24px; align-items: center; justify-content: center; }
+  .modal-overlay > .modal-card--confirm { width: auto !important; height: auto; max-width: 380px !important; border-radius: var(--radius-lg, 16px) !important; box-shadow: var(--shadow-lg, 0 12px 40px rgba(0,0,0,.15)); }
+  /* Onderbalk en support-bubbel weg zolang een modal open is. */
+  html.modal-open .bottom-nav, html.modal-open .sc-fab-wrap { display: none !important; }
+  html.modal-open, html.modal-open body { overscroll-behavior: none; }
+}

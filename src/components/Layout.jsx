@@ -5,6 +5,7 @@ import BottomNav from './BottomNav'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
 import SupportWidget from './SupportChat/SupportWidget'
+import ModalScrollLock from './ModalScrollLock'
 import { useTheme } from '../contexts/ThemeContext'
 
 function ThemeToggle() {
@@ -39,6 +40,7 @@ export default function Layout() {
       </main>
       <BottomNav />
       <SupportWidget />
+      <ModalScrollLock />
     </div>
   )
 }
