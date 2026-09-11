@@ -6,6 +6,7 @@ import { canDo } from '../lib/permissions'
 import { useUnreviewedMemberUploads } from './useUnreviewedMemberUploads'
 import { useSignatureRequestCount } from './useSignatureRequestCount'
 import { useSupportConversation } from './useSupportConversation'
+import { useMemberChatUnread } from './useMemberChat'
 import { useUnreadIndicators, markSeen as markSeenLocal } from './useUnreadIndicators'
 
 /**
@@ -80,8 +81,10 @@ export function useSidebarSignals() {
   // ---- Actions: tekenverzoeken
   const signatureRequestCount = useSignatureRequestCount()
 
-  // ---- Actions: ongelezen support-chat
-  const { unreadCount: chatUnread } = useSupportConversation()
+  // ---- Actions: ongelezen support-chat + ledenchat (DM's en niet-gedempte groepen)
+  const { unreadCount: supportUnread } = useSupportConversation()
+  const memberChatUnread = useMemberChatUnread(project?.id, featureEnabled('chat') && canDo(role, 'use_member_chat'))
+  const chatUnread = supportUnread + memberChatUnread
 
   // ---- Unread dots: prikbord, projectnieuws, events (cross-device via useUnreadIndicators)
   const { hasNewBoard, hasNewUpdates, hasNewEvents } = useUnreadIndicators(project?.id)

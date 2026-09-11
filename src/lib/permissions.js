@@ -25,7 +25,7 @@ const ACTION_REQUIREMENTS = {
   view_events: 'aspirant',      // alleen voor niet-public events
 
   // Member level — volledig lid (na betaling/acceptatie)
-  // (aspirant heeft al bijna alles, members kunnen in de toekomst extra rechten krijgen)
+  use_member_chat: 'member',    // 1-op-1 en groepschat met andere leden (migratie 099)
 
   // Moderator level
   publish_update: 'moderator',
