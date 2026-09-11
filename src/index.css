@@ -485,6 +485,10 @@ select.input {
   padding: 6px 0;
   padding-bottom: max(6px, env(safe-area-inset-bottom));
   z-index: 100;
+  /* Vaste hoogte zodat schermvullende views (chat) er exact op kunnen rekenen. */
+  --bottom-nav-h: 62px;
+  height: calc(var(--bottom-nav-h) + max(0px, env(safe-area-inset-bottom) - 6px));
+  box-sizing: border-box;
 }
 
 .bottom-nav-item {

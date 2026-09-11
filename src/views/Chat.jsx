@@ -373,8 +373,9 @@ export default function Chat() {
     })
   }
   const canPost = !!selected && (selected.source === 'support' || (!selected.archived && chatOn))
+  const isNarrow = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches
   const composerPlaceholder = !selected ? 'Stel je vraag aan het team…'
-    : selected.source === 'support' ? 'Typ een bericht…'
+    : selected.source === 'support' || isNarrow ? 'Typ een bericht…'
     : isGroup ? `Bericht aan ${selected.title}…` : `Bericht aan ${firstName(selected.title)}…`
 
   /* ── Render ─────────────────────────────────────────────────────────────── */

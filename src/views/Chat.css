@@ -345,3 +345,45 @@
 .chat-mentions button:hover, .chat-mentions button:focus-visible { background: var(--bg-hover); outline: none; }
 .chat-mention { color: var(--accent-cta); font-weight: var(--weight-semibold); }
 .chat-bubble--out .chat-mention { color: #fff; text-decoration: underline; }
+
+/* ── Mobiel: chat vult het hele scherm tussen bovenkant en onderbalk ──────────
+   Geen kaartrand, geen paginapadding, geen topbar (de chat heeft z'n eigen kop).
+   :has() is ondersteund vanaf Safari 15.4 / Chrome 105. */
+@media (max-width: 768px) {
+  .main-content:has(> .view-chat) { padding: 0 !important; }
+  .main-content:has(> .view-chat) > .main-topbar { display: none; }
+  .view-chat {
+    height: calc(100dvh - 62px - max(0px, env(safe-area-inset-bottom) - 6px));
+    min-height: 0;
+    gap: 0;
+    border-radius: 0;
+    max-width: none;
+  }
+  .chat-list, .chat-thread { border-radius: 0; box-shadow: none; }
+  .chat-list__search { padding: 10px 12px 8px; }
+  .push-banner { margin: 10px 12px 0; }
+
+  /* Kop: compact, één regel, niets loopt uit beeld. */
+  .chat-head { padding: 10px 12px; gap: 10px; border-bottom: 1px solid var(--border-default); }
+  .chat-head__back { padding: 6px; margin-left: -4px; }
+  .chat-head__avwrap .chat-av { width: 36px !important; height: 36px !important; font-size: 17px !important; }
+  .chat-head__txt { flex: 1; min-width: 0; }
+  .chat-head__title { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-head__sub { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+  .chat-stack { display: none; }
+  .chat-head__actions { margin-left: 0; }
+  .chat-head__actions .chat-icon { width: 34px; height: 34px; }
+
+  /* Berichten: meer breedte, minder marge. */
+  .chat-body { margin: 0; border-radius: 0; padding: 12px 12px 8px; }
+  .chat-msg { max-width: 86%; }
+  .chat-bubble { padding: 9px 12px; font-size: 15px; }
+  .chat-att-img { max-height: 220px; }
+
+  /* Composer. */
+  .chat-foot { padding: 8px 10px 10px; border-top: 1px solid var(--border-default); }
+  .chat-inputrow { gap: 4px; }
+  .chat-icon { width: 36px; height: 36px; }
+  .chat-input { min-height: 40px; padding: 9px 14px; font-size: 15px; }
+  .chat-send { width: 40px; height: 40px; }
+}
