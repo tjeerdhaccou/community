@@ -6,6 +6,7 @@ import { useProject } from '../contexts/ProjectContext'
 import { useToast } from '../components/Toast'
 import { logger, friendlyError } from '../lib/logger'
 import { renderSignedPdf } from '../lib/signature/render-signed-pdf'
+import { downloadProjectFile } from '../lib/storage'
 
 export default function Tekenen() {
   const { id } = useParams() // signer_id
@@ -688,12 +689,9 @@ function SignedDownloadButton({ signedPath, title }) {
   async function onDownload() {
     if (!signedPath) return
     setBusy(true)
-    const { data, error } = await supabase.storage
-      .from('signatures')
-      .createSignedUrl(signedPath, 120)
+    const fileName = title ? `${title.replace(/[\\/:*?"<>|]/g, '-')}.pdf` : undefined
+    await downloadProjectFile(signedPath, { bucket: 'signatures', fileName })
     setBusy(false)
-    if (error || !data) return
-    window.open(data.signedUrl, '_blank')
   }
   return (
     <button className="btn-primary" onClick={onDownload} disabled={busy || !signedPath}>

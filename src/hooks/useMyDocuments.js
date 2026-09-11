@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { logger, friendlyError } from '../lib/logger'
-import { uploadFile } from '../lib/storage'
+import { uploadFile, downloadProjectFile } from '../lib/storage'
 
 export function useMyDocuments() {
   const { user } = useAuth()
@@ -33,15 +33,9 @@ export function useMyDocuments() {
   useEffect(() => { fetchFiles() }, [fetchFiles])
 
   async function download(fileId, filePath, fileName) {
-    const { data, error } = await supabase.storage
-      .from('member-files')
-      .createSignedUrl(filePath, 60)
-
-    if (error) {
-      logger.error('Error creating download URL:', error)
-      return
-    }
-
+    // AVG-audit: eerst loggen, daarna downloaden. De download gaat via een
+    // signed URL met attachment-header, dus zonder nieuw tabblad — een pop-up
+    // blocker kan hem niet tegenhouden.
     supabase.from('file_download_log').insert({
       file_id: fileId,
       downloaded_by: user.id,
@@ -50,7 +44,8 @@ export function useMyDocuments() {
       if (logErr) logger.error('download audit log failed', logErr)
     })
 
-    window.open(data.signedUrl, '_blank')
+    const ok = await downloadProjectFile(filePath, { bucket: 'member-files', fileName })
+    if (!ok) logger.error('download mislukt voor', filePath)
   }
 
   async function upload(file, requestId = null) {

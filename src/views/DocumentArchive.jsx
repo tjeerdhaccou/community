@@ -4,7 +4,7 @@ import { canDo } from '../lib/permissions'
 import { useDocuments } from '../hooks/useDocuments'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
-import { openProjectFile } from '../lib/storage'
+import { openProjectFile, downloadProjectFile } from '../lib/storage'
 
 const CATEGORIES = [
   { key: 'all', label: 'Alles' },
@@ -73,7 +73,7 @@ export default function DocumentArchive() {
                 </div>
               </div>
               <div className="doc-archive-item__actions">
-                <a href={doc.file_path} onClick={(e) => { e.preventDefault(); openProjectFile(doc.file_path) }} className="btn-icon" title="Download">
+                <a href={doc.file_path} onClick={(e) => { e.preventDefault(); downloadProjectFile(doc.file_path, { fileName: doc.file_name }) }} className="btn-icon" title="Download">
                   <i className="fa-solid fa-download" />
                 </a>
                 {canDo(role, 'moderate_board') && (

@@ -1,5 +1,5 @@
 import { fileIcon, fileIconColor, formatFileSize } from '../lib/constants'
-import { openProjectFile } from '../lib/storage'
+import { downloadProjectFile } from '../lib/storage'
 
 export default function FileRow({ file }) {
   const icon = fileIcon(file.file_type)
@@ -9,7 +9,7 @@ export default function FileRow({ file }) {
     <a
       className="file-row"
       href={file.file_path}
-      onClick={(e) => { e.preventDefault(); openProjectFile(file.file_path) }}
+      onClick={(e) => { e.preventDefault(); downloadProjectFile(file.file_path, { fileName: file.file_name }) }}
       target="_blank"
       rel="noopener noreferrer"
     >

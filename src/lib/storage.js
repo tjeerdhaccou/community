@@ -130,11 +130,16 @@ export function toStoragePath(pathOrUrl, bucket = 'project-files') {
  * enforced by RLS, so it only succeeds when the current user may actually read
  * the underlying document.
  */
-export async function getSignedUrl(pathOrUrl, { bucket = 'project-files', expiresIn = 120 } = {}) {
+export async function getSignedUrl(pathOrUrl, { bucket = 'project-files', expiresIn = 120, download } = {}) {
   const path = toStoragePath(pathOrUrl, bucket)
   if (!path) return null
 
-  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn)
+  // `download` (true of een bestandsnaam) laat Storage
+  // `Content-Disposition: attachment` meesturen. De browser start dan een
+  // download in plaats van het bestand te tonen, waardoor de huidige pagina
+  // blijft staan en er geen tabblad (en dus geen pop-up) nodig is.
+  const options = download ? { download } : undefined
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, expiresIn, options)
   if (error) {
     console.error('getSignedUrl failed', error)
     return null
@@ -142,8 +147,56 @@ export async function getSignedUrl(pathOrUrl, { bucket = 'project-files', expire
   return data.signedUrl
 }
 
-/** Resolve a signed URL and open it in a new tab. */
-export async function openProjectFile(pathOrUrl, bucket = 'project-files') {
-  const url = await getSignedUrl(pathOrUrl, { bucket })
-  if (url) window.open(url, '_blank', 'noopener,noreferrer')
+/**
+ * Bestandsnaam veilig maken voor de download-parameter.
+ *
+ * supabase-js hangt de naam als `&download=<naam>` aan de signed URL en haalt
+ * die door encodeURI, wat & # ? % laat staan. Die tekens zouden de query
+ * breken en de naam afkappen, dus vervangen we ze door een streepje.
+ */
+function safeDownloadName(fileName) {
+  if (!fileName) return undefined
+  return fileName.replace(/[&#?%]/g, '-').trim() || undefined
+}
+
+/**
+ * Download een bestand zonder nieuw tabblad.
+ *
+ * De signed URL komt met `Content-Disposition: attachment`, dus navigeren naar
+ * die URL start een download en laat de app staan waar hij staat. Geen
+ * `window.open`, dus een pop-up blocker kan hier niets tegenhouden — dat was de
+ * reden dat downloads bij sommige leden stil mislukten.
+ */
+export async function downloadProjectFile(pathOrUrl, { bucket = 'project-files', fileName } = {}) {
+  const url = await getSignedUrl(pathOrUrl, { bucket, download: safeDownloadName(fileName) || true })
+  if (!url) return false
+  window.location.href = url
+  return true
+}
+
+/**
+ * Open een bestand om te bekijken (bijv. een pdf in een nieuw tabblad).
+ *
+ * Het tabblad wordt SYNCHROON in de klik geopend en pas daarna gevuld: na een
+ * await is de user activation van de klik verlopen en ziet de browser een
+ * pop-up zonder klik. Blokkeert de browser het alsnog, dan valt dit terug op
+ * een download in het huidige tabblad, zodat het lid zijn bestand altijd
+ * krijgt.
+ */
+export function openProjectFile(pathOrUrl, bucket = 'project-files') {
+  // Let op: met 'noopener' geeft window.open null terug, dan kunnen we de
+  // locatie niet meer zetten. We halen opener daarom hieronder zelf weg.
+  const tab = window.open('about:blank', '_blank')
+  try { if (tab) tab.opener = null } catch { /* cross-origin, niet erg */ }
+
+  return (async () => {
+    if (!tab || tab.closed) {
+      // Pop-up geblokkeerd: als download aanbieden i.p.v. de app verlaten.
+      return downloadProjectFile(pathOrUrl, { bucket })
+    }
+    const url = await getSignedUrl(pathOrUrl, { bucket })
+    if (!url) { tab.close(); return false }
+    tab.location.href = url
+    return true
+  })()
 }

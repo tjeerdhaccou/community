@@ -3,7 +3,7 @@ import { useUpdateComments } from '../hooks/useUpdates'
 import { useAuth } from '../contexts/AuthContext'
 import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
 import Linkify from './Linkify'
-import { openProjectFile } from '../lib/storage'
+import { downloadProjectFile } from '../lib/storage'
 
 function attachmentIcon(fileName = '', fileType = '') {
   const ext = fileName.split('.').pop()?.toLowerCase()
@@ -140,7 +140,7 @@ export default function UpdateDetail({ update, onClose, onEdit, onTogglePin, onR
                   <a
                     key={a.id}
                     href={a.file_path}
-                    onClick={(e) => { e.preventDefault(); openProjectFile(a.file_path) }}
+                    onClick={(e) => { e.preventDefault(); downloadProjectFile(a.file_path, { fileName: a.file_name }) }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="update-attachment-row update-attachment-row--link"

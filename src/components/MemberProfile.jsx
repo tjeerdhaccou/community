@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { ROLES, ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_STAGES, FUNNEL_LABELS, FUNNEL_COLORS, FUNNEL_ICONS, formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
-import { uploadFile } from '../lib/storage'
+import { uploadFile, downloadProjectFile } from '../lib/storage'
 import { labelForValue } from '../lib/intakeFields'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdminDocumentRequests } from '../hooks/useDocumentRequests'
@@ -461,12 +461,8 @@ function MemberDossier({ profileId, projectId }) {
     }
   }
 
-  async function handleDownload(filePath) {
-    const { data, error } = await supabase.storage
-      .from('member-files')
-      .createSignedUrl(filePath, 120)
-    if (error) { console.error(error); return }
-    window.open(data.signedUrl, '_blank')
+  async function handleDownload(filePath, fileName) {
+    await downloadProjectFile(filePath, { bucket: 'member-files', fileName })
   }
 
   async function handleToggleVisibility(fileId, currentVisibility) {
@@ -563,7 +559,7 @@ function MemberDossier({ profileId, projectId }) {
                   >
                     <i className={`fa-solid ${f.is_visible_to_member ? 'fa-eye' : 'fa-eye-slash'}`} />
                   </button>
-                  <button className="btn-icon-sm" onClick={() => handleDownload(f.file_path)} title="Downloaden">
+                  <button className="btn-icon-sm" onClick={() => handleDownload(f.file_path, f.file_name)} title="Downloaden">
                     <i className="fa-solid fa-download" />
                   </button>
                   <button className="btn-icon-sm" onClick={() => handleDeleteFile(f.id)} title="Verwijderen">
@@ -694,10 +690,8 @@ function DossierRequests({ profileId, projectId }) {
     }
   }
 
-  async function handleDownloadResponse(filePath) {
-    const { data, error } = await supabase.storage.from('member-files').createSignedUrl(filePath, 60)
-    if (error) { console.error(error); return }
-    window.open(data.signedUrl, '_blank')
+  async function handleDownloadResponse(filePath, fileName) {
+    await downloadProjectFile(filePath, { bucket: 'member-files', fileName })
   }
 
   return (
@@ -781,7 +775,7 @@ function DossierRequests({ profileId, projectId }) {
                       {req.response_file && (
                         <button
                           className="btn-secondary btn-sm"
-                          onClick={() => handleDownloadResponse(req.response_file.file_path)}
+                          onClick={() => handleDownloadResponse(req.response_file.file_path, req.response_file.file_name)}
                           style={{ marginRight: 8 }}
                         >
                           <i className="fa-solid fa-download" /> {req.response_file.file_name}
