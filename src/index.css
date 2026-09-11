@@ -12035,3 +12035,31 @@ html.more-open .sc-fab-wrap { display: none !important; }
   .notif-pref-row__info { flex: 1 1 100%; }
   .notif-pref-row select, .notif-pref-row input[type="date"] { width: 100%; min-width: 0; margin-left: 0; }
 }
+
+/* ===== Mobiel: filterchips als één horizontaal scrollende rij =====
+   Loopt tot de schermrand (compenseert de paginapadding), geen scrollbar,
+   zachte vervaging rechts als hint dat er meer is. */
+@media (max-width: 768px) {
+  .tag-filter-wrap--scroll {
+    margin-left: -16px; margin-right: -16px; margin-bottom: 14px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 40px), transparent);
+  }
+  .tag-filter-wrap--scroll .tag-filter--scroll {
+    display: flex; flex-wrap: nowrap; gap: 8px; max-height: none; overflow-x: auto; overflow-y: hidden;
+    padding: 2px 44px 6px 16px; /* rechts extra ruimte zodat de laatste chip niet onder de vervaging blijft */
+    scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity; scroll-padding: 0 16px;
+  }
+  .tag-filter--scroll::-webkit-scrollbar { display: none; }
+  .tag-filter--scroll .tag-filter__pill { flex: none; white-space: nowrap; margin-bottom: 0; scroll-snap-align: start; }
+  .tag-filter--scroll .tag-filter__divider { flex: none; }
+  /* Events-filterrij: geen dubbele onderrand-marge. */
+  .events-filter-row .tag-filter-wrap--scroll { margin-bottom: 0; }
+}
+@media (max-width: 768px) {
+  /* Events: tabs en chips onder elkaar; de chiprij mag de rij niet oprekken. */
+  .events-filter-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .events-filter-row .tag-filter-wrap--scroll { min-width: 0; width: calc(100% + 32px); }
+  .tag-filter-wrap--scroll { min-width: 0; max-width: calc(100% + 32px); }
+}
