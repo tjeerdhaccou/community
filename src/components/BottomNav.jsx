@@ -48,8 +48,12 @@ export default function BottomNav() {
   }, [allItems])
 
   const primarySet = useMemo(() => new Set(primary.map((i) => i.to)), [primary])
+  // Beheer (instellingen, pagina bouwer, aan de slag) is desktopwerk: niet in de mobiele sheet.
   const moreSections = useMemo(
-    () => sections.map((s) => ({ ...s, items: s.items.filter((i) => !primarySet.has(i.to)) })).filter((s) => s.items.length > 0),
+    () => sections
+      .filter((s) => s.label !== 'Beheer')
+      .map((s) => ({ ...s, items: s.items.filter((i) => !primarySet.has(i.to)) }))
+      .filter((s) => s.items.length > 0),
     [sections, primarySet],
   )
 
@@ -67,6 +71,10 @@ export default function BottomNav() {
   // Sheet sluiten bij navigatie (bv. via terugknop) en scroll vastzetten zolang hij open is.
   useEffect(() => { setMoreOpen(false) }, [location.pathname])
   useBodyScrollLock(moreOpen)
+  useEffect(() => {
+    document.documentElement.classList.toggle('more-open', moreOpen)
+    return () => document.documentElement.classList.remove('more-open')
+  }, [moreOpen])
 
   // Signalen per item (zelfde semantiek als de sidebar).
   function badgeFor(to) {
@@ -124,17 +132,18 @@ export default function BottomNav() {
             {moreSections.map((s, si) => (
               <div key={s.label || si} className="bottom-more__group">
                 {s.label && <div className="bottom-more__label">{s.label}</div>}
-                <div className="bottom-more__grid">
+                <div className="bottom-more__list">
                   {s.items.map((item) => {
                     const badge = badgeFor(item.to)
                     return (
                       <button key={item.to} type="button" className={`bottom-more__item ${isActive(item.to) ? 'bottom-more__item--active' : ''}`} onClick={() => go(item)}>
                         <span className="bottom-more__ic" style={{ '--nav-c': item.color, '--nav-bub-bg': `var(--nav-bub-${item.bubble}-bg)`, '--nav-bub-glyph': `var(--nav-bub-${item.bubble}-glyph)` }}>
                           <i className={item.icon} aria-hidden="true" />
-                          {badge && <span className="bottom-nav-badge">{badge}</span>}
-                          {!badge && dotFor(item.to) && <span className="bottom-nav-dot" aria-label="Nieuw" />}
                         </span>
                         <span className="bottom-more__txt">{item.label}</span>
+                        {badge && <span className="bottom-more__badge">{badge}</span>}
+                        {!badge && dotFor(item.to) && <span className="bottom-more__dot" aria-label="Nieuw" />}
+                        <i className="fa-solid fa-chevron-right bottom-more__chev" aria-hidden="true" />
                       </button>
                     )
                   })}
@@ -143,12 +152,13 @@ export default function BottomNav() {
             ))}
             <div className="bottom-more__group">
               <div className="bottom-more__label">Jij</div>
-              <div className="bottom-more__grid">
+              <div className="bottom-more__list">
                 <button type="button" className={`bottom-more__item ${isActive(ACCOUNT_ITEM.to) ? 'bottom-more__item--active' : ''}`} onClick={() => go(ACCOUNT_ITEM)}>
                   <span className="bottom-more__ic" style={{ '--nav-c': ACCOUNT_ITEM.color, '--nav-bub-bg': 'var(--nav-bub-neutral-bg)', '--nav-bub-glyph': 'var(--nav-bub-neutral-glyph)' }}>
                     <i className={ACCOUNT_ITEM.icon} aria-hidden="true" />
                   </span>
                   <span className="bottom-more__txt">{ACCOUNT_ITEM.label}</span>
+                  <i className="fa-solid fa-chevron-right bottom-more__chev" aria-hidden="true" />
                 </button>
               </div>
             </div>
