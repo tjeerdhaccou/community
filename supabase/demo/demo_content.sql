@@ -41,6 +41,27 @@ returns uuid language sql stable as $$
   select id from demo_people where full_name = p_naam limit 1;
 $$;
 
+-- Controle vooraf: alle namen die dit script gebruikt moeten bestaan als lid
+-- van het demoproject. Zo niet, dan stopt het script met een leesbare melding
+-- in plaats van een NOT NULL-fout halverwege.
+do $$
+declare
+  v_ontbreekt text;
+begin
+  select string_agg(n, ', ') into v_ontbreekt
+  from unnest(array[
+    'Sophie van der Berg','Daan de Vries','Emma Jansen','Liam Bakker','Julia Visser',
+    'Sem Smit','Tessa Meijer','Noah de Graaf','Fleur Mulder','Lucas Bos',
+    'Lotte de Jong','Finn Hendriks','Noor Dekker','Jesse Dijkstra','Iris van Dijk',
+    'Mees Vermeer','Eva Kok','Ruben Peters','Thomas Willems'
+  ]) n
+  where not exists (select 1 from demo_people dp where dp.full_name = n);
+
+  if v_ontbreekt is not null then
+    raise exception 'Deze leden ontbreken in het demoproject: %. Pas de namen in dit script aan of voeg de leden toe.', v_ontbreekt;
+  end if;
+end $$;
+
 -- ----------------------------------------------------------------------------
 -- 1. Opruimen: testberichten die als "half afgebouwd" lezen
 -- ----------------------------------------------------------------------------
