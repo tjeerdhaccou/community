@@ -276,7 +276,11 @@ export default function Chat() {
     const el = inputRef.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${Math.min(el.scrollHeight, 132)}px`
+    // scrollHeight telt de randen niet mee, maar het veld is border-box. Zetten
+    // we de hoogte zonder die correctie, dan komt het vakje 2px tekort en houdt
+    // het veld permanent een schuifbalk — ook als het leeg is.
+    const borderY = el.offsetHeight - el.clientHeight
+    el.style.height = `${Math.min(el.scrollHeight + borderY, 132)}px`
   }, [draft])
 
   // Nieuw-menu sluiten bij klik buiten.
