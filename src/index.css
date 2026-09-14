@@ -2075,7 +2075,7 @@ select.input {
   border: none;
   border-radius: var(--btn-radius);
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   font-size: 16px;
   font-weight: 600;
   display: inline-flex;
@@ -2482,7 +2482,7 @@ select.input {
   border-radius: 50%;
   border: none;
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   font-size: 16px;
   display: flex;
   align-items: center;
@@ -5272,7 +5272,7 @@ select.input {
 }
 .pb-publish-bar .btn-primary {
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   border: none;
 }
 
@@ -8338,7 +8338,7 @@ select.input {
   padding: 8px 14px;
   border-radius: var(--btn-radius);
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   border: none;
   font-size: 14px;
   cursor: pointer;
