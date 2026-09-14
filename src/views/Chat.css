@@ -40,7 +40,8 @@
 .chat-search--active { border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.12); }
 .chat-search__clear { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; padding: 2px; }
 
-.chat-convs { flex: 1; overflow-y: auto; }
+/* Zijwaarts scrollen is hier nooit de bedoeling. */
+.chat-convs { flex: 1; overflow-y: auto; overflow-x: hidden; }
 .chat-convs__label {
   font-size: 11px; font-weight: var(--weight-bold); letter-spacing: .06em; text-transform: uppercase;
   color: var(--text-tertiary); padding: 12px 16px 6px;
@@ -51,6 +52,11 @@
   display: flex; align-items: center; gap: 11px; width: 100%; text-align: left;
   padding: 11px 14px; border: none; background: transparent; cursor: pointer;
   transition: background 120ms;
+  /* Niet weglaten: gewone gesprekken zijn <button> (die krijgen border-box van
+     de browser), maar een ontdek-rij is een <div> en die is content-box. Dan
+     komt de padding bovenop width:100% en steekt de rij 28px buiten de kolom,
+     met een horizontale schuifbalk en een afgekapte knop tot gevolg. */
+  box-sizing: border-box;
 }
 .chat-conv:hover { background: var(--bg-hover); }
 .chat-conv--active { background: var(--bg-hover); box-shadow: inset 3px 0 0 var(--accent-cta); }
@@ -268,6 +274,10 @@
 .mpick__row {
   display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 8px 10px;
   border: none; background: transparent; cursor: pointer; font-family: inherit; color: var(--text-primary); font-size: 14.5px;
+  /* Zelfde reden als bij .chat-conv: in de ledenlijst van een groep is deze rij
+     een <div> (mpick__row--static) en die krijgt géén border-box van de
+     browser, dus zonder dit steekt de rij buiten de lijst. */
+  box-sizing: border-box;
 }
 .mpick__row:hover { background: var(--bg-hover); }
 .mpick__row--static { cursor: default; }
