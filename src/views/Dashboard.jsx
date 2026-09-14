@@ -14,7 +14,7 @@ import { useToast } from '../components/Toast'
 import { friendlyError } from '../lib/logger'
 
 export default function Dashboard() {
-  const { project, role, loading, basePath, onboardingActive } = useProject()
+  const { project, role, loading, basePath, onboardingActive, readOnly } = useProject()
   const { profile, isPlatformAdmin } = useAuth()
   const navigate = useNavigate()
 
@@ -292,7 +292,9 @@ export default function Dashboard() {
       )}
 
       {/* Welkomststappen voor nieuwe leden (profiel afmaken, prikbord, roadmap) */}
-      <MemberWelcome />
+      {/* In de klik-demo geen welkomstchecklist: een bezoeker kan de stappen
+          toch niet afvinken, en het leidt af van waar de demo over gaat. */}
+      {!readOnly && <MemberWelcome />}
 
       {/* Activity feed grid */}
       <div className="dash-feed">
