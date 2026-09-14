@@ -87,7 +87,7 @@ function normalizeThread(row, me, unreadMap) {
 
 export function useMemberChat({ enabled = true } = {}) {
   const { user } = useAuth()
-  const { project } = useProject()
+  const { project, readOnly } = useProject()
   const me = user?.id
   const projectId = project?.id
 
@@ -127,12 +127,23 @@ export function useMemberChat({ enabled = true } = {}) {
     const unreadMap = new Map((unreadRes.data || []).map((r) => [r.thread_id, r]))
     const all = (threadsRes.data || []).map((row) => normalizeThread(row, me, unreadMap))
 
+    if (readOnly) {
+      // Klik-demo: de bezoeker is nergens deelnemer, dus "mijn gesprekken" zou
+      // leeg zijn. Toon de groepen die RLS teruggeeft als de lijst zelf, zodat
+      // een mogelijke klant de chat echt ziet werken. DM's komen niet mee: die
+      // geeft de demo-policy niet vrij.
+      setThreads(all.filter((t) => t.kind === 'group' && !t.archived))
+      setDiscover([])
+      setLoading(false)
+      return
+    }
+
     // RLS geeft ook open groepen (Ontdek) en, voor moderators, alle groepen terug.
     // Mijn lijst = waar ik deelnemer ben; Ontdek = open, niet gearchiveerd, geen deelnemer.
     setThreads(all.filter((t) => t.isMember && !t.archived && !t.hidden))
     setDiscover(all.filter((t) => !t.isMember && t.kind === 'group' && t.joinPolicy === 'open' && !t.archived))
     setLoading(false)
-  }, [me, projectId, enabled])
+  }, [me, projectId, enabled, readOnly])
 
   useEffect(() => { fetchThreads() }, [fetchThreads])
 

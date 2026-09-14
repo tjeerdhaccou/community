@@ -331,6 +331,7 @@ export default function Chat() {
   }
 
   async function handleJoin(threadId) {
+    if (readOnly) { promptDemoSignup(); return }
     try { await chat.joinGroup(threadId); openThread(threadId); toast.success('Je bent aangesloten bij de groep.') }
     catch (err) { toast.error(err.message) }
   }
@@ -353,6 +354,7 @@ export default function Chat() {
   }
 
   function askLeave(thread) {
+    if (readOnly) { promptDemoSignup(); return }
     setConfirm({
       message: `Groep "${thread.title}" verlaten? Je kunt later weer aansluiten als de groep open is.`,
       label: 'Verlaten',
@@ -364,6 +366,7 @@ export default function Chat() {
   }
 
   function askArchive(thread) {
+    if (readOnly) { promptDemoSignup(); return }
     setConfirm({
       message: `Groep "${thread.title}" archiveren? Niemand kan er dan nog in schrijven.`,
       label: 'Archiveren',
@@ -375,6 +378,7 @@ export default function Chat() {
   }
 
   function askHide(thread) {
+    if (readOnly) { promptDemoSignup(); return }
     setConfirm({
       message: `Gesprek met ${firstName(thread.title)} verwijderen uit je lijst? Stuurt ${firstName(thread.title)} een nieuw bericht, dan komt het gesprek vanzelf terug.`,
       label: 'Verwijderen',
@@ -386,6 +390,7 @@ export default function Chat() {
   }
 
   function askDeleteMessage(msg) {
+    if (readOnly) { promptDemoSignup(); return }
     setConfirm({
       message: 'Dit bericht verwijderen? Anderen zien dan "Bericht verwijderd".',
       label: 'Verwijderen',
