@@ -23,6 +23,8 @@ const MAIN_DOMAIN = Deno.env.get('MAIN_DOMAIN') || 'buuur.nl'
 const UNSUBSCRIBE_SECRET = Deno.env.get('UNSUBSCRIBE_SECRET') || ''
 const DELAY_MINUTES = Number(Deno.env.get('CHAT_EMAIL_DELAY_MIN') || '10')
 const DIGEST_TIME = Deno.env.get('CHAT_DIGEST_TIME') || '17:00'
+// Weekdag voor de wekelijkse groepsdigest: 0=zo … 1=ma (standaard maandag).
+const DIGEST_WEEKDAY = Number(Deno.env.get('CHAT_DIGEST_WEEKDAY') || '1')
 const DIGEST_WINDOW_MIN = 15
 
 // deno-lint-ignore no-explicit-any
@@ -57,7 +59,12 @@ function mentionEmail(name: string | null, from: string, group: string, body: st
   return shell(`<p style="font-size:16px;margin:0 0 12px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 16px"><b style="color:#1A1A2E">${escapeHtml(from)}</b> noemde je in <b style="color:#1A1A2E">${escapeHtml(group)}</b> (${escapeHtml(project)}):</p><div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:0 0 22px">${escapeHtml(snippet(body))}</div>${button(link, 'Open de groep')}`, unsub)
 }
 
-function digestEmail(name: string | null, project: string, groups: { title: string; emoji: string | null; unread: number; last: string }[], link: string, unsub: string | null): string {
+function groupDirectEmail(name: string | null, from: string, group: string, body: string, project: string, link: string, unsub: string | null): string {
+  const hi = name ? `Hoi ${escapeHtml(name.split(' ')[0])},` : 'Hoi,'
+  return shell(`<p style="font-size:16px;margin:0 0 12px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 16px">Nieuw bericht van <b style="color:#1A1A2E">${escapeHtml(from)}</b> in <b style="color:#1A1A2E">${escapeHtml(group)}</b> (${escapeHtml(project)}):</p><div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:0 0 22px">${escapeHtml(snippet(body))}</div>${button(link, 'Open de groep')}`, unsub)
+}
+
+function digestEmail(name: string | null, project: string, groups: { title: string; emoji: string | null; unread: number; last: string }[], link: string, unsub: string | null, periode: string): string {
   const hi = name ? `Hoi ${escapeHtml(name.split(' ')[0])},` : 'Hoi,'
   const total = groups.reduce((n, g) => n + g.unread, 0)
   const rows = groups.map((g) => `
@@ -65,7 +72,7 @@ function digestEmail(name: string | null, project: string, groups: { title: stri
       <div style="font-size:14px;font-weight:600">${g.emoji ? escapeHtml(g.emoji) + ' ' : ''}${escapeHtml(g.title)} <span style="color:#9BA1B0;font-weight:400">· ${g.unread} ${g.unread === 1 ? 'nieuw bericht' : 'nieuwe berichten'}</span></div>
       <div style="font-size:14px;color:#5A5F72;margin-top:3px;line-height:1.5">${escapeHtml(snippet(g.last, 140))}</div>
     </div>`).join('')
-  return shell(`<p style="font-size:16px;margin:0 0 4px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 10px">Vandaag ${total} ${total === 1 ? 'nieuw bericht' : 'nieuwe berichten'} in je groepen bij ${escapeHtml(project)}.</p>${rows}<div style="margin-top:22px">${button(link, 'Open de chat')}</div>`, unsub)
+  return shell(`<p style="font-size:16px;margin:0 0 4px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 10px">${periode} ${total} ${total === 1 ? 'nieuw bericht' : 'nieuwe berichten'} in je groepen bij ${escapeHtml(project)}.</p>${rows}<div style="margin-top:22px">${button(link, 'Open de chat')}</div>`, unsub)
 }
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -87,9 +94,9 @@ function b64url(bytes: Uint8Array): string {
 }
 
 // Zelfde formaat als dispatch-notification: base64url(payload).base64url(hmac)
-async function unsubLink(userId: string): Promise<string | null> {
+async function unsubLink(userId: string, prefCol = 'pref_chat'): Promise<string | null> {
   if (!UNSUBSCRIBE_SECRET) return null
-  const payloadStr = JSON.stringify({ uid: userId, t: 'pref_chat', exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30 })
+  const payloadStr = JSON.stringify({ uid: userId, t: prefCol, exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30 })
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(UNSUBSCRIBE_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(payloadStr))
   const token = `${b64url(new TextEncoder().encode(payloadStr))}.${b64url(new Uint8Array(sig))}`
@@ -102,14 +109,20 @@ function threadLink(project: { slug: string; custom_domain: string | null } | nu
   return `https://${MAIN_DOMAIN}`
 }
 
-function amsterdamNow(): { date: string; minutes: number } {
+const WEEKDAYS: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+
+function amsterdamNow(): { date: string; minutes: number; weekday: number } {
   const p = Object.fromEntries(
     new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Europe/Amsterdam', year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', hour12: false,
+      hour: '2-digit', minute: '2-digit', hour12: false, weekday: 'short',
     }).formatToParts(new Date()).map((x) => [x.type, x.value]),
   ) as Record<string, string>
-  return { date: `${p.year}-${p.month}-${p.day}`, minutes: (Number(p.hour) % 24) * 60 + Number(p.minute) }
+  return {
+    date: `${p.year}-${p.month}-${p.day}`,
+    minutes: (Number(p.hour) % 24) * 60 + Number(p.minute),
+    weekday: WEEKDAYS[p.weekday] ?? 1,
+  }
 }
 
 function chatEnabled(features: Row | null): boolean {
@@ -124,10 +137,10 @@ Deno.serve(async () => {
   }
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
   const cutoff = new Date(Date.now() - DELAY_MINUTES * 60_000).toISOString()
-  let dmSent = 0, mentionSent = 0, digestSent = 0
+  let dmSent = 0, mentionSent = 0, digestSent = 0, groupDirectSent = 0
 
   // Voorkeuren in één keer ophalen (weinig rijen; alleen afwijkingen staan erin).
-  const { data: prefRows } = await admin.from('notification_preferences').select('profile_id, pref_chat, mute_until')
+  const { data: prefRows } = await admin.from('notification_preferences').select('profile_id, pref_chat, pref_chat_groups, mute_until')
   const prefs = new Map<string, Row>((prefRows ?? []).map((r: Row) => [r.profile_id, r]))
   const now = Date.now()
   function mailAllowed(userId: string): boolean {
@@ -138,6 +151,12 @@ Deno.serve(async () => {
     return true
   }
   const isMuted = (mutedUntil: string | null) => !!mutedUntil && new Date(mutedUntil).getTime() > now
+  // Groepsmail staat los van de persoonlijke mail: direct | daily | weekly | never.
+  // Zonder rij geldt de standaard (wekelijks); staat de hele chat-mail uit, dan ook groepen.
+  function groupPref(userId: string): string {
+    if (!mailAllowed(userId)) return 'never'
+    return prefs.get(userId)?.pref_chat_groups || 'weekly'
+  }
 
   // Alle deelnemer-rijen met thread + project + profiel: de basis voor 1 en 3.
   const { data: partRows } = await admin
@@ -211,43 +230,109 @@ Deno.serve(async () => {
     }
   }
 
-  // ── 3. Dagelijkse groepsdigest ───────────────────────────────────────────
+  // ── 3. Groepen: direct / dagelijks / wekelijks ───────────────────────────
+  // Kernregel: een mail gaat alleen over wat NIEUW is sinds de vorige mail.
+  // Daarvoor is het ijkpunt max(last_read_at, laatste digest). Zonder die regel
+  // kreeg een lid dat niets las elke dag dezelfde herinnering.
+  const { data: digestLog } = await admin
+    .from('notification_log')
+    .select('user_id, project_id, sent_at')
+    .eq('notification_type', 'chat_digest')
+    .order('sent_at', { ascending: false })
+    .limit(2000)
+  const lastDigest = new Map<string, string>()
+  for (const r of (digestLog ?? []) as Row[]) {
+    const k = `${r.user_id}:${r.project_id}`
+    if (!lastDigest.has(k)) lastDigest.set(k, r.sent_at)
+  }
+  // Vanaf welk moment telt een bericht als "nieuw" voor deze deelnemer?
+  function sinceFor(cp: Row, projectId: string): string {
+    const prev = lastDigest.get(`${cp.profile_id}:${projectId}`)
+    if (!prev) return cp.last_read_at
+    // Vergelijk als tijdstip, niet als tekst: tijdstempels kunnen in notatie
+    // verschillen (offset, aantal decimalen) en zouden dan verkeerd sorteren.
+    return new Date(prev).getTime() > new Date(cp.last_read_at).getTime() ? prev : cp.last_read_at
+  }
+
+  // 3a. 'direct': per groepsgesprek een nudge na X min ongelezen, één per
+  //     ongelezen-episode (zelfde ritme als een privébericht).
+  for (const cp of parts) {
+    const t = cp.thread
+    if (!t || t.kind !== 'group' || t.archived_at) continue
+    if (groupPref(cp.profile_id) !== 'direct') continue
+    if (!cp.profile?.email || !chatEnabled(t.project?.features)) continue
+    if (isMuted(cp.muted_until)) continue
+
+    const { data: msgs } = await admin
+      .from('chat_messages')
+      .select('id, body, created_at, sender:profiles!sender_id(full_name)')
+      .eq('thread_id', t.id).neq('sender_id', cp.profile_id).is('deleted_at', null)
+      .gt('created_at', cp.last_read_at).lt('created_at', cutoff)
+      .order('created_at', { ascending: false }).limit(1)
+    const m = (msgs ?? [])[0] as Row | undefined
+    if (!m) continue
+
+    const { data: logged } = await admin.from('notification_log').select('id')
+      .eq('notification_type', 'chat_group_direct').eq('user_id', cp.profile_id).eq('reference_id', t.id)
+      .gt('sent_at', cp.last_read_at).limit(1)
+    if (logged && logged.length > 0) continue
+
+    const from = m.sender?.full_name || 'Een lid'
+    const ok = await send([cp.profile.email], `Nieuw bericht in ${t.title}`,
+      groupDirectEmail(cp.profile.full_name, from, t.title, m.body || '📎 Bijlage', t.project?.name || 'je project',
+        threadLink(t.project, t.id), await unsubLink(cp.profile_id, 'pref_chat_groups')))
+    if (ok) groupDirectSent++
+    await admin.from('notification_log').insert({
+      user_id: cp.profile_id, project_id: t.project_id, notification_type: 'chat_group_direct',
+      reference_id: t.id, channel: 'email', email: cp.profile.email, status: ok ? 'sent' : 'failed',
+    })
+  }
+
+  // 3b. 'daily' / 'weekly': één overzicht per project, alleen in het tijdvenster
+  //     en (bij weekly) op de ingestelde weekdag.
   const ams = amsterdamNow()
   const [dh, dm] = DIGEST_TIME.split(':').map(Number)
   const diff = ams.minutes - (dh * 60 + dm)
   if (diff >= 0 && diff < DIGEST_WINDOW_MIN) {
-    // Per (gebruiker, project): groepen met ongelezen berichten (niet gedempt).
-    const byUserProject = new Map<string, { cp: Row; groups: { title: string; emoji: string | null; unread: number; last: string; threadId: string }[] }>()
+    // Per (gebruiker, project): groepen met berichten die nieuw zijn sinds de vorige mail.
+    const byUserProject = new Map<string, { cp: Row; pref: string; groups: { title: string; emoji: string | null; unread: number; last: string; threadId: string }[] }>()
     for (const cp of parts) {
       const t = cp.thread
       if (!t || t.kind !== 'group' || t.archived_at || isMuted(cp.muted_until)) continue
-      if (!cp.profile?.email || !mailAllowed(cp.profile_id) || !chatEnabled(t.project?.features)) continue
+      if (!cp.profile?.email || !chatEnabled(t.project?.features)) continue
+      const pref = groupPref(cp.profile_id)
+      if (pref !== 'daily' && pref !== 'weekly') continue
+      if (pref === 'weekly' && ams.weekday !== DIGEST_WEEKDAY) continue
+
+      const since = sinceFor(cp, t.project_id)
       const { data: unreadMsgs, count } = await admin
         .from('chat_messages')
         .select('body', { count: 'exact' })
         .eq('thread_id', t.id).neq('sender_id', cp.profile_id).is('deleted_at', null)
-        .gt('created_at', cp.last_read_at)
+        .gt('created_at', since)
         .order('created_at', { ascending: false }).limit(1)
-      if (!count) continue
+      if (!count) continue      // niets nieuws sinds de vorige mail → geen mail
       const key = `${cp.profile_id}:${t.project_id}`
-      if (!byUserProject.has(key)) byUserProject.set(key, { cp, groups: [] })
+      if (!byUserProject.has(key)) byUserProject.set(key, { cp, pref, groups: [] })
       byUserProject.get(key)!.groups.push({ title: t.title, emoji: t.emoji, unread: count, last: (unreadMsgs ?? [])[0]?.body || '📎 Bijlage', threadId: t.id })
     }
 
-    for (const [, { cp, groups }] of byUserProject) {
+    for (const [, { cp, pref, groups }] of byUserProject) {
       const t = cp.thread
-      // Eén digest per dag per gebruiker per project (sent_at op Amsterdam-datum).
+      // Extra slot op slot: nooit twee digests binnen hetzelfde venster.
+      const guardHours = pref === 'weekly' ? 24 * 6 : 20
       const { data: logged } = await admin.from('notification_log').select('sent_at')
         .eq('notification_type', 'chat_digest').eq('user_id', cp.profile_id).eq('project_id', t.project_id)
-        .gt('sent_at', new Date(Date.now() - 20 * 3600_000).toISOString()).limit(1)
+        .gt('sent_at', new Date(Date.now() - guardHours * 3600_000).toISOString()).limit(1)
       if (logged && logged.length > 0) continue
 
       const link = groups.length === 1
         ? threadLink(t.project, groups[0].threadId)
         : threadLink(t.project, '').replace(/\?thread=$/, '')
       const total = groups.reduce((n, g) => n + g.unread, 0)
+      const periode = pref === 'weekly' ? 'Deze week' : 'Vandaag'
       const ok = await send([cp.profile.email], `${total} ${total === 1 ? 'nieuw bericht' : 'nieuwe berichten'} in je groepen`,
-        digestEmail(cp.profile.full_name, t.project?.name || 'je project', groups, link, await unsubLink(cp.profile_id)))
+        digestEmail(cp.profile.full_name, t.project?.name || 'je project', groups, link, await unsubLink(cp.profile_id, 'pref_chat_groups'), periode))
       if (ok) digestSent++
       await admin.from('notification_log').insert({
         user_id: cp.profile_id, project_id: t.project_id, notification_type: 'chat_digest',
@@ -256,7 +341,7 @@ Deno.serve(async () => {
     }
   }
 
-  return new Response(JSON.stringify({ ok: true, dmSent, mentionSent, digestSent }), {
+  return new Response(JSON.stringify({ ok: true, dmSent, mentionSent, groupDirectSent, digestSent }), {
     headers: { 'Content-Type': 'application/json' },
   })
 })

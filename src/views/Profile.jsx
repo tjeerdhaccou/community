@@ -55,7 +55,7 @@ export default function Profile() {
 
   // Notification preferences
   const [notifPrefs, setNotifPrefs] = useState({
-    pref_updates: 'all', pref_prikbord: 'all', pref_events: 'all', pref_documents: 'all', pref_chat: 'all', mute_until: null,
+    pref_updates: 'all', pref_prikbord: 'all', pref_events: 'all', pref_documents: 'all', pref_chat: 'all', pref_chat_groups: 'weekly', mute_until: null,
   })
   const [prefsLoaded, setPrefsLoaded] = useState(false)
 
@@ -113,6 +113,7 @@ export default function Profile() {
       pref_events: newPrefs.pref_events,
       pref_documents: newPrefs.pref_documents,
       pref_chat: newPrefs.pref_chat,
+      pref_chat_groups: newPrefs.pref_chat_groups,
       mute_until: newPrefs.mute_until,
     }, { onConflict: 'profile_id' })
     if (error) console.error('Error saving notification preferences:', error)
@@ -481,7 +482,7 @@ export default function Profile() {
             { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-thumbtack', desc: 'Reacties en likes op je berichten' },
             { key: 'pref_events', label: 'Events', icon: 'fa-solid fa-calendar-check', desc: 'Nieuwe events en herinneringen' },
             { key: 'pref_documents', label: 'Documenten', icon: 'fa-solid fa-folder-open', desc: 'Nieuwe documenten' },
-            { key: 'pref_chat', label: 'Chat', icon: 'fa-solid fa-comments', desc: 'Ongelezen privéberichten, @vermeldingen en een dagelijks overzicht van je groepen' },
+            { key: 'pref_chat', label: 'Chat', icon: 'fa-solid fa-comments', desc: 'Privéberichten en @vermeldingen die je niet gelezen hebt' },
           ].map(cat => (
             <div key={cat.key} className="notif-pref-row">
               <div className="notif-pref-row__info">
@@ -501,6 +502,29 @@ export default function Profile() {
               </select>
             </div>
           ))}
+
+          {/* Groepen apart: daar gaat het om meelezen, niet om iets dat aan jou
+              persoonlijk gericht is. Vandaar een frequentie i.p.v. aan/uit. */}
+          <div className="notif-pref-row">
+            <div className="notif-pref-row__info">
+              <i className="fa-solid fa-user-group" />
+              <div>
+                <span className="notif-pref-row__label">Groepsberichten</span>
+                <span className="notif-pref-row__desc">
+                  Overzicht van nieuwe berichten in je groepen. Je krijgt alleen mail als er iets nieuws is.
+                </span>
+              </div>
+            </div>
+            <select
+              value={notifPrefs.pref_chat_groups}
+              onChange={e => saveNotifPrefs({ pref_chat_groups: e.target.value })}
+            >
+              <option value="direct">Direct</option>
+              <option value="daily">Dagelijks</option>
+              <option value="weekly">Wekelijks</option>
+              <option value="never">Nooit</option>
+            </select>
+          </div>
 
           {browserNotifSupported() && (
             <div className="notif-pref-row">
