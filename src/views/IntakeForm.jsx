@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION } from '../lib/constants'
 import { getIntakeField } from '../lib/intakeFields'
-import { accentVars, ACCENT_VAR_NAMES } from '../lib/brandAccent'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -40,16 +39,11 @@ export default function IntakeForm({ slugOverride } = {}) {
     const prevTheme = root.getAttribute('data-theme')
     root.setAttribute('data-theme', style === 'crowdbuilding' ? 'crowdbuilding' : 'warm')
 
-    // Het intakeformulier is de deur vanaf de eigen website van het project
-    // naar ons, dus hier telt hun steunkleur wél. Altijd licht (dark=false):
-    // dit formulier rendert nooit in dark mode.
-    const vars = accentVars(project.brand_accent_color, false)
-    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value))
-
     return () => {
       if (prevTheme) root.setAttribute('data-theme', prevTheme)
       else root.removeAttribute('data-theme')
-      ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
+      root.style.removeProperty('--accent-primary')
+      root.style.removeProperty('--border-focus')
     }
   }, [project])
 
@@ -309,7 +303,7 @@ export default function IntakeForm({ slugOverride } = {}) {
               type="submit"
               className="btn-primary join-card__btn"
               disabled={submitting || !firstName.trim() || !lastName.trim() || !email.trim() || !consent || !termsConsent}
-              style={{ background: 'var(--accent-cta)', color: 'var(--accent-on-cta)' }}
+              style={{ background: brandColor }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
             </button>

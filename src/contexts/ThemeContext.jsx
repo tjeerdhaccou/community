@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { safeStorage } from '../lib/safeStorage'
-import { accentVars, ACCENT_VAR_NAMES } from '../lib/brandAccent'
 
 const ThemeContext = createContext(null)
 
@@ -62,22 +61,14 @@ export function ThemeProvider({ children, projectBranding, scope }) {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [storageKey])
 
-  // Steunkleur van het project (brand_accent_color, ingesteld in het CMS onder
-  // Instellingen › Branding) vervangt het blauw uit het functionele palet.
-  //
-  // Niet rauw: dat was de reden dat merkkleuren er eerder uit gingen — ze
-  // overschreven --accent-primary inline op <html> in zowel licht als donker,
-  // waardoor donkere merkkleuren onleesbaar werden tegen de zwarte dark-mode
-  // achtergrond. deriveAccent() leidt per thema een leesbare tekstvariant en
-  // een passende kleur-op-vlak af, dus dat probleem is weg. Semantische
-  // kleuren (rood/groen/geel, notificatiebolletjes) blijven ongemoeid.
-  useEffect(() => {
-    const root = document.documentElement
-    const vars = accentVars(projectBranding?.brand_accent_color, dark)
-    ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
-    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value))
-    return () => ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
-  }, [projectBranding?.brand_accent_color, dark])
+  // Steunkleur per project staat uit. brand_accent_color leek het juiste veld,
+  // maar dat is bij élk project gevuld — de pagina-editor schrijft hem bij elke
+  // save uit het palet. Aansluiten betekende dus dat álle projecten ineens hun
+  // paletkleur in de app-chrome kregen (demoproject en vlinderhaven werden
+  // groen) in plaats van alleen de projecten waar je het bewust instelt.
+  // Wacht op een eigen kolom app_accent_color die alleen gevuld is als iemand
+  // in het CMS een steunkleur kiest. brandAccent.js blijft staan: de afleiding
+  // klopt, alleen de schakelaar deugde niet.
 
   return (
     <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey }}>
