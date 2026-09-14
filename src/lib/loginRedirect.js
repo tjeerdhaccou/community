@@ -31,8 +31,14 @@ export async function redirectByRole(session, navigate) {
   const membership = memberRes.data?.[0]
   if (membership?.projects) {
     const p = membership.projects
-    const domain = p.custom_domain || `${p.slug}.${MAIN_DOMAIN}`
-    navigateToSubdomain(`https://${domain}/`)
+    // Zonder custom_domain bestaat het subdomein niet noodzakelijk — dat wordt
+    // pas een werkende host zodra het domein in Vercel staat. Voorheen stuurde
+    // login daar tóch heen, met een Vercel-404 (DEPLOYMENT_NOT_FOUND) als
+    // gevolg. Het pad op het hoofddomein werkt altijd.
+    const target = p.custom_domain
+      ? `https://${p.custom_domain}/`
+      : `https://${MAIN_DOMAIN}/p/${p.slug}`
+    navigateToSubdomain(target)
     return
   }
 
