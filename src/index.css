@@ -12086,24 +12086,31 @@ html.more-open .sc-fab-wrap { display: none !important; }
 /* ============================================================================
    Klik-demo: bovenbalk + read-only prompt (zie DemoBanner.jsx)
    ============================================================================ */
+/* De balk zit in de topbar-rij en is precies zo hoog als de knoppen ernaast
+   (36px). Zo kost de demomodus geen extra verticale ruimte en verschuift de
+   rest van de UI niet — belangrijk voor views die met calc(100dvh - …)
+   rekenen, zoals de chat. */
 .demo-banner {
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--space-3, 12px);
-  padding: 10px 16px;
-  margin-bottom: var(--space-4, 16px);
+  gap: var(--space-2, 8px);
+  height: 36px;
+  min-width: 0;
+  margin-right: auto;          /* balk links, de knoppen blijven rechts */
+  padding: 0 14px;
   background: var(--accent-primary);
   color: #fff;
-  border-radius: var(--radius-md, 10px);
-  font-size: var(--text-body, 14px);
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-small, 13px);
+  white-space: nowrap;
 }
 .demo-banner__text {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-weight: 500;
 }
 .demo-banner__cta {
@@ -12113,6 +12120,12 @@ html.more-open .sc-fab-wrap { display: none !important; }
   white-space: nowrap;
 }
 .demo-banner__cta:hover { opacity: 0.9; }
+/* Smalle schermen: korte teksten, anders duwt de balk de knoppen weg. */
+.demo-banner__short { display: none; }
+@media (max-width: 900px) {
+  .demo-banner__long { display: none; }
+  .demo-banner__short { display: inline; }
+}
 
 .demo-prompt {
   max-width: 460px;

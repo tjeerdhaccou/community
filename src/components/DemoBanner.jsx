@@ -18,10 +18,12 @@ export default function DemoBanner() {
       <div className="demo-banner" role="status">
         <span className="demo-banner__text">
           <i className="fa-solid fa-eye" aria-hidden="true" />
-          Dit is een demo. Je kijkt rond in een voorbeeldproject.
+          <span className="demo-banner__long">Dit is een demo. Je kijkt rond in een voorbeeldproject.</span>
+          <span className="demo-banner__short">Demo</span>
         </span>
         <a className="demo-banner__cta" href={infoUrl} target="_blank" rel="noopener noreferrer">
-          Buuur voor jouw project?
+          <span className="demo-banner__long">Buuur voor jouw project?</span>
+          <span className="demo-banner__short">Meer weten</span>
         </a>
       </div>
 

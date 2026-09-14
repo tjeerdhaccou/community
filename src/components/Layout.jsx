@@ -32,8 +32,11 @@ export default function Layout() {
       <a href="#main-content" className="skip-link">Ga naar inhoud</a>
       <Sidebar />
       <main className="main-content" role="main" id="main-content">
-        {readOnly && <DemoBanner />}
+        {/* De demobalk staat in de topbar-rij en is even hoog als de knoppen
+            ernaast. Zo kost de demo geen extra verticale ruimte en schuift er
+            niets: views die met calc(100dvh - …) rekenen (chat) blijven kloppen. */}
         <div className="main-topbar">
+          {readOnly && <DemoBanner />}
           <GlobalSearch />
           <ThemeToggle />
           <NotificationBell />
