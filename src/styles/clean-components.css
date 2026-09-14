@@ -333,7 +333,7 @@
 
 .cl-btn--primary {
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   box-shadow: var(--shadow-xs);
 }
 .cl-btn--primary:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
@@ -360,7 +360,7 @@
   height: 56px;
   border-radius: var(--radius-full);
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   border: none;
   font-size: 22px;
   display: flex;

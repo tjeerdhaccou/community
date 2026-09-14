@@ -25,6 +25,9 @@
      ────────────────────────────────────────────────────────────────────────── */
   --accent-primary:      #4A90D9;   /* Primary actions, links, FAB */
   --accent-cta:          var(--accent-primary);  /* Filled CTA buttons. Defaults to primary; a theme can split it off (zie crowdbuilding-thema) */
+  --accent-on-cta:       #fff;      /* Tekst op --accent-cta. Wit tenzij een project een lichte
+                                       steunkleur heeft: brandAccent.js zet dit dan op donker,
+                                       zodat een gevulde knop leesbaar blijft. */
   --accent-blue:         #4A90D9;   /* Info/link-blauw als token zodat een thema het kan vervangen */
   --accent-blue-rgb:     74, 144, 217;  /* Zelfde blauw als rgb-triplet voor rgba(var(--accent-blue-rgb), x) tints */
   --accent-yellow:       #F4B400;   /* Stars, highlights, financial */
