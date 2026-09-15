@@ -97,14 +97,19 @@ function renderWithMentions(text, names) {
 
 /* ── Support-gesprekken normaliseren naar dezelfde thread-vorm ─────────────── */
 
-function normalizeSupport(c, teamName) {
+function normalizeSupport(c, teamName, logoUrl) {
   return {
     id: c.id,
     source: 'support',
     kind: 'support',
-    title: teamName,
+    // Naam uit het gesprek zelf, zodat een gesprek nooit het label van een
+    // ander project kan dragen.
+    title: c.project?.name ? `Team ${c.project.name}` : teamName,
     subtitle: 'Reageert meestal binnen één werkdag',
-    icon: 'fa-regular fa-life-ring',
+    // Team-avatar = het projectlogo; dat is identiteit, geen icoon. Zonder logo
+    // een headset: leest overal als "support", waar de reddingsboei dat niet deed.
+    avatarUrl: logoUrl || null,
+    icon: 'fa-solid fa-headset',
     last: c.last
       ? { body: c.last.body || (c.last.attachment_path ? '📎 Bijlage' : ''), created_at: c.last.created_at, mine: c.last.sender_role === 'user', senderName: null }
       : null,
@@ -137,10 +142,10 @@ export default function Chat() {
 
   // Eén gesorteerde lijst per sectie.
   const directThreads = useMemo(() => {
-    const s = support.conversations.map((c) => normalizeSupport(c, teamName))
+    const s = support.conversations.map((c) => normalizeSupport(c, teamName, project?.logo_url))
     const d = chat.threads.filter((t) => t.kind === 'direct')
     return [...s, ...d].sort((a, b) => (b.last_message_at || '').localeCompare(a.last_message_at || ''))
-  }, [support.conversations, chat.threads, teamName])
+  }, [support.conversations, chat.threads, teamName, project?.logo_url])
 
   const groupThreads = useMemo(
     () => chat.threads.filter((t) => t.kind === 'group'),
@@ -585,10 +590,10 @@ export default function Chat() {
           <div className="chat-head__avwrap">
             <Avatar
               size={42}
-              url={selected?.avatarUrl}
+              url={selected?.avatarUrl || ((!selected || selected.source === 'support') ? project?.logo_url : null)}
               name={selected?.title || teamName}
               emoji={selected?.emoji}
-              icon={!selected || selected.source === 'support' ? 'fa-regular fa-life-ring' : isGroup ? 'fa-solid fa-hashtag' : null}
+              icon={!selected || selected.source === 'support' ? 'fa-solid fa-headset' : isGroup ? 'fa-solid fa-hashtag' : null}
             />
             {(!selected || selected.source === 'support') && <span className="chat-head__on" />}
           </div>

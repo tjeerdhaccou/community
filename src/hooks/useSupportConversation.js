@@ -19,14 +19,21 @@ export function useSupportConversation() {
 
   const userId = user?.id
 
+  const projectId = project?.id
+
   const fetchConversation = useCallback(async () => {
-    if (!userId) return
+    if (!userId || !projectId) return
     setLoading(true)
 
+    // Per project, niet per gebruiker. Zonder het project-filter pakte dit het
+    // meest recente open gesprek van de gebruiker uit wélk project dan ook, dus
+    // een bericht vanaf negen-kavels belandde in het vlinderhaven-gesprek — en
+    // dook in het CMS op onder het verkeerde project.
     const { data: convs, error } = await supabase
       .from('support_conversations')
       .select('*')
       .eq('user_id', userId)
+      .eq('project_id', projectId)
       .eq('status', 'open')
       .order('last_message_at', { ascending: false })
       .limit(1)
@@ -51,7 +58,7 @@ export function useSupportConversation() {
       setMessages([])
     }
     setLoading(false)
-  }, [userId])
+  }, [userId, projectId])
 
   useEffect(() => { fetchConversation() }, [fetchConversation])
 

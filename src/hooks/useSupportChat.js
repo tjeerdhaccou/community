@@ -46,8 +46,12 @@ export function useSupportChat() {
   const [sending, setSending] = useState(false)
   const instanceRef = useRef(Math.random().toString(36).slice(2, 8))
 
+  const projectId = project?.id
+
   const fetchAll = useCallback(async () => {
-    if (!userId) return
+    if (!userId || !projectId) return
+    // Per project. Voorheen kwamen álle supportgesprekken van de gebruiker mee,
+    // uit elk project, en kregen ze allemaal het label van het huidige project.
     const { data, error } = await supabase
       .from('support_conversations')
       .select(
@@ -56,6 +60,7 @@ export function useSupportChat() {
          support_messages(id, conversation_id, sender_id, sender_role, body, read_at, created_at, attachment_path, attachment_name, attachment_type)`,
       )
       .eq('user_id', userId)
+      .eq('project_id', projectId)
       .order('last_message_at', { ascending: false })
 
     if (error) {
@@ -65,7 +70,7 @@ export function useSupportChat() {
     }
     setConversations((data || []).map(mapConversation))
     setLoading(false)
-  }, [userId])
+  }, [userId, projectId])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
