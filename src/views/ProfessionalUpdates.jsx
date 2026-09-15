@@ -41,7 +41,7 @@ export default function ProfessionalUpdates() {
     options: PROFESSIONAL_TYPES.map(t => ({
       key: t,
       label: PROFESSIONAL_LABELS[t],
-      dot: PROFESSIONAL_COLORS[t],
+      dot: `var(--tag-brand-text, ${PROFESSIONAL_COLORS[t]})`,
     })),
   }], [])
 

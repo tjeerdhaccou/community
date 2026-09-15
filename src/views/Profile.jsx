@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { uploadImage } from '../lib/storage'
 import { logAudit } from '../lib/audit'
 import { exportUserData } from '../lib/dataExport'
-import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, tagStyle } from '../lib/constants'
 import { getProfileCompleteness } from '../lib/profileCompleteness'
 import { getIntakeField } from '../lib/intakeFields'
 import { useProject } from '../contexts/ProjectContext'
@@ -359,7 +359,7 @@ export default function Profile() {
                 </p>
               )}
               {isProfessional && proLabel && (
-                <span className="pro-badge" style={{ background: `${proColor}14`, color: proColor }}>{proLabel}</span>
+                <span className="pro-badge" style={tagStyle(proColor)}>{proLabel}</span>
               )}
               <button type="button" className="btn-secondary btn-sm" onClick={() => avatarRef.current?.click()}>
                 <i className="fa-solid fa-camera" /> Foto wijzigen

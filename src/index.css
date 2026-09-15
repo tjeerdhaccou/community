@@ -1417,7 +1417,7 @@ select.input {
 }
 
 .tag-filter__pill--active:hover {
-  color: #fff;
+  color: var(--accent-on-fill);
 }
 
 .tag-filter__divider {
@@ -1463,6 +1463,8 @@ select.input {
   margin-bottom: 10px;
 }
 
+.update-tag__icon { margin-right: 5px; font-size: 10px; }
+.tag-filter__icon { margin-right: 6px; font-size: 11px; }
 .update-tag {
   display: inline-block;
   padding: 3px 10px;
@@ -4502,8 +4504,9 @@ select.input {
 }
 
 .member-card__badge--new {
-  background: rgba(59, 210, 105, 0.14) !important;
-  color: #2a9d4e !important;
+  /* Semantisch "nieuw": blijft groen, ook met branding — maar via tokens. */
+  background: var(--tag-green-bg) !important;
+  color: var(--tag-green-text) !important;
 }
 .member-card__company-logo {
   position: absolute;
@@ -4625,8 +4628,9 @@ select.input {
 }
 
 .member-profile__badge--new {
-  background: rgba(59, 210, 105, 0.14) !important;
-  color: #2a9d4e !important;
+  /* Semantisch "nieuw": blijft groen, ook met branding — maar via tokens. */
+  background: var(--tag-green-bg) !important;
+  color: var(--tag-green-text) !important;
 }
 
 .member-profile__actions {

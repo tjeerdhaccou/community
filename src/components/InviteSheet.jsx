@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PROFESSIONAL_TYPES, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { PROFESSIONAL_TYPES, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, tagStyle } from '../lib/constants'
 
 export default function InviteSheet({ invites, onInvite, onRevoke, onClose }) {
   const [email, setEmail] = useState('')
@@ -92,7 +92,7 @@ export default function InviteSheet({ invites, onInvite, onRevoke, onClose }) {
                     <span className="invite-row__name">{inv.name || inv.email}</span>
                     <span className="invite-row__email">{inv.email}</span>
                   </div>
-                  <span className="pro-badge" style={{ background: `${color}14`, color }}>
+                  <span className="pro-badge" style={tagStyle(color)}>
                     {PROFESSIONAL_LABELS[inv.professional_type]}
                   </span>
                   {inv.status === 'pending' ? (

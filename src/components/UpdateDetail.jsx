@@ -1,7 +1,7 @@
 import { useState, useRef, useLayoutEffect } from 'react'
 import { useUpdateComments } from '../hooks/useUpdates'
 import { useAuth } from '../contexts/AuthContext'
-import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
+import { UPDATE_TAG_COLORS, UPDATE_TAG_ICONS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
 import Linkify from './Linkify'
 import { downloadProjectFile } from '../lib/storage'
 
@@ -96,6 +96,7 @@ export default function UpdateDetail({ update, onClose, onEdit, onTogglePin, onR
             )}
             {update.tag && tagColors && (
               <span className="update-detail__tag" style={{ background: tagColors.bg, color: tagColors.color }}>
+                {UPDATE_TAG_ICONS[update.tag] && <i className={`${UPDATE_TAG_ICONS[update.tag]} update-tag__icon`} aria-hidden="true" />}
                 {update.tag}
               </span>
             )}

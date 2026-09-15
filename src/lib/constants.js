@@ -21,11 +21,42 @@ export const POST_TAG_COLORS = {
 
 export const UPDATE_TAGS = ['Mijlpaal', 'Update', 'Besluit', 'Verslag']
 
+// Zonder branding elk type z'n Clean-kleur; met branding wint --tag-brand-*
+// (één tint van de structuurkleur) en maakt het icoontje het onderscheid.
 export const UPDATE_TAG_COLORS = {
-  'Mijlpaal': { bg: 'var(--tag-green-bg)', color: 'var(--tag-green-text)' },
-  'Update': { bg: 'var(--tag-blue-bg)', color: 'var(--tag-blue-text)' },
-  'Besluit': { bg: 'var(--tag-pink-bg)', color: 'var(--tag-pink-text)' },
-  'Verslag': { bg: 'var(--tag-orange-bg)', color: 'var(--tag-orange-text)' },
+  'Mijlpaal': { bg: 'var(--tag-brand-bg, var(--tag-green-bg))', color: 'var(--tag-brand-text, var(--tag-green-text))' },
+  'Update': { bg: 'var(--tag-brand-bg, var(--tag-blue-bg))', color: 'var(--tag-brand-text, var(--tag-blue-text))' },
+  'Besluit': { bg: 'var(--tag-brand-bg, var(--tag-pink-bg))', color: 'var(--tag-brand-text, var(--tag-pink-text))' },
+  'Verslag': { bg: 'var(--tag-brand-bg, var(--tag-orange-bg))', color: 'var(--tag-brand-text, var(--tag-orange-text))' },
+}
+export const UPDATE_TAG_ICONS = {
+  'Mijlpaal': 'fa-solid fa-flag',
+  'Update': 'fa-solid fa-bullhorn',
+  'Besluit': 'fa-solid fa-gavel',
+  'Verslag': 'fa-solid fa-file-lines',
+}
+
+/**
+ * Badge-stijl uit een Clean-kleur. Zonder branding: de kleur zelf met 14% tint
+ * (het 8-cijferige hex-trucje dat overal al gebruikt werd). Met branding wint
+ * --tag-brand-*: één tint van de structuurkleur voor alle labels.
+ */
+export function tagStyle(hex) {
+  const c = hex || '#9ba1b0'
+  return { background: `var(--tag-brand-bg, ${c}14)`, color: `var(--tag-brand-text, ${c})` }
+}
+
+export const FUNNEL_ORDER = ['nieuw', 'orienterend', 'aspirant_koper', 'koper', 'bewoner']
+
+/**
+ * Fase-badge: met branding een tintschaal van de structuurkleur, van licht
+ * (Nieuw) naar vol (Bewoner). Zonder branding de Clean-kleur per fase.
+ */
+export function funnelStyle(stage) {
+  const step = FUNNEL_ORDER.indexOf(stage) + 1
+  const c = FUNNEL_COLORS[stage] || '#9ba1b0'
+  if (step === 0) return tagStyle(c)
+  return { background: `var(--scale-${step}-bg, ${c}14)`, color: `var(--scale-${step}-text, ${c})` }
 }
 
 // ===== Role definitions =====
