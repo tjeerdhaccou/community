@@ -138,8 +138,8 @@
 }
 
 .cl-checkbox--checked {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
   animation: cl-checkbox-spring 300ms var(--ease-spring) forwards;
 }
 

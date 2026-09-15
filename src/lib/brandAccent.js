@@ -107,6 +107,11 @@ export function accentVars(hex, dark = false) {
   return {
     '--accent-cta': a.fill,
     '--accent-on-cta': a.onFill,
+    // Vlakken (actieve chips, avatars, stepper) krijgen de merkkleur zelf, niet
+    // de donkerder gemaakte tekstvariant — anders staat er een bruinige tint
+    // naast je knop in plaats van je eigen kleur.
+    '--accent-fill': a.fill,
+    '--accent-on-fill': a.onFill,
     '--accent-primary': a.text,
     '--accent-blue': a.text,
     '--accent-blue-rgb': a.rgb.join(', '),

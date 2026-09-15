@@ -12,8 +12,8 @@ html {
   left: 16px;
   z-index: 100000;
   padding: 8px 16px;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   border-radius: var(--radius-md, 8px);
   font-size: 14px;
   font-weight: 600;
@@ -273,8 +273,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 22px;
   font-weight: 700;
 }
@@ -391,8 +391,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 16px;
   font-weight: 700;
 }
@@ -912,7 +912,7 @@ select.input {
   transition: background 0.3s;
 }
 .dash-stepper__line--filled {
-  background: var(--accent-primary);
+  background: var(--accent-fill);
 }
 .dash-stepper__dot {
   width: 14px;
@@ -924,8 +924,8 @@ select.input {
   transition: all 0.3s;
 }
 .dash-stepper__dot--done {
-  border-color: var(--accent-primary);
-  background: var(--accent-primary);
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
 }
 .dash-stepper__dot--active {
   width: 16px;
@@ -1126,8 +1126,8 @@ select.input {
   font-weight: 600;
 }
 .dash-member-avatar--more {
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1215,8 +1215,8 @@ select.input {
 }
 
 .milestone-active .milestone-label {
-  color: #fff;
-  background: var(--accent-primary);
+  color: var(--accent-on-fill);
+  background: var(--accent-fill);
   font-weight: 600;
 }
 
@@ -1411,9 +1411,9 @@ select.input {
 }
 
 .tag-filter__pill--active {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 
 .tag-filter__pill--active:hover {
@@ -1562,8 +1562,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 16px;
   font-weight: 700;
 }
@@ -2241,8 +2241,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 16px;
   font-weight: 700;
 }
@@ -2399,8 +2399,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 16px;
   font-weight: 700;
 }
@@ -2515,9 +2515,9 @@ select.input {
 .post-tag-option:hover { border-color: var(--accent-primary); }
 
 .post-tag-option--active {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 
 .post-image-preview {
@@ -3026,10 +3026,10 @@ select.input {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  background: var(--accent-primary);
+  background: var(--accent-fill);
   font-size: var(--text-tiny);
   font-weight: var(--weight-bold);
-  color: #fff;
+  color: var(--accent-on-fill);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -3486,8 +3486,8 @@ select.input {
   flex-shrink: 0;
 }
 .event-card__rsvp-btn:hover {
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 .event-card__rsvp-btn--going {
   background: rgba(59, 210, 105, 0.12);
@@ -3675,8 +3675,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 16px;
   font-weight: 700;
 }
@@ -3705,9 +3705,9 @@ select.input {
 .location-toggle__btn:hover { border-color: var(--accent-primary); }
 
 .location-toggle__btn--active {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 
 /* RSVP buttons */
@@ -3747,9 +3747,9 @@ select.input {
 }
 
 .rsvp-btn--maybe {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 
 .rsvp-btn--not_going {
@@ -3799,8 +3799,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 16px;
   font-weight: 700;
 }
@@ -4053,8 +4053,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 16px;
   font-weight: 700;
 }
@@ -4495,8 +4495,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 22px;
   font-weight: 700;
 }
@@ -5014,9 +5014,9 @@ select.input {
   color: var(--text-primary);
 }
 .member-dossier__note-type--active {
-  background: var(--accent-primary);
-  color: #fff;
-  border-color: var(--accent-primary);
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
+  border-color: var(--accent-fill);
 }
 
 .member-dossier__note-form textarea {
@@ -5587,9 +5587,9 @@ select.input {
 .theme-select__btn:hover { border-color: var(--accent-primary); }
 
 .theme-select__btn--active {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 
 .settings-cover-preview {
@@ -5631,7 +5631,7 @@ select.input {
 }
 
 .settings-milestone__dot--done { background: var(--accent-green); }
-.settings-milestone__dot--active { background: var(--accent-primary); }
+.settings-milestone__dot--active { background: var(--accent-fill); }
 
 .settings-milestone__status {
   margin-left: auto;
@@ -6544,9 +6544,9 @@ select.input {
   background: var(--bg-hover);
 }
 .phase-select__btn--active {
-  background: var(--accent-primary);
+  background: var(--accent-fill);
   color: white;
-  border-color: var(--accent-primary);
+  border-color: var(--accent-fill);
 }
 
 /* Phase badge on cards */
@@ -6576,7 +6576,7 @@ select.input {
 
 /* Active phase dot indicator */
 .pro-filter-dot--active {
-  background: var(--accent-primary);
+  background: var(--accent-fill);
   box-shadow: 0 0 0 2px rgba(var(--accent-blue-rgb), 0.3);
 }
 
@@ -6970,8 +6970,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 15px;
   font-weight: 700;
 }
@@ -7532,8 +7532,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 11px;
   font-weight: 700;
 }
@@ -7693,8 +7693,8 @@ select.input {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   font-size: 12px;
   font-weight: 700;
 }
@@ -7991,9 +7991,9 @@ select.input {
   background: var(--bg-hover);
 }
 .theme-select__btn--active {
-  border-color: var(--accent-primary);
-  background: var(--accent-primary);
-  color: #fff;
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 
 /* ===== Enhanced Event Detail with Tabs ===== */
@@ -8187,8 +8187,8 @@ select.input {
 }
 .agenda-item__num {
   width: 28px; height: 28px;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700;
@@ -8375,8 +8375,8 @@ select.input {
   font-size: 13px; color: var(--text-tertiary, #9BA1B0); margin-top: 6px;
 }
 .doc-archive-item__category {
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   padding: 1px 8px;
   border-radius: 8px;
   font-size: 11px;
@@ -9211,7 +9211,7 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--accent-primary);
+  background: var(--accent-fill);
 }
 
 /* Post follow/star */
@@ -9567,8 +9567,8 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   width: 56px;
   height: 56px;
   border-radius: var(--radius-full);
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10677,7 +10677,7 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
 
 /* Text alignment buttons */
 .pb-align-options { display: flex; gap: 4px; }
-.pb-align--active { background: var(--accent-primary) !important; color: #fff !important; }
+.pb-align--active { background: var(--accent-fill) !important; color: #fff !important; }
 .pb-text-size-toggle { display: flex; gap: 8px; }
 .pb-text-size-btn {
   display: flex; align-items: center; gap: 6px;
@@ -10691,9 +10691,9 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   transition: all 150ms;
 }
 .pb-text-size-btn--active {
-  border-color: var(--accent-primary);
-  background: var(--accent-primary);
-  color: #fff;
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 
 /* Color inputs */
@@ -10835,9 +10835,9 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   transition: all 150ms;
 }
 .pb-columns-btn--active {
-  border-color: var(--accent-primary);
-  background: var(--accent-primary);
-  color: #fff;
+  border-color: var(--accent-fill);
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
 }
 .pb-cards-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
 .pb-card-editor {
@@ -10915,8 +10915,8 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
 .pb-member-chip__initials {
   width: 28px; height: 28px;
   border-radius: 50%;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 600;
   flex-shrink: 0;
@@ -11167,7 +11167,7 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 .profile-progress__bar {
   height: 100%;
   border-radius: 999px;
-  background: var(--accent-primary);
+  background: var(--accent-fill);
   transition: width 300ms ease;
 }
 .profile-progress__hint {
@@ -12098,8 +12098,8 @@ html.more-open .sc-fab-wrap { display: none !important; }
   min-width: 0;
   margin-right: auto;          /* balk links, de knoppen blijven rechts */
   padding: 0 14px;
-  background: var(--accent-primary);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   border-radius: var(--radius-full, 999px);
   font-size: var(--text-small, 13px);
   white-space: nowrap;
