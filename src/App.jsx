@@ -302,9 +302,16 @@ function SubdomainLookup({ slug }) {
   // Anonieme bezoekers kunnen de org niet zien door RLS — stuur naar login
   // ipv 404, zodat ze na inloggen op het juiste subdomain landen
   if (!user) return <Login />
-  // Ingelogde user die niks ziet heeft vrijwel zeker geen toegang (RLS
-  // verbergt orgs/projects waar 'ie geen lid van is). Een echte typo in
-  // de subdomain-URL is veel zeldzamer dan een verwijderd lidmaatschap.
+  // Ingelogde user die niks ziet: twee mogelijkheden die we niet uit elkaar
+  // kúnnen halen. RLS verbergt projecten waar 'ie geen lid van is, dus "bestaat
+  // niet" en "geen toegang" zien er vanaf hier identiek uit. Het onderscheid
+  // forceren zou een endpoint vragen waarmee iedereen projectnamen kan
+  // uitvragen — dat is de ruil niet waard.
+  //
+  // Vroeger noemden we alleen "geen toegang", omdat een typo in de subdomain
+  // toch niet resolvede. Sinds *.buuur.nl een wildcard is, serveert élk
+  // subdomein de app en komen typefouten hier wél binnen. De melding noemt dus
+  // allebei de oorzaken.
   return <SubdomainNoAccess slug={slug} />
 }
 
@@ -319,9 +326,11 @@ function SubdomainNoAccess({ slug }) {
     <div className="error-boundary">
       <div className="error-boundary__card">
         <i className="fa-solid fa-lock error-boundary__icon" style={{ color: 'var(--text-tertiary)' }} />
-        <h2>Geen toegang</h2>
+        <h2>Geen toegang tot {slug}</h2>
         <p>
-          Je bent ingelogd als <strong>{user?.email}</strong> en hebt geen toegang tot <strong>{slug}</strong>.
+          Je bent ingelogd als <strong>{user?.email}</strong>. Dat kan twee dingen betekenen:
+          het adres <strong>{slug}.{mainDomain}</strong> bestaat niet — controleer de spelling —
+          of je bent geen lid van dit project.
         </p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button className="btn-primary" onClick={handleLogoutAndLogin}>
