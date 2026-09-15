@@ -112,10 +112,12 @@ function scaleVars(str, dark) {
   ;[0.10, 0.22, 0.36, 0.55, 0.85].forEach((alpha, i) => {
     const n = i + 1
     const blended = mix(str.rgb, surface, alpha)
-    const textRgb = parseHex(str.text)
-    const onFillRgb = parseHex(str.onFill)
-    const text = contrastRatio(textRgb, blended) >= AA_NORMAL ? str.text
-      : contrastRatio(onFillRgb, blended) >= contrastRatio(textRgb, blended) ? str.onFill : str.text
+    // Kandidaten: de leesbare structuurvariant (mooiste), dan inkt en wit.
+    // Een middentint kan te donker zijn voor de structuurvariant én te licht
+    // voor wit — dan redt inkt het. Eerste die 4.5 haalt wint; anders de beste.
+    const candidates = [str.text, ON_FILL_DARK, ON_FILL_LIGHT]
+    const scored = candidates.map((c) => ({ c, r: contrastRatio(parseHex(c), blended) }))
+    const text = (scored.find((x) => x.r >= AA_NORMAL) || scored.sort((a, b) => b.r - a.r)[0]).c
     out[`--scale-${n}-bg`] = `rgba(${str.rgb.join(', ')}, ${alpha})`
     out[`--scale-${n}-text`] = text
   })
