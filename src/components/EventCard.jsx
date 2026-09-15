@@ -1,4 +1,4 @@
-import { EVENT_TYPE_MAP, EVENT_VISIBILITY_MAP } from '../lib/constants'
+import { EVENT_TYPE_MAP, EVENT_VISIBILITY_MAP, tagStyle } from '../lib/constants'
 
 const MONTHS_SHORT = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC']
 const DAYS_SHORT = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za']
@@ -57,7 +57,7 @@ export default function EventCard({ event, onRsvp, onClick }) {
 
         <div className="event-card__tags">
           {typeInfo && (
-            <span className="event-card__type-tag" style={{ background: `${typeInfo.color}18`, color: typeInfo.color }}>
+            <span className="event-card__type-tag" style={tagStyle(typeInfo.color)}>
               {typeInfo.label}
             </span>
           )}
