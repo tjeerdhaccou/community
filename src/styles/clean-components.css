@@ -66,10 +66,14 @@
   width: 24px;
   text-align: center;
   flex-shrink: 0;
-  color: var(--text-tertiary);
+  /* Elk item heeft een eigen kleur (zie navigation.js). Die tonen we altijd,
+     niet alleen bij het actieve item — anders zie je van het hele systeem maar
+     één icoon tegelijk en lijkt het willekeurig. Heeft het project een
+     structuurkleur, dan wint --nav-icon-brand en wordt de hele nav één kleur:
+     naast een merkidentiteit is een regenboog-zijbalk juist onrustig. */
+  color: var(--nav-icon-brand, var(--nav-c, var(--text-tertiary)));
   transition: transform 200ms var(--ease-spring);
 }
-.cl-nav-item--active .cl-nav-item__icon { color: var(--nav-c, var(--text-primary)); }
 
 .cl-nav-item:hover .cl-nav-item__icon { transform: scale(1.1); }
 

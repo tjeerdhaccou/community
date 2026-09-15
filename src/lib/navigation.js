@@ -17,7 +17,7 @@ export const NAV_SECTIONS = [
     // 1-click bereikbaarheid, niet weggemoffeld als tab in Documenten.
     label: 'Voor jou',
     items: [
-      { to: 'mijn-dossier', icon: 'fa-solid fa-file-shield', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Mijn dossier', shortLabel: 'Dossier', membersOnly: true },
+      { to: 'mijn-dossier', icon: 'fa-solid fa-file-shield', color: '#2BAFA0', bubble: 'navy', label: 'Mijn dossier', shortLabel: 'Dossier', membersOnly: true },
       // Chat: support + ledenchat (1-op-1 en thema-groepen) op één pagina.
       { to: 'chat', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Chat' },
     ]
@@ -26,14 +26,14 @@ export const NAV_SECTIONS = [
     label: 'Actueel',
     items: [
       { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', bubble: 'coral', label: 'Projectnieuws', shortLabel: 'Nieuws', feature: 'updates' },
-      { to: 'community', icon: 'fa-solid fa-thumbtack', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
+      { to: 'community', icon: 'fa-solid fa-thumbtack', color: '#E4572E', bubble: 'green', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
       { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', bubble: 'amber', label: 'Events', feature: 'events' },
     ]
   },
   {
     label: 'Project',
     items: [
-      { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--clean-logbook, #7B5EA7)', bubble: 'periwinkle', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
+      { to: 'roadmap', icon: 'fa-solid fa-road', color: '#5B6BD6', bubble: 'periwinkle', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
       // Library only: projectdocumenten + adviseur-documenten. Eigen bestanden
       // staan onder "Mijn dossier".
       { to: 'documenten', icon: 'fa-solid fa-folder-open', color: '#9B59B6', bubble: 'pink', label: 'Projectdossier', membersOnly: true },
@@ -46,7 +46,7 @@ export const NAV_SECTIONS = [
       { to: 'members', icon: 'fa-solid fa-users', color: '#F23578', bubble: 'peach', label: 'Leden', action: 'view_members_list', feature: 'members' },
       // Organisatie bundelt Team (adviseurs) + Groepen/commissies.
       {
-        to: 'organisatie', icon: 'fa-solid fa-people-group', color: 'var(--accent-primary, #4A90D9)', bubble: 'navy', label: 'Organisatie',
+        to: 'organisatie', icon: 'fa-solid fa-people-group', color: '#C9A96E', bubble: 'navy', label: 'Organisatie',
         visible: (ctx) => (canDo(ctx.role, 'view_team') && ctx.featureEnabled('team')) || canDo(ctx.role, 'manage_workgroups'),
       },
     ]
