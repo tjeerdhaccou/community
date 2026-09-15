@@ -47,7 +47,7 @@
   border: none;
   border-radius: var(--radius-full);
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   font-size: 22px;
   display: flex;
   align-items: center;
@@ -115,7 +115,7 @@
   height: 40px;
   border-radius: var(--radius-full);
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -194,8 +194,7 @@
   box-shadow: var(--shadow-xs);
 }
 .sc-bubble--out {
-  background: var(--accent-cta);
-  color: #fff;
+  background: var(--text-primary); color: var(--bg-surface);
   border-bottom-right-radius: 5px;
 }
 .sc-stamp {
@@ -271,7 +270,7 @@
   border: none;
   border-radius: var(--radius-full);
   background: var(--accent-cta);
-  color: #fff;
+  color: var(--accent-on-cta);
   font-size: 16px;
   cursor: pointer;
   display: flex;
