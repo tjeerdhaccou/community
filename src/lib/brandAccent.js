@@ -129,6 +129,10 @@ export function accentVars({ accent, structure } = {}, dark = false) {
     '--accent-blue': str.text,
     '--accent-blue-rgb': str.rgb.join(', '),
     '--clean-inbox': str.text,
+    // Nav-iconen volgen de structuurkleur, niet de actiekleur: iconen zijn
+    // navigatie-meubilair en de actiekleur moet schaars blijven zodat de knop
+    // die ertoe doet opvalt.
+    '--nav-icon-brand': str.text,
     '--border-focus': str.text,
   }
 }
