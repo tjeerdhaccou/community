@@ -3260,14 +3260,22 @@ select.input {
   transition: background 0.12s, color 0.12s;
 }
 .seg-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
-.seg-tab--active { background: var(--bg-surface); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+/* Actief draagt het merk, net als cluster-tab en filterpil. De witte kaart
+   blijft: die maakt van de rij een schakelaar i.p.v. losse knoppen. */
+.seg-tab--active { background: var(--bg-surface); color: var(--accent-primary); box-shadow: var(--shadow-sm); }
 .seg-tab__count {
   font-size: 12px;
-  background: var(--notif-bg);
-  color: var(--notif-text);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
   padding: 1px 7px;
   border-radius: 10px;
   font-weight: 700;
+}
+/* Nadruk alleen op de actieve tab — gelijk aan .cluster-tab__count. Rood is
+   voor urgentie (notificaties), niet voor "hoeveel items staan hier". */
+.seg-tab--active .seg-tab__count {
+  background: var(--tag-brand-bg, rgba(74, 144, 217, 0.14));
+  color: var(--accent-primary);
 }
 /* When seg-tabs sit inside the events filter row, the row owns the margin. */
 .events-filter-row .seg-tabs { margin-bottom: 0; }
@@ -8171,8 +8179,8 @@ select.input {
   font-weight: 700;
 }
 .cluster-tab--active .cluster-tab__count {
-  background: var(--notif-bg);
-  color: var(--notif-text);
+  background: var(--tag-brand-bg, rgba(74, 144, 217, 0.14));
+  color: var(--accent-primary);
 }
 
 .event-tab-content { display: flex; flex-direction: column; gap: 20px; }
@@ -12151,3 +12159,18 @@ html.more-open .sc-fab-wrap { display: none !important; }
 .demo-prompt h2 { margin: 0 0 var(--space-2, 8px); }
 .demo-prompt p { color: var(--text-secondary); margin: 0 0 var(--space-5, 20px); }
 .demo-prompt__actions { justify-content: center; }
+
+/* ============================================================================
+   TAB-FAMILIE — drie niveaus, één taal
+   ----------------------------------------------------------------------------
+   .cluster-tab    onderstreept   welke sectie   (Leden / Werving)
+   .seg-tab        witte kaart    welke weergave (Verzoeken / Tekenen)
+   .tag-filter__pill  gevuld      welk filter    (Alles / Mijlpaal)
+
+   Ze bestaan naast elkaar omdat ze verschillende dingen betekenen, en kunnen
+   tegelijk in beeld staan: Leden.jsx zet cluster-tabs boven Members.jsx, dat
+   zelf pillen gebruikt. Het gewicht loopt op met hoe specifiek de keuze is.
+
+   Regel: alle drie de actieve staten dragen de merkkleur. Het verschil zit in
+   het gewicht (lijn → kaart → vulling), niet in wel/geen kleur.
+   ============================================================================ */

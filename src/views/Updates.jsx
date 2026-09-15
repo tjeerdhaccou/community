@@ -12,7 +12,7 @@ import UpdateDetail from '../components/UpdateDetail'
 import ConfirmModal from '../components/ConfirmModal'
 import { useToast } from '../components/Toast'
 
-import { UPDATE_TAGS, UPDATE_TAG_COLORS, UPDATE_TAG_ICONS } from '../lib/constants'
+import { UPDATE_TAGS, UPDATE_TAG_ICONS } from '../lib/constants'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...UPDATE_TAGS]
 
