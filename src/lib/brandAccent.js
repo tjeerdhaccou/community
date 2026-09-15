@@ -96,28 +96,41 @@ export function deriveAccent(hex, dark = false) {
 }
 
 /**
- * CSS-variabelen voor een merkkleur. Vervangt het blauw uit het functionele
- * palet (--accent-primary/--accent-blue/--clean-inbox) en de CTA-vulkleur.
- * Semantische kleuren (rood, groen, geel, notificatiebolletjes) blijven staan:
- * die betekenen iets en horen niet mee te kleuren.
+ * CSS-variabelen voor de merkkleuren van een project.
+ *
+ * Twee rollen, want zo werkt een huisstijl meestal: Negen Kavels heeft groen
+ * voor structuur en coral voor de knop. Het CrowdBuilding-thema splitst intern
+ * hetzelfde (navy structuur, coral CTA).
+ *
+ *   accent     knoppen en call-to-actions
+ *   structure  vlakken, labels, iconen, links, actieve elementen
+ *
+ * Ontbreekt er één, dan neemt hij de andere over. Zijn ze allebei leeg, dan
+ * wordt er niets gezet en blijft het functionele palet intact.
+ *
+ * Semantische kleuren (rood, groen, geel, notificatiebolletjes) blijven altijd
+ * ongemoeid: die betekenen iets en horen niet mee te kleuren.
  */
-export function accentVars(hex, dark = false) {
-  const a = deriveAccent(hex, dark)
-  if (!a) return {}
+export function accentVars({ accent, structure } = {}, dark = false) {
+  const cta = deriveAccent(accent || structure, dark)
+  const str = deriveAccent(structure || accent, dark)
+  if (!cta && !str) return {}
+
   return {
-    '--accent-cta': a.fill,
-    '--accent-on-cta': a.onFill,
-    // Vlakken (actieve chips, avatars, stepper) krijgen de merkkleur zelf, niet
-    // de donkerder gemaakte tekstvariant — anders staat er een bruinige tint
-    // naast je knop in plaats van je eigen kleur.
-    '--accent-fill': a.fill,
-    '--accent-on-fill': a.onFill,
-    '--accent-primary': a.text,
-    '--accent-blue': a.text,
-    '--accent-blue-rgb': a.rgb.join(', '),
-    '--clean-inbox': a.text,
-    '--border-focus': a.text,
+    // Knoppen en CTA's
+    '--accent-cta': cta.fill,
+    '--accent-on-cta': cta.onFill,
+    // Vlakken krijgen de merkkleur zelf, niet de tekstvariant — anders staat er
+    // een bruinige tint naast je knop in plaats van je eigen kleur.
+    '--accent-fill': str.fill,
+    '--accent-on-fill': str.onFill,
+    // Tekst, links en iconen: de op contrast afgestemde variant.
+    '--accent-primary': str.text,
+    '--accent-blue': str.text,
+    '--accent-blue-rgb': str.rgb.join(', '),
+    '--clean-inbox': str.text,
+    '--border-focus': str.text,
   }
 }
 
-export const ACCENT_VAR_NAMES = Object.keys(accentVars('#000000'))
+export const ACCENT_VAR_NAMES = Object.keys(accentVars({ accent: '#000000' }))

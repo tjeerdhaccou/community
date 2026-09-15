@@ -76,11 +76,17 @@ export function ThemeProvider({ children, projectBranding, scope }) {
   // blijven ongemoeid.
   useEffect(() => {
     const root = document.documentElement
-    const vars = accentVars(projectBranding?.app_accent_color, dark)
+    const vars = accentVars(
+      {
+        accent: projectBranding?.app_accent_color,
+        structure: projectBranding?.app_structure_color,
+      },
+      dark,
+    )
     ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
     Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value))
     return () => ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
-  }, [projectBranding?.app_accent_color, dark])
+  }, [projectBranding?.app_accent_color, projectBranding?.app_structure_color, dark])
 
   return (
     <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey }}>

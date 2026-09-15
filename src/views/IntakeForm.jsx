@@ -43,7 +43,10 @@ export default function IntakeForm({ slugOverride } = {}) {
     // Het intakeformulier is de deur vanaf de eigen website van het project naar
     // ons, dus hier telt hun steunkleur wel. Altijd licht: dit formulier rendert
     // nooit in dark mode.
-    const vars = accentVars(project.app_accent_color, false)
+    const vars = accentVars(
+      { accent: project.app_accent_color, structure: project.app_structure_color },
+      false,
+    )
     Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value))
 
     return () => {
@@ -59,7 +62,7 @@ export default function IntakeForm({ slugOverride } = {}) {
       const projectColumn = UUID_REGEX.test(projectIdent) ? 'id' : 'slug'
       const projectRes = await supabase
         .from('projects')
-        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, brand_accent_color, app_accent_color, intake_enabled, intake_intro_text, default_theme, organization:organizations(default_theme)')
+        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, brand_accent_color, app_accent_color, app_structure_color, intake_enabled, intake_intro_text, default_theme, organization:organizations(default_theme)')
         .eq(projectColumn, projectIdent)
         .single()
 

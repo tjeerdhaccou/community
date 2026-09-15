@@ -102,6 +102,7 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
     brand_accent_color: project.brand_accent_color,
     // Steunkleur uit het CMS (Instellingen > Branding). NULL = functioneel palet.
     app_accent_color: project.app_accent_color,
+    app_structure_color: project.app_structure_color,
     // Cascade: eigen projectthema → organisatiethema → (ThemeContext valt terug op warm)
     default_theme: project.default_theme || org?.default_theme || undefined,
   } : {}
