@@ -464,7 +464,7 @@ export default function PageBuilder() {
                   <span
                     key={k}
                     className="pb-color-theme-chip__dot"
-                    style={{ background: project?.custom_colors?.[k] || '#ccc' }}
+                    style={{ background: project?.custom_colors?.[k] || '#ccc' }} /* allow-hex: swatch van het gekozen palet */
                   />
                 ))}
               </div>
@@ -612,6 +612,7 @@ export default function PageBuilder() {
                     <span className="pb-text-color-dot" style={{ background: (COLOR_THEMES[colorTheme] || COLOR_THEMES.clean).text }} /> Donker
                   </button>
                   <button type="button" className={`pb-text-color-btn ${ctaSection.text_color === 'light' ? 'pb-text-color-btn--active' : ''}`} onClick={() => updateSection(ctaSection.id, 'text_color', 'light')}>
+                    {/* allow-hex: swatch toont letterlijk wit */}
                     <span className="pb-text-color-dot" style={{ background: '#ffffff', border: '1px solid #ccc' }} /> Licht
                   </button>
                 </div>

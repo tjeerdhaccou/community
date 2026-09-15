@@ -184,7 +184,7 @@ export default function Onboarding() {
               alignItems: 'center',
               justifyContent: 'center',
               background: step.done ? 'var(--accent-green, #3BD269)' : 'var(--bg-hover)',
-              color: step.done ? '#fff' : step.color,
+              color: step.done ? 'var(--accent-on-fill, #fff)' : step.color,
             }}>
               <i className={step.done ? 'fa-solid fa-check' : step.icon} />
             </div>

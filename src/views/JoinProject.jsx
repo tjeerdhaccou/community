@@ -174,7 +174,7 @@ export default function JoinProject() {
             <div className="join-card__routes">
               {hasIntake && (
                 <a href={intakeUrl} className="join-card__route">
-                  <div className="join-card__route-icon" style={{ background: 'rgba(59,210,105,0.14)', color: '#27A854' }}>
+                  <div className="join-card__route-icon" style={{ background: 'rgba(59,210,105,0.14)', color: 'var(--tag-green-text, #27A854)' }}>
                     <i className="fa-solid fa-clipboard-list" />
                   </div>
                   <div>
@@ -187,7 +187,7 @@ export default function JoinProject() {
 
               {hasPublicSite && (
                 <a href={publicSiteUrl} className="join-card__route">
-                  <div className="join-card__route-icon" style={{ background: 'rgba(74,144,217,0.14)', color: '#3A7BC8' }}>
+                  <div className="join-card__route-icon" style={{ background: 'rgba(74,144,217,0.14)', color: 'var(--tag-blue-text, #3A7BC8)' }}>
                     <i className="fa-solid fa-globe" />
                   </div>
                   <div>
@@ -200,7 +200,7 @@ export default function JoinProject() {
 
               {!hasIntake && (
                 <button className="join-card__route" onClick={handleJoin} disabled={joining}>
-                  <div className="join-card__route-icon" style={{ background: 'rgba(240,144,32,0.14)', color: '#C47718' }}>
+                  <div className="join-card__route-icon" style={{ background: 'rgba(240,144,32,0.14)', color: 'var(--tag-orange-text, #C47718)' }}>
                     <i className="fa-solid fa-user-plus" />
                   </div>
                   <div>

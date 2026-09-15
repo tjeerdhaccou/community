@@ -5,6 +5,7 @@ import { timeAgo, MONTHS_SHORT, MONTHS_LONG, DAYS_LONG } from '../lib/constants'
 import { COLOR_THEMES } from './PageBuilder'
 import { loadFonts } from '../lib/fonts'
 import { getIntakePath } from '../lib/subdomain'
+import { deriveAccent } from '../lib/brandAccent'
 
 const FONT_MAP = {
   clean: { heading: 'Inter, sans-serif', body: 'Inter, sans-serif' },
@@ -353,7 +354,14 @@ function ContentBlock({ section, updates, events, onUpdateClick, onEventClick })
             </div>
             {hasBtn && (
               <a href={section.cta_url} className="cl-btn cl-btn--primary cl-btn--lg pub-footer__btn" target="_blank" rel="noopener noreferrer"
-                style={{ background: section.cta_btn_color || 'var(--pub-primary)', color: '#fff', whiteSpace: 'nowrap' }}>
+                style={{
+                  background: section.cta_btn_color || 'var(--pub-primary)',
+                  // Knopkleur kiest de klant zelf in de pagina-bouwer; de tekst
+                  // volgt op contrast, anders is wit op een lichte keuze onleesbaar.
+                  // allow-hex: laatste terugval als er geen kleur gekozen is.
+                  color: deriveAccent(section.cta_btn_color)?.onFill || '#fff',
+                  whiteSpace: 'nowrap',
+                }}>
                 {section.cta_label}
               </a>
             )}
@@ -608,7 +616,11 @@ export default function PublicProject({ slugOverride }) {
             <Link
               to={getIntakePath(project)}
               className="cl-btn cl-btn--primary cl-btn--lg"
-              style={{ background: activeCtaBtnColor || '#ffffff', color: activeCtaBtnColor ? '#fff' : ctaBg }}
+              style={{
+                // allow-hex: terugval als er geen knopkleur gekozen is.
+                background: activeCtaBtnColor || 'var(--pub-background)',
+                color: activeCtaBtnColor ? (deriveAccent(activeCtaBtnColor)?.onFill || '#fff') : ctaBg,
+              }}
             >
               {activeCtaText || 'Schrijf je in'}
             </Link>

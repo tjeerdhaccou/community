@@ -216,7 +216,7 @@ export default function PlatformAdmin() {
                     {org.logo_url ? (
                       <img src={org.logo_url} alt={org.name} style={{ width: 40, height: 40, borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} />
                     ) : (
-                      <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-sm)', background: 'var(--accent-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 'var(--radius-sm)', background: 'var(--accent-primary)', color: 'var(--accent-on-fill, #fff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
                         {(org.name || 'O')[0]}
                       </div>
                     )}
@@ -229,7 +229,7 @@ export default function PlatformAdmin() {
                     <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', padding: '3px 8px', borderRadius: 'var(--radius-xs)', background: statusStyle.bg, color: statusStyle.color }}>
                       {org.status || 'active'}
                     </span>
-                    <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', padding: '3px 8px', borderRadius: 'var(--radius-xs)', background: 'rgba(74,144,217,0.14)', color: '#3A7BC8' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', padding: '3px 8px', borderRadius: 'var(--radius-xs)', background: 'rgba(74,144,217,0.14)', color: 'var(--tag-blue-text, #3A7BC8)' }}>
                       {TIER_LABELS[org.tier] || 'Free'}
                     </span>
                   </div>
