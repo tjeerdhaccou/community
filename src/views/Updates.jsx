@@ -12,7 +12,7 @@ import UpdateDetail from '../components/UpdateDetail'
 import ConfirmModal from '../components/ConfirmModal'
 import { useToast } from '../components/Toast'
 
-import { UPDATE_TAGS } from '../lib/constants'
+import { UPDATE_TAGS, UPDATE_TAG_COLORS, UPDATE_TAG_ICONS } from '../lib/constants'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 const FILTER_TAGS = ['Alles', ...UPDATE_TAGS]
 
@@ -129,8 +129,14 @@ export default function Updates() {
           <button
             key={tag}
             className={`tag-filter__pill ${activeTag === tag ? 'tag-filter__pill--active' : ''}`}
+            // Actieve pil in de tint van z'n type — dezelfde als de tag op de kaart.
+            // 'Alles' heeft geen type en houdt de inktvulling.
+            style={activeTag === tag && UPDATE_TAG_COLORS[tag]
+              ? { background: UPDATE_TAG_COLORS[tag].bg, color: UPDATE_TAG_COLORS[tag].color, borderColor: 'transparent' }
+              : undefined}
             onClick={() => setActiveTag(tag)}
           >
+            {UPDATE_TAG_ICONS[tag] && <i className={`${UPDATE_TAG_ICONS[tag]} tag-filter__icon`} aria-hidden="true" />}
             {tag}
           </button>
         ))}

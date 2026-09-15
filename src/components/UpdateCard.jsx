@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { canDo } from '../lib/permissions'
-import { UPDATE_TAG_COLORS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
+import { UPDATE_TAG_COLORS, UPDATE_TAG_ICONS, timeAgo, REACTIONS, REACTION_MAP } from '../lib/constants'
 
 export default function UpdateCard({ update, onEdit, onTogglePin, onReaction, onClick, featured = false }) {
   const { role } = useProject()
@@ -25,6 +25,7 @@ export default function UpdateCard({ update, onEdit, onTogglePin, onReaction, on
           )}
           {update.tag && (
             <span className="update-tag" style={{ background: tagStyle.bg, color: tagStyle.color }}>
+              {UPDATE_TAG_ICONS[update.tag] && <i className={`${UPDATE_TAG_ICONS[update.tag]} update-tag__icon`} aria-hidden="true" />}
               {update.tag}
             </span>
           )}

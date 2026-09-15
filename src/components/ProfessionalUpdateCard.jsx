@@ -1,4 +1,4 @@
-import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, timeAgo } from '../lib/constants'
+import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, timeAgo, tagStyle } from '../lib/constants'
 import { useAuth } from '../contexts/AuthContext'
 import FileRow from './FileRow'
 
@@ -22,7 +22,7 @@ export default function ProfessionalUpdateCard({ update, onEdit }) {
             </div>
           )}
           <span className="pro-update-card__name">{update.author?.full_name || 'Onbekend'}</span>
-          <span className="pro-badge" style={{ background: `${color}14`, color }}>{label}</span>
+          <span className="pro-badge" style={tagStyle(color)}>{label}</span>
           {update.phase && update.phase !== 'ALG' && (
             <span className="phase-badge">{update.phase}</span>
           )}

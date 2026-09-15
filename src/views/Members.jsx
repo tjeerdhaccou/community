@@ -7,7 +7,7 @@ import { useWorkgroups } from '../hooks/useWorkgroups'
 import useIntakeResponses from '../hooks/useIntakeResponses'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import { canDo } from '../lib/permissions'
-import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_LABELS, FUNNEL_COLORS } from '../lib/constants'
+import { ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_LABELS, FUNNEL_COLORS, tagStyle, funnelStyle } from '../lib/constants'
 import { getIntakeUrl, getProjectBaseUrl } from '../lib/subdomain'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 import MemberProfile from '../components/MemberProfile'
@@ -434,7 +434,7 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
                 {inv.name && <span className="invite-row__email">{inv.email}</span>}
               </div>
               {inv.assigned_role && inv.assigned_role !== 'guest' && (
-                <span className="invite-role-badge" style={{ background: `${ROLE_COLORS[inv.assigned_role]}14`, color: ROLE_COLORS[inv.assigned_role] }}>
+                <span className="invite-role-badge" style={tagStyle(ROLE_COLORS[inv.assigned_role])}>
                   {ROLE_LABELS[inv.assigned_role]}
                 </span>
               )}
@@ -554,16 +554,16 @@ function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [], ha
       )}
 
       <div className="member-card__badges">
-        <span className="member-card__badge" style={{ background: `${roleColor}14`, color: roleColor }}>
+        <span className="member-card__badge" style={tagStyle(roleColor)}>
           {ROLE_LABELS[membership.role]}
         </span>
         {proLabel && (
-          <span className="member-card__badge" style={{ background: `${proColor}14`, color: proColor }}>
+          <span className="member-card__badge" style={tagStyle(proColor)}>
             {proLabel}
           </span>
         )}
         {showFunnel && funnelLabel && membership.funnel_stage !== 'nieuw' && (
-          <span className="member-card__badge" style={{ background: `${funnelColor}14`, color: funnelColor }}>
+          <span className="member-card__badge" style={tagStyle(funnelColor)}>
             {funnelLabel}
           </span>
         )}

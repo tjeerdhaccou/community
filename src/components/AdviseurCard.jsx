@@ -1,4 +1,4 @@
-import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS } from '../lib/constants'
+import { PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, tagStyle } from '../lib/constants'
 
 export default function AdviseurCard({ profile, onEdit }) {
   const color = PROFESSIONAL_COLORS[profile.professional_type] || '#9ba1b0'
@@ -19,7 +19,7 @@ export default function AdviseurCard({ profile, onEdit }) {
       </div>
 
       <h3 className="adviseur-card__name">{profile.full_name}</h3>
-      <span className="pro-badge" style={{ background: `${color}14`, color }}>{typeLabel}</span>
+      <span className="pro-badge" style={tagStyle(color)}>{typeLabel}</span>
 
       {profile.company && (
         <p className="adviseur-card__company">{profile.company}</p>

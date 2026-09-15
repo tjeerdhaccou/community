@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
-import { ROLES, ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_STAGES, FUNNEL_LABELS, FUNNEL_COLORS, FUNNEL_ICONS, formatFileSize, fileIcon, fileIconColor } from '../lib/constants'
+import { ROLES, ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_STAGES, FUNNEL_LABELS, FUNNEL_COLORS, FUNNEL_ICONS, formatFileSize, fileIcon, fileIconColor, tagStyle } from '../lib/constants'
 import { uploadFile, downloadProjectFile } from '../lib/storage'
 import { labelForValue } from '../lib/intakeFields'
 import { useAuth } from '../contexts/AuthContext'
@@ -144,12 +144,12 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
             {/* Badges */}
             <div className="member-profile__badges">
               {role && (
-                <span className="member-profile__badge" style={{ background: `${roleColor}18`, color: roleColor }}>
+                <span className="member-profile__badge" style={tagStyle(roleColor)}>
                   {roleLabel}
                 </span>
               )}
               {proLabel && (
-                <span className="member-profile__badge" style={{ background: `${proColor}18`, color: proColor }}>
+                <span className="member-profile__badge" style={tagStyle(proColor)}>
                   {proLabel}
                 </span>
               )}
@@ -341,7 +341,7 @@ export default function MemberProfile({ profileId, membership, onClose, canManag
                         })()}>
                           {ROLES.filter(r => r !== 'guest' && r !== role && (r !== 'admin' || canAssignAdminRole)).map(r => (
                             <button key={r} onClick={() => handleRoleChange(r)}>
-                              <span className="member-profile__role-dot" style={{ background: ROLE_COLORS[r] }} />
+                              <span className="member-profile__role-dot" style={{ background: `var(--tag-brand-text, ${ROLE_COLORS[r]})` }} />
                               {ROLE_LABELS[r]}
                             </button>
                           ))}

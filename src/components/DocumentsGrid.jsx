@@ -40,7 +40,7 @@ export default function DocumentsGrid({ updates }) {
             <i className={`docs-grid__icon ${icon}`} style={{ color }} />
             <div className="docs-grid__name">{file.file_name}</div>
             <div className="docs-grid__meta">
-              <span style={{ color: proColor }}>{file.author?.full_name}</span>
+              <span style={{ color: `var(--tag-brand-text, ${proColor})` }}>{file.author?.full_name}</span>
               <span>{timeAgo(file.updateDate)}</span>
               {file.file_size > 0 && <span>{formatFileSize(file.file_size)}</span>}
             </div>

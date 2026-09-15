@@ -95,6 +95,33 @@ export function deriveAccent(hex, dark = false) {
   }
 }
 
+
+function mix(rgb, surface, alpha) {
+  return rgb.map((v, i) => v * alpha + surface[i] * (1 - alpha))
+}
+
+/**
+ * Fase-schaal: vijf tinten van de structuurkleur, van licht (Nieuw) naar vol
+ * (Bewoner). Per stap wordt de tekstkleur gekozen op contrast tegen de
+ * werkelijke, gemengde achtergrond — een lichte tint krijgt de leesbare
+ * structuurvariant, een volle tint de kleur-op-vlak.
+ */
+function scaleVars(str, dark) {
+  const surface = parseHex(dark ? SURFACE_DARK : SURFACE_LIGHT)
+  const out = {}
+  ;[0.10, 0.22, 0.36, 0.55, 0.85].forEach((alpha, i) => {
+    const n = i + 1
+    const blended = mix(str.rgb, surface, alpha)
+    const textRgb = parseHex(str.text)
+    const onFillRgb = parseHex(str.onFill)
+    const text = contrastRatio(textRgb, blended) >= AA_NORMAL ? str.text
+      : contrastRatio(onFillRgb, blended) >= contrastRatio(textRgb, blended) ? str.onFill : str.text
+    out[`--scale-${n}-bg`] = `rgba(${str.rgb.join(', ')}, ${alpha})`
+    out[`--scale-${n}-text`] = text
+  })
+  return out
+}
+
 /**
  * CSS-variabelen voor de merkkleuren van een project.
  *
@@ -129,6 +156,12 @@ export function accentVars({ accent, structure } = {}, dark = false) {
     '--accent-blue': str.text,
     '--accent-blue-rgb': str.rgb.join(', '),
     '--clean-inbox': str.text,
+    // Labels en tags (rol, type, categorie): één tint van de structuurkleur.
+    // Betekenis zit dan in het icoon of de tekst, niet in een eigen kleur.
+    '--tag-brand-bg': `rgba(${str.rgb.join(', ')}, 0.14)`,
+    '--tag-brand-text': str.text,
+    // Fase-badges: tintschaal Nieuw → Bewoner
+    ...scaleVars(str, dark),
     // Nav-iconen volgen de structuurkleur, niet de actiekleur: iconen zijn
     // navigatie-meubilair en de actiekleur moet schaars blijven zodat de knop
     // die ertoe doet opvalt.
