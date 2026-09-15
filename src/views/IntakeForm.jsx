@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION } from '../lib/constants'
 import { getIntakeField } from '../lib/intakeFields'
+import { accentVars, ACCENT_VAR_NAMES } from '../lib/brandAccent'
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -39,11 +40,16 @@ export default function IntakeForm({ slugOverride } = {}) {
     const prevTheme = root.getAttribute('data-theme')
     root.setAttribute('data-theme', style === 'crowdbuilding' ? 'crowdbuilding' : 'warm')
 
+    // Het intakeformulier is de deur vanaf de eigen website van het project naar
+    // ons, dus hier telt hun steunkleur wel. Altijd licht: dit formulier rendert
+    // nooit in dark mode.
+    const vars = accentVars(project.app_accent_color, false)
+    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value))
+
     return () => {
       if (prevTheme) root.setAttribute('data-theme', prevTheme)
       else root.removeAttribute('data-theme')
-      root.style.removeProperty('--accent-primary')
-      root.style.removeProperty('--border-focus')
+      ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
     }
   }, [project])
 
@@ -53,7 +59,7 @@ export default function IntakeForm({ slugOverride } = {}) {
       const projectColumn = UUID_REGEX.test(projectIdent) ? 'id' : 'slug'
       const projectRes = await supabase
         .from('projects')
-        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, brand_accent_color, intake_enabled, intake_intro_text, default_theme, organization:organizations(default_theme)')
+        .select('id, name, tagline, description, logo_url, cover_image_url, brand_primary_color, brand_accent_color, app_accent_color, intake_enabled, intake_intro_text, default_theme, organization:organizations(default_theme)')
         .eq(projectColumn, projectIdent)
         .single()
 
@@ -303,7 +309,7 @@ export default function IntakeForm({ slugOverride } = {}) {
               type="submit"
               className="btn-primary join-card__btn"
               disabled={submitting || !firstName.trim() || !lastName.trim() || !email.trim() || !consent || !termsConsent}
-              style={{ background: brandColor }}
+              style={{ background: 'var(--accent-cta)', color: 'var(--accent-on-cta)' }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
             </button>

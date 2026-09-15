@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { safeStorage } from '../lib/safeStorage'
+import { accentVars, ACCENT_VAR_NAMES } from '../lib/brandAccent'
 
 const ThemeContext = createContext(null)
 
@@ -61,14 +62,25 @@ export function ThemeProvider({ children, projectBranding, scope }) {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [storageKey])
 
-  // Steunkleur per project staat uit. brand_accent_color leek het juiste veld,
-  // maar dat is bij élk project gevuld — de pagina-editor schrijft hem bij elke
-  // save uit het palet. Aansluiten betekende dus dat álle projecten ineens hun
-  // paletkleur in de app-chrome kregen (demoproject en vlinderhaven werden
-  // groen) in plaats van alleen de projecten waar je het bewust instelt.
-  // Wacht op een eigen kolom app_accent_color die alleen gevuld is als iemand
-  // in het CMS een steunkleur kiest. brandAccent.js blijft staan: de afleiding
-  // klopt, alleen de schakelaar deugde niet.
+  // Steunkleur van het project vervangt het blauw uit het functionele palet.
+  //
+  // Bewust app_accent_color en niet brand_accent_color: dat laatste veld is bij
+  // élk project gevuld (de pagina-editor schrijft het bij elke save uit het
+  // palet), dus daarop aansluiten zette de kleur overal tegelijk aan in plaats
+  // van per project. app_accent_color raakt alleen gevuld vanuit het CMS.
+  //
+  // Ook niet rauw toepassen: deriveAccent() leidt per thema een leesbare
+  // tekstvariant en een passende kleur-op-vlak af. Zonder dat werden donkere
+  // merkkleuren onleesbaar in dark mode — de reden dat merkkleuren er ooit
+  // uitgingen. Semantische kleuren (rood/groen/geel, notificatiebolletjes)
+  // blijven ongemoeid.
+  useEffect(() => {
+    const root = document.documentElement
+    const vars = accentVars(projectBranding?.app_accent_color, dark)
+    ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
+    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value))
+    return () => ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
+  }, [projectBranding?.app_accent_color, dark])
 
   return (
     <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey }}>
