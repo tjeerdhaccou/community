@@ -108,6 +108,7 @@
   position: relative;
   z-index: 1;
 }
+.sc-head__logo { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .sc-head__av {
   position: relative;
   flex: none;

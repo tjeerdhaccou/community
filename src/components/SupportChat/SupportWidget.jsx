@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSupportConversation } from '../../hooks/useSupportConversation'
+import { useProject } from '../../contexts/ProjectContext'
 import { useToast } from '../Toast'
 import './SupportWidget.css'
 
@@ -49,6 +50,7 @@ export default function SupportWidget() {
   const [file, setFile] = useState(null)
   const [showEmoji, setShowEmoji] = useState(false)
   const [labelVisible, setLabelVisible] = useState(true)
+  const { project } = useProject()
   const { messages, loading, sending, sendMessage, markRead, unreadCount } = useSupportConversation()
   const toast = useToast()
   const location = useLocation()
@@ -168,7 +170,9 @@ export default function SupportWidget() {
     <div className="sc-panel" role="dialog" aria-label="Support-chat">
       <div className="sc-head">
         <div className="sc-head__av">
-          <i className="fa-regular fa-life-ring" aria-hidden="true" />
+          {project?.logo_url
+            ? <img src={project.logo_url} alt="" className="sc-head__logo" />
+            : <i className="fa-solid fa-headset" aria-hidden="true" />}
           <span className="sc-head__on" />
         </div>
         <div className="sc-head__txt">
