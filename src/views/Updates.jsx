@@ -129,11 +129,6 @@ export default function Updates() {
           <button
             key={tag}
             className={`tag-filter__pill ${activeTag === tag ? 'tag-filter__pill--active' : ''}`}
-            // Actieve pil in de tint van z'n type — dezelfde als de tag op de kaart.
-            // 'Alles' heeft geen type en houdt de inktvulling.
-            style={activeTag === tag && UPDATE_TAG_COLORS[tag]
-              ? { background: UPDATE_TAG_COLORS[tag].bg, color: UPDATE_TAG_COLORS[tag].color, borderColor: 'transparent' }
-              : undefined}
             onClick={() => setActiveTag(tag)}
           >
             {UPDATE_TAG_ICONS[tag] && <i className={`${UPDATE_TAG_ICONS[tag]} tag-filter__icon`} aria-hidden="true" />}
