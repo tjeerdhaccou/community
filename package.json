@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:colors": "node scripts/check-colors.mjs",
+    "prebuild": "node scripts/check-colors.mjs"
   },
   "dependencies": {
     "@sentry/react": "^10.46.0",

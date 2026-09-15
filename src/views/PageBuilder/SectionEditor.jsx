@@ -454,7 +454,7 @@ export default function SectionEditor({ section, index, total, colorTheme, proje
                   className={`pb-text-color-btn ${section.text_color === 'light' ? 'pb-text-color-btn--active' : ''}`}
                   onClick={() => onUpdate(section.id, 'text_color', 'light')}
                 >
-                  <span className="pb-text-color-dot" style={{ background: '#ffffff', border: '1px solid #ccc' }} /> Licht
+                  <span className="pb-text-color-dot" style={{ background: '#ffffff', border: '1px solid #ccc' }} /> Licht{/* allow-hex: swatch toont letterlijk wit */}
                 </button>
               </div>
             </div>

@@ -103,7 +103,7 @@ export default function OrgOnboarding() {
                 className={`onboarding-type ${orgType === 'professional' ? 'onboarding-type--active' : ''}`}
                 onClick={() => setOrgType('professional')}
               >
-                <div className="onboarding-type__icon" style={{ background: 'rgba(74,144,217,0.14)', color: '#3A7BC8' }}>
+                <div className="onboarding-type__icon" style={{ background: 'rgba(74,144,217,0.14)', color: 'var(--tag-blue-text, #3A7BC8)' }}>
                   <i className="fa-solid fa-briefcase" />
                 </div>
                 <strong>Ik begeleid meerdere groepen</strong>
@@ -113,7 +113,7 @@ export default function OrgOnboarding() {
                 className={`onboarding-type ${orgType === 'group' ? 'onboarding-type--active' : ''}`}
                 onClick={() => setOrgType('group')}
               >
-                <div className="onboarding-type__icon" style={{ background: 'rgba(59,210,105,0.14)', color: '#27A854' }}>
+                <div className="onboarding-type__icon" style={{ background: 'rgba(59,210,105,0.14)', color: 'var(--tag-green-text, #27A854)' }}>
                   <i className="fa-solid fa-house-chimney-user" />
                 </div>
                 <strong>Ik heb een woongroep</strong>

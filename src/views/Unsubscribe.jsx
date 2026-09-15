@@ -44,7 +44,7 @@ export default function Unsubscribe() {
 
         {status === 'success' && (
           <>
-            <i className="fa-solid fa-circle-check" style={{ fontSize: 40, color: '#3BD269', marginBottom: 20 }} />
+            <i className="fa-solid fa-circle-check" style={{ fontSize: 40, color: 'var(--accent-green, #3BD269)', marginBottom: 20 }} />
             <h1 style={{ margin: '0 0 12px', fontSize: 22 }}>Je bent uitgeschreven</h1>
             <p style={{ margin: '0 0 24px', fontSize: 15, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
               Je krijgt geen mail meer over <strong>{label}</strong>. Je kan dit
@@ -58,7 +58,7 @@ export default function Unsubscribe() {
 
         {status === 'error' && (
           <>
-            <i className="fa-solid fa-circle-exclamation" style={{ fontSize: 40, color: '#F23578', marginBottom: 20 }} />
+            <i className="fa-solid fa-circle-exclamation" style={{ fontSize: 40, color: 'var(--accent-pink, #F23578)', marginBottom: 20 }} />
             <h1 style={{ margin: '0 0 12px', fontSize: 22 }}>Uitschrijven niet gelukt</h1>
             <p style={{ margin: '0 0 24px', fontSize: 15, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
               {errorMsg}<br />

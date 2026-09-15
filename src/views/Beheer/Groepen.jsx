@@ -315,7 +315,7 @@ function WorkgroupModal({ workgroup, onClose, onSave }) {
                     width: 40, height: 40, borderRadius: 'var(--radius-sm, 8px)', cursor: 'pointer',
                     border: 'none',
                     background: icon === opt ? 'var(--accent-primary, #4A90D9)' : 'var(--bg-hover)',
-                    color: icon === opt ? '#fff' : 'var(--text-secondary)',
+                    color: icon === opt ? 'var(--accent-on-fill, #fff)' : 'var(--text-secondary)',
                   }}
                   aria-label={opt}
                 >
