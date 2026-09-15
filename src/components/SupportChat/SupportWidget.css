@@ -114,8 +114,8 @@
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
-  background: var(--accent-cta);
-  color: var(--accent-on-cta);
+  background: var(--accent-fill);
+  color: var(--accent-on-fill);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -88,3 +88,18 @@ export function isNavItemVisible(item, ctx) {
 export function visibleNavItems(ctx) {
   return NAV_SECTIONS.flatMap((s) => s.items.filter((i) => isNavItemVisible(i, ctx)))
 }
+
+/**
+ * Kleur van een nav-item, voor onderdelen elders (dashboardtegels, kaartkoppen)
+ * die hetzelfde concept tonen. Zo is "Leden" overal dezelfde tint, en volgt het
+ * dashboard automatisch de structuurkleur zodra een project branding heeft:
+ * --nav-icon-brand wint, anders de eigen tint van het item.
+ */
+export function navColor(to) {
+  for (const section of NAV_SECTIONS) {
+    for (const item of section.items) {
+      if (item.to === to) return `var(--nav-icon-brand, ${item.color})`
+    }
+  }
+  return 'var(--nav-icon-brand, var(--text-tertiary))'
+}

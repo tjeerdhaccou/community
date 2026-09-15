@@ -185,11 +185,11 @@
 .chat-av {
   flex: none; border-radius: var(--radius-full); object-fit: cover;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--accent-cta); color: var(--accent-on-cta); font-weight: var(--weight-semibold); line-height: 1;
+  background: var(--accent-fill); color: var(--accent-on-fill); font-weight: var(--weight-semibold); line-height: 1;
 }
 .chat-av--initials { background: var(--bg-active); color: var(--text-secondary); }
 .chat-av--emoji { background: var(--bg-page); border: 1px solid var(--border-default); }
-.chat-av--icon { background: var(--accent-cta); color: var(--accent-on-cta); }
+.chat-av--icon { background: var(--accent-fill); color: var(--accent-on-fill); }
 
 .chat-list__search { display: flex; align-items: center; gap: 8px; }
 .chat-search { flex: 1; }

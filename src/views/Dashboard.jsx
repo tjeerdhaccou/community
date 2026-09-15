@@ -12,6 +12,7 @@ import MemberWelcome from '../components/MemberWelcome'
 import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
 import { useToast } from '../components/Toast'
 import { friendlyError } from '../lib/logger'
+import { navColor } from '../lib/navigation'
 
 export default function Dashboard() {
   const { project, role, loading, basePath, onboardingActive, readOnly } = useProject()
@@ -138,7 +139,7 @@ export default function Dashboard() {
     actionItems.push({
       id: `pay-${pr.id}`,
       iconClass: 'fa-euro-sign',
-      iconStyle: { background: 'rgba(240,144,32,0.14)', color: '#F09020' },
+      iconStyle: { background: 'var(--tag-orange-bg)', color: 'var(--accent-orange)' },
       title: `${isAgreed ? 'Rond je betaling af' : 'Openstaand betaalverzoek'}: ${(pr.amount_cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: pr.currency || 'EUR' })}`,
       subtitle: `${pr.title}${pr.reference ? ` · ref ${pr.reference}` : ''}`,
       onClick: () => { window.location.href = href },
@@ -210,22 +211,22 @@ export default function Dashboard() {
       {/* Stats row — meteen onder de header voor projectcontext in één oogopslag */}
       <div className="dash-stats">
         <div className="dash-stat" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-user-tag dash-stat__icon" style={{ color: '#4A90D9' }} />
+          <i className="fa-solid fa-user-tag dash-stat__icon" style={{ color: navColor('mijn-dossier') }} />
           <span className="dash-stat__value">{ROLE_LABELS[role] || role}</span>
           <span className="dash-stat__label">Jouw rol</span>
         </div>
         <div className="dash-stat" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-users dash-stat__icon" style={{ color: '#F09020' }} />
+          <i className="fa-solid fa-users dash-stat__icon" style={{ color: navColor('members') }} />
           <span className="dash-stat__value">{feed.stats.members}</span>
           <span className="dash-stat__label">Leden</span>
         </div>
         <div className="dash-stat" onClick={() => navigate(`${basePath}/updates`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-bullhorn dash-stat__icon" style={{ color: '#F23578' }} />
+          <i className="fa-solid fa-bullhorn dash-stat__icon" style={{ color: navColor('updates') }} />
           <span className="dash-stat__value">{feed.stats.updates}</span>
           <span className="dash-stat__label">Nieuws</span>
         </div>
         <div className="dash-stat" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-road dash-stat__icon" style={{ color: '#7B5EA7' }} />
+          <i className="fa-solid fa-road dash-stat__icon" style={{ color: navColor('roadmap') }} />
           <span className="dash-stat__value">{activePhase?.subtitle || activePhase?.name || '—'}</span>
           <span className="dash-stat__label">Fase</span>
         </div>
@@ -241,7 +242,7 @@ export default function Dashboard() {
       )}
       {role === 'aspirant' && (
         <div className="dash-status-strip">
-          <i className="fa-solid fa-seedling dash-status-strip__icon" style={{ color: '#3BD269' }} />
+          <i className="fa-solid fa-seedling dash-status-strip__icon" style={{ color: 'var(--accent-green)' }} />
           <span>Welkom als aspirant-lid. Kijk rond; na de kennismakingsperiode word je volledig lid.</span>
         </div>
       )}
@@ -302,7 +303,7 @@ export default function Dashboard() {
         {feed.nextEvent && (
           <div className="dash-card dash-card--event" onClick={() => navigate(`${basePath}/events?open=${feed.nextEvent.id}`)} role="button" tabIndex={0}>
             <div className="dash-card__content">
-              <span className="dash-card__label"><i className="fa-solid fa-calendar-check" style={{ color: '#F09020' }} /> Eerstvolgende event</span>
+              <span className="dash-card__label"><i className="fa-solid fa-calendar-check" style={{ color: navColor('events') }} /> Eerstvolgende event</span>
               <h3 className="dash-card__title">{feed.nextEvent.title}</h3>
               <span className="dash-card__meta">
                 {(() => {
@@ -320,7 +321,7 @@ export default function Dashboard() {
         {feed.latestUpdate && (
           <div className="dash-card dash-card--update" onClick={() => navigate(`${basePath}/updates`)} role="button" tabIndex={0}>
             <div className="dash-card__content">
-              <span className="dash-card__label"><i className="fa-solid fa-bullhorn" style={{ color: '#F4B400' }} /> Laatste update</span>
+              <span className="dash-card__label"><i className="fa-solid fa-bullhorn" style={{ color: navColor('updates') }} /> Laatste update</span>
               <h3 className="dash-card__title">{feed.latestUpdate.title}</h3>
               <span className="dash-card__meta">
                 {feed.latestUpdate.author?.full_name} · {timeAgo(feed.latestUpdate.created_at)}
@@ -334,7 +335,7 @@ export default function Dashboard() {
         {feed.latestPosts.length > 0 && (
           <div className="dash-card dash-card--posts" onClick={() => navigate(`${basePath}/community`)} role="button" tabIndex={0}>
             <div className="dash-card__content">
-              <span className="dash-card__label"><i className="fa-solid fa-thumbtack" style={{ color: '#3BD269' }} /> Prikbord</span>
+              <span className="dash-card__label"><i className="fa-solid fa-thumbtack" style={{ color: navColor('community') }} /> Prikbord</span>
               <div className="dash-posts-list">
                 {feed.latestPosts.map(p => (
                   <div key={p.id} className="dash-post-item">
@@ -356,7 +357,7 @@ export default function Dashboard() {
         {feed.newMembers.length > 0 && (
           <div className="dash-card dash-card--members" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
             <div className="dash-card__content">
-              <span className="dash-card__label"><i className="fa-solid fa-users" style={{ color: '#F23578' }} /> Nieuwste leden</span>
+              <span className="dash-card__label"><i className="fa-solid fa-users" style={{ color: navColor('members') }} /> Nieuwste leden</span>
               <div className="dash-members-avatars">
                 {feed.newMembers.slice(0, 8).map(m => (
                   m.profile?.avatar_url
