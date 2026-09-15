@@ -26,7 +26,7 @@ export const NAV_SECTIONS = [
     label: 'Actueel',
     items: [
       { to: 'updates', icon: 'fa-solid fa-bullhorn', color: 'var(--clean-today, #F4B400)', bubble: 'coral', label: 'Projectnieuws', shortLabel: 'Nieuws', feature: 'updates' },
-      { to: 'community', icon: 'fa-solid fa-thumbtack', color: '#E4572E', bubble: 'green', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
+      { to: 'community', icon: 'fa-solid fa-thumbtack', color: '#F09020', bubble: 'green', label: 'Prikbord', action: 'read_board', membersOnly: true, feature: 'board' },
       { to: 'events', icon: 'fa-solid fa-calendar-check', color: 'var(--clean-upcoming, #F09020)', bubble: 'amber', label: 'Events', feature: 'events' },
     ]
   },
