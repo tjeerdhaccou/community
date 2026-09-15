@@ -28,6 +28,14 @@
   --accent-on-cta:       #fff;      /* Tekst op --accent-cta. Wit tenzij een project een lichte
                                        steunkleur heeft: brandAccent.js zet dit dan op donker,
                                        zodat een gevulde knop leesbaar blijft. */
+
+  /* Vulkleur voor accent-vlakken: actieve chips, avatars, stepper. Valt terug
+     op --accent-primary, zodat thema's die die twee splitsen (CrowdBuilding:
+     navy structuur, coral CTA) onveranderd blijven. Een projectsteunkleur
+     overschrijft dit met de rauwe kleur, want een vlak hoort de merkkleur zelf
+     te zijn — niet de donkerder gemaakte tekstvariant. */
+  --accent-fill:         var(--accent-primary);
+  --accent-on-fill:      #fff;   /* Tekst op --accent-fill, zie --accent-on-cta */
   --accent-blue:         #4A90D9;   /* Info/link-blauw als token zodat een thema het kan vervangen */
   --accent-blue-rgb:     74, 144, 217;  /* Zelfde blauw als rgb-triplet voor rgba(var(--accent-blue-rgb), x) tints */
   --accent-yellow:       #F4B400;   /* Stars, highlights, financial */
