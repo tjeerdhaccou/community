@@ -1,59 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { loadFonts } from '../lib/fonts'
-import {
-  UnderlineDoodle,
-  SparkleDoodle,
-  SmileyDoodle,
-  HouseDoodle,
-} from '../components/LandingDoodles'
+import { START } from '../content/landing'
 import '../styles/landing.css'
 
-const SEGMENTS = {
-  bewoner: {
-    icon: <HouseDoodle />,
-    color: 'var(--lp-green)',
-    soft: 'var(--lp-green-soft)',
-    title: 'Ik wil hier (samen) wonen',
-    desc: 'Je bent toekomstig bewoner, zoekt een woonproject of bent onderdeel van een bewonersgroep.',
-    formTitle: 'Vertel ons over je woonwens',
-    formIntro: 'Laat je gegevens achter en we nemen contact op zodra buuur light beschikbaar is — of eerder, als er een project bij je past.',
-  },
-  professional: {
-    icon: <SparkleDoodle />,
-    color: 'var(--lp-lilac)',
-    soft: 'var(--lp-lilac-soft)',
-    title: 'Ik begeleid of ontwikkel projecten',
-    desc: 'Je bent procesbegeleider, projectontwikkelaar, corporatie of gemeente en wilt in contact staan met toekomstige bewoners.',
-    formTitle: 'Vertel ons over je project',
-    formIntro: 'Laat je gegevens achter en we plannen een kennismaking — we laten je graag zien wat buuur pro voor jouw project kan doen.',
-  },
+const SEGMENTS = START.segments
+
+function bubbleStyle(name) {
+  return { '--lp-b-bg': `var(--lp-bub-${name}-bg)`, '--lp-b-fg': `var(--lp-bub-${name}-fg)` }
 }
-
-const BEWONER_SITUATIES = [
-  'Ik oriënteer me nog',
-  'Ik zoek een bestaand woonproject',
-  'Ik ben onderdeel van een bewonersgroep',
-  'Ons initiatief zoekt een platform',
-]
-
-const PRO_ROLLEN = [
-  'Procesbegeleider',
-  'Projectontwikkelaar',
-  'Woningcorporatie',
-  'Gemeente',
-  'Anders',
-]
 
 export default function Start() {
   const [searchParams, setSearchParams] = useSearchParams()
   const paramSegment = searchParams.get('segment')
   const segment = SEGMENTS[paramSegment] ? paramSegment : null
-
-  // landing.css verwijst naar Inter/Space Grotesk/Caveat — on-demand laden.
-  useEffect(() => { loadFonts(['Inter', 'Space Grotesk', 'Caveat']) }, [])
 
   const [form, setForm] = useState({
     name: '',
@@ -95,138 +56,84 @@ export default function Start() {
     setSubmitting(false)
     if (insertError) {
       logger.error('Lead insert failed', insertError)
-      setError('Er ging iets mis bij het versturen. Probeer het opnieuw of mail ons op hallo@buuur.nl.')
+      setError(START.error)
       return
     }
     setDone(true)
   }
 
   const seg = segment ? SEGMENTS[segment] : null
+  const firstName = form.name.trim().split(' ')[0]
 
   return (
     <div className="lp">
-      <nav className="lp-nav">
-        <div className="lp-nav__inner">
-          <Link to="/" className="lp-nav__logo" style={{ textDecoration: 'none' }}>
-            buuur
-            <UnderlineDoodle stretch />
+      <nav className="lp-nav" aria-label="Hoofdnavigatie">
+        <div className="lp-nav__in">
+          <Link to="/" className="lp-logo">
+            <span className="lp-logo__mark"><i className="fa-solid fa-house" aria-hidden="true" /></span>buuur
           </Link>
           <div className="lp-nav__links">
-            <Link to="/login" className="lp-btn lp-btn--small">Inloggen</Link>
+            <Link to="/login" className="lp-btn lp-btn--ghost lp-btn--sm">Inloggen</Link>
           </div>
         </div>
       </nav>
 
-      <main className="lp-main">
+      <main>
         <div className="lp-start">
           {done ? (
-            <div className="lp-start__success">
-              <div className="lp-start__success-smiley"><SmileyDoodle /></div>
-              <h1>Gelukt!</h1>
-              <p>
-                Bedankt {form.name.split(' ')[0]} — we hebben je bericht ontvangen
-                en nemen snel contact met je op.
-              </p>
-              <Link to="/" className="lp-btn">
-                Terug naar de homepage
-              </Link>
+            <div className="lp-start__done">
+              <span className="lp-bub lp-bub--lg" style={bubbleStyle('green')}><i className="fa-solid fa-check" aria-hidden="true" /></span>
+              <h1>{START.successTitle}</h1>
+              <p>{START.successBody.replace('{naam}', firstName || 'je')}</p>
+              <Link to="/" className="lp-btn">{START.successCta}</Link>
             </div>
           ) : !segment ? (
             <>
-              <header className="lp-start__header">
-                <h1>
-                  Waar kunnen we je{' '}
-                  <span className="lp-underlined">
-                    mee helpen
-                    <UnderlineDoodle stretch />
-                  </span>
-                  ?
-                </h1>
-                <p>Kies wat het best bij je past — dan stellen we de juiste vragen.</p>
+              <header className="lp-start__head">
+                <h1>{START.chooseTitle}</h1>
+                <p>{START.chooseIntro}</p>
               </header>
-              <div className="lp-start__choices">
+              <div className="lp-choices">
                 {Object.entries(SEGMENTS).map(([key, s]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className="lp-card lp-start__choice"
-                    style={{ '--c': s.color, '--c-soft': s.soft }}
-                    onClick={() => pickSegment(key)}
-                  >
-                    <span className="lp-start__choice-icon">{s.icon}</span>
+                  <button key={key} type="button" className="lp-choice" onClick={() => pickSegment(key)}>
+                    <span className="lp-bub" style={bubbleStyle(s.bubble)}><i className={s.icon} aria-hidden="true" /></span>
                     <h2>{s.title}</h2>
                     <p>{s.desc}</p>
-                    <span className="lp-start__choice-cta">
-                      Verder <i className="fa-solid fa-arrow-right" />
-                    </span>
+                    <span className="lp-choice__cta">Verder <i className="fa-solid fa-arrow-right" aria-hidden="true" /></span>
                   </button>
                 ))}
               </div>
             </>
           ) : (
             <>
-              <button
-                type="button"
-                className="lp-start__back"
-                onClick={() => setSearchParams({})}
-              >
-                <i className="fa-solid fa-arrow-left" /> Andere keuze
+              <button type="button" className="lp-back" onClick={() => setSearchParams({})}>
+                <i className="fa-solid fa-arrow-left" aria-hidden="true" /> {START.back}
               </button>
-              <header className="lp-start__header">
+              <header className="lp-start__head">
                 <h1>{seg.formTitle}</h1>
                 <p>{seg.formIntro}</p>
               </header>
-              <form className="lp-card lp-start__form" style={{ '--c': seg.color }} onSubmit={handleSubmit}>
+              <form className="lp-form" onSubmit={handleSubmit}>
                 <div className="lp-field">
                   <label htmlFor="lead-name">Naam *</label>
-                  <input
-                    id="lead-name"
-                    className="lp-input"
-                    type="text"
-                    required
-                    autoComplete="name"
-                    value={form.name}
-                    onChange={update('name')}
-                  />
+                  <input id="lead-name" className="lp-input" type="text" required autoComplete="name" value={form.name} onChange={update('name')} />
                 </div>
                 <div className="lp-field">
                   <label htmlFor="lead-email">E-mailadres *</label>
-                  <input
-                    id="lead-email"
-                    className="lp-input"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    value={form.email}
-                    onChange={update('email')}
-                  />
+                  <input id="lead-email" className="lp-input" type="email" required autoComplete="email" value={form.email} onChange={update('email')} />
                 </div>
 
                 {segment === 'bewoner' && (
                   <>
                     <div className="lp-field">
                       <label htmlFor="lead-region">Regio of woonplaats</label>
-                      <input
-                        id="lead-region"
-                        className="lp-input"
-                        type="text"
-                        placeholder="bijv. Amsterdam, Achterhoek…"
-                        value={form.region}
-                        onChange={update('region')}
-                      />
+                      <input id="lead-region" className="lp-input" type="text" placeholder="Bijvoorbeeld Amsterdam of de Achterhoek" value={form.region} onChange={update('region')} />
                     </div>
                     <div className="lp-field">
                       <label htmlFor="lead-situation">Waar sta je nu?</label>
-                      <select
-                        id="lead-situation"
-                        className="lp-input"
-                        value={form.situation}
-                        onChange={update('situation')}
-                      >
-                        <option value="">Maak een keuze…</option>
-                        {BEWONER_SITUATIES.map(s => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
+                      <select id="lead-situation" className="lp-input" value={form.situation} onChange={update('situation')}>
+                        <option value="">Maak een keuze</option>
+                        {seg.situations.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                   </>
@@ -236,51 +143,28 @@ export default function Start() {
                   <>
                     <div className="lp-field">
                       <label htmlFor="lead-org">Organisatie *</label>
-                      <input
-                        id="lead-org"
-                        className="lp-input"
-                        type="text"
-                        required
-                        autoComplete="organization"
-                        value={form.organization}
-                        onChange={update('organization')}
-                      />
+                      <input id="lead-org" className="lp-input" type="text" required autoComplete="organization" value={form.organization} onChange={update('organization')} />
                     </div>
                     <div className="lp-field">
                       <label htmlFor="lead-role">Jouw rol</label>
-                      <select
-                        id="lead-role"
-                        className="lp-input"
-                        value={form.role}
-                        onChange={update('role')}
-                      >
-                        <option value="">Maak een keuze…</option>
-                        {PRO_ROLLEN.map(r => (
-                          <option key={r} value={r}>{r}</option>
-                        ))}
+                      <select id="lead-role" className="lp-input" value={form.role} onChange={update('role')}>
+                        <option value="">Maak een keuze</option>
+                        {seg.roles.map(r => <option key={r} value={r}>{r}</option>)}
                       </select>
                     </div>
                   </>
                 )}
 
                 <div className="lp-field">
-                  <label htmlFor="lead-message">
-                    {segment === 'bewoner' ? 'Vertel iets over je woonwens' : 'Vertel iets over je project'}
-                  </label>
-                  <textarea
-                    id="lead-message"
-                    className="lp-input"
-                    rows={4}
-                    value={form.message}
-                    onChange={update('message')}
-                  />
+                  <label htmlFor="lead-message">{seg.messageLabel}</label>
+                  <textarea id="lead-message" className="lp-input" rows={4} value={form.message} onChange={update('message')} />
                 </div>
 
-                {error && <p className="lp-start__error">{error}</p>}
+                {error && <p className="lp-form__error" role="alert">{error}</p>}
 
-                <div className="lp-start__actions">
+                <div className="lp-form__actions">
                   <button type="submit" className="lp-btn" disabled={submitting}>
-                    {submitting ? 'Versturen…' : 'Verstuur'} <i className="fa-solid fa-paper-plane" />
+                    {submitting ? 'Versturen…' : 'Verstuur'} <i className="fa-solid fa-paper-plane" aria-hidden="true" />
                   </button>
                 </div>
               </form>
@@ -290,8 +174,8 @@ export default function Start() {
       </main>
 
       <footer className="lp-footer">
-        <div className="lp-footer__inner">
-          <p className="lp-footer__copy">© {new Date().getFullYear()} CrowdBuilding — Met ❤️ gemaakt in Amsterdam</p>
+        <div className="lp-wrap">
+          <p className="lp-footer__copy">© {new Date().getFullYear()} CrowdBuilding</p>
         </div>
       </footer>
     </div>
