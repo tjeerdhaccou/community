@@ -36,14 +36,24 @@ function memberEmail(name: string | null, body: string, link: string): string {
   return shell(`<p style="font-size:16px;margin:0 0 12px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 16px">Je hebt een antwoord van support gekregen:</p><div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:0 0 22px">${escapeHtml(snippet)}</div>${button(link, 'Bekijk en reageer')}<p style="font-size:12px;color:#9BA1B0;margin:24px 0 0">Je krijgt deze mail omdat je een vraag hebt gesteld via de support-chat.</p>`)
 }
 
-function digestEmail(items: { who: string; project: string | null; snippet: string; when: string }[], link: string): string {
+// Hoe lang wachten we voor de volgende herinnering over dezelfde vraag?
+// 0 = nog nooit gemeld → meteen; daarna 1 dag, 3 dagen, en vervolgens wekelijks.
+const REMINDER_GAPS_HOURS = [0, 24, 72, 168]
+
+function isReminderDue(count: number, lastAt: string | null): boolean {
+  if (!lastAt || count === 0) return true
+  const gap = REMINDER_GAPS_HOURS[Math.min(count, REMINDER_GAPS_HOURS.length - 1)]
+  return Date.now() - new Date(lastAt).getTime() >= gap * 3600_000
+}
+
+function digestEmail(items: { who: string; project: string | null; snippet: string; when: string }[], link: string, extraOpen = 0): string {
   const rows = items.map((it) => `
     <div style="border-top:1px solid #ECE8E1;padding:14px 0">
       <div style="font-size:14px;font-weight:600">${escapeHtml(it.who)}${it.project ? ` <span style="color:#9BA1B0;font-weight:400">· ${escapeHtml(it.project)}</span>` : ''} <span style="color:#9BA1B0;font-weight:400;font-size:12px">· ${escapeHtml(it.when)}</span></div>
       <div style="font-size:15px;color:#3A3656;margin-top:4px;line-height:1.5">${escapeHtml(it.snippet)}</div>
     </div>`).join('')
   const n = items.length
-  return shell(`<p style="font-size:16px;margin:0 0 4px;font-weight:600">Openstaande supportvragen</p><p style="font-size:14px;color:#5A5F72;margin:0 0 8px">${n} ${n === 1 ? 'vraag wacht' : 'vragen wachten'} op antwoord.</p>${rows}<div style="margin-top:22px">${button(link, 'Open de support-inbox')}</div><p style="font-size:12px;color:#9BA1B0;margin:22px 0 0">Je krijgt deze digest als beheerder van de organisatie. Instellen kan in de support-inbox onder Instellingen.</p>`)
+  return shell(`<p style="font-size:16px;margin:0 0 4px;font-weight:600">Openstaande supportvragen</p><p style="font-size:14px;color:#5A5F72;margin:0 0 8px">${n} ${n === 1 ? 'vraag wacht' : 'vragen wachten'} op antwoord.</p>${rows}<div style="margin-top:22px">${button(link, 'Open de support-inbox')}</div>${extraOpen > 0 ? `<p style="font-size:13px;color:#9BA1B0;margin:14px 0 0">Er ${extraOpen === 1 ? 'staat nog 1 vraag' : `staan nog ${extraOpen} vragen`} open waarover je eerder bericht kreeg.</p>` : ''}<p style="font-size:12px;color:#9BA1B0;margin:22px 0 0">Je krijgt deze digest als beheerder van de organisatie. Herinneringen over dezelfde vraag worden steeds verder uit elkaar gezet. Instellen kan in de support-inbox onder Instellingen.</p>`)
 }
 
 async function send(to: string[], subject: string, html: string): Promise<boolean> {
@@ -113,11 +123,12 @@ Deno.serve(async () => {
   // Alle onbeantwoorde vragen (ongelezen lid-berichten), gegroepeerd per org.
   const { data: openMsgs } = await admin
     .from('support_messages')
-    .select(`body, created_at, conversation:support_conversations!inner(id, org_id, sender:profiles!user_id(full_name), project:projects(name), org:organizations(slug))`)
+    .select(`body, created_at, conversation:support_conversations!inner(id, org_id, reminder_count, last_reminder_at, sender:profiles!user_id(full_name), project:projects(name), org:organizations(slug))`)
     .eq('sender_role', 'user').is('read_at', null)
     .order('created_at', { ascending: true })
 
-  const byOrg = new Map<string, { slug: string | null; convs: Map<string, { who: string; project: string | null; snippet: string; when: string }> }>()
+  type DigestItem = { who: string; project: string | null; snippet: string; when: string; convId: string; reminderCount: number; lastReminderAt: string | null }
+  const byOrg = new Map<string, { slug: string | null; convs: Map<string, DigestItem> }>()
   for (const m of (openMsgs ?? []) as any[]) {
     const conv = m.conversation
     const orgId = conv?.org_id
@@ -129,6 +140,9 @@ Deno.serve(async () => {
       project: conv.project?.name ?? null,
       snippet: (m.body || '').slice(0, 200),
       when: shortTime(m.created_at),
+      convId: conv.id,
+      reminderCount: conv.reminder_count ?? 0,
+      lastReminderAt: conv.last_reminder_at as string | null,
     })
   }
 
@@ -166,9 +180,26 @@ Deno.serve(async () => {
     if (recipients.length === 0) continue
 
     const link = slug ? `https://admin.${MAIN_DOMAIN}/org/${slug}/support` : `https://admin.${MAIN_DOMAIN}`
-    const items = [...convs.values()]
-    const ok = await send(recipients, `Openstaande supportvragen (${items.length})`, digestEmail(items, link))
+
+    // Afbouwend herinneren per vraag: 1e bij binnenkomst, dan na 1 dag, 3 dagen
+    // en daarna wekelijks. Zo blijft een vraag porren zonder dagelijkse ruis.
+    const all = [...convs.values()]
+    const due = all.filter((it) => isReminderDue(it.reminderCount, it.lastReminderAt))
+    if (due.length === 0) continue
+
+    const extra = all.length - due.length
+    const ok = await send(recipients, `Openstaande supportvragen (${due.length})`, digestEmail(due, link, extra))
     if (ok) digestsSent++
+
+    // Teller ophogen voor precies de vragen die in deze mail stonden.
+    if (ok) {
+      const stamp = new Date().toISOString()
+      for (const it of due) {
+        await admin.from('support_conversations')
+          .update({ reminder_count: it.reminderCount + 1, last_reminder_at: stamp })
+          .eq('id', it.convId)
+      }
+    }
 
     // Log het slot (ook bij mislukte send, om spam-retries te voorkomen).
     await admin.from('support_digest_log').insert({ org_id: orgId, digest_date: now.date, slot: dueSlot })
