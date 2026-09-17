@@ -163,7 +163,10 @@ Deno.serve(async (req) => {
 
     await sb.from('storage_backup_runs').update({ finished_at: new Date().toISOString(), ...stats, error: problems.length ? problems.slice(0, 50).join('\n') : null }).eq('id', run?.id)
 
-    if (mode === 'verify' && (stats.missing > 0 || problems.length > 0)) {
+    // Alleen mailen als er nieuws is: nieuw ontbrekende bestanden, iets hersteld,
+    // of een fout. Al eerder gemelde onherstelbare bestanden blijven stil — die
+    // veranderen nooit meer en zouden anders elke nacht dezelfde mail opleveren.
+    if (mode === 'verify' && (problems.length > 0 || stats.restored > 0)) {
       await sendAlert(
         `Bestandscontrole buuur: ${stats.restored} hersteld, ${stats.unrecoverable} onherstelbaar`,
         [`Gecontroleerd: ${stats.checked}`, `Ontbrekend: ${stats.missing}`, `Hersteld uit back-up: ${stats.restored}`, `Onherstelbaar: ${stats.unrecoverable}`, `Opgeruimd (30 dagen na verwijderen): ${stats.pruned}`, '', ...problems],
