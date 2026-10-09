@@ -486,8 +486,20 @@ function SignatureCard({ signature, onOpen }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
             <span style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
               Getekend op {new Date(signature.signed_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {signature.countersigned_at && (
+                <> · bevestigd door {signature.org_name || 'de organisatie'} op {new Date(signature.countersigned_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })}</>
+              )}
             </span>
-            <SignedDownloadButton signedPath={signature.signed_file_path} fileName={signature.file_name} />
+            {signature.countersigned_file_path ? (
+              <SignedDownloadButton
+                signedPath={signature.countersigned_file_path}
+                fileName={signature.file_name}
+                label="Download volledig getekende versie"
+                primary
+              />
+            ) : (
+              <SignedDownloadButton signedPath={signature.signed_file_path} fileName={signature.file_name} />
+            )}
           </div>
         )}
       </div>
@@ -497,8 +509,9 @@ function SignatureCard({ signature, onOpen }) {
 
 // Knop om de getekende versie van een tekenverzoek te downloaden. Werkt op
 // de privé signatures-bucket via een tijdelijke signed URL (RLS laat signers
-// hun eigen signed-<id>.pdf lezen).
-function SignedDownloadButton({ signedPath, fileName }) {
+// alles in de map van hun eigen verzoek lezen: signed-<id>.pdf én, na
+// tegentekening door de organisatie, countersigned.pdf).
+function SignedDownloadButton({ signedPath, fileName, label = 'Download getekende versie', primary = false }) {
   const [busy, setBusy] = useState(false)
   async function onClick(e) {
     e.stopPropagation()
@@ -525,13 +538,13 @@ function SignedDownloadButton({ signedPath, fileName }) {
   return (
     <button
       type="button"
-      className="btn-secondary"
+      className={primary ? 'btn-primary' : 'btn-secondary'}
       onClick={onClick}
       disabled={busy || !signedPath}
       style={{ fontSize: 13 }}
     >
       <i className="fa-solid fa-download" />
-      {busy ? 'Laden…' : 'Download getekende versie'}
+      {busy ? 'Laden…' : label}
     </button>
   )
 }
