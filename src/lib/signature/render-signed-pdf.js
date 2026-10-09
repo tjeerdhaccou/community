@@ -12,6 +12,14 @@ function formatNlDate(d) {
   return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+// De standaard-fonts kennen alleen WinAnsi; alles daarbuiten (emoji e.d.)
+// zou de render laten crashen.
+function clean(s) {
+  return String(s ?? '')
+    .normalize('NFC')
+    .replace(/[^\x20-\x7E\xA0-\xFF–—‘’“”…€]/g, '?')
+}
+
 // Bouwt de regels die in het handtekening-blok komen. NAW-veld wordt alleen
 // getoond als het is meegegeven. Krabbel + plaats/datum zijn altijd aanwezig.
 function buildSignatureLines({ signer, naw, place }) {
@@ -46,17 +54,22 @@ function buildSignatureLines({ signer, naw, place }) {
 }
 
 // Rendert het handtekening-blok (krabbel + NAW + plaats/datum) op de signer's
-// placement-coords en plakt een audit-pagina achteraan.
+// placement-coords, zet de invulregels van het lid op de PDF en plakt een
+// audit-pagina achteraan.
 //
-// signature   = rij uit signature_request_signers (incl. placement_*)
-// originalPdf = Uint8Array van het originele PDF
-// signer      = { full_name, email }
-// naw         = { street_address, postal_code, city, date_of_birth?, phone? }
-// place       = waar de signer nu ondertekent
-// signedIp    = IP-adres bij ondertekening (van edge function)
+// signature    = rij uit signature_request_signers (incl. placement_*)
+// originalPdf  = Uint8Array van het originele PDF
+// signer       = { full_name, email }
+// naw          = { street_address, postal_code, city, date_of_birth?, phone? }
+// place        = waar de signer nu ondertekent
+// signedIp     = IP-adres bij ondertekening (van edge function)
+// signaturePng = Uint8Array van de getekende/geüploade krabbel (PNG); zonder
+//                PNG valt het blok terug op de naam in schuinschrift
+// annotations  = [{ page, x, y, text, size }] tekstregels van het lid,
+//                x/y genormaliseerd (0..1, linksboven van de tekst)
 //
 // Retourneert: { signedBytes: Uint8Array, signedHash: string }
-export async function renderSignedPdf({ originalPdf, signature, signer, naw, place, signedIp }) {
+export async function renderSignedPdf({ originalPdf, signature, signer, naw, place, signedIp, signaturePng = null, annotations = [] }) {
   // Hash van het origineel berekenen — voor audit-trail én om afwijkingen te
   // detecteren. We BLOKKEREN niet meer bij mismatch: in praktijk genereert dat
   // false-positives (Supabase Storage roundtrip is mogelijk niet byte-exact),
@@ -76,8 +89,25 @@ export async function renderSignedPdf({ originalPdf, signature, signer, naw, pla
   const pdf = await PDFDocument.load(originalPdf)
   const handFont = await pdf.embedFont(StandardFonts.HelveticaOblique) // SES: schuin = "handgeschreven"
   const regular = await pdf.embedFont(StandardFonts.Helvetica)
+  const pageCount = pdf.getPageCount()
+  const sigImage = signaturePng ? await pdf.embedPng(signaturePng) : null
 
-  // 3. Signature-blok op de placement plaatsen.
+  // 3. Invulregels van het lid (bv. NAW op de stippellijnen).
+  for (const a of annotations) {
+    if (!a?.text || !a.page || a.page < 1 || a.page > pageCount) continue
+    const page = pdf.getPage(a.page - 1)
+    const { width, height } = page.getSize()
+    const size = Number(a.size) || 10
+    page.drawText(clean(a.text), {
+      x: width * Number(a.x),
+      y: height * (1 - Number(a.y)) - size,
+      size,
+      font: regular,
+      color: rgb(0.1, 0.1, 0.1),
+    })
+  }
+
+  // 4. Signature-blok op de placement plaatsen.
   if (signature.placement) {
     const p = signature.placement
     const page = pdf.getPage(p.page - 1)
@@ -102,24 +132,37 @@ export async function renderSignedPdf({ originalPdf, signature, signer, naw, pla
 
     const lines = buildSignatureLines({ signer, naw, place })
 
-    // Adaptief: als het blok krap is (bestaande verzoeken met 0.10 hoogte),
-    // maken we de krabbel iets kleiner om ruimte te maken voor de NAW-regels.
+    // Ruimte voor de krabbel = blokhoogte minus de tekstregels. Bij een
+    // echte krabbel (PNG) vullen we die ruimte zo goed mogelijk; zonder PNG
+    // komt de naam in schuinschrift.
     const totalLinesHeight = lines.reduce((sum, l) => sum + l.size + 2, 0)
     const availableForKrabbel = Math.max(blockH - totalLinesHeight - 8, 12)
-    const krabbelSize = Math.min(20, availableForKrabbel)
 
-    page.drawText(signer.full_name, {
-      x: blockX + 6,
-      y: blockY + blockH - krabbelSize - 4,
-      size: krabbelSize,
-      font: handFont,
-      color: rgb(0.1, 0.1, 0.4),
-    })
+    let krabbelBottom
+    if (sigImage) {
+      const maxW = blockW - 12
+      const maxH = availableForKrabbel
+      const scale = Math.min(maxW / sigImage.width, maxH / sigImage.height)
+      const w = sigImage.width * scale
+      const h = sigImage.height * scale
+      page.drawImage(sigImage, { x: blockX + 6, y: blockY + blockH - h - 4, width: w, height: h })
+      krabbelBottom = blockY + blockH - h - 4
+    } else {
+      const krabbelSize = Math.min(20, availableForKrabbel)
+      page.drawText(clean(signer.full_name), {
+        x: blockX + 6,
+        y: blockY + blockH - krabbelSize - 4,
+        size: krabbelSize,
+        font: handFont,
+        color: rgb(0.1, 0.1, 0.4),
+      })
+      krabbelBottom = blockY + blockH - krabbelSize - 4
+    }
 
     // NAW + plaats/datum regels onder de krabbel
-    let lineY = blockY + blockH - krabbelSize - 12
+    let lineY = krabbelBottom - 8
     for (const l of lines) {
-      page.drawText(l.text, {
+      page.drawText(clean(l.text), {
         x: blockX + 6,
         y: lineY,
         size: l.size,
@@ -130,7 +173,7 @@ export async function renderSignedPdf({ originalPdf, signature, signer, naw, pla
     }
   }
 
-  // 4. Audit-pagina achteraan.
+  // 5. Audit-pagina achteraan.
   const auditPage = pdf.addPage()
   const { height: ah } = auditPage.getSize()
   const margin = 50
@@ -144,8 +187,8 @@ export async function renderSignedPdf({ originalPdf, signature, signer, naw, pla
   const lineGap = 18
   const small = 11
   function line(label, value) {
-    auditPage.drawText(`${label}`, { x: margin, y, size: small, font: regular, color: rgb(0.4, 0.4, 0.4) })
-    auditPage.drawText(String(value ?? '—'), { x: margin + 130, y, size: small, font: regular, color: rgb(0.1, 0.1, 0.1) })
+    auditPage.drawText(clean(label), { x: margin, y, size: small, font: regular, color: rgb(0.4, 0.4, 0.4) })
+    auditPage.drawText(clean(String(value ?? '—')), { x: margin + 130, y, size: small, font: regular, color: rgb(0.1, 0.1, 0.1) })
     y -= lineGap
   }
 
@@ -170,12 +213,14 @@ export async function renderSignedPdf({ originalPdf, signature, signer, naw, pla
   line('Plaats:',       place)
   line('Datum/tijd:',   new Date().toISOString())
   line('IP-adres:',     signedIp ?? 'onbekend')
+  line('Handtekening:', sigImage ? 'eigenhandig gezet (getekend of geüpload)' : 'naam in schuinschrift')
+  if (annotations.length > 0) line('Ingevuld:', `${annotations.length} tekstregel(s) door ondertekenaar`)
   y -= 12
 
   const userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || 'onbekend'
   auditPage.drawText('Apparaat:', { x: margin, y, size: small, font: regular, color: rgb(0.4, 0.4, 0.4) })
   const uaTrim = userAgent.length > 90 ? userAgent.slice(0, 90) + '…' : userAgent
-  auditPage.drawText(uaTrim, { x: margin + 130, y, size: 9, font: regular, color: rgb(0.1, 0.1, 0.1) })
+  auditPage.drawText(clean(uaTrim), { x: margin + 130, y, size: 9, font: regular, color: rgb(0.1, 0.1, 0.1) })
   y -= lineGap + 16
 
   auditPage.drawText(
@@ -188,7 +233,7 @@ export async function renderSignedPdf({ originalPdf, signature, signer, naw, pla
     { x: margin, y, size: 9, font: regular, color: rgb(0.4, 0.4, 0.4) },
   )
 
-  // 5. Bytes + hash teruggeven.
+  // 6. Bytes + hash teruggeven.
   const signedBytes = await pdf.save()
   const signedHash = await sha256Hex(signedBytes)
   return { signedBytes, signedHash }
