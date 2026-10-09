@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -7,6 +8,7 @@ import { useToast } from '../components/Toast'
 import { logger, friendlyError } from '../lib/logger'
 import { renderSignedPdf } from '../lib/signature/render-signed-pdf'
 import { downloadProjectFile } from '../lib/storage'
+import SignaturePad from '../components/SignaturePad'
 
 export default function Tekenen() {
   const { id } = useParams() // signer_id
@@ -24,6 +26,16 @@ export default function Tekenen() {
   const [place, setPlace] = useState('')
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // Echte krabbel (PNG-blob uit SignaturePad): getekend of geüpload.
+  const [signatureBlob, setSignatureBlob] = useState(null)
+  // Invulregels die het lid zelf op de PDF zet (bv. NAW op de stippellijnen).
+  // x/y genormaliseerd (0..1) = linksboven van de tekst; size in PDF-punten.
+  const [annotations, setAnnotations] = useState([])
+  const [annotateMode, setAnnotateMode] = useState(false)
+  const [activeAnnotation, setActiveAnnotation] = useState(null)
+  // De pagina-wrappers uit de pdfjs-render, zodat we er met portals een
+  // React-laag (invulregels) overheen kunnen leggen.
+  const [pageEls, setPageEls] = useState([])
 
   // NAW-velden — worden zowel op het handtekening-blok gerenderd, op de
   // audit-pagina, opgeslagen als snapshot op de signer-rij, én bij submit
@@ -170,10 +182,12 @@ export default function Tekenen() {
 
         const container = canvasContainerRef.current
         container.innerHTML = ''
+        const wraps = []
 
         for (let pageNum = 1; pageNum <= doc.numPages; pageNum++) {
           const page = await doc.getPage(pageNum)
           const viewport = page.getViewport({ scale: 1.3 })
+          const base = page.getViewport({ scale: 1 }) // afmetingen in PDF-punten
 
           const wrap = document.createElement('div')
           wrap.style.position = 'relative'
@@ -223,9 +237,11 @@ export default function Tekenen() {
           }
 
           container.appendChild(wrap)
+          wraps.push({ page: pageNum, el: wrap, widthPt: base.width, heightPt: base.height })
           const ctx = canvas.getContext('2d')
           await page.render({ canvasContext: ctx, viewport }).promise
         }
+        if (!cancelled) setPageEls(wraps)
 
         // Auto-scroll naar de placement-marker als die er is
         if (placementMarkerRef.current) {
@@ -250,6 +266,7 @@ export default function Tekenen() {
     if (!naw.street_address.trim()) { toast.error('Vul je adres in.'); return }
     if (!naw.postal_code.trim()) { toast.error('Vul je postcode in.'); return }
     if (!naw.city.trim()) { toast.error('Vul je woonplaats in.'); return }
+    if (!signatureBlob) { toast.error('Zet eerst je handtekening (tekenen of foto uploaden).'); return }
     if (!agreed) { toast.error('Vink eerst het akkoord aan.'); return }
     if (signer.request_status !== 'open') { toast.error('Dit verzoek is niet meer actief.'); return }
 
@@ -275,6 +292,20 @@ export default function Tekenen() {
         phone: naw.phone.trim() || null,
       }
 
+      // Lege invulregels weglaten; alleen wat het lid echt getypt heeft.
+      const cleanAnnotations = annotations
+        .filter(a => a.text.trim())
+        .map(a => ({ page: a.page, x: a.x, y: a.y, text: a.text.trim(), size: a.size }))
+
+      // Krabbel-PNG: eerst uploaden (naast de getekende PDF), zodat de
+      // tegentekening door de organisatie hem later opnieuw kan plaatsen.
+      const signaturePng = new Uint8Array(await signatureBlob.arrayBuffer())
+      const signaturePath = `${signer.org_id}/${signer.request_id}/signed-${signer.signer_id}.png`
+      const { error: sigUpErr } = await supabase.storage
+        .from('signatures')
+        .upload(signaturePath, signatureBlob, { contentType: 'image/png', upsert: true })
+      if (sigUpErr) throw new Error(`Handtekening uploaden mislukt: ${sigUpErr.message}`)
+
       // Defensief: kopie maken zodat eventuele toekomstige transfers door
       // pdf-lib of crypto.subtle de bron-bytes niet kunnen detachen.
       const { signedBytes } = await renderSignedPdf({
@@ -284,6 +315,8 @@ export default function Tekenen() {
         naw: nawSnapshot,
         place: place.trim(),
         signedIp,
+        signaturePng,
+        annotations: cleanAnnotations,
       })
 
       // Profiel bijwerken met de NAW die het lid nu heeft ingevuld — zo hoeft
@@ -325,6 +358,8 @@ export default function Tekenen() {
           signed_place: place.trim(),
           signed_naw_snapshot: nawSnapshot,
           signed_file_path: signedPath,
+          signed_signature_path: signaturePath,
+          signed_annotations: cleanAnnotations.length ? cleanAnnotations : null,
         })
         .eq('id', signer.signer_id)
       if (updateErr) throw new Error(friendlyError(updateErr))
@@ -341,7 +376,20 @@ export default function Tekenen() {
       toast.error(err.message || 'Tekenen mislukt. Probeer opnieuw.')
       setSubmitting(false)
     }
-  }, [signer, pdfBytes, place, naw, agreed, profile, user, basePath, navigate, toast])
+  }, [signer, pdfBytes, place, naw, agreed, signatureBlob, annotations, profile, user, basePath, navigate, toast])
+
+  // Invulregels beheren
+  const addAnnotation = useCallback((page, x, y) => {
+    const id = crypto.randomUUID()
+    setAnnotations(prev => [...prev, { id, page, x, y, text: '', size: 10 }])
+    setActiveAnnotation(id)
+  }, [])
+  const updateAnnotation = useCallback((id, patch) => {
+    setAnnotations(prev => prev.map(a => (a.id === id ? { ...a, ...patch } : a)))
+  }, [])
+  const removeAnnotation = useCallback((id) => {
+    setAnnotations(prev => prev.filter(a => a.id !== id))
+  }, [])
 
   // Download van het originele document (vóór tekenen) — lid wil het rustig
   // kunnen lezen / offline doornemen voordat ze tekenen.
@@ -487,7 +535,34 @@ export default function Tekenen() {
             {signer.description}
           </div>
         )}
+        {annotateMode && (
+          <div style={{
+            position: 'sticky', top: 72, zIndex: 2, marginBottom: 8, padding: '8px 12px',
+            background: 'var(--accent-primary, #4A90D9)', color: '#fff', borderRadius: 8, fontSize: 13,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}>
+            <span><i className="fa-solid fa-i-cursor" /> Klik op het document waar je tekst wilt zetten. Typ, en klik ergens anders voor de volgende regel.</span>
+            <button type="button" onClick={() => { setAnnotateMode(false); setActiveAnnotation(null) }} style={{ background: '#fff', color: 'var(--accent-primary, #4A90D9)', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 600, cursor: 'pointer' }}>
+              Klaar
+            </button>
+          </div>
+        )}
         <div ref={canvasContainerRef} style={{ overflowX: 'auto' }} />
+        {pageEls.map(({ page, el, widthPt }) => createPortal(
+          <AnnotationLayer
+            key={page}
+            page={page}
+            pageWidthPt={widthPt}
+            annotations={annotations.filter(a => a.page === page)}
+            active={annotateMode && !submitting}
+            activeId={activeAnnotation}
+            onAdd={(x, y) => addAnnotation(page, x, y)}
+            onChange={updateAnnotation}
+            onRemove={removeAnnotation}
+            onFocus={setActiveAnnotation}
+          />,
+          el,
+        ))}
       </div>
 
       {/* Rechts: tekenform (sticky) */}
@@ -501,7 +576,7 @@ export default function Tekenen() {
       }}>
         <h3 style={{ marginTop: 0, fontSize: 16 }}>Ondertekenen</h3>
         <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-          Je krabbel, naam, plaats en de datum komen op de gemarkeerde plek in het document. Een audit-pagina met hash en tijdstip wordt achteraan toegevoegd.
+          Je handtekening, naam, plaats en de datum komen op de gemarkeerde plek in het document. Een certificaat-pagina met hash en tijdstip wordt achteraan toegevoegd.
         </p>
 
         <button
@@ -573,7 +648,35 @@ export default function Tekenen() {
           Deze gegevens komen op het contract én worden op je profiel opgeslagen zodat je ze niet opnieuw hoeft in te vullen.
         </p>
 
+        {/* --- Invullen op het document --- */}
+        <div style={{ marginBottom: 14, paddingTop: 12, borderTop: '1px solid var(--border-default)' }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+            Invullen op het document
+            <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}> (optioneel)</span>
+          </label>
+          <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: '0 0 8px' }}>
+            Staan er stippellijnen of vragen in het document? Zet je antwoord er direct op, zoals in Acrobat.
+          </p>
+          <button
+            type="button"
+            className={annotateMode ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => { setAnnotateMode(m => !m); setActiveAnnotation(null) }}
+            disabled={submitting}
+            style={{ width: '100%', fontSize: 13 }}
+          >
+            <i className="fa-solid fa-i-cursor" />
+            {annotateMode ? 'Klaar met invullen' : annotations.length ? `Tekst toevoegen (${annotations.filter(a => a.text.trim()).length} regel${annotations.filter(a => a.text.trim()).length === 1 ? '' : 's'})` : 'Tekst toevoegen'}
+          </button>
+        </div>
+
         {/* --- Ondertekening --- */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+            Handtekening<span style={{ color: 'var(--accent-red)' }}> *</span>
+          </label>
+          <SignaturePad onChange={setSignatureBlob} disabled={submitting} height={150} />
+        </div>
+
         <SignFormField
           label="Plaats van ondertekening"
           required
@@ -604,7 +707,7 @@ export default function Tekenen() {
           type="button"
           className="btn-primary"
           onClick={onSign}
-          disabled={submitting || !agreed || !place.trim()}
+          disabled={submitting || !agreed || !place.trim() || !signatureBlob}
           style={{ width: '100%', marginBottom: 8 }}
         >
           <i className="fa-solid fa-signature" />
@@ -656,7 +759,75 @@ export default function Tekenen() {
   )
 }
 
-// Knop om de getekende PDF te downloaden (signed URL ophalen, openen in nieuwe tab).
+// Laag over één PDF-pagina met de invulregels van het lid. In "active"-modus
+// voegt een klik op lege ruimte een nieuwe regel toe; bestaande regels zijn
+// altijd te bewerken/verwijderen. Lettergrootte schaalt mee met de
+// pagina-breedte zodat wat je ziet overeenkomt met de PDF.
+function AnnotationLayer({ page, pageWidthPt, annotations, active, activeId, onAdd, onChange, onRemove, onFocus }) {
+  const ref = useRef(null)
+  const [scale, setScale] = useState(1) // css-px per PDF-punt
+
+  useLayoutEffect(() => {
+    function measure() {
+      if (ref.current && pageWidthPt) setScale(ref.current.clientWidth / pageWidthPt)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [pageWidthPt])
+
+  function onClick(e) {
+    if (!active || e.target !== e.currentTarget) return
+    const r = e.currentTarget.getBoundingClientRect()
+    onAdd((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height)
+  }
+
+  return (
+    <div
+      ref={ref}
+      data-page={page}
+      onClick={onClick}
+      style={{ position: 'absolute', inset: 0, pointerEvents: active ? 'auto' : 'none', cursor: active ? 'text' : 'default', zIndex: 1 }}
+    >
+      {annotations.map(a => {
+        const px = Math.max(8, a.size * scale)
+        const isActive = a.id === activeId
+        return (
+          <div
+            key={a.id}
+            style={{ position: 'absolute', left: `${a.x * 100}%`, top: `${a.y * 100}%`, display: 'flex', alignItems: 'flex-start', gap: 2, pointerEvents: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <input
+              autoFocus={isActive}
+              value={a.text}
+              placeholder="Typ hier…"
+              onChange={e => onChange(a.id, { text: e.target.value })}
+              onFocus={() => onFocus(a.id)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') e.currentTarget.blur() }}
+              size={Math.max(4, a.text.length + 1)}
+              style={{
+                fontSize: px, lineHeight: 1, padding: '0 1px', margin: 0,
+                fontFamily: 'Helvetica, Arial, sans-serif', color: '#1a1a1a',
+                background: isActive ? 'rgba(74,144,217,0.10)' : 'transparent',
+                border: `1px ${a.text ? 'dotted' : 'dashed'} rgba(74,144,217,0.7)`, borderRadius: 2, outline: 'none',
+              }}
+            />
+            <button
+              type="button"
+              title="Regel verwijderen"
+              onClick={() => onRemove(a.id)}
+              style={{ fontSize: Math.max(10, px * 0.9), lineHeight: 1, padding: '0 3px', border: 'none', background: 'rgba(255,255,255,0.85)', color: 'var(--accent-red, #E53E3E)', borderRadius: 3, cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // Uniform input-veld voor het teken-form. Houdt de JSX beknopt en de styling
 // consistent (Clean DS via var()'s uit index.css).
 function SignFormField({

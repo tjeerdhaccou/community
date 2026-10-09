@@ -24,7 +24,7 @@
 // signed-<signer>.pdf's blijven bestaan als bewijs per ondertekenaar.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'https://esm.sh/pdf-lib@1.17.1'
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'https://esm.sh/pdf-lib@1.17.1'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -106,10 +106,13 @@ type Block = {
   y: number
   width: number
   height: number
-  krabbel: string          // de "handgeschreven" regel (naam)
+  krabbel: string          // de "handgeschreven" regel (naam) — fallback als er geen PNG is
+  image?: PDFImage | null  // echte krabbel (getekend of geüpload)
   header?: string          // kleine regel boven de krabbel (bv. "Namens CommonCity")
   lines: { text: string; size: number; muted: boolean }[]
 }
+
+type Annotation = { page: number; x: number; y: number; text: string; size?: number }
 
 // Zelfde layout als render-signed-pdf.js in de community-app, zodat het
 // org-blok en de opnieuw getekende lid-blokken er identiek uitzien.
@@ -128,7 +131,6 @@ function drawBlock(page: PDFPage, block: Block, handFont: PDFFont, regular: PDFF
   const headerH = block.header ? 9 : 0
   const totalLinesHeight = block.lines.reduce((sum, l) => sum + l.size + 2, 0)
   const availableForKrabbel = Math.max(blockH - totalLinesHeight - headerH - 8, 12)
-  const krabbelSize = Math.min(20, availableForKrabbel)
 
   let top = blockY + blockH
   if (block.header) {
@@ -138,11 +140,24 @@ function drawBlock(page: PDFPage, block: Block, handFont: PDFFont, regular: PDFF
     top -= headerH
   }
 
-  page.drawText(clean(block.krabbel), {
-    x: blockX + 6, y: top - krabbelSize - 4, size: krabbelSize, font: handFont, color: rgb(0.1, 0.1, 0.4),
-  })
+  let krabbelBottom: number
+  if (block.image) {
+    // Echte krabbel: zo groot mogelijk in de beschikbare ruimte, verhouding behouden.
+    const maxW = blockW - 12
+    const scale = Math.min(maxW / block.image.width, availableForKrabbel / block.image.height)
+    const w = block.image.width * scale
+    const h = block.image.height * scale
+    page.drawImage(block.image, { x: blockX + 6, y: top - h - 4, width: w, height: h })
+    krabbelBottom = top - h - 4
+  } else {
+    const krabbelSize = Math.min(20, availableForKrabbel)
+    page.drawText(clean(block.krabbel), {
+      x: blockX + 6, y: top - krabbelSize - 4, size: krabbelSize, font: handFont, color: rgb(0.1, 0.1, 0.4),
+    })
+    krabbelBottom = top - krabbelSize - 4
+  }
 
-  let lineY = top - krabbelSize - 12
+  let lineY = krabbelBottom - 8
   for (const l of block.lines) {
     page.drawText(clean(l.text), {
       x: blockX + 6, y: lineY, size: l.size, font: regular,
@@ -152,7 +167,7 @@ function drawBlock(page: PDFPage, block: Block, handFont: PDFFont, regular: PDFF
   }
 }
 
-function signerBlock(s: Row): Block | null {
+function signerBlock(s: Row, image: PDFImage | null): Block | null {
   if (!s.placement_page) return null
   const naw = (s.signed_naw_snapshot ?? {}) as Row
   const name = s.signed_full_name ?? s.profile?.full_name ?? '—'
@@ -173,13 +188,14 @@ function signerBlock(s: Row): Block | null {
     width: Number(s.placement_width_norm ?? 0.25),
     height: Number(s.placement_height_norm ?? 0.14),
     krabbel: name,
+    image,
     lines,
   }
 }
 
-type Countersign = { name: string; role: string | null; place: string; page: number; x: number; y: number; width: number; height: number }
+type Countersign = { name: string; role: string | null; place: string; page: number; x: number; y: number; width: number; height: number; signaturePath: string | null }
 
-function orgBlock(orgName: string, cs: Countersign, at: Date): Block {
+function orgBlock(orgName: string, cs: Countersign, at: Date, image: PDFImage | null): Block {
   const lines: Block['lines'] = [{ text: cs.name, size: 8, muted: true }]
   if (cs.role) lines.push({ text: cs.role, size: 8, muted: true })
   lines.push({ text: `${cs.place}, ${fmtDate(at)}`, size: 8, muted: false })
@@ -187,7 +203,23 @@ function orgBlock(orgName: string, cs: Countersign, at: Date): Block {
     page: cs.page, x: cs.x, y: cs.y, width: cs.width, height: cs.height,
     header: `Namens ${orgName}`,
     krabbel: cs.name,
+    image,
     lines,
+  }
+}
+
+// Invulregels van een ondertekenaar (NAW op stippellijnen e.d.) opnieuw
+// tekenen, precies zoals in render-signed-pdf.js van de community-app.
+function drawAnnotations(pdf: PDFDocument, annotations: Annotation[] | null, font: PDFFont) {
+  const pageCount = pdf.getPageCount()
+  for (const a of annotations ?? []) {
+    if (!a?.text || !a.page || a.page < 1 || a.page > pageCount) continue
+    const page = pdf.getPage(a.page - 1)
+    const { width, height } = page.getSize()
+    const size = Number(a.size) || 10
+    page.drawText(clean(a.text), {
+      x: width * Number(a.x), y: height * (1 - Number(a.y)) - size, size, font, color: rgb(0.1, 0.1, 0.1),
+    })
   }
 }
 
@@ -199,21 +231,31 @@ async function renderCountersignedPdf(args: {
   countersign: Countersign
   countersignedAt: Date
   countersignedByName: string | null
+  signerImages: Map<string, Uint8Array>   // signer.id → PNG van de krabbel
+  orgSignaturePng: Uint8Array | null
 }): Promise<Uint8Array> {
-  const { originalPdf, request, signers, orgName, countersign, countersignedAt, countersignedByName } = args
+  const { originalPdf, request, signers, orgName, countersign, countersignedAt, countersignedByName, signerImages, orgSignaturePng } = args
   const pdf = await PDFDocument.load(originalPdf)
   const handFont = await pdf.embedFont(StandardFonts.HelveticaOblique)
   const regular = await pdf.embedFont(StandardFonts.Helvetica)
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
   const pageCount = pdf.getPageCount()
 
-  // 1. Blokken van de ondertekenaars (uit de snapshot) + het org-blok.
+  async function embed(png: Uint8Array | null | undefined): Promise<PDFImage | null> {
+    if (!png) return null
+    try { return await pdf.embedPng(png) } catch (e) { console.warn('[countersign] png embed', e); return null }
+  }
+
+  // 1. Invulregels van de ondertekenaars, dan hun blokken (uit de snapshot),
+  //    dan het org-blok.
+  for (const s of signers) drawAnnotations(pdf, s.signed_annotations as Annotation[] | null, regular)
   const blocks: Block[] = []
   for (const s of signers) {
-    const b = signerBlock(s)
+    const b = signerBlock(s, await embed(signerImages.get(s.id)))
     if (b) blocks.push(b)
   }
-  blocks.push(orgBlock(orgName, countersign, countersignedAt))
+  const orgImage = await embed(orgSignaturePng)
+  blocks.push(orgBlock(orgName, countersign, countersignedAt, orgImage))
   for (const b of blocks) {
     if (b.page < 1 || b.page > pageCount) continue
     drawBlock(pdf.getPage(b.page - 1), b, handFont, regular)
@@ -271,6 +313,9 @@ async function renderCountersignedPdf(args: {
     line('Datum/tijd:', s.signed_at ? fmtDateTime(s.signed_at) : null)
     line('IP-adres:', s.signed_ip)
     if (s.signed_user_agent) line('Apparaat:', s.signed_user_agent, 8)
+    line('Handtekening:', signerImages.has(s.id) ? 'eigenhandig gezet (getekend of geüpload)' : 'naam in schuinschrift')
+    const n = Array.isArray(s.signed_annotations) ? s.signed_annotations.length : 0
+    if (n > 0) line('Ingevuld:', `${n} tekstregel(s) door ondertekenaar`)
     gap(12)
   })
 
@@ -279,6 +324,7 @@ async function renderCountersignedPdf(args: {
   if (countersign.role) line('Functie:', countersign.role)
   line('Plaats:', countersign.place)
   line('Datum/tijd:', fmtDateTime(countersignedAt))
+  line('Handtekening:', orgImage ? 'eigenhandig gezet (getekend of geüpload)' : 'naam in schuinschrift')
   line('Wijze:', countersignedByName
     ? `Bevestigd in het beheer door ${countersignedByName}`
     : 'Automatisch bevestigd zodra alle ondertekenaars getekend hadden, zoals ingesteld bij het aanmaken van het verzoek')
@@ -434,6 +480,7 @@ Deno.serve(async (req) => {
         y: Number(body.y ?? request.countersign_y_norm),
         width: Number(body.width ?? request.countersign_width_norm ?? 0.25),
         height: Number(body.height ?? request.countersign_height_norm ?? 0.14),
+        signaturePath: (body.signature_path ?? request.countersign_signature_path ?? null) || null,
       }
     : {
         name: request.countersign_name ?? '',
@@ -444,6 +491,7 @@ Deno.serve(async (req) => {
         y: Number(request.countersign_y_norm),
         width: Number(request.countersign_width_norm ?? 0.25),
         height: Number(request.countersign_height_norm ?? 0.14),
+        signaturePath: request.countersign_signature_path ?? null,
       }
 
   const signers: Row[] = (request.signers ?? []).filter((s: Row) => s.status === 'signed')
@@ -467,12 +515,27 @@ Deno.serve(async (req) => {
   if (dlErr || !blob) return fail(`Origineel niet gevonden: ${dlErr?.message ?? 'leeg'}`)
   const originalPdf = new Uint8Array(await blob.arrayBuffer())
 
+  // Krabbel-PNG's: per ondertekenaar (signed-<id>.png) en die van de org.
+  // Ontbreekt er een, dan valt dat blok terug op de naam in schuinschrift.
+  async function downloadPng(path: string | null): Promise<Uint8Array | null> {
+    if (!path) return null
+    const { data, error } = await admin.storage.from('signatures').download(path)
+    if (error || !data) { console.warn('[countersign] png ontbreekt', path, error?.message); return null }
+    return new Uint8Array(await data.arrayBuffer())
+  }
+  const signerImages = new Map<string, Uint8Array>()
+  for (const s of signers) {
+    const png = await downloadPng(s.signed_signature_path ?? null)
+    if (png) signerImages.set(s.id, png)
+  }
+  const orgSignaturePng = await downloadPng(cs.signaturePath)
+
   const countersignedAt = new Date()
   let pdfBytes: Uint8Array
   try {
     pdfBytes = await renderCountersignedPdf({
       originalPdf, request, signers, orgName, countersign: cs, countersignedAt,
-      countersignedByName: callerName,
+      countersignedByName: callerName, signerImages, orgSignaturePng,
     })
   } catch (err) {
     return fail(`Renderen mislukt: ${err instanceof Error ? err.message : String(err)}`)
