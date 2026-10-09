@@ -15,6 +15,8 @@ import { logger } from '../lib/logger'
 //   - file_path        = origineel PDF in storage bucket "signatures"
 //   - placement_*      = waar het handtekening-blok komt
 //   - signed_file_path = na ondertekening: pad naar de getekende kopie
+//   - countersigned_*  = na tegentekening door de organisatie: pad naar de
+//                        volledig getekende versie (beide partijen)
 export function useSignatureRequests() {
   const { user } = useAuth()
   const { project } = useProject()
@@ -42,7 +44,9 @@ export function useSignatureRequests() {
         request:signature_requests!request_id(
           id, title, description, file_path, file_name, file_size,
           file_sha256, status, due_at, created_at, project_id, org_id,
-          creator:profiles!created_by(full_name)
+          countersigned_at, countersigned_file_path, countersign_name,
+          creator:profiles!created_by(full_name),
+          org:organizations!org_id(name)
         )
       `)
       .eq('profile_id', user.id)
@@ -71,6 +75,10 @@ export function useSignatureRequests() {
         created_at: row.request.created_at,
         org_id: row.request.org_id,
         creator_name: row.request.creator?.full_name ?? null,
+        org_name: row.request.org?.name ?? null,
+        countersigned_at: row.request.countersigned_at ?? null,
+        countersigned_file_path: row.request.countersigned_file_path ?? null,
+        countersign_name: row.request.countersign_name ?? null,
         status: row.status,
         viewed_at: row.viewed_at,
         signed_at: row.signed_at,

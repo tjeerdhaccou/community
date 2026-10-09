@@ -60,7 +60,9 @@ export default function Tekenen() {
           request:signature_requests!request_id(
             id, title, description, file_path, file_name, file_size, file_sha256,
             status, due_at, created_at, project_id, org_id,
-            creator:profiles!created_by(full_name)
+            countersigned_at, countersigned_file_path,
+            creator:profiles!created_by(full_name),
+            org:organizations!org_id(name)
           )
         `)
         .eq('id', id)
@@ -83,6 +85,9 @@ export default function Tekenen() {
         signed_at: data.signed_at,
         signed_place: data.signed_place,
         signed_file_path: data.signed_file_path,
+        countersigned_at: data.request.countersigned_at ?? null,
+        countersigned_file_path: data.request.countersigned_file_path ?? null,
+        org_name: data.request.org?.name ?? null,
         decline_reason: data.decline_reason,
         placement: data.placement_page ? {
           page: data.placement_page,
@@ -415,7 +420,16 @@ export default function Tekenen() {
           <i className="fa-solid fa-circle-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
           <h3 className="empty-inline__title">Al getekend</h3>
           <p>Je hebt dit document getekend op {new Date(signer.signed_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })}.</p>
-          <SignedDownloadButton signedPath={signer.signed_file_path} title={signer.title} />
+          {signer.countersigned_file_path ? (
+            <>
+              <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>
+                {signer.org_name || 'De organisatie'} heeft het op {new Date(signer.countersigned_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' })} bevestigd; daarmee is het rond.
+              </p>
+              <SignedDownloadButton signedPath={signer.countersigned_file_path} title={signer.title} label="Download volledig getekende versie" />
+            </>
+          ) : (
+            <SignedDownloadButton signedPath={signer.signed_file_path} title={signer.title} />
+          )}
         </div>
       </div>
     )
@@ -684,7 +698,7 @@ function SignFormField({
   )
 }
 
-function SignedDownloadButton({ signedPath, title }) {
+function SignedDownloadButton({ signedPath, title, label = 'Download getekende versie' }) {
   const [busy, setBusy] = useState(false)
   async function onDownload() {
     if (!signedPath) return
@@ -696,7 +710,7 @@ function SignedDownloadButton({ signedPath, title }) {
   return (
     <button className="btn-primary" onClick={onDownload} disabled={busy || !signedPath}>
       <i className="fa-solid fa-download" />
-      {busy ? 'Laden…' : `Download getekende versie`}
+      {busy ? 'Laden…' : label}
     </button>
   )
 }
