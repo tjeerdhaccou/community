@@ -73,6 +73,14 @@ const PREF_COLUMN: Record<Type, 'pref_updates' | 'pref_prikbord' | 'pref_events'
 // niet als mail bij elke upload.
 const IN_APP_ONLY: Set<Type> = new Set(['document_request_submitted'])
 
+// Persoonlijk gerichte verzoeken: de ontvanger is met naam en toenaam
+// aangewezen (ondertekenaar, aangeschreven lid). Die mailen we ook bij
+// voorkeur 'mentions' — het ís een persoonlijke aanspreking — en ook als de
+// aanmaker toevallig zelf ontvanger is (bv. een beheerder die zichzelf een
+// tekenverzoek stuurt om het te testen). Alleen 'mute' of vakantiemodus
+// houdt de mail tegen.
+const DIRECT_TYPES: Set<Type> = new Set(['signature_request', 'document_request'])
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -104,8 +112,10 @@ serve(async (req) => {
     // Bepaal ontvangers
     const recipientIds = await resolveRecipients(admin, type as Type, ctx, reference_id)
 
-    // Skip actor zelf
-    const filtered = recipientIds.filter(id => id !== actor_id)
+    // Skip actor zelf — behalve bij persoonlijk gerichte verzoeken, daar is
+    // de ontvangerslijst expliciet.
+    const isDirect = DIRECT_TYPES.has(type as Type)
+    const filtered = isDirect ? recipientIds : recipientIds.filter(id => id !== actor_id)
 
     if (filtered.length === 0) {
       return json({ success: true, sent: 0, skipped: 0, reason: 'no_recipients' })
@@ -149,8 +159,10 @@ serve(async (req) => {
         inAppRecipients.push({ id: profile.id })
       }
 
-      // Email: bij 'all' (default), niet muted, email aanwezig, en geen in-app-only type
-      if (prefValue === 'all' && !muted && profile.email && !IN_APP_ONLY.has(type as Type)) {
+      // Email: bij 'all' (default), niet muted, email aanwezig, en geen in-app-only type.
+      // Persoonlijk gerichte verzoeken ook bij 'mentions'.
+      const wantsMail = prefValue === 'all' || (isDirect && prefValue === 'mentions')
+      if (wantsMail && !muted && profile.email && !IN_APP_ONLY.has(type as Type)) {
         emailRecipients.push({ id: profile.id, email: profile.email, full_name: profile.full_name })
       }
     }
@@ -348,7 +360,7 @@ interface NotificationContext {
   emailLinkPath: string // bv. /updates#123
   inAppTitle: string
   inAppBody: string | null
-  relatedType: 'update' | 'event' | 'document' | 'post' | 'comment' | 'document_request'
+  relatedType: 'update' | 'event' | 'document' | 'post' | 'comment' | 'document_request' | 'signature_request'
 }
 
 async function loadContext(
@@ -571,7 +583,7 @@ async function loadContext(
       emailLinkPath: '/mijn-documenten',
       inAppTitle: `Nieuw tekenverzoek: ${sr.title}`,
       inAppBody: sr.description ? truncate(sr.description, 100) : null,
-      relatedType: 'document_request',
+      relatedType: 'signature_request',
     }
   }
 

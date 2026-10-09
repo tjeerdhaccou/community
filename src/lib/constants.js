@@ -164,6 +164,13 @@ export const NOTIFICATION_CONFIG = {
   document_request_submitted: { icon: 'fa-solid fa-file-circle-check', color: '#3BD269' },
   payment_request_sent: { icon: 'fa-solid fa-euro-sign',     color: '#F09020' },
   payment_request_paid: { icon: 'fa-solid fa-circle-check',  color: '#3BD269' },
+  // Types uit de edge function dispatch-notification (migratie 107)
+  signature_request:    { icon: 'fa-solid fa-signature',     color: '#2D8CFF' },
+  signature_countersigned: { icon: 'fa-solid fa-file-signature', color: '#3BD269' },
+  new_post:             { icon: 'fa-solid fa-message',       color: '#4A90D9' },
+  new_comment:          { icon: 'fa-solid fa-comment',       color: '#4A90D9' },
+  new_reply:            { icon: 'fa-solid fa-reply',         color: '#4A90D9' },
+  new_update_comment:   { icon: 'fa-solid fa-comment',       color: '#F4B400' },
 }
 
 // ===== Event types =====

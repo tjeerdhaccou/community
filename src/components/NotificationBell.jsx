@@ -41,6 +41,8 @@ export default function NotificationBell() {
     else if (related_type === 'document') navigate(`${basePath}/documenten`)
     else if (related_type === 'document_request' && notification.type === 'document_request_submitted') navigate(`${basePath}/members`)
     else if (related_type === 'document_request') navigate(`${basePath}/documenten?tab=mijn`)
+    else if (related_type === 'signature_request') navigate(`${basePath}/mijn-documenten`)
+    else if (related_type === 'comment') navigate(`${basePath}/community`)
     else if (related_type === 'payment_request' && notification.type === 'payment_request_sent') navigate(`/verzoeken/${related_id}`)
     else navigate(basePath)
   }
