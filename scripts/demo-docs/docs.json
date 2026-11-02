@@ -1,0 +1,80 @@
+[
+ {"file":"definitief-ontwerp-toelichting.pdf","kicker":"Ontwerp · Space&Matter","title":"Definitief ontwerp: toelichting","subtitle":"Versie 1.0 · vastgesteld door de bouwcommissie",
+  "blocks":[
+   {"img":"maquette.jpg","caption":"Maquette van het definitief ontwerp, gezien vanaf de waterkant."},
+   {"h":"Het ontwerp in het kort","p":"Het Demoproject telt 40 woningen rond een gedeeld binnenhof op Zeeburgereiland. De woningen variëren van studio's van 42 m² tot gezinswoningen van 128 m². Op de begane grond ligt een gemeenschapsruimte van 120 m² met een keuken, een werkplaats en een logeerkamer voor bezoek van bewoners."},
+   {"h":"Wat er sinds het voorlopig ontwerp is veranderd","ul":["De gevel aan de waterkant is rustiger: minder materiaalwisselingen, meer hout.","De bergingen zijn naar de begane grond verplaatst, zodat er op de verdiepingen ruimte vrijkomt voor bredere galerijen.","De daktuin volgt het gekozen concept Eetbare Oase: moestuinbakken, fruitbomen en een overdekte zitplek.","Vier woningen zijn omgezet naar levensloopbestendig, met de slaapkamer op de entreeverdieping."]},
+   {"h":"Galerijen als straat","p":"De galerijen zijn 2,4 meter breed. Dat is breed genoeg voor een bankje en plantenbakken voor de deur, en precies daarom gekozen: de galerij is de plek waar je je buren tegenkomt. Trappen aan de buitenkant verbinden de lagen, zodat je niet alleen via de lift naar boven gaat."},
+   {"h":"Duurzaamheid","p":"Het gebouw wordt verwarmd met een collectieve warmtepomp met bodemlussen (zie het duurzaamheidsplan). Het dak draagt 180 zonnepanelen, collectief ingekocht. De draagconstructie is van hout, de gevels zijn bekleed met onbehandeld vurenhout dat mooi vergrijst."},
+   {"h":"Volgende stappen","ul":["Indienen omgevingsvergunning","Uitwerking technisch ontwerp met constructeur en installateur","Keuzegesprekken per woning over indeling en afwerking"]}
+  ]},
+ {"file":"brochure-wonen-in-het-demoproject.pdf","kicker":"Voor geïnteresseerden","title":"Wonen in het Demoproject","subtitle":"Een woongemeenschap die je samen bouwt",
+  "blocks":[
+   {"h":"Wat is het Demoproject?","p":"Het Demoproject is een vereniging van toekomstige bewoners die samen 40 woningen laat bouwen op Zeeburgereiland in Amsterdam. Geen ontwikkelaar die bepaalt hoe je woont, maar een groep die zelf opdrachtgever is. Dat betekent meer invloed op je woning, gedeelde voorzieningen en buren die je al kent voordat je de sleutel krijgt."},
+   {"h":"Wat je deelt","ul":["Een binnenhof met moestuin en speelplek","Een gemeenschapsruimte met keuken en werkplaats","Een daktuin met fruitbomen en uitzicht over het IJ","Deelauto's, bakfietsen en een gereedschapsbibliotheek"]},
+   {"h":"Wat je zelf houdt","p":"Je eigen woning, met een eigen voordeur, keuken en badkamer. Samenwonen betekent hier niet alles delen: je kiest zelf hoeveel je meedoet."},
+   {"h":"Hoe stap je in?","ul":["Kom naar een informatieavond voor nieuwe leden.","Word aspirant-lid en kijk een paar maanden mee in Buuur.","Kies een woningtype en word lid van de vereniging.","Werk mee in een werkgroep, van duurzaamheid tot gemeenschapsruimte."]},
+   {"h":"Planning","p":"Start bouw staat gepland zodra de omgevingsvergunning onherroepelijk is. De bouw duurt ongeveer 18 maanden."}
+  ]},
+ {"file":"woningtypen-en-prijsindicatie.pdf","kicker":"Verkoop & informatie","title":"Woningtypen en prijsindicatie","subtitle":"Indicatieve prijzen, vrij op naam, inclusief grond",
+  "blocks":[
+   {"p":"Alle prijzen zijn indicatief en gebaseerd op de begroting van het definitief ontwerp. Omdat we samen opdrachtgever zijn, betaal je de werkelijke kosten: er zit geen ontwikkelaarsmarge op. Meer- of minderwerk per woning wordt apart verrekend."},
+   {"table":[["Type","Oppervlak","Aantal","Prijs vanaf"],["Studio","42 m²","6","€ 255.000"],["Tweekamer","58 m²","10","€ 335.000"],["Driekamer","78 m²","12","€ 445.000"],["Gezinswoning","104 m²","8","€ 575.000"],["Maisonnette","128 m²","4","€ 695.000"]],"widths":[170,110,80,123],"alignRight":true},
+   {"h":"Wat is inbegrepen","ul":["Een aandeel in de gemeenschapsruimte, het binnenhof en de daktuin","Aansluiting op de collectieve warmtepomp en de zonnepanelen","Een eigen berging op de begane grond"]},
+   {"h":"Sociale huur en middenhuur","p":"Acht woningen worden in samenwerking met een woningcorporatie verhuurd. De bewoners daarvan zijn volwaardig lid van de vereniging."}
+  ]},
+ {"file":"programma-van-eisen-v3.pdf","kicker":"Projectdossier","title":"Programma van eisen, versie 3","subtitle":"Vastgesteld door de ALV",
+  "blocks":[
+   {"h":"1. Uitgangspunten","ul":["Wonen met elkaar, niet naast elkaar: ontmoeting is een ontwerpopgave.","Betaalbaar voor verschillende inkomens: minimaal 20% sociale huur of middenhuur.","Gasloos en energieneutraal op gebouwniveau.","Toegankelijk voor alle leeftijden."]},
+   {"h":"2. Gemeenschappelijke ruimtes","table":[["Ruimte","Minimaal","Opmerking"],["Gemeenschapsruimte","120 m²","Met keuken, aan het binnenhof"],["Werkplaats","25 m²","Afsluitbaar, met krachtstroom"],["Logeerkamer","18 m²","Met eigen badkamer"],["Fietsenberging","2,5 plek / woning","Inclusief bakfietsplekken"],["Daktuin","400 m²","Toegankelijk met lift"]],"widths":[160,110,213]},
+   {"h":"3. Woningen","p":"Elke woning heeft een eigen buitenruimte van minimaal 6 m², op de galerij of als balkon. Plattegronden zijn zo opgezet dat een kamer later bij de buurwoning getrokken kan worden."},
+   {"h":"4. Duurzaamheid","ul":["Collectieve warmtepomp, geen individuele installaties","Houtskeletbouw of CLT, minimaal 60% biobased","Regenwater opvangen voor de daktuin","Groen dak op alle niet-betreedbare delen"]}
+  ]},
+ {"file":"begroting-stichtingskosten.pdf","kicker":"Financieel","title":"Begroting stichtingskosten","subtitle":"Stand definitief ontwerp",
+  "blocks":[
+   {"p":"De stichtingskosten zijn alle kosten om het gebouw neer te zetten, van grond tot oplevering. Deze begroting is opgesteld met de kostendeskundige en wordt bij elke ontwerpfase bijgewerkt."},
+   {"table":[["Post","Bedrag","Aandeel"],["Grond (erfpacht, afgekocht)","€ 4.120.000","24%"],["Bouwkosten","€ 10.650.000","62%"],["Installaties en warmtepomp","€ 980.000","6%"],["Advies en ontwerp","€ 760.000","4%"],["Leges en heffingen","€ 220.000","1%"],["Onvoorzien (3%)","€ 470.000","3%"],["Totaal","€ 17.200.000","100%"]],"widths":[260,130,93],"alignRight":true,"boldLast":true},
+   {"h":"Risico's","ul":["Prijsstijging bouwmaterialen: afgedekt met een indexatieclausule tot start bouw.","Vertraging vergunning: elke maand kost circa € 18.000 aan rente en advieskosten.","Leegstand bij oplevering: alle 40 woningen zijn toegewezen, er is een wachtlijst."]},
+   {"h":"Financiering","p":"De bouw wordt gefinancierd met een bouwkrediet. Leden betalen bij toetreding een inleg van 10% van de koopsom, de rest bij oplevering via hun eigen hypotheek."}
+  ]},
+ {"file":"concept-statuten-vereniging.pdf","kicker":"Juridisch · concept","title":"Concept-statuten Vereniging Demoproject","subtitle":"Ter bespreking in de ALV",
+  "blocks":[
+   {"h":"Artikel 1. Naam en zetel","p":"De vereniging draagt de naam Vereniging Demoproject en is gevestigd in Amsterdam."},
+   {"h":"Artikel 2. Doel","p":"De vereniging heeft ten doel het gezamenlijk realiseren en in stand houden van een woongemeenschap, en het bevorderen van het samenleven van haar leden."},
+   {"h":"Artikel 3. Leden","ul":["Lid kan zijn iedere natuurlijke persoon die een woning in het project afneemt of huurt.","Aspirant-leden hebben spreekrecht maar geen stemrecht in de algemene vergadering.","Het bestuur besluit over toelating; tegen een weigering staat beroep open bij de algemene vergadering."]},
+   {"h":"Artikel 4. Bestuur","p":"Het bestuur bestaat uit ten minste drie leden, benoemd door de algemene vergadering voor een termijn van twee jaar. Bestuurders zijn eenmaal herbenoembaar."},
+   {"h":"Artikel 5. Algemene vergadering","p":"Ten minste twee keer per jaar wordt een algemene vergadering gehouden. Besluiten worden genomen met gewone meerderheid, tenzij deze statuten anders bepalen. Voor een statutenwijziging is twee derde van de uitgebrachte stemmen nodig."}
+  ]},
+ {"file":"omgevingsvergunning-overzicht-bijlagen.pdf","kicker":"Vergunning & technisch","title":"Omgevingsvergunning: overzicht bijlagen","subtitle":"Stand van de aanvraag",
+  "blocks":[
+   {"p":"Overzicht van alle stukken voor de aanvraag omgevingsvergunning bij de gemeente Amsterdam, met wie ze aanlevert."},
+   {"table":[["Bijlage","Door","Status"],["Bouwtekeningen DO","Space&Matter","Gereed"],["Constructieve berekening","Constructeur","Gereed"],["Brandveiligheidsplan","Adviseur brand","Gereed"],["Energieprestatie (BENG)","Installatieadviseur","Gereed"],["Daglichtberekening","Space&Matter","Gereed"],["Bodemonderzoek","Gemeente","Aangeleverd"],["Welstandsadvies","Commissie","Positief"]],"widths":[200,160,123]},
+   {"h":"Planning","p":"Na indiening heeft de gemeente acht weken om te beslissen, eenmalig te verlengen met zes weken. Daarna volgt een bezwaartermijn van zes weken."}
+  ]},
+ {"file":"duurzaamheidsplan-warmtepomp.pdf","kicker":"Werkgroep Duurzaamheid","title":"Duurzaamheidsplan: warmtepomp met bodemlussen","subtitle":"Advies aan de ALV",
+  "blocks":[
+   {"h":"Advies","p":"De werkgroep adviseert een collectieve warmtepomp met gesloten bodemlussen, gecombineerd met 180 zonnepanelen op het dak. Dit is over 30 jaar de goedkoopste optie en maakt het gebouw gasloos en vrijwel energieneutraal."},
+   {"h":"Vergelijking","table":[["","Stadsverwarming","Warmtepomp"],["Investering","€ 310.000","€ 640.000"],["Energiekosten per woning","€ 1.450 / jaar","€ 720 / jaar"],["Kosten over 30 jaar","€ 2,05 mln","€ 1,51 mln"],["CO2-uitstoot","Gemiddeld","Laag"],["Koeling in de zomer","Nee","Ja"]],"widths":[190,150,143],"alignRight":true},
+   {"h":"Hoe het werkt","p":"Onder het binnenhof komen 24 bodemlussen tot 120 meter diep. In de winter halen ze warmte uit de bodem, in de zomer brengen ze die terug. Zo koelt het gebouw in de zomer en laadt het de bodem op voor de winter."},
+   {"h":"Wat het van ons vraagt","ul":["Een hogere investering vooraf, verdeeld over alle woningen","Een beheercontract voor onderhoud","Een energiecommissie die het verbruik volgt"]}
+  ]},
+ {"file":"planning-tot-oplevering.pdf","kicker":"Projectdossier","title":"Planning tot oplevering","subtitle":"Bijgewerkt na het definitief ontwerp",
+  "blocks":[
+   {"table":[["Fase","Duur","Status"],["Initiatief en groepsvorming","6 maanden","Afgerond"],["Voorlopig ontwerp","4 maanden","Afgerond"],["Definitief ontwerp","4 maanden","Afgerond"],["Omgevingsvergunning","3 tot 5 maanden","Lopend"],["Technisch ontwerp en aanbesteding","4 maanden","Gepland"],["Bouw","18 maanden","Gepland"],["Oplevering en inhuizen","1 maand","Gepland"]],"widths":[230,130,123]},
+   {"h":"Kritieke punten","ul":["De vergunning moet onherroepelijk zijn voordat het bouwkrediet ingaat.","De aanbesteding start pas als alle woningen zijn toegewezen.","Keuzegesprekken per woning moeten klaar zijn voor het technisch ontwerp."]}
+  ]},
+ {"file":"notulen-alv-halfjaarsvergadering.pdf","kicker":"Vergadering · notulen","title":"Notulen ALV: halfjaarsvergadering","subtitle":"Aanwezig: 34 van de 40 leden. Voorzitter: Sophie van der Berg",
+  "blocks":[
+   {"h":"1. Opening","p":"De voorzitter opent de vergadering en heet vier nieuwe leden welkom. Het quorum is ruim gehaald."},
+   {"h":"2. Huishoudelijk reglement","p":"Het reglement wordt met algemene stemmen vastgesteld, met één wijziging: huisdieren zijn toegestaan, mits ze geen overlast geven in de gemeenschappelijke ruimtes."},
+   {"h":"3. Budget gemeenschapsruimte","p":"Het voorgestelde budget van € 85.000 voor de inrichting wordt goedgekeurd (31 voor, 2 tegen, 1 onthouding). De werkgroep komt met een uitgewerkt voorstel."},
+   {"h":"4. Rondvraag","ul":["Vraag over de fietsenberging: de werkgroep neemt bakfietsplekken mee in het ontwerp.","Voorstel voor een hardloopgroepje: wordt via het prikbord opgepakt."]},
+   {"h":"Besluiten","ul":["Huishoudelijk reglement vastgesteld","Budget gemeenschapsruimte goedgekeurd","Volgende ALV over een half jaar"]}
+  ]},
+ {"file":"presentatie-definitief-ontwerp.pdf","kicker":"Vergadering · presentatie","title":"Presentatie definitief ontwerp","subtitle":"Space&Matter voor alle leden",
+  "blocks":[
+   {"img":"maquette2.jpg","caption":"Maquette van het binnenhof."},
+   {"h":"Wat we lieten zien","ul":["De plattegronden per woningtype","De nieuwe gevel aan de waterkant","De indeling van de gemeenschapsruimte","De daktuin volgens concept Eetbare Oase"]},
+   {"h":"Vragen uit de zaal","p":"De meeste vragen gingen over de galerijen (breed genoeg voor een bankje: ja), de bergingen (op de begane grond) en de planning (start bouw na een onherroepelijke vergunning)."}
+  ]}
+]
