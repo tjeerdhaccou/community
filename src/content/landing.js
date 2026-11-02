@@ -16,7 +16,7 @@ const IMG = '/assets/landing'
 
 export const HERO = {
   eyebrow: 'Voor ontwikkelaars, procesbegeleiders en bewonersgroepen',
-  title: 'Eerst de buren, dan de woningen.',
+  title: 'Eerst buren, dan bouwen.',
   lead:
     'Een buurt ontstaat lang voordat de eerste paal de grond in gaat. Buuur brengt je ' +
     'toekomstige bewoners vanaf de eerste schets samen, op één plek: nieuws, gesprekken, ' +
@@ -253,7 +253,7 @@ export const SLOT = {
 }
 
 export const FOOTER = {
-  tagline: 'Eerst de buren, dan de woningen.',
+  tagline: 'Eerst buren, dan bouwen.',
 }
 
 // Startformulier (/start). De keys 'bewoner' en 'professional' zijn de

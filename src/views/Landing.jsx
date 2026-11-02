@@ -274,7 +274,7 @@ export default function Landing() {
 
   useEffect(() => {
     const prev = document.title
-    document.title = 'Buuur, eerst de buren, dan de woningen'
+    document.title = 'Buuur, eerst buren, dan bouwen'
     return () => { document.title = prev }
   }, [])
 
