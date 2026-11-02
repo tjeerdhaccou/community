@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { NAV_SECTIONS } from '../lib/navigation'
-import { HERO, STRIP, DOELGROEPEN, STAPPEN, MODULES, QUOTE, PLANS, SLOT, FOOTER } from '../content/landing'
+import { HERO, MAKER, STRIP, DOELGROEPEN, STAPPEN, MODULES, OVER, QUOTE, PLANS, SLOT, FOOTER } from '../content/landing'
 import '../styles/landing.css'
 
 const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
@@ -284,11 +284,13 @@ export default function Landing() {
         <div className="lp-nav__in">
           <Link to="/" className="lp-logo">
             <span className="lp-logo__mark"><i className="fa-solid fa-house" aria-hidden="true" /></span>buuur
+            <span className="lp-logo__by">{MAKER.label}</span>
           </Link>
           <div className="lp-nav__links">
             <a href="#voorwie">Voor wie</a>
             <a href="#hoe">Zo werkt het</a>
             <a href="#modules">Wat erin zit</a>
+            <a href="#over">Over ons</a>
             <a href="#plans">Light &amp; pro</a>
             {user ? (
               <Link to="/dashboard" className="lp-btn lp-btn--sm">Naar het platform</Link>
@@ -365,6 +367,24 @@ export default function Landing() {
           </div>
         </section>
 
+        <section className="lp-section" id="over">
+          <div className="lp-wrap">
+            <div className="lp-over">
+              <div className="lp-over__media" data-reveal>
+                <img src={OVER.image.src} alt={OVER.image.alt} width="1600" height="1066" loading="lazy" decoding="async" />
+              </div>
+              <div className="lp-over__body" data-reveal style={{ '--d': 1 }}>
+                <Eyebrow>{OVER.eyebrow}</Eyebrow>
+                <h2>{OVER.title}</h2>
+                {OVER.body.map(text => <p key={text}>{text}</p>)}
+                <a href={MAKER.href} className="lp-btn lp-btn--ghost" target="_blank" rel="noopener noreferrer">
+                  {OVER.link} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="lp-band" data-reveal>
           <img className="lp-band__bg" src={QUOTE.image.src} alt={QUOTE.image.alt} loading="lazy" decoding="async" />
           <div className="lp-wrap">
@@ -424,7 +444,10 @@ export default function Landing() {
       <footer className="lp-footer">
         <div className="lp-wrap">
           <div className="lp-footer__in">
-            <span><b>buuur</b> · {FOOTER.tagline}</span>
+            <span>
+              <b>buuur</b> · {FOOTER.tagline} Een tool van{' '}
+              <a href={MAKER.href} className="lp-footer__maker" target="_blank" rel="noopener noreferrer">{MAKER.name}</a>, Amsterdam.
+            </span>
             <span className="lp-footer__links">
               <Link to="/privacy">Privacybeleid</Link>
               <Link to="/voorwaarden">Algemene voorwaarden</Link>

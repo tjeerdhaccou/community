@@ -10,20 +10,21 @@
 // landing.css (coral, green, amber, peri, pink, indigo, peach, teal, navy).
 //
 // Foto's staan in public/assets/landing (niet onder een eigen map: de
-// SPA-rewrite in vercel.json laat alleen /assets ongemoeid). Allemaal van
-// Unsplash, vrij te gebruiken onder de Unsplash-licentie.
+// SPA-rewrite in vercel.json laat alleen /assets ongemoeid). De *-samenbouw-
+// foto's zijn van Space&Matter, de rest komt van Unsplash (vrije licentie).
 const IMG = '/assets/landing'
 
 export const HERO = {
-  eyebrow: 'Voor ontwikkelaars, procesbegeleiders en bewonersinitiatieven',
+  eyebrow: 'Voor ontwikkelaars, procesbegeleiders en bewonersgroepen',
   title: 'Eerst de buren, dan de woningen.',
   lead:
-    'Buuur is de plek waar een woonproject en zijn toekomstige bewoners elkaar vinden. ' +
-    'Nieuws, gesprekken, documenten en ledenwerving in één omgeving die van jouw project is, ' +
-    'met jouw naam en jouw kleur.',
+    'Een buurt ontstaat lang voordat de eerste paal de grond in gaat. Buuur brengt je ' +
+    'toekomstige bewoners vanaf de eerste schets samen, op één plek: nieuws, gesprekken, ' +
+    'documenten en nieuwe leden. Geen appgroepen en mailketens meer, maar een thuisbasis ' +
+    'die van je project is.',
   primary: 'Plan een demo',
   secondary: 'Kijk rond in het demoproject',
-  note: 'Inloggen zonder wachtwoord. Eigen adres per project, zoals jouwproject.buuur.nl.',
+  note: 'Gemaakt door CrowdBuilding. Inloggen zonder wachtwoord, eigen adres per project.',
   // Zwevende kaartjes rond het productframe: wat er op een gewone dag gebeurt.
   chips: [
     { icon: 'fa-solid fa-face-smile', bubble: 'peach', title: 'Hanna is lid geworden', meta: 'Zeg hallo op het prikbord' },
@@ -31,12 +32,19 @@ export const HERO = {
   ],
 }
 
+// Afzender, naast het logo en in de footer.
+export const MAKER = {
+  label: 'door CrowdBuilding',
+  name: 'CrowdBuilding',
+  href: 'https://crowdbuilding.com',
+}
+
 // Fotostrook onder de hero. Decoratief, dus alleen een korte alt.
 export const STRIP = [
   { src: `${IMG}/strip-lange-tafel.webp`, alt: 'Buren aan een lange tafel in de tuin' },
   { src: `${IMG}/strip-moestuin.webp`, alt: 'Samen aan het werk in de moestuin' },
   { src: `${IMG}/strip-buitentafel.webp`, alt: 'Een groep in gesprek aan tafel' },
-  { src: `${IMG}/strip-gevels.webp`, alt: 'Woningen aan het water' },
+  { src: `${IMG}/strip-samenbouw.webp`, alt: 'Een collectief woongebouw met galerijen en daktuinen' },
   { src: `${IMG}/strip-samen-koken.webp`, alt: 'Samen koken' },
   { src: `${IMG}/strip-tuin.webp`, alt: 'Een zomerse middag in de gemeenschappelijke tuin' },
   { src: `${IMG}/strip-tuinfeest.webp`, alt: 'Lunch in de tuin' },
@@ -45,10 +53,10 @@ export const STRIP = [
 
 export const DOELGROEPEN = {
   eyebrow: 'Voor wie',
-  title: 'Drie soorten makers, één omgeving.',
+  title: 'Drie soorten makers. Eén probleem.',
   intro:
-    'Een ontwikkelaar, een procesbegeleider en een bewonersgroep hebben hetzelfde probleem ' +
-    'in een andere jas: de mensen zijn er, de plek ontbreekt. Kies je rol.',
+    'Ontwikkelaar, procesbegeleider of bewonersgroep: de mensen zijn er al, ' +
+    'de plek om samen te komen ontbreekt. Kies je rol.',
   painLabel: 'Herken je dit',
   items: [
     {
@@ -58,15 +66,15 @@ export const DOELGROEPEN = {
         'Je verkoopt gemeenschap, maar tussen tekening en oplevering zien je kopers elkaar nooit. ' +
         'Wie afhaakt, merk je pas bij de notaris.',
       painSub: 'Geïnteresseerden in Excel, kopers in de mail, de gemeente vraagt om bewijs van participatie.',
-      title: 'Een wachtlijst die zich al buurt voelt.',
+      title: 'Een wachtlijst die al voelt als een buurt.',
       body:
-        'Zet je project op Buuur zodra de eerste schets er is. Geïnteresseerden melden zich aan via ' +
-        'je eigen pagina, leren elkaar kennen op het prikbord en volgen elke fase op de roadmap. ' +
-        'Kopers die elkaar kennen haken minder af. En je laat de gemeente zien dat participatie ' +
-        'meer is dan één avond in het buurthuis.',
+        'Zet je project op Buuur zodra de eerste schets er ligt. Geïnteresseerden melden zich aan ' +
+        'via je eigen pagina, leren elkaar kennen op het prikbord en volgen elke fase op de roadmap. ' +
+        'Kopers die elkaar kennen, haken minder snel af. En de gemeente ziet participatie die verder ' +
+        'gaat dan één avond in het buurthuis.',
       points: [
         'Van geïnteresseerde tot koper in één ledenlijst, met fase en rol per persoon',
-        'Nieuws, events en documenten per project, in jouw huisstijl op jouw domein',
+        'Nieuws, events en documenten per project, in je eigen huisstijl en op je eigen adres',
         'Betrokkenheid zwart op wit: wie kwam, wie las, wie reageerde',
       ],
       cta: 'Plan een demo',
@@ -81,20 +89,20 @@ export const DOELGROEPEN = {
         'Vijf projecten, vijf WhatsApp-groepen, vijf Drive-mappen. En in elk overleg dezelfde vraag: ' +
         'waar staan we eigenlijk?',
       painSub: 'Documenten die je voor de derde keer opvraagt. Besluiten die in een appgroep verdwijnen.',
-      title: 'Al je projecten onder één login.',
+      title: 'Vijf projecten. Eén login.',
       body:
-        'Elke groep krijgt een eigen omgeving met eigen leden, kleur en pagina. Jij ziet ze allemaal ' +
-        'in één organisatiedashboard. Documentverzoeken hebben een deadline en een beoordeling, fases ' +
-        'staan vast op de roadmap en besluiten blijven vindbaar. Zo kan een groep door, ook op de ' +
-        'avond dat jij er niet bij bent.',
+        'Elke groep krijgt een eigen omgeving met eigen leden, kleur en pagina. Jij overziet ze ' +
+        'allemaal vanuit één dashboard. Documentverzoeken hebben een deadline en een beoordeling, ' +
+        'fases staan vast op de roadmap en besluiten blijven vindbaar. Zo loopt een groep door, ' +
+        'ook op de avond dat jij er niet bij bent.',
       points: [
-        'Organisatiedashboard met alle leden, updates en events van al je projecten',
+        'Eén dashboard met de leden, updates en events van al je projecten',
         'Documentverzoeken met deadline, goedkeuring en ondertekenen',
         'Werkgroepen en commissies met eigen documenten en gesprekken',
       ],
       cta: 'Plan een demo',
       ctaTo: '/start?segment=professional',
-      ctaNote: 'Ook als je maar één traject begeleidt.',
+      ctaNote: 'Ook als je één traject begeleidt.',
       image: { src: `${IMG}/rol-procesbegeleider.webp`, alt: 'Overleg aan tafel met tekeningen en kleurstalen' },
     },
     {
@@ -104,19 +112,19 @@ export const DOELGROEPEN = {
         'Jullie zijn met twaalf, hebben een naam en een droom. De notulen staan in drie inboxen en ' +
         'niemand weet meer wie er nu echt meedoet.',
       painSub: 'Een website laten bouwen kost geld dat jullie nog niet hebben.',
-      title: 'Een thuis voor je initiatief, vanaf dag één.',
+      title: 'Van eerste borrel tot sleuteloverdracht.',
       body:
-        'Met buuur light zet je in een middag een projectomgeving neer: prikbord, agenda, documenten ' +
+        'Met buuur light staat je projectomgeving er in een middag: prikbord, agenda, documenten ' +
         'en een eigen pagina waarmee je nieuwe leden vindt. Geen websitebouwer, geen wachtwoorden, ' +
-        'geen IT. Het groeit met jullie mee, van de eerste borrel tot de sleuteloverdracht.',
+        'geen IT-gedoe. Het groeit met je groep mee, tot je de sleutel in handen hebt.',
       points: [
         'Eigen naam, kleur en adres, bijvoorbeeld vlinderhaven.buuur.nl',
         'Pagina bouwer plus aanmeldformulier voor nieuwe leden, zonder code',
-        'Roadmap die iedereen laat zien waar jullie staan',
+        'Roadmap die iedereen laat zien waar je staat',
       ],
       cta: 'Start met buuur light',
       ctaTo: '/start?segment=bewoner',
-      ctaNote: 'Ook verkrijgbaar via CrowdBuilding.',
+      ctaNote: 'Met CrowdBuilding als bondgenoot achter je.',
       image: { src: `${IMG}/rol-initiatief.webp`, alt: 'Twee bewoners aan het werk in een plantenbak' },
     },
   ],
@@ -124,44 +132,59 @@ export const DOELGROEPEN = {
 
 export const STAPPEN = {
   eyebrow: 'Zo werkt het',
-  title: 'Van eerste schets tot sleutel, in drie stappen.',
+  title: 'Van eerste schets tot sleutel in drie stappen.',
   items: [
     {
       bubble: 'indigo',
-      title: 'Maak je projectomgeving',
-      body: 'Naam, logo, kleur en een eigen adres zoals jouwproject.buuur.nl. Zet aan wat je project nodig heeft.',
+      title: 'Zet je project neer',
+      body: 'Naam, logo, kleur en een eigen adres zoals jouwproject.buuur.nl. Zet aan wat je project nu nodig heeft, de rest volgt later.',
       image: { src: `${IMG}/stap-schets.webp`, alt: 'Handen boven een bouwtekening' },
     },
     {
       bubble: 'coral',
-      title: 'Nodig je mensen uit',
-      body: 'Team, bewoners en geïnteresseerden loggen in met een code per mail. Iedereen krijgt een rol en een fase.',
+      title: 'Haal je mensen binnen',
+      body: 'Team, bewoners en geïnteresseerden loggen in met een code uit hun mail. Geen wachtwoord, wel een rol en een fase per persoon.',
       image: { src: `${IMG}/stap-mensen.webp`, alt: 'Een groep mensen in gesprek' },
     },
     {
       bubble: 'green',
-      title: 'Werk samen tot de sleutel',
-      body: 'Nieuws, events, documenten en de roadmap groeien mee met het project. Je publieke pagina ook, automatisch.',
-      image: { src: `${IMG}/stap-sleutel.webp`, alt: 'Woningen aan de gracht' },
+      title: 'Bouw samen door tot de sleutel',
+      body: 'Nieuws, events, documenten en de roadmap groeien mee met je project. Je publieke pagina ook, vanzelf.',
+      image: { src: `${IMG}/stap-samenbouw.webp`, alt: 'Een collectief woongebouw met houten gevels, galerijen en daktuinen' },
     },
   ],
 }
 
 export const MODULES = {
   eyebrow: 'Wat erin zit',
-  title: 'Negen onderdelen, één zijbalk.',
-  intro: 'Zet aan wat je project nu nodig heeft. De rest blijft uit tot het zover is.',
+  title: 'Negen onderdelen. Eén zijbalk.',
+  intro: 'Zet aan wat je project nu nodig heeft. De rest wacht tot het zover is.',
   items: [
     { icon: 'fa-solid fa-bullhorn', bubble: 'coral', title: 'Projectnieuws', body: 'Updates van het team, voor leden of voor iedereen. Verschijnen ook op je publieke pagina.' },
     { icon: 'fa-solid fa-thumbtack', bubble: 'green', title: 'Prikbord', body: 'Vragen, ideeën en kennismaken. Per project of per werkgroep, met foto\'s en tags.' },
     { icon: 'fa-solid fa-calendar-check', bubble: 'amber', title: 'Events', body: 'Informatieavonden en ontwerpsessies, met aanmelden en een herinnering vooraf.' },
-    { icon: 'fa-solid fa-comments', bubble: 'green', title: 'Chat', body: 'Eén op één of in een themagroep, zoals Bouwcommissie of Duurzaamheid. Weg uit WhatsApp.' },
-    { icon: 'fa-solid fa-road', bubble: 'peri', title: 'Roadmap', body: 'De fases van schets tot bouw, zichtbaar voor iedereen. Nooit meer de vraag waar we staan.' },
+    { icon: 'fa-solid fa-comments', bubble: 'green', title: 'Chat', body: 'Eén op één of in een themagroep, zoals Bouwcommissie of Duurzaamheid. Eindelijk weg uit WhatsApp.' },
+    { icon: 'fa-solid fa-road', bubble: 'peri', title: 'Roadmap', body: 'De fases van schets tot bouw, zichtbaar voor iedereen. Nooit meer de vraag: waar staan we nu?' },
     { icon: 'fa-solid fa-folder-open', bubble: 'pink', title: 'Projectdossier', body: 'Ontwerpen, notulen en rapporten, met rechten per groep. Versies blijven bewaard.' },
     { icon: 'fa-solid fa-file-shield', bubble: 'navy', title: 'Mijn dossier', body: 'Per lid: eigen bestanden en verzoeken om te uploaden of te ondertekenen, met deadline.' },
     { icon: 'fa-solid fa-users', bubble: 'peach', title: 'Leden', body: 'Ledenlijst en ledenwerving in één. Van geïnteresseerde tot bewoner, met rol en fase.' },
     { icon: 'fa-solid fa-wand-magic-sparkles', bubble: 'teal', title: 'Pagina bouwer', body: 'Je publieke projectpagina uit blokken, in je eigen huisstijl. Klaar in een middag.' },
   ],
+}
+
+// Wie erachter zit. Alleen dingen die over CrowdBuilding vaststaan.
+export const OVER = {
+  eyebrow: 'Van CrowdBuilding',
+  title: 'Gemaakt door mensen die samenbouwen van dichtbij kennen.',
+  body: [
+    'Buuur komt van CrowdBuilding, het startpunt voor collectieve woonprojecten. We zien hoe ' +
+    'bouwgroepen vol energie beginnen en dan verzanden in appgroepen, mailketens en losse mappen. ' +
+    'Dus bouwden we de plek die we zelf misten.',
+    'CrowdBuilding is eigendom van een stichting. Elke euro gaat terug naar de missie: ' +
+    'meer mensen die samen hun woondroom waarmaken.',
+  ],
+  link: 'Meer over CrowdBuilding',
+  image: { src: `${IMG}/cb-samenbouw.webp`, alt: 'Een collectief woongebouw met houten gevels, galerijen en daktuinen' },
 }
 
 export const QUOTE = {
@@ -177,8 +200,8 @@ export const QUOTE = {
 
 export const PLANS = {
   eyebrow: 'Light & pro',
-  title: 'Eén platform, twee manieren om in te stappen.',
-  intro: 'Zelfde onderdelen, andere schaal. Pro is voor wie er zijn werk van maakt, light voor de groep die zelf begint.',
+  title: 'Eén platform. Twee manieren om in te stappen.',
+  intro: 'Dezelfde onderdelen, een andere schaal. Pro is voor wie er zijn werk van maakt, light voor de groep die zelf begint.',
   items: [
     {
       key: 'pro',
@@ -188,11 +211,11 @@ export const PLANS = {
       name: 'buuur pro',
       sub: 'Voor wie woningen ontwikkelt of groepen begeleidt',
       body:
-        'Een eigen omgeving per project, met organisatiedashboard, ledenwerving op maat en ' +
-        'documentverzoeken. Je betaalt per woning, dus de prijs groeit mee met je project.',
+        'Een eigen omgeving per project, met een dashboard over al je projecten, ledenwerving op ' +
+        'maat en documentverzoeken. Je betaalt per woning, dus de prijs groeit mee met je project.',
       points: [
         'Eigen omgeving per project, met eigen huisstijl en domein',
-        'Organisatiedashboard over al je projecten',
+        'Eén dashboard over al je projecten',
         'Ledenwerving, documentverzoeken en dossiers per lid',
       ],
       cta: 'Plan een demo',
@@ -204,10 +227,10 @@ export const PLANS = {
       tag: 'Voor één initiatief',
       tagTint: 'green',
       name: 'buuur light',
-      sub: 'Voor wooncoöperaties, CPO-groepen en bewonersgroepen',
+      sub: 'Voor wooncoöperaties, bouwgroepen en bewonersgroepen',
       body:
-        'Eén projectomgeving voor jullie groep, om te groeien van los idee naar hechte club. ' +
-        'Ook verkrijgbaar via CrowdBuilding.',
+        'Eén projectomgeving voor je groep, om te groeien van los idee naar hechte club. ' +
+        'Je start vandaag, zonder gedoe.',
       points: [
         'Prikbord, events, documenten en roadmap',
         'Eigen pagina met aanmeldformulier voor nieuwe leden',
@@ -222,15 +245,15 @@ export const PLANS = {
 export const SLOT = {
   title: 'Kijk eerst zelf rond.',
   body:
-    'Het demoproject staat open. Loop door het dashboard, de chat en de roadmap alsof je al lid bent. ' +
-    'Daarna praten we verder over jouw project.',
+    'Het demoproject staat open. Klik door het dashboard, de chat en de roadmap alsof je al lid bent. ' +
+    'Daarna praten we over jouw project.',
   primary: 'Naar het demoproject',
   secondary: 'Plan een demo',
   image: { src: `${IMG}/slot-tafel.webp`, alt: 'Buren aan een lange tafel in de tuin' },
 }
 
 export const FOOTER = {
-  tagline: 'Eerst de buren, dan de woningen. Een initiatief van CrowdBuilding, Amsterdam.',
+  tagline: 'Eerst de buren, dan de woningen.',
 }
 
 // Startformulier (/start). De keys 'bewoner' en 'professional' zijn de
