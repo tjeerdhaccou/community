@@ -94,6 +94,7 @@
 .lp-logo { font-weight: 700; font-size: 24px; letter-spacing: -.02em; display: inline-flex; align-items: center; gap: 9px; color: var(--text-primary); }
 .lp-logo__mark { width: 28px; height: 28px; border-radius: 9px; background: var(--lp-cta); color: var(--lp-on-cta); display: inline-grid; place-items: center; font-size: 14px; transition: transform .35s var(--lp-ease); }
 .lp-logo:hover .lp-logo__mark { transform: rotate(-10deg) scale(1.08); }
+.lp-logo__by { font-size: 13px; font-weight: 500; letter-spacing: 0; color: var(--text-tertiary); align-self: flex-end; margin: 0 0 3px -3px; }
 .lp-nav__links { display: flex; align-items: center; gap: 4px; }
 .lp-nav__links > a:not(.lp-btn) { font-size: 15px; font-weight: 500; color: var(--text-secondary); padding: 8px 12px; border-radius: var(--radius-md); }
 .lp-nav__links > a:not(.lp-btn):hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -233,6 +234,16 @@
 .lp-quote__who b { display: block; font-size: 15px; }
 .lp-quote__who span:not(.lp-av) { font-size: 13px; color: var(--text-tertiary); }
 
+/* ===== Van CrowdBuilding ===== */
+.lp-over { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 88px); align-items: center; }
+.lp-over__media { border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow-md); aspect-ratio: 3 / 2; }
+.lp-over__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 1.2s var(--lp-ease); }
+.lp-over__media:hover img { transform: scale(1.04); }
+.lp-over__body h2 { font-size: clamp(28px, 3.2vw, 44px); font-weight: 700; margin: 12px 0 16px; }
+.lp-over__body p { font-size: 17px; color: var(--text-secondary); max-width: 34em; }
+.lp-over__body p + p { margin-top: 12px; }
+.lp-over__body .lp-btn { margin-top: 28px; }
+
 /* Quote als foto-band over de volle breedte. Tekst blijft wit op een donkere
    laag, in licht en donker thema, dus hier vaste kleuren. */
 .lp-band { position: relative; isolation: isolate; overflow: hidden; padding: clamp(88px, 11vw, 160px) 0; margin: clamp(24px, 3vw, 48px) 0; }
@@ -275,6 +286,7 @@
 .lp-footer__in b { color: var(--text-primary); }
 .lp-footer__links a { margin-left: 20px; }
 .lp-footer__links a:hover { color: var(--text-primary); }
+.lp .lp-footer__maker { color: var(--text-primary); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .lp-footer__copy { margin-top: 12px; font-size: 13px; }
 
 /* ===== Fotostrook ===== */
@@ -349,11 +361,14 @@ textarea.lp-input { resize: vertical; }
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .lp-hero { grid-template-columns: 1fr; gap: 48px; padding-top: 40px; }
-  .lp-panel, .lp-plans, .lp-quote, .lp-final, .lp-choices { grid-template-columns: 1fr; }
+  .lp-panel, .lp-plans, .lp-quote, .lp-final, .lp-choices, .lp-over { grid-template-columns: 1fr; }
   .lp-final__media { min-height: 0; aspect-ratio: 16 / 9; }
   .lp-chip--1 { left: -8px; }
   .lp-steps, .lp-mods { grid-template-columns: 1fr 1fr; }
   .lp-section { padding: 56px 0; }
+}
+@media (max-width: 1000px) {
+  .lp-nav__links > a[href^="#"] { display: none; }
 }
 @media (max-width: 760px) {
   .lp-nav__links > a:not(.lp-btn) { display: none; }
