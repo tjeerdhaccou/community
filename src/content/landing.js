@@ -8,6 +8,11 @@
 //
 // Iconen zijn Font Awesome-klassen, kleuren verwijzen naar bubbel-tinten uit
 // landing.css (coral, green, amber, peri, pink, indigo, peach, teal, navy).
+//
+// Foto's staan in public/assets/landing (niet onder een eigen map: de
+// SPA-rewrite in vercel.json laat alleen /assets ongemoeid). Allemaal van
+// Unsplash, vrij te gebruiken onder de Unsplash-licentie.
+const IMG = '/assets/landing'
 
 export const HERO = {
   eyebrow: 'Voor ontwikkelaars, procesbegeleiders en bewonersinitiatieven',
@@ -19,7 +24,24 @@ export const HERO = {
   primary: 'Plan een demo',
   secondary: 'Kijk rond in het demoproject',
   note: 'Inloggen zonder wachtwoord. Eigen adres per project, zoals jouwproject.buuur.nl.',
+  // Zwevende kaartjes rond het productframe: wat er op een gewone dag gebeurt.
+  chips: [
+    { icon: 'fa-solid fa-face-smile', bubble: 'peach', title: 'Hanna is lid geworden', meta: 'Zeg hallo op het prikbord' },
+    { icon: 'fa-solid fa-calendar-check', bubble: 'green', title: '24 aanmeldingen', meta: 'Informatieavond, donderdag' },
+  ],
 }
+
+// Fotostrook onder de hero. Decoratief, dus alleen een korte alt.
+export const STRIP = [
+  { src: `${IMG}/strip-lange-tafel.webp`, alt: 'Buren aan een lange tafel in de tuin' },
+  { src: `${IMG}/strip-moestuin.webp`, alt: 'Samen aan het werk in de moestuin' },
+  { src: `${IMG}/strip-buitentafel.webp`, alt: 'Een groep in gesprek aan tafel' },
+  { src: `${IMG}/strip-gevels.webp`, alt: 'Woningen aan het water' },
+  { src: `${IMG}/strip-samen-koken.webp`, alt: 'Samen koken' },
+  { src: `${IMG}/strip-tuin.webp`, alt: 'Een zomerse middag in de gemeenschappelijke tuin' },
+  { src: `${IMG}/strip-tuinfeest.webp`, alt: 'Lunch in de tuin' },
+  { src: `${IMG}/strip-diner.webp`, alt: 'Een gezamenlijk diner' },
+]
 
 export const DOELGROEPEN = {
   eyebrow: 'Voor wie',
@@ -50,6 +72,7 @@ export const DOELGROEPEN = {
       cta: 'Plan een demo',
       ctaTo: '/start?segment=professional',
       ctaNote: 'Je betaalt per woning, niet per gebruiker.',
+      image: { src: `${IMG}/rol-ontwikkelaar.webp`, alt: 'Maquette van een woongebouw' },
     },
     {
       key: 'procesbegeleider',
@@ -72,6 +95,7 @@ export const DOELGROEPEN = {
       cta: 'Plan een demo',
       ctaTo: '/start?segment=professional',
       ctaNote: 'Ook als je maar één traject begeleidt.',
+      image: { src: `${IMG}/rol-procesbegeleider.webp`, alt: 'Overleg aan tafel met tekeningen en kleurstalen' },
     },
     {
       key: 'initiatief',
@@ -93,6 +117,7 @@ export const DOELGROEPEN = {
       cta: 'Start met buuur light',
       ctaTo: '/start?segment=bewoner',
       ctaNote: 'Ook verkrijgbaar via CrowdBuilding.',
+      image: { src: `${IMG}/rol-initiatief.webp`, alt: 'Twee bewoners aan het werk in een plantenbak' },
     },
   ],
 }
@@ -105,16 +130,19 @@ export const STAPPEN = {
       bubble: 'indigo',
       title: 'Maak je projectomgeving',
       body: 'Naam, logo, kleur en een eigen adres zoals jouwproject.buuur.nl. Zet aan wat je project nodig heeft.',
+      image: { src: `${IMG}/stap-schets.webp`, alt: 'Handen boven een bouwtekening' },
     },
     {
       bubble: 'coral',
       title: 'Nodig je mensen uit',
       body: 'Team, bewoners en geïnteresseerden loggen in met een code per mail. Iedereen krijgt een rol en een fase.',
+      image: { src: `${IMG}/stap-mensen.webp`, alt: 'Een groep mensen in gesprek' },
     },
     {
       bubble: 'green',
       title: 'Werk samen tot de sleutel',
       body: 'Nieuws, events, documenten en de roadmap groeien mee met het project. Je publieke pagina ook, automatisch.',
+      image: { src: `${IMG}/stap-sleutel.webp`, alt: 'Woningen aan de gracht' },
     },
   ],
 }
@@ -144,6 +172,7 @@ export const QUOTE = {
   name: 'Jasper Ewals',
   org: 'CommonCity',
   initials: 'JE',
+  image: { src: `${IMG}/quote-tuin.webp`, alt: '' },
 }
 
 export const PLANS = {
@@ -197,6 +226,7 @@ export const SLOT = {
     'Daarna praten we verder over jouw project.',
   primary: 'Naar het demoproject',
   secondary: 'Plan een demo',
+  image: { src: `${IMG}/slot-tafel.webp`, alt: 'Buren aan een lange tafel in de tuin' },
 }
 
 export const FOOTER = {
