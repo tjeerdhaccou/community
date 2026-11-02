@@ -538,11 +538,11 @@ export default function Tekenen() {
         {annotateMode && (
           <div style={{
             position: 'sticky', top: 72, zIndex: 2, marginBottom: 8, padding: '8px 12px',
-            background: 'var(--accent-primary, #4A90D9)', color: '#fff', borderRadius: 8, fontSize: 13,
+            background: 'var(--accent-primary, #4A90D9)', color: 'var(--accent-on-fill, #fff)', borderRadius: 8, fontSize: 13,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
           }}>
             <span><i className="fa-solid fa-i-cursor" /> Klik op het document waar je tekst wilt zetten. Typ, en klik ergens anders voor de volgende regel.</span>
-            <button type="button" onClick={() => { setAnnotateMode(false); setActiveAnnotation(null) }} style={{ background: '#fff', color: 'var(--accent-primary, #4A90D9)', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 600, cursor: 'pointer' }}>
+            <button type="button" onClick={() => { setAnnotateMode(false); setActiveAnnotation(null) }} style={{ background: 'var(--accent-on-fill, #fff)', color: 'var(--accent-primary, #4A90D9)', border: 'none', borderRadius: 6, padding: '4px 10px', fontWeight: 600, cursor: 'pointer' }}>
               Klaar
             </button>
           </div>
@@ -808,7 +808,7 @@ function AnnotationLayer({ page, pageWidthPt, annotations, active, activeId, onA
               size={Math.max(4, a.text.length + 1)}
               style={{
                 fontSize: px, lineHeight: 1, padding: '0 1px', margin: 0,
-                fontFamily: 'Helvetica, Arial, sans-serif', color: '#1a1a1a',
+                fontFamily: 'Helvetica, Arial, sans-serif', color: '#1a1a1a', // allow-hex: inkt op het witte PDF-papier, volgt bewust geen thema
                 background: isActive ? 'rgba(74,144,217,0.10)' : 'transparent',
                 border: `1px ${a.text ? 'dotted' : 'dashed'} rgba(74,144,217,0.7)`, borderRadius: 2, outline: 'none',
               }}
