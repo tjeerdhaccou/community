@@ -61,7 +61,7 @@ function RoadmapPhase({ phase, index }) {
 
   return (
     <div className={`roadmap-phase ${open ? 'roadmap-phase--open' : ''} roadmap-phase--${phase.status}`}>
-      <div className="roadmap-phase__head" onClick={() => setOpen(!open)}>
+      <div className="roadmap-phase__head" onClick={() => setOpen(!open)} data-tour={phase.status === 'active' ? 'roadmap-active' : undefined}>
         <div className="roadmap-phase__num" style={numStyle}>{phase.num}</div>
         <div className="roadmap-phase__info">
           <div className="roadmap-phase__name">

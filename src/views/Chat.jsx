@@ -464,6 +464,7 @@ export default function Chat() {
         key={t.id}
         type="button"
         className={`chat-conv ${t.id === selectedId ? 'chat-conv--active' : ''} ${t.muted ? 'chat-conv--muted' : ''}`}
+        data-tour={t.kind === 'group' ? 'chat-group' : undefined}
         onClick={() => openThread(t.id)}
       >
         <Avatar url={t.avatarUrl} name={t.title} emoji={t.emoji} icon={t.icon || (t.kind === 'group' ? 'fa-solid fa-hashtag' : null)} />
