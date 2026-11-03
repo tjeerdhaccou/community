@@ -8,6 +8,14 @@
   --tour-ease: cubic-bezier(.2, .7, .2, 1);
   --tour-key: #E8B931;            /* goud van de sleutels, in licht en donker gelijk */
   --tour-key-ink: #5A4500;
+  /* De kaartjes van de rondleiding hebben een eigen kleur: diep indigo met
+     witte tekst, zodat ze opvallen tussen de witte kaarten van de app. */
+  --tour-bg: #221D4D;
+  --tour-bg-2: #2F2963;
+  --tour-grad: linear-gradient(160deg, #2C2662 0%, #1C1842 100%);
+  --tour-ink: #FFFFFF;
+  --tour-ink-2: rgba(255, 255, 255, .8);
+  --tour-ink-3: rgba(255, 255, 255, .56);
   position: fixed; inset: 0; z-index: 9000; pointer-events: none;
   font-family: var(--font-family);
   /* Bubbeltinten per opdracht. Onder het CrowdBuilding-thema bestaan de
@@ -18,6 +26,8 @@
   --tour-bub-green-bg: var(--nav-bub-green-bg, #DCF0E2);           --tour-bub-green-fg: var(--nav-bub-green-glyph, #2E7D4A);
 }
 [data-theme="dark"] .tour-root, [data-theme="crowdbuilding-dark"] .tour-root {
+  --tour-bg: #332C74; --tour-bg-2: #3F378A;
+  --tour-grad: linear-gradient(160deg, #3D3586 0%, #2A2463 100%);
   --tour-bub-periwinkle-bg: rgba(160, 165, 210, .18); --tour-bub-periwinkle-fg: #B7BCE0;
   --tour-bub-amber-bg: rgba(240, 200, 80, .16);       --tour-bub-amber-fg: #F0C850;
   --tour-bub-pink-bg: rgba(240, 110, 160, .16);       --tour-bub-pink-fg: #F59BC1;
@@ -28,23 +38,30 @@
 
 .tour-card__kicker {
   display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--tour-ink-3);
 }
 .tour-link {
   background: none; border: 0; padding: 6px 4px; font: inherit; font-size: 14px; font-weight: 500;
-  color: var(--text-secondary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+  color: var(--tour-ink-2); cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
 }
-.tour-link:hover { color: var(--text-primary); }
+.tour-link:hover { color: var(--tour-ink); }
 .tour-x {
   position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%;
-  border: 0; background: transparent; color: var(--text-tertiary); cursor: pointer; display: grid; place-items: center;
+  border: 0; background: transparent; color: var(--tour-ink-3); cursor: pointer; display: grid; place-items: center;
 }
-.tour-x:hover { background: var(--bg-hover); color: var(--text-primary); }
+.tour-x:hover { background: var(--tour-bg-2); color: var(--tour-ink); }
 .tour-bub {
   flex: none; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; font-size: 18px;
   background: var(--tour-b-bg); color: var(--tour-b-fg);
 }
 .tour-bub--sm { width: 32px; height: 32px; border-radius: 10px; font-size: 14px; }
+
+/* Knoppen op de indigo kaartjes */
+.tour-root .btn-primary { background: var(--tour-key); color: var(--tour-key-ink); }
+.tour-root .btn-primary:hover { opacity: 1; filter: brightness(1.06); }
+.tour-root .btn-secondary { border-color: rgba(255, 255, 255, .32); color: var(--tour-ink); }
+.tour-root .btn-secondary:hover { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .5); }
+.tour-root a.btn-primary, .tour-root a.btn-secondary { text-decoration: none; }
 
 /* ===== Welkom- en slotkaart ===== */
 .tour-overlay {
@@ -55,19 +72,19 @@
 }
 .tour-card {
   position: relative; width: min(460px, 100%); text-align: center;
-  background: var(--bg-surface); color: var(--text-primary);
+  background: var(--tour-bg); background-image: var(--tour-grad); color: var(--tour-ink);
   border-radius: var(--radius-xl, 20px); box-shadow: var(--shadow-lg); padding: 32px 30px 24px;
   animation: tour-pop .45s var(--tour-ease);
 }
 .tour-card h2 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin: 8px 0 10px; }
-.tour-card p { font-size: 15.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+.tour-card p { font-size: 15.5px; line-height: 1.55; color: var(--tour-ink-2); margin: 0; }
 .tour-card__actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 24px; }
 .tour-card__actions a { text-decoration: none; }
-.tour-card__note { display: inline-flex; gap: 6px; align-items: center; margin-top: 16px; font-size: 13px; color: var(--text-tertiary); }
+.tour-card__note { display: inline-flex; gap: 6px; align-items: center; margin-top: 16px; font-size: 13px; color: var(--tour-ink-3); }
 .tour-card--finish .tour-link { margin-top: 12px; }
 
 /* Vier opdracht-bubbels die rond een sleutel draaien. */
-.tour-card__art { position: relative; height: 116px; margin: -6px auto 14px; width: 220px; }
+.tour-card__art { position: relative; height: 116px; margin: -6px auto 26px; width: 220px; }
 .tour-art__ring {
   position: absolute; left: 50%; top: 50%; translate: -50% -50%;
   width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 26px;
@@ -94,12 +111,12 @@
 .tour-brief {
   position: fixed; left: 50%; bottom: calc(24px + var(--tour-safe-bottom, 0px)); translate: -50% 0; width: min(520px, calc(100% - 32px));
   display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px;
-  background: var(--bg-surface); color: var(--text-primary); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
+  background: var(--tour-bg); background-image: var(--tour-grad); color: var(--tour-ink); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
   animation: tour-rise .4s var(--tour-ease);
 }
 .tour-brief__body { min-width: 0; padding-right: 18px; }
 .tour-brief h3 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; margin: 4px 0 6px; }
-.tour-brief p { font-size: 14.5px; line-height: 1.5; color: var(--text-secondary); margin: 0; }
+.tour-brief p { font-size: 14.5px; line-height: 1.5; color: var(--tour-ink-2); margin: 0; }
 .tour-brief__actions { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
 
 /* ===== Spotlight ===== */
@@ -117,25 +134,25 @@
 /* ===== Tip bij de spotlight ===== */
 .tour-tip {
   position: fixed; width: 320px; padding: 16px 18px 10px;
-  background: var(--bg-surface); color: var(--text-primary); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
+  background: var(--tour-bg); background-image: var(--tour-grad); color: var(--tour-ink); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
   animation: tour-rise .35s var(--tour-ease);
 }
 .tour-tip h3 { font-size: 15px; font-weight: 700; margin: 0 26px 6px 0; display: flex; gap: 8px; align-items: center; }
 .tour-tip h3 i { color: var(--tour-key-ink); background: var(--tour-key); width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-size: 12px; }
-.tour-tip p { font-size: 14px; line-height: 1.5; color: var(--text-secondary); margin: 0; }
+.tour-tip p { font-size: 14px; line-height: 1.5; color: var(--tour-ink-2); margin: 0; }
 .tour-tip__actions { display: flex; justify-content: flex-end; }
 .tour-tip--float::before {
   content: ''; position: absolute; left: var(--arrow); top: 100%; translate: -50% 0;
-  border: 8px solid transparent; border-top-color: var(--bg-surface);
+  border: 8px solid transparent; border-top-color: var(--tour-bg);
 }
-.tour-tip--below::before { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--bg-surface); }
+.tour-tip--below::before { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--tour-bg); }
 .tour-tip--sheet { left: 50%; bottom: calc(24px + var(--tour-safe-bottom, 0px)); translate: -50% 0; width: min(420px, calc(100% - 32px)); }
 
 /* ===== Sleutel binnen ===== */
 .tour-toast {
   position: fixed; left: 50%; bottom: calc(24px + var(--tour-safe-bottom, 0px)); translate: -50% 0; width: min(460px, calc(100% - 32px));
   display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-  background: var(--bg-surface); color: var(--text-primary); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
+  background: var(--tour-bg); background-image: var(--tour-grad); color: var(--tour-ink); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
   animation: tour-rise .4s var(--tour-ease);
 }
 .tour-toast__key {
@@ -143,13 +160,13 @@
   background: var(--tour-key); color: var(--tour-key-ink); animation: tour-pop .5s var(--tour-ease), tour-wiggle 1s ease-in-out .5s 2;
 }
 .tour-toast__body { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; }
-.tour-toast__body span { color: var(--text-secondary); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tour-toast__body span { color: var(--tour-ink-2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ===== Sleutelbos rechtsonder (links zit het gebruikersmenu van de sidebar) ===== */
 .tour-ring { position: fixed; right: 20px; bottom: calc(20px + var(--tour-safe-bottom, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 .tour-ring__btn {
   display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border: 0; cursor: pointer;
-  background: var(--bg-surface); color: var(--text-primary); border-radius: 999px; box-shadow: var(--shadow-md);
+  background: var(--tour-bg); color: var(--tour-ink); border-radius: 999px; box-shadow: var(--shadow-md);
   font: inherit; font-size: 13px; transition: transform .2s var(--tour-ease), box-shadow .2s;
 }
 .tour-ring__btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
@@ -157,25 +174,25 @@
 .tour-keys { display: inline-flex; }
 .tour-key {
   width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; margin-left: -6px;
-  background: var(--bg-hover); color: var(--text-faint, var(--text-tertiary)); box-shadow: 0 0 0 2px var(--bg-surface);
+  background: var(--tour-bg-2); color: var(--tour-ink-3); box-shadow: 0 0 0 2px var(--tour-bg);
   transition: background .3s, color .3s;
 }
 .tour-key:first-child { margin-left: 0; }
 .tour-key--on { background: var(--tour-key); color: var(--tour-key-ink); animation: tour-pop .45s var(--tour-ease); }
 .tour-ring__panel {
-  width: 290px; padding: 16px; background: var(--bg-surface); color: var(--text-primary);
+  width: 290px; padding: 16px; background: var(--tour-bg); background-image: var(--tour-grad); color: var(--tour-ink);
   border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg); animation: tour-rise .3s var(--tour-ease);
 }
 .tour-ring__head { display: flex; flex-direction: column; margin-bottom: 10px; }
 .tour-ring__head b { font-size: 15px; }
-.tour-ring__head span { font-size: 13px; color: var(--text-tertiary); }
+.tour-ring__head span { font-size: 13px; color: var(--tour-ink-3); }
 .tour-ring__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
 .tour-ring__item {
   width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 0; border-radius: 10px;
-  background: transparent; color: var(--text-primary); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+  background: transparent; color: var(--tour-ink); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
 }
-.tour-ring__item:hover { background: var(--bg-hover); }
-.tour-ring__item--done > span:not(.tour-bub) { color: var(--text-tertiary); text-decoration: line-through; }
+.tour-ring__item:hover { background: var(--tour-bg-2); }
+.tour-ring__item--done > span:not(.tour-bub) { color: var(--tour-ink-3); text-decoration: line-through; }
 .tour-ring__item--done .tour-bub { background: var(--tour-key); color: var(--tour-key-ink); }
 .tour-ring__check { margin-left: auto; color: var(--accent-green, #3BD269); }
 .tour-ring__foot { display: flex; justify-content: flex-end; margin-top: 10px; }
