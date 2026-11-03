@@ -24,7 +24,7 @@ export const HERO = {
     'die van je project is.',
   primary: 'Plan een demo',
   secondary: 'Kijk rond in het demoproject',
-  note: 'Gemaakt door CrowdBuilding. Inloggen zonder wachtwoord, eigen adres per project.',
+  note: 'Inloggen zonder wachtwoord. Eigen adres per project, zoals projectnaam.buuur.nl.',
   // Zwevende kaartjes rond het productframe: wat er op een gewone dag gebeurt.
   chips: [
     { icon: 'fa-solid fa-face-smile', bubble: 'peach', title: 'Hanna is lid geworden', meta: 'Zeg hallo op het prikbord' },
@@ -118,13 +118,13 @@ export const DOELGROEPEN = {
         'en een eigen pagina waarmee je nieuwe leden vindt. Geen websitebouwer, geen wachtwoorden, ' +
         'geen IT-gedoe. Het groeit met je groep mee, tot je de sleutel in handen hebt.',
       points: [
-        'Eigen naam, kleur en adres, bijvoorbeeld vlinderhaven.buuur.nl',
+        'Eigen naam, kleur en adres, zoals projectnaam.buuur.nl',
         'Pagina bouwer plus aanmeldformulier voor nieuwe leden, zonder code',
         'Roadmap die iedereen laat zien waar je staat',
       ],
       cta: 'Start met buuur light',
       ctaTo: '/start?segment=bewoner',
-      ctaNote: 'Met CrowdBuilding als bondgenoot achter je.',
+      ctaNote: 'Je omgeving staat er binnen een middag.',
       image: { src: `${IMG}/rol-initiatief.webp`, alt: 'Twee bewoners aan het werk in een plantenbak' },
     },
   ],
@@ -137,7 +137,7 @@ export const STAPPEN = {
     {
       bubble: 'indigo',
       title: 'Zet je project neer',
-      body: 'Naam, logo, kleur en een eigen adres zoals jouwproject.buuur.nl. Zet aan wat je project nu nodig heeft, de rest volgt later.',
+      body: 'Naam, logo, kleur en een eigen adres zoals projectnaam.buuur.nl. Zet aan wat je project nu nodig heeft, de rest volgt later.',
       image: { src: `${IMG}/stap-schets.webp`, alt: 'Handen boven een bouwtekening' },
     },
     {
@@ -243,13 +243,70 @@ export const PLANS = {
 }
 
 export const SLOT = {
-  title: 'Kijk eerst zelf rond.',
+  title: 'Neem een kijkje.',
   body:
     'Het demoproject staat open. Klik door het dashboard, de chat en de roadmap alsof je al lid bent. ' +
     'Daarna praten we over jouw project.',
   primary: 'Naar het demoproject',
   secondary: 'Plan een demo',
-  image: { src: `${IMG}/slot-tafel.webp`, alt: 'Buren aan een lange tafel in de tuin' },
+}
+
+// Geanimeerde doorklik door het platform naast "Neem een kijkje". Drie scènes;
+// per scène verschijnen de stappen één voor één. Initialen en bubbelkleuren
+// verwijzen naar de bubbeltinten in landing.css.
+export const REEL = {
+  label: 'Zo ziet het eruit',
+  scenes: [
+    {
+      key: 'chat',
+      tab: 'Chat',
+      icon: 'fa-solid fa-comments',
+      title: 'Bouwcommissie',
+      meta: '7 leden',
+      messages: [
+        { who: 'Sophie', initials: 'SB', bubble: 'peach', text: 'Het definitief ontwerp staat in het projectdossier.' },
+        { who: 'Jesse', initials: 'JD', bubble: 'teal', text: 'Top! Is de meterkast nu verplaatst?' },
+        { who: 'Sophie', initials: 'SB', bubble: 'peach', text: 'Ja, naar de berging. De plattegrond staat erbij.' },
+      ],
+      reaction: { icon: 'fa-solid fa-thumbs-up', count: 4 },
+    },
+    {
+      key: 'prikbord',
+      tab: 'Prikbord',
+      icon: 'fa-solid fa-thumbtack',
+      post: {
+        who: 'Noor',
+        initials: 'NV',
+        bubble: 'pink',
+        tag: 'Even voorstellen',
+        text: 'Hoi allemaal! Ik ben Noor, verpleegkundige en sinds deze week lid. Ik kijk uit naar de kookavond.',
+      },
+      likes: 12,
+      comments: [
+        { who: 'Emma', initials: 'EJ', bubble: 'green', text: 'Welkom Noor! Tot donderdag.' },
+        { who: 'Liam', initials: 'LB', bubble: 'indigo', text: 'Leuk dat je erbij bent.' },
+      ],
+    },
+    {
+      key: 'events',
+      tab: 'Events',
+      icon: 'fa-solid fa-calendar-check',
+      event: { day: '13', month: 'nov', title: 'Kookavond met de buren', meta: 'vr 18:30 · Buurthuis De Meevaart' },
+      going: 12,
+      attendees: [
+        { initials: 'SB', bubble: 'peach' },
+        { initials: 'EJ', bubble: 'green' },
+        { initials: 'LB', bubble: 'indigo' },
+        { initials: 'JD', bubble: 'teal' },
+      ],
+      cta: 'Aanmelden',
+      done: 'Je bent aangemeld',
+      next: [
+        { day: '15', month: 'nov', title: 'Werkgroep Duurzaamheid', meta: 'Online · 15 gaan' },
+        { day: '23', month: 'nov', title: 'Bouwvergadering met de architect', meta: 'Space&Matter · 22 gaan' },
+      ],
+    },
+  ],
 }
 
 export const FOOTER = {

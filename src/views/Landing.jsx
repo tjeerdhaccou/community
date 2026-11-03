@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { NAV_SECTIONS } from '../lib/navigation'
-import { HERO, MAKER, STRIP, DOELGROEPEN, STAPPEN, MODULES, OVER, QUOTE, PLANS, SLOT, FOOTER } from '../content/landing'
+import { HERO, MAKER, STRIP, DOELGROEPEN, STAPPEN, MODULES, OVER, QUOTE, PLANS, SLOT, REEL, FOOTER } from '../content/landing'
 import '../styles/landing.css'
 
 const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
@@ -72,6 +72,193 @@ function CountUp({ to, duration = 1400 }) {
   }, [to, duration])
 
   return <b ref={ref}>{value}</b>
+}
+
+// Laatste twee woorden aan elkaar, zodat er nooit één woord alleen op de
+// laatste regel staat (een "weeskind").
+function noWidow(text) {
+  const i = text.lastIndexOf(' ')
+  return i > 0 ? `${text.slice(0, i)}\u00A0${text.slice(i + 1)}` : text
+}
+
+// Aantal stappen per scène van de doorklik; de laatste stap blijft even staan.
+const REEL_STEPS = { chat: 6, prikbord: 5, events: 4 }
+const REEL_TICK_MS = 1100
+const REEL_HOLD = 3
+
+function ReelAvatar({ person }) {
+  return <span className="lp-av" style={bubbleStyle(person.bubble)}>{person.initials}</span>
+}
+
+function ReelChat({ scene, step }) {
+  const [m1, m2, m3] = scene.messages
+  return (
+    <div className="lp-reel__chat">
+      {[m1, m2].map((m, i) => step > i && (
+        <div key={i} className={`lp-msg ${i === 1 ? 'lp-msg--right' : ''}`}>
+          <ReelAvatar person={m} />
+          <div className="lp-msg__bubble"><b>{m.who}</b>{m.text}</div>
+        </div>
+      ))}
+      {step === 3 && (
+        <div className="lp-msg">
+          <ReelAvatar person={m3} />
+          <div className="lp-msg__bubble lp-msg__typing" aria-label={`${m3.who} typt`}><i /><i /><i /></div>
+        </div>
+      )}
+      {step > 3 && (
+        <div className="lp-msg">
+          <ReelAvatar person={m3} />
+          <div className="lp-msg__bubble">
+            <b>{m3.who}</b>{m3.text}
+            {step > 4 && (
+              <span className="lp-msg__react"><i className={scene.reaction.icon} aria-hidden="true" /> {scene.reaction.count}</span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReelBoard({ scene, step }) {
+  const { post } = scene
+  return (
+    <div className="lp-reel__board">
+      {step > 0 && (
+        <div className="lp-post">
+          <div className="lp-post__head">
+            <ReelAvatar person={post} />
+            <div><b>{post.who}</b><span>{post.tag}</span></div>
+          </div>
+          <p>{post.text}</p>
+          <div className="lp-post__bar">
+            <span className={step > 1 ? 'lp-post__like lp-post__like--on' : 'lp-post__like'}>
+              <i className={step > 1 ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} aria-hidden="true" /> {step > 1 ? scene.likes : 0}
+            </span>
+            <span><i className="fa-regular fa-comment" aria-hidden="true" /> {Math.max(0, step - 2)}</span>
+          </div>
+        </div>
+      )}
+      {scene.comments.map((c, i) => step > i + 2 && (
+        <div key={i} className="lp-comment">
+          <ReelAvatar person={c} />
+          <div><b>{c.who}</b>{c.text}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ReelEvent({ scene, step }) {
+  const going = step > 2
+  return (
+    <div className="lp-reel__event">
+      {step > 0 && (
+        <div className="lp-ev">
+          <div className="lp-ev__date"><b>{scene.event.day}</b><span>{scene.event.month}</span></div>
+          <div className="lp-ev__body">
+            <b>{scene.event.title}</b>
+            <span>{scene.event.meta}</span>
+            <div className="lp-ev__row">
+              <span className="lp-ev__avs">
+                {scene.attendees.map((a, i) => <ReelAvatar key={i} person={a} />)}
+                {going && <span className="lp-av lp-av--you">Jij</span>}
+              </span>
+              <span className="lp-ev__count"><i className="fa-solid fa-user" aria-hidden="true" /> {going ? scene.going + 1 : scene.going}</span>
+            </div>
+            <span className={`lp-ev__btn ${step === 2 ? 'lp-ev__btn--press' : ''} ${going ? 'lp-ev__btn--done' : ''}`}>
+              <i className={going ? 'fa-solid fa-check' : 'fa-solid fa-circle-plus'} aria-hidden="true" /> {going ? scene.done : scene.cta}
+            </span>
+          </div>
+        </div>
+      )}
+      {step > 0 && scene.next.map(ev => (
+        <div key={ev.title} className="lp-ev lp-ev--sm">
+          <div className="lp-ev__date"><b>{ev.day}</b><span>{ev.month}</span></div>
+          <div className="lp-ev__body"><b>{ev.title}</b><span>{ev.meta}</span></div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Doorklik door het echte platform: chat, prikbord, events. Draait alleen in
+// beeld, pauzeert bij hover of focus, en staat stil bij reduced motion (dan
+// tonen de scènes hun eindstand en wissel je met de tabs).
+function PlatformReel() {
+  const ref = useRef(null)
+  const still = typeof window !== 'undefined' && reducedMotion()
+  const [scene, setScene] = useState(0)
+  const [step, setStep] = useState(still ? 99 : 0)
+  const [visible, setVisible] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const current = REEL.scenes[scene]
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !('IntersectionObserver' in window)) { setVisible(true); return }
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { threshold: 0.3 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (still || !visible || paused) return
+    const t = setTimeout(() => {
+      if (step >= REEL_STEPS[current.key] + REEL_HOLD) {
+        setScene(sc => (sc + 1) % REEL.scenes.length)
+        setStep(0)
+      } else {
+        setStep(st => st + 1)
+      }
+    }, REEL_TICK_MS)
+    return () => clearTimeout(t)
+  }, [step, scene, visible, paused, still, current.key])
+
+  function pick(i) {
+    setScene(i)
+    setStep(still ? 99 : 1)
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="lp-reel"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
+      <div className="lp-reel__win">
+        <div className="lp-reel__bar">
+          <span className="lp-reel__dots" aria-hidden="true"><i /><i /><i /></span>
+          <div className="lp-reel__tabs" role="tablist" aria-label={REEL.label}>
+            {REEL.scenes.map((sc, i) => (
+              <button
+                key={sc.key}
+                type="button"
+                role="tab"
+                aria-selected={i === scene}
+                className="lp-reel__tab"
+                onClick={() => pick(i)}
+              >
+                <i className={sc.icon} aria-hidden="true" /> {sc.tab}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="lp-reel__screen" key={current.key} aria-live="off">
+          {current.key === 'chat' && (
+            <div className="lp-reel__head"><b>{current.title}</b><span>{current.meta}</span></div>
+          )}
+          {current.key === 'chat' && <ReelChat scene={current} step={step} />}
+          {current.key === 'prikbord' && <ReelBoard scene={current} step={step} />}
+          {current.key === 'events' && <ReelEvent scene={current} step={step} />}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function Eyebrow({ children }) {
@@ -390,7 +577,7 @@ export default function Landing() {
           <div className="lp-wrap">
             <figure className="lp-quote lp-quote--band">
               <div>
-                <blockquote>"{QUOTE.text}"</blockquote>
+                <blockquote>"{noWidow(QUOTE.text)}"</blockquote>
                 <figcaption>{QUOTE.caption}</figcaption>
               </div>
               <div className="lp-quote__who">
@@ -426,7 +613,7 @@ export default function Landing() {
           <div className="lp-wrap">
             <div className="lp-final" data-reveal>
               <div className="lp-final__media">
-                <img src={SLOT.image.src} alt={SLOT.image.alt} width="1100" height="900" loading="lazy" decoding="async" />
+                <PlatformReel />
               </div>
               <div className="lp-final__body">
                 <h2>{SLOT.title}</h2>
