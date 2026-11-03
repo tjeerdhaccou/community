@@ -251,59 +251,76 @@ export const SLOT = {
   secondary: 'Plan een demo',
 }
 
-// Geanimeerde doorklik door het platform naast "Neem een kijkje". Drie scènes;
-// per scène verschijnen de stappen één voor één. Initialen en bubbelkleuren
-// verwijzen naar de bubbeltinten in landing.css.
+// Doorklik door het platform naast "Neem een kijkje". Gebruikt de echte
+// componenten van de app (chatopmaak, PostCard, EventCard) met de persona's en
+// profielfoto's van het demoproject. Per scène verschijnen de stappen één voor
+// één; datums van events rekent de landing uit ten opzichte van vandaag.
+const AVATAR = 'https://randomuser.me/api/portraits'
 export const REEL = {
   label: 'Zo ziet het eruit',
+  people: {
+    sophie: { full_name: 'Sophie van der Berg', avatar_url: `${AVATAR}/women/1.jpg` },
+    jesse: { full_name: 'Jesse Dijkstra', avatar_url: `${AVATAR}/men/14.jpg` },
+    noor: { full_name: 'Noor Dekker', avatar_url: `${AVATAR}/women/13.jpg` },
+    emma: { full_name: 'Emma Jansen', avatar_url: `${AVATAR}/women/3.jpg` },
+    liam: { full_name: 'Liam Bakker', avatar_url: `${AVATAR}/men/4.jpg` },
+    julia: { full_name: 'Julia Visser', avatar_url: `${AVATAR}/women/5.jpg` },
+    daan: { full_name: 'Daan de Vries', avatar_url: `${AVATAR}/men/2.jpg` },
+  },
   scenes: [
     {
       key: 'chat',
       tab: 'Chat',
       icon: 'fa-solid fa-comments',
-      title: 'Bouwcommissie',
-      meta: '7 leden',
+      thread: { title: 'Bouwcommissie', emoji: '🏗️', sub: '7 leden · Ontwerp, planning en alles met de architect' },
       messages: [
-        { who: 'Sophie', initials: 'SB', bubble: 'peach', text: 'Het definitief ontwerp staat in het projectdossier.' },
-        { who: 'Jesse', initials: 'JD', bubble: 'teal', text: 'Top! Is de meterkast nu verplaatst?' },
-        { who: 'Sophie', initials: 'SB', bubble: 'peach', text: 'Ja, naar de berging. De plattegrond staat erbij.' },
+        { from: 'sophie', text: 'Het definitief ontwerp staat sinds vandaag in het projectdossier.' },
+        { from: 'jesse', text: 'Top! Is de meterkast nu naar de berging verplaatst?' },
+        { from: 'sophie', text: 'Ja, en de plattegrond per woning staat erbij.' },
+        { mine: true, text: 'Dank! Ik kijk er vanavond naar.' },
       ],
-      reaction: { icon: 'fa-solid fa-thumbs-up', count: 4 },
     },
     {
       key: 'prikbord',
       tab: 'Prikbord',
       icon: 'fa-solid fa-thumbtack',
-      post: {
-        who: 'Noor',
-        initials: 'NV',
-        bubble: 'pink',
-        tag: 'Even voorstellen',
-        text: 'Hoi allemaal! Ik ben Noor, verpleegkundige en sinds deze week lid. Ik kijk uit naar de kookavond.',
-      },
-      likes: 12,
-      comments: [
-        { who: 'Emma', initials: 'EJ', bubble: 'green', text: 'Welkom Noor! Tot donderdag.' },
-        { who: 'Liam', initials: 'LB', bubble: 'indigo', text: 'Leuk dat je erbij bent.' },
+      posts: [
+        {
+          id: 'reel-post-1',
+          author: 'noor',
+          minutesAgo: 25,
+          tag: 'Even voorstellen',
+          text: 'Hoi allemaal! Ik ben Noor, verpleegkundige en sinds deze week lid. Ik kijk uit naar de kookavond.',
+          reactions: { heart: 9, celebrate: 3 },
+          comments: 2,
+        },
+        {
+          id: 'reel-post-2',
+          author: 'emma',
+          minutesAgo: 60 * 26,
+          tag: 'Idee',
+          text: 'Zullen we op het dak een paar moestuinbakken zetten? Bij mijn vorige woning werkte dat verrassend goed.',
+          image_url: 'https://images.unsplash.com/photo-1788538812809-f22af3a6993a?w=800&h=500&fit=crop',
+          reactions: { lightbulb: 6, thumbsup: 4 },
+          comments: 5,
+        },
       ],
     },
     {
       key: 'events',
       tab: 'Events',
       icon: 'fa-solid fa-calendar-check',
-      event: { day: '13', month: 'nov', title: 'Kookavond met de buren', meta: 'vr 18:30 · Buurthuis De Meevaart' },
-      going: 12,
-      attendees: [
-        { initials: 'SB', bubble: 'peach' },
-        { initials: 'EJ', bubble: 'green' },
-        { initials: 'LB', bubble: 'indigo' },
-        { initials: 'JD', bubble: 'teal' },
-      ],
-      cta: 'Aanmelden',
-      done: 'Je bent aangemeld',
-      next: [
-        { day: '15', month: 'nov', title: 'Werkgroep Duurzaamheid', meta: 'Online · 15 gaan' },
-        { day: '23', month: 'nov', title: 'Bouwvergadering met de architect', meta: 'Space&Matter · 22 gaan' },
+      events: [
+        {
+          id: 'reel-ev-1', title: 'Kookavond met de buren', daysFromNow: 10, time: '18:30', duration_hours: 3,
+          location: 'Buurthuis De Meevaart, Amsterdam', event_type: 'uitje', visibility: 'aspirant', max_attendees: 30,
+          going: ['sophie', 'emma', 'liam', 'jesse'], going_count: 12,
+        },
+        {
+          id: 'reel-ev-2', title: 'Bouwvergadering met de architect', daysFromNow: 20, time: '17:00', duration_hours: 2,
+          location: 'Kantoor Space&Matter, Amsterdam-Noord', event_type: 'bouwvergadering', visibility: 'members',
+          going: ['daan', 'julia', 'sophie', 'noor'], going_count: 22,
+        },
       ],
     },
   ],
