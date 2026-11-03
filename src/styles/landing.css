@@ -17,8 +17,9 @@
   --lp-bub-peach-bg: #FCE3D3;  --lp-bub-peach-fg: #C56A2A;
   --lp-bub-teal-bg: #E2EEF5;   --lp-bub-teal-fg: #2E6E8E;
   --lp-line: #ECE8E0;
-  /* Labels: koraal, maar een tint donkerder dan de bubbel voor leesbare kleine tekst (5:1). */
-  --lp-eyebrow-bg: #FFDAD7; --lp-eyebrow-fg: #A8322A;
+  /* Labels: roze uit het eigen palet (geel is van de sleutels in de demo), een
+     tint donkerder dan de bubbel voor leesbare kleine tekst (5,5:1). */
+  --lp-eyebrow-bg: #FFE2EE; --lp-eyebrow-fg: #A3305F;
 
   /* Knopkleur. Het middenblauw van de app (#4A90D9) haalt met witte tekst
      maar 3,2:1. Op een marketingpagina staan de knoppen groot en los, dus
@@ -51,7 +52,7 @@
   --lp-bub-peach-bg: rgba(240, 150, 90, .16);  --lp-bub-peach-fg: #F2A97B;
   --lp-bub-teal-bg: rgba(90, 170, 210, .16);   --lp-bub-teal-fg: #8CC7E6;
   --lp-line: var(--border-subtle);
-  --lp-eyebrow-bg: rgba(255, 120, 110, .18); --lp-eyebrow-fg: #FF9B93;
+  --lp-eyebrow-bg: rgba(240, 110, 160, .16); --lp-eyebrow-fg: #F59BC1;
   --lp-cta: var(--accent-cta);
   --lp-cta-hover: var(--accent-cta);
   --lp-on-cta: var(--accent-on-cta);
@@ -289,7 +290,7 @@
 }
 
 /* ===== Doorklik door het platform ===== */
-.lp-reel { width: min(440px, 100%); }
+.lp-reel { width: min(480px, 100%); }
 .lp-reel__win { background: var(--bg-surface); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden; }
 .lp-reel__bar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--lp-line); }
 .lp-reel__dots { display: inline-flex; gap: 5px; }
@@ -302,72 +303,35 @@
 }
 .lp-reel__tab[aria-selected="true"] { background: var(--lp-eyebrow-bg); color: var(--lp-eyebrow-fg); }
 .lp-reel__tab:hover:not([aria-selected="true"]) { color: var(--text-primary); }
-.lp-reel__screen { height: 330px; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 12px; font-size: 13px; background: var(--bg-page); animation: lp-reel-in .45s var(--lp-ease); }
-.lp-reel__head { display: flex; align-items: baseline; gap: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--lp-line); }
-.lp-reel__head b { font-size: 14px; }
-.lp-reel__head span { color: var(--text-tertiary); font-size: 12px; }
-.lp-reel__chat, .lp-reel__board, .lp-reel__event { display: flex; flex-direction: column; gap: 10px; }
-.lp-reel .lp-av { width: 28px; height: 28px; font-size: 10px; flex: none; }
-.lp-msg { display: flex; gap: 8px; align-items: flex-end; animation: lp-reel-pop .4s var(--lp-ease); }
-.lp-msg--right { flex-direction: row-reverse; }
-.lp-msg__bubble {
-  position: relative; max-width: 78%; background: var(--bg-surface); border-radius: 8px 8px 8px 2px; padding: 8px 11px;
-  box-shadow: var(--shadow-sm); line-height: 1.45;
+/* Binnen het venster draait de echte app-UI (chatopmaak, PostCard,
+   EventCard). Die krijgt de app-radii terug in plaats van de strakkere
+   landing-radii, anders klopt het beeld niet met het platform. */
+.lp-reel__win { --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px; --radius-xl: 20px; --btn-radius: 10px; }
+.lp-reel__screen {
+  height: 380px; overflow: hidden; display: flex; flex-direction: column;
+  background: var(--bg-page); font-size: 14px; line-height: 1.5; animation: lp-reel-in .45s var(--lp-ease);
 }
-.lp-msg--right .lp-msg__bubble { border-radius: 8px 8px 2px 8px; background: var(--lp-bub-teal-bg); }
-.lp-msg__bubble b { display: block; font-size: 11px; color: var(--text-tertiary); margin-bottom: 2px; }
-.lp-msg__typing { display: inline-flex; gap: 4px; padding: 12px 14px; }
-.lp-msg__typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary); animation: lp-typing 1s ease-in-out infinite; }
-.lp-msg__typing i:nth-child(2) { animation-delay: .15s; }
-.lp-msg__typing i:nth-child(3) { animation-delay: .3s; }
-.lp-msg__react {
-  position: absolute; right: 8px; bottom: -11px; display: inline-flex; gap: 4px; align-items: center;
-  background: var(--bg-surface); border-radius: 999px; padding: 2px 7px; font-size: 11px; font-weight: 600; box-shadow: var(--shadow-sm);
-  color: var(--lp-bub-amber-fg); animation: lp-reel-pop .4s var(--lp-ease);
-}
-.lp-post { background: var(--bg-surface); border-radius: var(--radius-lg); padding: 12px 14px; box-shadow: var(--shadow-sm); animation: lp-reel-pop .4s var(--lp-ease); }
-.lp-post__head { display: flex; gap: 8px; align-items: center; }
-.lp-post__head b { display: block; font-size: 13px; }
-.lp-post__head span { font-size: 11px; font-weight: 600; color: var(--lp-bub-pink-fg); }
-.lp-post p { margin-top: 8px; line-height: 1.5; color: var(--text-secondary); }
-.lp-post__bar { display: flex; gap: 16px; margin-top: 10px; color: var(--text-tertiary); font-weight: 600; font-size: 12px; }
-.lp-post__like { transition: color .2s; }
-.lp-post__like--on { color: var(--lp-bub-pink-fg); }
-.lp-post__like--on i { animation: lp-heart .5s var(--lp-ease); }
-.lp-comment { display: flex; gap: 8px; align-items: flex-start; margin-left: 16px; animation: lp-reel-pop .4s var(--lp-ease); }
-.lp-comment > div { background: var(--bg-surface); border-radius: 8px; padding: 7px 10px; box-shadow: var(--shadow-sm); line-height: 1.45; }
-.lp-comment b { display: block; font-size: 11px; color: var(--text-tertiary); }
-.lp-ev { display: flex; gap: 14px; background: var(--bg-surface); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-sm); animation: lp-reel-pop .4s var(--lp-ease); }
-.lp-ev--sm { padding: 10px 14px; align-items: center; opacity: .85; }
-.lp-ev--sm .lp-ev__date { width: 38px; height: 40px; }
-.lp-ev--sm .lp-ev__date b { font-size: 15px; }
-.lp-ev--sm .lp-ev__body > b { font-size: 13px; }
-.lp-ev__date { flex: none; width: 46px; height: 52px; border-radius: 6px; background: var(--bg-page); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.lp-ev__date b { font-size: 18px; line-height: 1; }
-.lp-ev__date span { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--lp-bub-coral-fg); }
-.lp-ev__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-.lp-ev__body > b { font-size: 15px; }
-.lp-ev__body > span { color: var(--text-secondary); font-size: 12px; }
-.lp-ev__row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-.lp-ev__avs { display: inline-flex; }
-.lp-ev__avs .lp-av { margin-left: -6px; box-shadow: 0 0 0 2px var(--bg-surface); }
-.lp-ev__avs .lp-av:first-child { margin-left: 0; }
-.lp-av--you { background: var(--lp-cta); color: var(--lp-on-cta); animation: lp-reel-pop .4s var(--lp-ease); font-size: 9px !important; }
-.lp-ev__count { font-size: 12px; font-weight: 600; color: var(--text-secondary); display: inline-flex; gap: 5px; align-items: center; }
-.lp-ev__btn {
-  align-self: flex-start; margin-top: 12px; display: inline-flex; gap: 6px; align-items: center; font-size: 12px; font-weight: 600;
-  padding: 7px 12px; border-radius: var(--btn-radius); background: var(--tag-blue-bg); color: var(--tag-blue-text);
-  transition: background .25s, color .25s, transform .15s;
-}
-.lp-ev__btn--press { transform: scale(.94); }
-.lp-ev__btn--done { background: var(--lp-bub-green-bg); color: var(--lp-bub-green-fg); }
+.lp-reel__screen--prikbord, .lp-reel__screen--events { padding: 14px; }
+.lp-reel__chat { display: flex; flex-direction: column; height: 100%; background: var(--bg-surface); }
+.lp-reel__chat .chat-head { padding: 12px 16px; }
+.lp-reel__chat .chat-head__sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.lp-reel__chat .chat-head__txt { min-width: 0; }
+.lp-reel__chat .chat-body { margin: 0 10px 10px; padding: 14px; overflow: hidden; justify-content: flex-end; }
+.lp-reel__chat .chat-msg { max-width: 86%; }
+.lp-reel__chat .chat-bubble { font-size: 13.5px; padding: 9px 13px; }
+.lp-reel__typing { display: inline-flex; gap: 4px; padding: 4px 2px; }
+.lp-reel__typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary); animation: lp-typing 1s ease-in-out infinite; }
+.lp-reel__typing i:nth-child(2) { animation-delay: .15s; }
+.lp-reel__typing i:nth-child(3) { animation-delay: .3s; }
+.lp-reel__feed, .lp-reel__events { display: flex; flex-direction: column; gap: 12px; }
+.lp-reel__feed .feed-card, .lp-reel__events .event-card { margin: 0; }
+.lp-reel__pop { animation: lp-reel-pop .45s var(--lp-ease); }
 @keyframes lp-reel-in { from { opacity: 0; } }
 @keyframes lp-reel-pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 @keyframes lp-typing { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
-@keyframes lp-heart { 0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); } }
 .lp-final__body { padding: clamp(36px, 5vw, 72px); align-self: center; }
-.lp-final h2 { font-size: clamp(28px, 3.4vw, 48px); font-weight: 700; }
-.lp-final p { color: var(--text-secondary); font-size: 17px; margin-top: 16px; max-width: 32em; }
+.lp-final__body h2 { font-size: clamp(28px, 3.4vw, 48px); font-weight: 700; }
+.lp-final__body p { color: var(--text-secondary); font-size: 17px; margin-top: 16px; max-width: 32em; }
 .lp-final__btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 36px; }
 
 /* ===== Footer ===== */
@@ -471,6 +435,8 @@ textarea.lp-input { resize: vertical; }
   .lp-app__side { display: none; }
   .lp-tiles { grid-template-columns: repeat(2, 1fr); }
   .lp-quote:not(.lp-quote--band) { padding: 32px 26px; }
+  .lp-final__media { padding: 20px 12px; }
+  .lp-reel__screen { height: 400px; }
   .lp-chip { display: none; }
   .lp-panel__media { aspect-ratio: auto; overflow: visible; box-shadow: none; }
   .lp-panel__media img { border-radius: var(--radius-xl); aspect-ratio: 4 / 3; height: auto; }

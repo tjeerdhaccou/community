@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { NAV_SECTIONS } from '../lib/navigation'
 import { HERO, MAKER, STRIP, DOELGROEPEN, STAPPEN, MODULES, OVER, QUOTE, PLANS, SLOT, REEL, FOOTER } from '../content/landing'
+import PostCard from '../components/PostCard'
+import EventCard from '../components/EventCard'
+import ChatAvatar from '../components/Chat/Avatar'
+import './Chat.css'
 import '../styles/landing.css'
 
 const MAIN_DOMAIN = import.meta.env.VITE_MAIN_DOMAIN || 'buuur.nl'
@@ -82,103 +86,97 @@ function noWidow(text) {
 }
 
 // Aantal stappen per scène van de doorklik; de laatste stap blijft even staan.
-const REEL_STEPS = { chat: 6, prikbord: 5, events: 4 }
-const REEL_TICK_MS = 1100
+const REEL_STEPS = { chat: 5, prikbord: 4, events: 2 }
+const REEL_TICK_MS = 1200
 const REEL_HOLD = 3
+const person = key => REEL.people[key]
 
-function ReelAvatar({ person }) {
-  return <span className="lp-av" style={bubbleStyle(person.bubble)}>{person.initials}</span>
-}
-
+// Chat: dezelfde markup en opmaak (Chat.css) als de groepschat in de app.
 function ReelChat({ scene, step }) {
-  const [m1, m2, m3] = scene.messages
+  const shown = scene.messages.filter((_, i) => step > (i < 2 ? i : i + 1))
+  const typing = step === 3
+  const msg = (m, i, body) => {
+    const p = m.mine ? null : person(m.from)
+    return (
+      <div key={i} className={`chat-msg ${m.mine ? 'chat-msg--out' : 'chat-msg--in'} lp-reel__pop`}>
+        {!m.mine && <span className="chat-msg__av"><ChatAvatar size={28} url={p.avatar_url} name={p.full_name} /></span>}
+        <div className="chat-msg__col">
+          {!m.mine && <div className="chat-sender">{p.full_name}</div>}
+          <div className={`chat-bubble ${m.mine ? 'chat-bubble--out' : 'chat-bubble--in'}`}>{body}</div>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="lp-reel__chat">
-      {[m1, m2].map((m, i) => step > i && (
-        <div key={i} className={`lp-msg ${i === 1 ? 'lp-msg--right' : ''}`}>
-          <ReelAvatar person={m} />
-          <div className="lp-msg__bubble"><b>{m.who}</b>{m.text}</div>
+      <header className="chat-head">
+        <ChatAvatar size={42} emoji={scene.thread.emoji} name={scene.thread.title} />
+        <div className="chat-head__txt">
+          <div className="chat-head__title">{scene.thread.title}</div>
+          <div className="chat-head__sub">{scene.thread.sub}</div>
         </div>
-      ))}
-      {step === 3 && (
-        <div className="lp-msg">
-          <ReelAvatar person={m3} />
-          <div className="lp-msg__bubble lp-msg__typing" aria-label={`${m3.who} typt`}><i /><i /><i /></div>
-        </div>
-      )}
-      {step > 3 && (
-        <div className="lp-msg">
-          <ReelAvatar person={m3} />
-          <div className="lp-msg__bubble">
-            <b>{m3.who}</b>{m3.text}
-            {step > 4 && (
-              <span className="lp-msg__react"><i className={scene.reaction.icon} aria-hidden="true" /> {scene.reaction.count}</span>
-            )}
-          </div>
-        </div>
-      )}
+      </header>
+      <div className="chat-body">
+        {shown.map((m, i) => msg(m, i, <div className="chat-bubble__text">{m.text}</div>))}
+        {typing && msg(scene.messages[2], 'typing', <span className="lp-reel__typing" aria-label="typt"><i /><i /><i /></span>)}
+      </div>
     </div>
   )
 }
 
+// Prikbord: de echte PostCard. Reacties en reactieteller lopen op.
 function ReelBoard({ scene, step }) {
-  const { post } = scene
   return (
-    <div className="lp-reel__board">
-      {step > 0 && (
-        <div className="lp-post">
-          <div className="lp-post__head">
-            <ReelAvatar person={post} />
-            <div><b>{post.who}</b><span>{post.tag}</span></div>
-          </div>
-          <p>{post.text}</p>
-          <div className="lp-post__bar">
-            <span className={step > 1 ? 'lp-post__like lp-post__like--on' : 'lp-post__like'}>
-              <i className={step > 1 ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} aria-hidden="true" /> {step > 1 ? scene.likes : 0}
-            </span>
-            <span><i className="fa-regular fa-comment" aria-hidden="true" /> {Math.max(0, step - 2)}</span>
-          </div>
-        </div>
-      )}
-      {scene.comments.map((c, i) => step > i + 2 && (
-        <div key={i} className="lp-comment">
-          <ReelAvatar person={c} />
-          <div><b>{c.who}</b>{c.text}</div>
-        </div>
-      ))}
+    <div className="lp-reel__feed">
+      {scene.posts.map((p, i) => {
+        if (step < (i === 0 ? 1 : 4)) return null
+        const live = i > 0 || step > 1
+        const reactions = live ? p.reactions : {}
+        const post = {
+          id: p.id,
+          author_id: p.author,
+          author: person(p.author),
+          created_at: new Date(Date.now() - p.minutesAgo * 60000).toISOString(),
+          tag: p.tag,
+          text: p.text,
+          image_url: p.image_url,
+          reactions,
+          totalReactions: Object.values(reactions).reduce((a, b) => a + b, 0),
+          myReactions: new Set(),
+          comment_count: i > 0 || step > 2 ? p.comments : 0,
+        }
+        // currentUserId ≠ auteur, anders toont PostCard het beheermenu.
+        return <div key={p.id} className="lp-reel__pop"><PostCard post={post} currentUserId="bezoeker" /></div>
+      })}
     </div>
   )
 }
 
-function ReelEvent({ scene, step }) {
-  const going = step > 2
+function eventDate(ev) {
+  const d = new Date()
+  d.setDate(d.getDate() + ev.daysFromNow)
+  const [h, m] = ev.time.split(':').map(Number)
+  d.setHours(h, m, 0, 0)
+  return d.toISOString()
+}
+
+// Events: de echte EventCard. De bezoeker meldt zich (lokaal) aan, of de
+// doorklik doet het voor hem.
+function ReelEvents({ scene, step, rsvp, onRsvp }) {
   return (
-    <div className="lp-reel__event">
-      {step > 0 && (
-        <div className="lp-ev">
-          <div className="lp-ev__date"><b>{scene.event.day}</b><span>{scene.event.month}</span></div>
-          <div className="lp-ev__body">
-            <b>{scene.event.title}</b>
-            <span>{scene.event.meta}</span>
-            <div className="lp-ev__row">
-              <span className="lp-ev__avs">
-                {scene.attendees.map((a, i) => <ReelAvatar key={i} person={a} />)}
-                {going && <span className="lp-av lp-av--you">Jij</span>}
-              </span>
-              <span className="lp-ev__count"><i className="fa-solid fa-user" aria-hidden="true" /> {going ? scene.going + 1 : scene.going}</span>
-            </div>
-            <span className={`lp-ev__btn ${step === 2 ? 'lp-ev__btn--press' : ''} ${going ? 'lp-ev__btn--done' : ''}`}>
-              <i className={going ? 'fa-solid fa-check' : 'fa-solid fa-circle-plus'} aria-hidden="true" /> {going ? scene.done : scene.cta}
-            </span>
-          </div>
-        </div>
-      )}
-      {step > 0 && scene.next.map(ev => (
-        <div key={ev.title} className="lp-ev lp-ev--sm">
-          <div className="lp-ev__date"><b>{ev.day}</b><span>{ev.month}</span></div>
-          <div className="lp-ev__body"><b>{ev.title}</b><span>{ev.meta}</span></div>
-        </div>
-      ))}
+    <div className="lp-reel__events">
+      {scene.events.map((ev, i) => {
+        const mine = rsvp[ev.id] ?? (i === 0 && step > 1)
+        const going = ev.going.map(k => ({ status: 'going', profile: person(k) }))
+        const event = {
+          ...ev,
+          date: eventDate(ev),
+          my_rsvp: mine ? 'going' : null,
+          going_count: ev.going_count + (mine ? 1 : 0),
+          event_rsvps: mine ? [{ status: 'going', profile: { full_name: 'Jij' } }, ...going] : going,
+        }
+        return <div key={ev.id} className="lp-reel__pop"><EventCard event={event} onRsvp={(id, status) => onRsvp(id, status === 'going')} /></div>
+      })}
     </div>
   )
 }
@@ -193,6 +191,7 @@ function PlatformReel() {
   const [step, setStep] = useState(still ? 99 : 0)
   const [visible, setVisible] = useState(false)
   const [paused, setPaused] = useState(false)
+  const [rsvp, setRsvp] = useState({})
   const current = REEL.scenes[scene]
 
   useEffect(() => {
@@ -209,6 +208,7 @@ function PlatformReel() {
       if (step >= REEL_STEPS[current.key] + REEL_HOLD) {
         setScene(sc => (sc + 1) % REEL.scenes.length)
         setStep(0)
+        setRsvp({})
       } else {
         setStep(st => st + 1)
       }
@@ -219,6 +219,7 @@ function PlatformReel() {
   function pick(i) {
     setScene(i)
     setStep(still ? 99 : 1)
+    setRsvp({})
   }
 
   return (
@@ -248,13 +249,12 @@ function PlatformReel() {
             ))}
           </div>
         </div>
-        <div className="lp-reel__screen" key={current.key} aria-live="off">
-          {current.key === 'chat' && (
-            <div className="lp-reel__head"><b>{current.title}</b><span>{current.meta}</span></div>
-          )}
+        <div className={`lp-reel__screen lp-reel__screen--${current.key}`} key={current.key}>
           {current.key === 'chat' && <ReelChat scene={current} step={step} />}
           {current.key === 'prikbord' && <ReelBoard scene={current} step={step} />}
-          {current.key === 'events' && <ReelEvent scene={current} step={step} />}
+          {current.key === 'events' && (
+            <ReelEvents scene={current} step={step} rsvp={rsvp} onRsvp={(id, on) => setRsvp(r => ({ ...r, [id]: on }))} />
+          )}
         </div>
       </div>
     </div>
