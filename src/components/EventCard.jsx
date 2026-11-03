@@ -36,7 +36,7 @@ export default function EventCard({ event, onRsvp, onClick }) {
   }
 
   return (
-    <article className={`event-card ${isPast ? 'event-card--past' : ''}`} onClick={onClick}>
+    <article className={`event-card ${isPast ? 'event-card--past' : ''}`} onClick={onClick} data-tour={isPast ? undefined : 'event-card'}>
       {/* Date badge */}
       <div className="event-card__date-col">
         <div className="event-card__date-badge">

@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
@@ -9,6 +9,9 @@ import ModalScrollLock from './ModalScrollLock'
 import DemoBanner from './DemoBanner'
 import { useTheme } from '../contexts/ThemeContext'
 import { useProject } from '../contexts/ProjectContext'
+
+// Alleen demobezoekers krijgen de rondleiding; de rest laadt de code niet.
+const DemoTour = lazy(() => import('./DemoTour'))
 
 function ThemeToggle() {
   const { dark, toggleDark } = useTheme()
@@ -48,6 +51,7 @@ export default function Layout() {
       <BottomNav />
       {/* Support-chat is niet zinvol in de demo (en zou tegen RLS aanlopen). */}
       {!readOnly && <SupportWidget />}
+      {readOnly && <Suspense fallback={null}><DemoTour /></Suspense>}
       <ModalScrollLock />
     </div>
   )

@@ -1,0 +1,215 @@
+/* =====================================================================
+   Rondleiding in de klik-demo ("verzamel je sleutelbos").
+   Alles op app-tokens, zodat licht/donker en het CrowdBuilding-thema
+   vanzelf kloppen. De laag vangt geen klikken behalve op de kaarten zelf.
+   ===================================================================== */
+
+.tour-root {
+  --tour-ease: cubic-bezier(.2, .7, .2, 1);
+  --tour-key: #E8B931;            /* goud van de sleutels, in licht en donker gelijk */
+  --tour-key-ink: #5A4500;
+  position: fixed; inset: 0; z-index: 9000; pointer-events: none;
+  font-family: var(--font-family);
+  /* Bubbeltinten per opdracht. Onder het CrowdBuilding-thema bestaan de
+     nav-bubbels al; in de andere thema's vallen we terug op dezelfde tinten. */
+  --tour-bub-periwinkle-bg: var(--nav-bub-periwinkle-bg, #E7E9EE); --tour-bub-periwinkle-fg: var(--nav-bub-periwinkle-glyph, #4A4E73);
+  --tour-bub-amber-bg: var(--nav-bub-amber-bg, #FFF0CA);           --tour-bub-amber-fg: var(--nav-bub-amber-glyph, #A77E0A);
+  --tour-bub-pink-bg: var(--nav-bub-pink-bg, #FFE2EE);             --tour-bub-pink-fg: var(--nav-bub-pink-glyph, #C04C7D);
+  --tour-bub-green-bg: var(--nav-bub-green-bg, #DCF0E2);           --tour-bub-green-fg: var(--nav-bub-green-glyph, #2E7D4A);
+}
+[data-theme="dark"] .tour-root, [data-theme="crowdbuilding-dark"] .tour-root {
+  --tour-bub-periwinkle-bg: rgba(160, 165, 210, .18); --tour-bub-periwinkle-fg: #B7BCE0;
+  --tour-bub-amber-bg: rgba(240, 200, 80, .16);       --tour-bub-amber-fg: #F0C850;
+  --tour-bub-pink-bg: rgba(240, 110, 160, .16);       --tour-bub-pink-fg: #F59BC1;
+  --tour-bub-green-bg: rgba(79, 216, 122, .16);       --tour-bub-green-fg: #7BDB9A;
+}
+.tour-root > * { pointer-events: auto; }
+.tour-root .tour-spot { pointer-events: none; }
+
+.tour-card__kicker {
+  display: block; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.tour-link {
+  background: none; border: 0; padding: 6px 4px; font: inherit; font-size: 14px; font-weight: 500;
+  color: var(--text-secondary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+}
+.tour-link:hover { color: var(--text-primary); }
+.tour-x {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%;
+  border: 0; background: transparent; color: var(--text-tertiary); cursor: pointer; display: grid; place-items: center;
+}
+.tour-x:hover { background: var(--bg-hover); color: var(--text-primary); }
+.tour-bub {
+  flex: none; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; font-size: 18px;
+  background: var(--tour-b-bg); color: var(--tour-b-fg);
+}
+.tour-bub--sm { width: 32px; height: 32px; border-radius: 10px; font-size: 14px; }
+
+/* ===== Welkom- en slotkaart ===== */
+.tour-overlay {
+  position: fixed; inset: 0; display: grid; place-items: center; padding: 20px;
+  background: color-mix(in srgb, var(--bg-page) 55%, transparent);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  animation: tour-fade .3s var(--tour-ease);
+}
+.tour-card {
+  position: relative; width: min(460px, 100%); text-align: center;
+  background: var(--bg-surface); color: var(--text-primary);
+  border-radius: var(--radius-xl, 20px); box-shadow: var(--shadow-lg); padding: 32px 30px 24px;
+  animation: tour-pop .45s var(--tour-ease);
+}
+.tour-card h2 { font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin: 8px 0 10px; }
+.tour-card p { font-size: 15.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+.tour-card__actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 24px; }
+.tour-card__actions a { text-decoration: none; }
+.tour-card__note { display: inline-flex; gap: 6px; align-items: center; margin-top: 16px; font-size: 13px; color: var(--text-tertiary); }
+.tour-card--finish .tour-link { margin-top: 12px; }
+
+/* Vier opdracht-bubbels die rond een sleutel draaien. */
+.tour-card__art { position: relative; height: 116px; margin: -6px auto 14px; width: 220px; }
+.tour-art__ring {
+  position: absolute; left: 50%; top: 50%; translate: -50% -50%;
+  width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 26px;
+  background: var(--tour-key); color: var(--tour-key-ink); box-shadow: 0 8px 24px color-mix(in srgb, var(--tour-key) 45%, transparent);
+  animation: tour-wiggle 3.2s ease-in-out infinite;
+}
+.tour-art__ring--big { width: 84px; height: 84px; font-size: 36px; animation: tour-pop .6s var(--tour-ease), tour-wiggle 3.2s ease-in-out .6s infinite; }
+.tour-art__bub {
+  position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 12px;
+  display: grid; place-items: center; font-size: 16px; background: var(--tour-b-bg); color: var(--tour-b-fg);
+  box-shadow: var(--shadow-sm);
+  transform: rotate(calc(var(--i) * 90deg + 45deg)) translate(78px) rotate(calc(var(--i) * -90deg - 45deg));
+  animation: tour-orbit-in .6s var(--tour-ease) calc(var(--i) * 80ms) backwards;
+}
+.tour-spark {
+  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; border-radius: 2px; background: var(--tour-key);
+  opacity: 0; animation: tour-spark 1.1s var(--tour-ease) calc(.15s + var(--i) * 30ms) forwards;
+  --a: calc(var(--i) * 36deg);
+}
+.tour-spark:nth-child(3n) { background: var(--accent-cta); }
+.tour-spark:nth-child(3n + 1) { background: var(--nav-bub-pink-glyph, #C04C7D); }
+
+/* ===== Briefing ===== */
+.tour-brief {
+  position: fixed; left: 50%; bottom: calc(24px + var(--tour-safe-bottom, 0px)); translate: -50% 0; width: min(520px, calc(100% - 32px));
+  display: flex; gap: 16px; align-items: flex-start; padding: 20px 22px;
+  background: var(--bg-surface); color: var(--text-primary); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
+  animation: tour-rise .4s var(--tour-ease);
+}
+.tour-brief__body { min-width: 0; padding-right: 18px; }
+.tour-brief h3 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; margin: 4px 0 6px; }
+.tour-brief p { font-size: 14.5px; line-height: 1.5; color: var(--text-secondary); margin: 0; }
+.tour-brief__actions { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+
+/* ===== Spotlight ===== */
+.tour-spot {
+  position: fixed; border-radius: 14px;
+  box-shadow: 0 0 0 9999px color-mix(in srgb, #0B0A1A 42%, transparent), 0 0 0 3px var(--tour-key);
+  transition: top .25s var(--tour-ease), left .25s var(--tour-ease), width .25s var(--tour-ease), height .25s var(--tour-ease);
+  animation: tour-fade .3s var(--tour-ease);
+}
+.tour-spot::after {
+  content: ''; position: absolute; inset: -3px; border-radius: inherit; border: 3px solid var(--tour-key);
+  animation: tour-pulse 1.8s ease-out infinite;
+}
+
+/* ===== Tip bij de spotlight ===== */
+.tour-tip {
+  position: fixed; width: 320px; padding: 16px 18px 10px;
+  background: var(--bg-surface); color: var(--text-primary); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
+  animation: tour-rise .35s var(--tour-ease);
+}
+.tour-tip h3 { font-size: 15px; font-weight: 700; margin: 0 26px 6px 0; display: flex; gap: 8px; align-items: center; }
+.tour-tip h3 i { color: var(--tour-key-ink); background: var(--tour-key); width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font-size: 12px; }
+.tour-tip p { font-size: 14px; line-height: 1.5; color: var(--text-secondary); margin: 0; }
+.tour-tip__actions { display: flex; justify-content: flex-end; }
+.tour-tip--float::before {
+  content: ''; position: absolute; left: var(--arrow); top: 100%; translate: -50% 0;
+  border: 8px solid transparent; border-top-color: var(--bg-surface);
+}
+.tour-tip--below::before { top: auto; bottom: 100%; border-top-color: transparent; border-bottom-color: var(--bg-surface); }
+.tour-tip--sheet { left: 50%; bottom: calc(24px + var(--tour-safe-bottom, 0px)); translate: -50% 0; width: min(420px, calc(100% - 32px)); }
+
+/* ===== Sleutel binnen ===== */
+.tour-toast {
+  position: fixed; left: 50%; bottom: calc(24px + var(--tour-safe-bottom, 0px)); translate: -50% 0; width: min(460px, calc(100% - 32px));
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  background: var(--bg-surface); color: var(--text-primary); border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg);
+  animation: tour-rise .4s var(--tour-ease);
+}
+.tour-toast__key {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 17px;
+  background: var(--tour-key); color: var(--tour-key-ink); animation: tour-pop .5s var(--tour-ease), tour-wiggle 1s ease-in-out .5s 2;
+}
+.tour-toast__body { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14px; }
+.tour-toast__body span { color: var(--text-secondary); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ===== Sleutelbos rechtsonder (links zit het gebruikersmenu van de sidebar) ===== */
+.tour-ring { position: fixed; right: 20px; bottom: calc(20px + var(--tour-safe-bottom, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.tour-ring__btn {
+  display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px; border: 0; cursor: pointer;
+  background: var(--bg-surface); color: var(--text-primary); border-radius: 999px; box-shadow: var(--shadow-md);
+  font: inherit; font-size: 13px; transition: transform .2s var(--tour-ease), box-shadow .2s;
+}
+.tour-ring__btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.tour-ring__label b { font-variant-numeric: tabular-nums; }
+.tour-keys { display: inline-flex; }
+.tour-key {
+  width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; margin-left: -6px;
+  background: var(--bg-hover); color: var(--text-faint, var(--text-tertiary)); box-shadow: 0 0 0 2px var(--bg-surface);
+  transition: background .3s, color .3s;
+}
+.tour-key:first-child { margin-left: 0; }
+.tour-key--on { background: var(--tour-key); color: var(--tour-key-ink); animation: tour-pop .45s var(--tour-ease); }
+.tour-ring__panel {
+  width: 290px; padding: 16px; background: var(--bg-surface); color: var(--text-primary);
+  border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-lg); animation: tour-rise .3s var(--tour-ease);
+}
+.tour-ring__head { display: flex; flex-direction: column; margin-bottom: 10px; }
+.tour-ring__head b { font-size: 15px; }
+.tour-ring__head span { font-size: 13px; color: var(--text-tertiary); }
+.tour-ring__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tour-ring__item {
+  width: 100%; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--text-primary); font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+}
+.tour-ring__item:hover { background: var(--bg-hover); }
+.tour-ring__item--done > span:not(.tour-bub) { color: var(--text-tertiary); text-decoration: line-through; }
+.tour-ring__item--done .tour-bub { background: var(--tour-key); color: var(--tour-key-ink); }
+.tour-ring__check { margin-left: auto; color: var(--accent-green, #3BD269); }
+.tour-ring__foot { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+/* ===== Mobiel: boven de onderbalk ===== */
+@media (max-width: 768px) {
+  .tour-root { --tour-nav-h: calc(62px + max(0px, env(safe-area-inset-bottom) - 6px)); }
+  .tour-ring { right: 12px; bottom: calc(max(var(--tour-nav-h), var(--tour-safe-bottom, 0px)) + 12px); }
+  .tour-brief, .tour-toast, .tour-tip--sheet { bottom: calc(max(var(--tour-nav-h), var(--tour-safe-bottom, 0px)) + 12px); }
+  .tour-ring__label { display: none; }
+  .tour-brief { padding: 16px; gap: 12px; }
+  .tour-brief .tour-bub { width: 36px; height: 36px; font-size: 15px; border-radius: 11px; }
+  .tour-card { padding: 26px 20px 20px; }
+  .tour-card h2 { font-size: 23px; }
+}
+
+@media (max-width: 1100px) {
+  .tour-root--busy .tour-ring { display: none; }
+}
+
+@keyframes tour-fade { from { opacity: 0; } }
+@keyframes tour-pop { from { opacity: 0; transform: scale(.85); } }
+@keyframes tour-rise { from { opacity: 0; translate: -50% 16px; } }
+.tour-ring__panel, .tour-tip--float { animation-name: tour-rise-plain; }
+@keyframes tour-rise-plain { from { opacity: 0; transform: translateY(10px); } }
+@keyframes tour-pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(1.08); } }
+@keyframes tour-wiggle { 0%, 100% { rotate: 0deg; } 20% { rotate: -14deg; } 40% { rotate: 10deg; } 60% { rotate: -6deg; } 80% { rotate: 2deg; } }
+@keyframes tour-orbit-in { from { opacity: 0; transform: rotate(calc(var(--i) * 90deg + 45deg)) translate(20px) rotate(calc(var(--i) * -90deg - 45deg)); } }
+@keyframes tour-spark {
+  0% { opacity: 1; transform: rotate(var(--a)) translate(0) rotate(0); }
+  100% { opacity: 0; transform: rotate(var(--a)) translate(92px) rotate(180deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-root *, .tour-root *::before, .tour-root *::after { animation: none !important; transition: none !important; }
+  .tour-spark { display: none; }
+}

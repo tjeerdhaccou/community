@@ -161,6 +161,7 @@ export default function Documents() {
           <button
             key={t.key}
             className={`seg-tab ${activeTab === t.key ? 'seg-tab--active' : ''}`}
+            data-tour={`doc-tab-${t.key}`}
             onClick={() => { setTab(t.key); setCategoryFilter('all'); setMeetingCat('all') }}
           >
             {t.label}
