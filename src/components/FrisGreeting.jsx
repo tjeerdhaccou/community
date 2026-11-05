@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { navColor } from '../lib/navigation'
 
-const DAYS_SHORT = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']
 const DAYS_LONG = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag']
 const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
 
@@ -74,8 +73,7 @@ export default function FrisGreeting({ projectName, firstName, basePath, signatu
       </div>
       <div className="fris-greeting__day">
         <h1 className="fris-greeting__weekday">
-          {DAYS_SHORT[now.getDay()]}
-          <span className="fris-greeting__dot" aria-hidden="true" />
+          {DAYS_LONG[now.getDay()].replace(/^./, (c) => c.toUpperCase())}
         </h1>
         <p className="fris-greeting__date">{now.getDate()} {MONTHS[now.getMonth()]}<br />{now.getFullYear()}</p>
       </div>
