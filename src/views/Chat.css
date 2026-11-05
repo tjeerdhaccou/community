@@ -476,3 +476,56 @@ html.scroll-locked, html.scroll-locked body { overscroll-behavior: none; }
 @media (max-width: 768px) {
   .modal-overlay--sheet .grp-icon__menu { width: auto; }
 }
+
+/* ── Iconenbalk (Fris-look, desktop): de lijst klapt in tot alleen avatars ── */
+.chat-rail__toggle, .chat-rail__btn { display: none; }
+
+@media (min-width: 769px) {
+  [data-look="fris"] .chat-list { position: relative; transition: width 320ms var(--ease-smooth); }
+  [data-look="fris"] .chat-rail__toggle {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; top: 18px; right: -16px; z-index: 3;
+    width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--bg-surface); color: var(--text-secondary); font-size: 12px;
+    box-shadow: 0 0 0 1px var(--border-default), 0 4px 12px -4px rgba(26, 26, 46, 0.2);
+    opacity: 0; transition: opacity 180ms, transform 180ms var(--ease-spring), color 150ms;
+  }
+  [data-look="fris"] .chat-list:hover .chat-rail__toggle,
+  [data-look="fris"] .chat-rail__toggle:focus-visible,
+  [data-look="fris"] .chat-list--rail .chat-rail__toggle { opacity: 1; }
+  [data-look="fris"] .chat-rail__toggle:hover { color: var(--text-primary); transform: scale(1.08); }
+
+  [data-look="fris"] .chat-list--rail { width: 76px; overflow: visible; }
+  [data-look="fris"] .chat-list--rail .chat-list__search {
+    flex-direction: column; align-items: center; gap: 8px; padding: 12px 0 8px;
+  }
+  [data-look="fris"] .chat-list--rail .chat-search { display: none; }
+  [data-look="fris"] .chat-rail__btn {
+    width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--fris-fill); color: var(--text-secondary); font-size: 15px;
+  }
+  [data-look="fris"] .chat-list--rail .chat-rail__btn { display: flex; align-items: center; justify-content: center; }
+  [data-look="fris"] .chat-rail__btn:hover { background: var(--fris-fill-strong); color: var(--text-primary); }
+  [data-look="fris"] .chat-list--rail .chat-new__menu { left: 0; z-index: 6; }
+
+  [data-look="fris"] .chat-list--rail :is(.chat-convs__empty, .chat-conv--discover, .chat-conv__mid) { display: none; }
+  [data-look="fris"] .chat-list--rail .chat-convs__label { font-size: 0; padding: 0; width: 28px; margin: 8px 0; border-top: 1.5px dotted var(--border-subtle); }
+  [data-look="fris"] .chat-list--rail .chat-convs__label:first-child { display: none; }
+  [data-look="fris"] .chat-list--rail .chat-convs { padding: 6px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  [data-look="fris"] .chat-list--rail .chat-conv,
+  [data-look="fris"] .chat-list--rail .chat-conv:hover,
+  [data-look="fris"] .chat-list--rail .chat-conv--active,
+  [data-look="fris"] .chat-list--rail .chat-conv--active:hover {
+    position: relative; width: 60px; height: 60px; padding: 0; justify-content: center; border-radius: 18px;
+  }
+  [data-look="fris"] .chat-list--rail .chat-conv:hover { background: var(--fris-fill); }
+  [data-look="fris"] .chat-list--rail .chat-conv--active { background: var(--fris-fill-strong); }
+  [data-look="fris"] .chat-list--rail .chat-conv--active::before {
+    content: ''; position: absolute; left: -8px; top: 18px; bottom: 18px; width: 3px; border-radius: 3px; background: var(--text-primary);
+  }
+  [data-look="fris"] .chat-list--rail .chat-conv__badge {
+    position: absolute; top: 6px; right: 6px; margin: 0; box-shadow: 0 0 0 2px var(--bg-surface);
+  }
+  [data-look="fris"] .chat-list--rail .chat-conv .chat-av { transition: transform 260ms var(--ease-spring); }
+  [data-look="fris"] .chat-list--rail .chat-conv:hover .chat-av { transform: scale(1.06); }
+}
