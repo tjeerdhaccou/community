@@ -1,382 +1,405 @@
 /* ============================================================================
-   FRIS — opt-in beta-look bovenop de Clean-stijl
-   Actief via html[data-look="fris"] (ThemeContext, toggle in topbar/gebruikersmenu).
-   Nooit samen met het CrowdBuilding-thema. Alles hier is een overlay: zonder
-   het attribuut verandert er niets.
+   FRIS — opt-in beta-look "Buurtkrant", bovenop de Clean-stijl
+   Actief via html[data-look="fris"] (ThemeContext, toggle in topbar en
+   gebruikersmenu). Nooit samen met het CrowdBuilding-thema.
+
+   Beeldtaal: een buurtkrant. Wit papier, Instrument Serif voor koppen, dunne
+   doorlopende lijnen in plaats van kaarten met schaduw, een dubbele lijn onder
+   elke paginakop, genummerde inhoud. Het "buuur"-woordmerk (drie verende u's)
+   is het speelse accent.
+
+   Animaties gebruiken fill-mode backwards: na afloop is er niets meer
+   actief. Een transform-animatie die "in effect" blijft maakt van de view
+   een containing block voor position: fixed, en dan vallen modals erin.
    ============================================================================ */
 
 [data-look="fris"] {
   --font-display:        'Instrument Serif', Georgia, 'Times New Roman', serif;
 
+  --fris-rule:           1px solid var(--border-default);
+  --fris-rule-strong:    1px solid var(--text-primary);
+  --fris-rule-double:    3px double var(--text-primary);
+
   --fris-dur-press:      160ms;
   --fris-dur-move:       420ms;
-  --fris-dur-enter:      560ms;
+  --fris-dur-enter:      520ms;
   --fris-ease-enter:     cubic-bezier(0.2, 0.8, 0.2, 1);
-  --fris-rule:           1.5px dotted var(--border-subtle);
-  --fris-ink-from:       var(--text-faint);
+
+  /* Krant: platte vlakken met een haarlijn in plaats van zwevende kaarten */
+  --shadow-xs:           none;
+  --shadow-sm:           0 0 0 1px var(--border-default);
+  --shadow-md:           0 0 0 1px var(--border-subtle), 0 12px 28px -14px rgba(26, 26, 46, 0.22);
+  --radius-md:           8px;
+  --radius-lg:           10px;
+  --radius-xl:           14px;
 }
 
-/* Licht: wit papier in plaats van de warme tint */
 [data-look="fris"][data-theme="warm"] {
   --bg-page:             #FFFFFF;
-  --bg-hover:            #F5F6F8;
-  --bg-active:           #ECEEF2;
-  --bg-selected:         #F0F2F6;
-  --border-default:      #ECEEF2;
-  --border-subtle:       #DCDFE6;
+  --bg-hover:            #F6F6F4;
+  --bg-active:           #EDEDEA;
+  --bg-selected:         #F1F1EE;
+  --border-default:      #E7E7E3;
+  --border-subtle:       #D6D6D1;
 }
 
-[data-look="fris"][data-theme="dark"] {
-  --fris-ink-from:       var(--text-faint);
+/* ── Keyframes ─────────────────────────────────────────────────────────────── */
+
+@keyframes fris-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fris-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fris-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes fris-pop {
+  0%   { opacity: 0; transform: scale(0.4); }
+  60%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: none; }
 }
-
-/* ── Typografie ────────────────────────────────────────────────────────────── */
-
-[data-look="fris"] .view-header h1,
-[data-look="fris"] .dash-header h1 {
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 46px;
-  line-height: 1;
-  letter-spacing: -0.01em;
+@keyframes fris-hop {
+  0%, 100% { transform: none; }
+  40%      { transform: translateY(-0.28em); }
+  70%      { transform: translateY(0.04em); }
+}
+@keyframes fris-pick-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.9); }
+  to   { opacity: 1; transform: none; }
 }
 
 /* ── Binnenkomst ───────────────────────────────────────────────────────────── */
 
-@keyframes fris-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-@keyframes fris-pop {
-  0%   { opacity: 0; transform: scale(0.3) rotate(-14deg); }
-  60%  { opacity: 1; transform: scale(1.18) rotate(4deg); }
-  100% { opacity: 1; transform: none; }
-}
-@keyframes fris-ink { from { color: var(--fris-ink-from); } }
-@keyframes fris-ping {
-  0%       { box-shadow: 0 0 0 0 currentColor; }
-  80%,100% { box-shadow: 0 0 0 8px transparent; }
-}
-@keyframes fris-bounce {
-  0%   { transform: none; }
-  35%  { transform: translateY(-5px) scale(1.12); }
-  65%  { transform: translateY(1px) scale(0.96); }
-  100% { transform: none; }
-}
-
-/* Elke view komt zacht binnen bij navigatie (de Outlet mount opnieuw). */
 [data-look="fris"] .main-content > *:not(.main-topbar) {
   animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards;
 }
 
-/* Dashboard: de blokken na elkaar */
-[data-look="fris"] .main-content > .view-dashboard { animation: none; }
-[data-look="fris"] .view-dashboard > * {
-  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards;
+/* ── Typografie en paginakop ───────────────────────────────────────────────── */
+
+[data-look="fris"] .view-header {
+  padding-bottom: 14px;
+  border-bottom: var(--fris-rule-double);
+  margin-bottom: 28px;
 }
-[data-look="fris"] .view-dashboard > :nth-child(2) { animation-delay: 80ms; }
-[data-look="fris"] .view-dashboard > :nth-child(3) { animation-delay: 160ms; }
-[data-look="fris"] .view-dashboard > :nth-child(4) { animation-delay: 240ms; }
-[data-look="fris"] .view-dashboard > :nth-child(n+5) { animation-delay: 320ms; }
-[data-look="fris"] .dash-feed > * { animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards; }
-[data-look="fris"] .dash-feed > :nth-child(1) { animation-delay: 380ms; }
-[data-look="fris"] .dash-feed > :nth-child(2) { animation-delay: 440ms; }
-[data-look="fris"] .dash-feed > :nth-child(3) { animation-delay: 500ms; }
-[data-look="fris"] .dash-feed > :nth-child(n+4) { animation-delay: 560ms; }
+[data-look="fris"] .view-header h1,
+[data-look="fris"] .dash-header h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+[data-look="fris"] .view-header__subtitle {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1.3;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+[data-look="fris"] .view-header__eyebrow { color: var(--text-secondary); }
 
-/* ── Begroeting (FrisGreeting) ─────────────────────────────────────────────── */
+[data-look="fris"] :is(.modal-header h2, .feed-empty h3, .chat-empty__t) {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+}
+[data-look="fris"] .sidebar-project-name {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.005em;
+}
 
-.fris-greeting { margin-bottom: 28px; }
-.fris-greeting__top {
-  font-size: 14px;
-  font-weight: 500;
+/* ── Woordmerk ─────────────────────────────────────────────────────────────── */
+
+.buuur { display: inline-flex; white-space: nowrap; }
+.buuur__u {
+  display: inline-block;
+  animation: fris-hop 700ms var(--ease-spring) calc(500ms + var(--i) * 110ms) backwards;
+}
+.buuur:hover .buuur__u { animation: fris-hop 600ms var(--ease-spring) calc(var(--i) * 90ms); }
+.buuur--loading {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 34px;
   color: var(--text-secondary);
 }
-.fris-greeting__day {
+.buuur--loading .buuur__u { animation: fris-hop 1.1s var(--ease-smooth) calc(var(--i) * 140ms) infinite; }
+
+/* ── Voorpagina (FrisFront) ────────────────────────────────────────────────── */
+
+.fris-front { margin-bottom: 32px; }
+
+.fris-mast { text-align: center; padding-bottom: 10px; border-bottom: var(--fris-rule-double); }
+.fris-mast__kicker {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-top: 12px;
-}
-.fris-greeting__weekday {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 56px;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: var(--text-primary);
-}
-.fris-greeting__dot {
-  width: 13px;
-  height: 13px;
-  margin-top: 6px;
-  border-radius: 50%;
-  background: var(--accent-red);
-  color: var(--accent-red);
-  animation: fris-ping 2.6s var(--fris-ease-enter) 1.4s infinite;
-}
-.fris-greeting__date {
-  margin: 0;
-  padding-top: 4px;
-  text-align: right;
-  font-size: 17px;
-  line-height: 1.2;
-  font-weight: 500;
+  align-items: baseline;
+  padding-bottom: 8px;
+  border-bottom: var(--fris-rule);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--text-secondary);
 }
-.fris-greeting__sentence {
-  margin: 24px 0 0;
-  max-width: 640px;
+.fris-mast__hey {
   font-family: var(--font-display);
-  font-size: clamp(28px, 4.2vw, 40px);
-  line-height: 1.18;
-  color: var(--text-tertiary);
-}
-.fris-greeting__sentence em { font-style: italic; }
-
-.fris-ink {
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-primary);
-  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) backwards;
+}
+.fris-mast__title {
+  margin: 14px 0 4px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(52px, 11vw, 104px);
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.fris-mast__edition {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
 }
 
-.fris-chip {
-  display: inline;
-  padding: 0;
+.fris-lead {
+  max-width: 720px;
+  margin: 26px auto 34px;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3.2vw, 32px);
+  line-height: 1.22;
+  text-align: center;
+  color: var(--text-primary);
+  animation: fris-fade 700ms var(--ease-smooth) 160ms backwards;
+}
+.fris-lead em { font-style: italic; }
+
+.fris-cols { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 0 44px; }
+.fris-col--side { position: relative; }
+.fris-col--side::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 0;
+  bottom: 0;
+  border-left: var(--fris-rule);
+}
+@media (max-width: 860px) {
+  .fris-cols { grid-template-columns: 1fr; gap: 36px; }
+  .fris-col--side::before { display: none; }
+}
+
+.fris-col__head {
+  position: relative;
+  margin: 0 0 4px;
+  padding-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.fris-col__head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-bottom: var(--fris-rule-strong);
+  transform-origin: left;
+  animation: fris-draw 700ms var(--fris-ease-enter) 120ms backwards;
+}
+.fris-empty { margin: 14px 0; font-size: 15px; color: var(--text-secondary); }
+
+.fris-index { list-style: none; margin: 0; padding: 0; }
+.fris-index__item {
+  position: relative;
+  border-bottom: var(--fris-rule);
+  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) var(--fris-delay, 0ms) backwards;
+}
+.fris-index__btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  width: 100%;
+  padding: 16px 40px 16px 2px;
   border: none;
   background: none;
   font: inherit;
+  text-align: left;
   color: var(--text-primary);
   cursor: pointer;
-  text-align: inherit;
-  border-radius: 6px;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 0.15em;
-  transition: text-decoration-color 200ms var(--ease-default);
-  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) backwards;
-}
-.fris-chip:hover { text-decoration-color: currentColor; }
-.fris-chip:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
-.fris-chip__ic {
-  display: inline-block;
-  font-size: 0.72em;
-  margin-right: 0.22em;
-  vertical-align: 0.06em;
-  animation: fris-pop 620ms var(--ease-spring) var(--fris-delay, 0ms) backwards;
-}
-
-/* ── Dashboard: rijen met stippellijnen in plaats van kaarten ──────────────── */
-
-[data-look="fris"] .dash-card,
-[data-look="fris"] .dash-intake-alert,
-[data-look="fris"] .dash-stat {
-  background: transparent;
-  box-shadow: none;
-  border-radius: var(--radius-md);
-}
-[data-look="fris"] .dash-feed { gap: 0; }
-[data-look="fris"] .dash-card {
-  border-bottom: var(--fris-rule);
-  border-radius: 0;
-  padding: 18px 4px;
   transition: background-color 200ms var(--ease-default);
 }
-[data-look="fris"] .dash-card:hover {
-  transform: none;
-  box-shadow: none;
-  background: var(--bg-hover);
-}
-[data-look="fris"] .dash-intake-alert {
-  margin-bottom: 0;
-  border-bottom: var(--fris-rule);
-  border-radius: 0;
-}
-[data-look="fris"] .dash-intake-alert:hover { background: var(--bg-hover); transform: none; }
-[data-look="fris"] .dash-card__arrow,
-[data-look="fris"] .dash-intake-alert__arrow {
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 200ms, transform 260ms var(--ease-spring);
-}
-[data-look="fris"] .dash-card:hover .dash-card__arrow,
-[data-look="fris"] .dash-intake-alert:hover .dash-intake-alert__arrow {
-  opacity: 1;
-  transform: none;
-}
-[data-look="fris"] .dash-card__label i {
-  display: inline-block;
+.fris-index__btn:hover { background: var(--bg-hover); }
+.fris-index__btn:focus-visible { outline: 2px solid var(--border-focus); outline-offset: -2px; }
+.fris-index__num {
+  flex: none;
+  min-width: 34px;
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
   transition: transform 320ms var(--ease-spring);
 }
-[data-look="fris"] .dash-card:hover .dash-card__label i { transform: scale(1.18) rotate(-8deg); }
-
-/* ── Indrukken en hover ────────────────────────────────────────────────────── */
-
-[data-look="fris"] :is(.btn-primary, .btn-secondary, .theme-toggle-btn, .bottom-nav-item, .cl-nav-item, .dash-stat, .fris-chip) {
-  transition: transform var(--fris-dur-press) var(--ease-spring), background-color 200ms, color 200ms, text-decoration-color 200ms;
+.fris-index__btn:hover .fris-index__num { transform: translateX(3px); }
+.fris-index__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fris-index__kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
 }
-[data-look="fris"] :is(.btn-primary, .btn-secondary, .theme-toggle-btn, .bottom-nav-item, .dash-stat):active { transform: scale(0.94); }
-[data-look="fris"] .cl-nav-item:active { transform: scale(0.98); }
-[data-look="fris"] .cl-nav-item__icon { transition: transform 320ms var(--ease-spring); }
-[data-look="fris"] .cl-nav-item:hover .cl-nav-item__icon { transform: scale(1.15) rotate(-8deg); }
-
-[data-look="fris"] :is(.sidebar-dot, .bottom-nav-dot) {
-  color: var(--accent-blue);
-  animation: fris-ping 2.6s var(--fris-ease-enter) 1s infinite;
-}
-
-/* ── Mobiele onderbalk: zwevende pil met glijdende selectie ────────────────── */
-
-.bottom-nav__pill { display: none; }
-
-@media (max-width: 768px) {
-  [data-look="fris"] .bottom-nav {
-    left: 50%;
-    right: auto;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    transform: translateX(-50%);
-    height: 56px;
-    padding: 6px;
-    gap: 2px;
-    border: none;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--bg-hover) 88%, transparent);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    backdrop-filter: blur(16px) saturate(1.4);
-    box-shadow: var(--shadow-md);
-  }
-  [data-look="fris"] .bottom-nav-item {
-    position: relative;
-    z-index: 1;
-    flex: none;
-    width: 56px;
-    height: 44px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 999px;
-  }
-  [data-look="fris"] .bottom-nav-item i {
-    font-size: 20px;
-    color: var(--nav-icon-brand, var(--nav-c, var(--text-secondary)));
-  }
-  [data-look="fris"] .bottom-nav-item--active i {
-    animation: fris-bounce 520ms var(--ease-spring);
-  }
-  [data-look="fris"] .bottom-nav-item__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-  [data-look="fris"] .bottom-nav__pill {
-    display: block;
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    width: 56px;
-    height: 44px;
-    border-radius: 999px;
-    background: var(--bg-surface);
-    box-shadow: var(--shadow-sm);
-    transform: translateX(calc(var(--slot, 0) * 58px));
-    transition: transform var(--fris-dur-move) var(--ease-spring);
-  }
-}
-
-/* ── Weekstrip (FrisWeek) ──────────────────────────────────────────────────── */
-
-.fris-week { margin: -4px 0 28px; max-width: 640px; }
-.fris-week__strip {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 2px;
-  padding-bottom: 12px;
-  border-bottom: var(--fris-rule);
-}
-.fris-week__marker {
+.fris-index__title { font-size: 17px; font-weight: 600; line-height: 1.3; }
+.fris-index__sub { font-size: 14px; color: var(--text-secondary); }
+.fris-index__arrow {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: calc((100% - 12px) / 7);
-  height: calc(100% - 12px);
-  box-sizing: border-box;
-  border: 1.5px solid var(--border-default);
-  border-radius: 12px;
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-xs);
-  transform: translateX(calc(var(--slot, 0) * (100% + 2px)));
-  transition: transform var(--fris-dur-move) var(--ease-spring);
+  right: 14px;
+  top: 50%;
+  margin-top: -7px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 200ms, transform 280ms var(--ease-spring);
 }
-.fris-week__day {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  min-height: 60px;
-  padding: 9px 0 7px;
+.fris-index__btn:hover .fris-index__arrow { opacity: 1; transform: none; }
+.fris-index__dismiss {
+  position: absolute;
+  right: 6px;
+  top: 8px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 12px;
+  border-radius: 50%;
   background: none;
-  font: inherit;
   color: var(--text-tertiary);
   cursor: pointer;
-  transition: color 200ms var(--ease-default), transform var(--fris-dur-press) var(--ease-spring);
 }
-.fris-week__day:active { transform: scale(0.94); }
-.fris-week__day--selected { color: var(--text-primary); }
-.fris-week__num { font-size: 20px; font-weight: 600; line-height: 1; }
-.fris-week__label { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; color: var(--text-secondary); }
-.fris-week__day--today .fris-week__label { color: var(--accent-red); }
-.fris-week__dot { width: 4px; height: 4px; border-radius: 50%; }
-.fris-week__dot--on { background: var(--dot-c); }
+.fris-index__dismiss:hover { background: var(--bg-active); color: var(--text-primary); }
+.fris-index__item:has(.fris-index__dismiss) .fris-index__arrow { display: none; }
 
-.fris-week__list { animation: fris-rise 380ms var(--fris-ease-enter) backwards; }
-.fris-week__list--b { animation-name: fris-rise-b; }
-@keyframes fris-rise-b { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-.fris-week__empty {
-  margin: 0;
-  padding: 16px 4px;
-  font-size: 15px;
-  color: var(--text-secondary);
+.fris-agenda { list-style: none; margin: 0; padding: 0; }
+.fris-agenda li {
   border-bottom: var(--fris-rule);
+  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) var(--fris-delay, 0ms) backwards;
 }
-.fris-week__row {
+.fris-agenda__btn {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
-  min-height: 56px;
-  padding: 0 4px;
+  padding: 12px 2px;
   border: none;
-  border-bottom: var(--fris-rule);
   background: none;
   font: inherit;
-  color: var(--text-primary);
   text-align: left;
+  color: var(--text-primary);
   cursor: pointer;
   transition: background-color 200ms var(--ease-default);
 }
-.fris-week__row:hover { background: var(--bg-hover); }
-.fris-week__ic { font-size: 18px; transition: transform 320ms var(--ease-spring); }
-.fris-week__row:hover .fris-week__ic { transform: scale(1.18) rotate(-8deg); }
-.fris-week__title { flex: 1; min-width: 0; font-size: 16px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fris-week__meta { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
-.fris-week__chev {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 200ms, transform 260ms var(--ease-spring);
+.fris-agenda__btn:hover { background: var(--bg-hover); }
+.fris-agenda__date { flex: none; display: flex; flex-direction: column; align-items: center; width: 42px; }
+.fris-agenda__dow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-red);
 }
-.fris-week__row:hover .fris-week__chev { opacity: 1; transform: none; }
+.fris-agenda__day {
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+.fris-agenda__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fris-agenda__title { font-size: 16px; font-weight: 600; line-height: 1.3; }
+.fris-agenda__meta { font-size: 13px; color: var(--text-secondary); }
 
-/* ── Filters (prikbord, nieuws, events, documenten, leden) ─────────────────── */
+.fris-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 6px 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.fris-more i { transition: transform 280ms var(--ease-spring); }
+.fris-more:hover i { transform: translateX(4px); }
 
-[data-look="fris"] .tag-filter { gap: 4px 20px; }
+/* ── Lijsten: rijen met haarlijnen in plaats van kaarten ───────────────────── */
+
+[data-look="fris"] :is(.feed-list, .dash-feed) { gap: 0; border-top: var(--fris-rule-strong); }
+[data-look="fris"] :is(.feed-card, .dash-card, .event-card, .update-card) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: var(--fris-rule);
+  transition: background-color 200ms var(--ease-default);
+}
+[data-look="fris"] :is(.feed-card, .dash-card, .event-card, .update-card):hover {
+  background: var(--bg-hover);
+  box-shadow: none;
+  transform: none;
+}
+[data-look="fris"] .feed-list > * { animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards; }
+[data-look="fris"] .feed-list > :nth-child(2) { animation-delay: 50ms; }
+[data-look="fris"] .feed-list > :nth-child(3) { animation-delay: 100ms; }
+[data-look="fris"] .feed-list > :nth-child(4) { animation-delay: 150ms; }
+[data-look="fris"] .feed-list > :nth-child(n+5) { animation-delay: 200ms; }
+
+[data-look="fris"] .feed-composer-prompt {
+  box-shadow: none;
+  border: var(--fris-rule);
+  border-radius: var(--radius-full);
+}
+[data-look="fris"] .feed-composer-prompt:hover { box-shadow: none; border-color: var(--text-primary); }
+
+/* Events: datum als krantencijfer */
+[data-look="fris"] .event-card__date-badge { background: transparent; box-shadow: none; }
+[data-look="fris"] .event-card__day {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 38px;
+  line-height: 0.95;
+}
+[data-look="fris"] .event-card__month { color: var(--accent-red); letter-spacing: 0.08em; }
+
+/* Tags als gekleurd stipje + tekst (inline style zet de achtergrond) */
+[data-look="fris"] :is(.feed-card__tag, .update-tag) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent !important;
+  font-weight: 600;
+}
+[data-look="fris"] :is(.feed-card__tag, .update-tag)::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Filters: tekst met een lijn die onder de actieve groeit ───────────────── */
+
+[data-look="fris"] .tag-filter { gap: 4px 22px; }
 [data-look="fris"] .tag-filter__pill {
   position: relative;
   padding: 10px 0;
@@ -395,91 +418,123 @@
   right: 0;
   bottom: 2px;
   height: 2px;
-  border-radius: 2px;
   background: currentColor;
   transform: scaleX(0);
-  transition: transform 360ms var(--ease-spring);
+  transform-origin: left;
+  transition: transform 360ms var(--fris-ease-enter);
 }
 [data-look="fris"] .tag-filter__pill:hover { color: var(--text-primary); border-color: transparent; }
 [data-look="fris"] .tag-filter__pill--active,
-[data-look="fris"] .tag-filter__pill--active:hover {
-  background: transparent;
-  color: var(--text-primary);
-}
+[data-look="fris"] .tag-filter__pill--active:hover { background: transparent; color: var(--text-primary); }
 [data-look="fris"] .tag-filter__pill--active::after { transform: scaleX(1); }
 
-/* ── Prikbord: berichten als rijen ─────────────────────────────────────────── */
+/* ── Chat ──────────────────────────────────────────────────────────────────── */
 
-[data-look="fris"] .feed-composer-prompt {
-  background: transparent;
-  box-shadow: none;
-  border-radius: 0;
-  border-bottom: var(--fris-rule);
-  padding: 14px 4px;
+[data-look="fris"] .chat-head__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1;
 }
-[data-look="fris"] .feed-composer-prompt:hover { box-shadow: none; background: var(--bg-hover); }
-
-[data-look="fris"] .feed-list { gap: 0; border-top: var(--fris-rule); }
-[data-look="fris"] .feed-card {
-  background: transparent;
-  box-shadow: none;
-  border-radius: 0;
-  border-bottom: var(--fris-rule);
-  padding: 20px 8px;
-  transition: background-color 200ms var(--ease-default);
+[data-look="fris"] .chat-head { border-bottom: var(--fris-rule-double); }
+[data-look="fris"] .chat-body { background: transparent; border-radius: 0; margin: 0; }
+[data-look="fris"] .chat-convs__label { color: var(--text-primary); }
+[data-look="fris"] .chat-conv { border-bottom: var(--fris-rule); }
+[data-look="fris"] .chat-conv--active { background: var(--bg-hover); box-shadow: inset 2px 0 0 var(--text-primary); }
+[data-look="fris"] .chat-conv__name { font-size: 15px; }
+[data-look="fris"] .chat-bubble { border-radius: 14px; }
+[data-look="fris"] .chat-bubble--in {
+  background: var(--bg-surface);
+  border: var(--fris-rule);
+  border-bottom-left-radius: 4px;
 }
-[data-look="fris"] .feed-card:hover {
-  background: var(--bg-hover);
-  box-shadow: none;
-  transform: none;
-}
-[data-look="fris"] .feed-list > * { animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards; }
-[data-look="fris"] .feed-list > :nth-child(2) { animation-delay: 60ms; }
-[data-look="fris"] .feed-list > :nth-child(3) { animation-delay: 120ms; }
-[data-look="fris"] .feed-list > :nth-child(4) { animation-delay: 180ms; }
-[data-look="fris"] .feed-list > :nth-child(n+5) { animation-delay: 240ms; }
-
-/* Tag als gekleurd stipje + tekst in plaats van een pil (inline style zet de achtergrond) */
-[data-look="fris"] .feed-card__tag {
-  display: inline-flex;
+[data-look="fris"] .chat-bubble--out { border-bottom-right-radius: 4px; }
+[data-look="fris"] .chat-msg { animation: fris-rise 320ms var(--fris-ease-enter) backwards; }
+[data-look="fris"] .chat-datesep {
+  align-self: stretch;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
   padding: 0;
-  background: transparent !important;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
 }
-[data-look="fris"] .feed-card__tag::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
+[data-look="fris"] .chat-datesep::before,
+[data-look="fris"] .chat-datesep::after { content: ''; flex: 1; border-top: var(--fris-rule); }
+[data-look="fris"] .chat-send { transition: transform var(--fris-dur-press) var(--ease-spring); }
+[data-look="fris"] .chat-send:active { transform: scale(0.88) rotate(-8deg); }
 
-[data-look="fris"] .feed-card__action-btn {
-  transition: transform var(--fris-dur-press) var(--ease-spring), color 200ms, background-color 200ms;
+/* ── Modals ────────────────────────────────────────────────────────────────── */
+
+[data-look="fris"] .modal-header { border-bottom: var(--fris-rule); }
+[data-look="fris"] .modal-card { animation: fris-pick-in 280ms var(--fris-ease-enter) backwards; }
+
+/* ── Interactie ────────────────────────────────────────────────────────────── */
+
+[data-look="fris"] :is(.btn-primary, .btn-secondary, .theme-toggle-btn, .bottom-nav-item, .cl-nav-item, .feed-card__action-btn) {
+  transition: transform var(--fris-dur-press) var(--ease-spring), background-color 200ms, color 200ms, border-color 200ms;
 }
+[data-look="fris"] :is(.btn-primary, .btn-secondary, .theme-toggle-btn, .bottom-nav-item):active { transform: scale(0.95); }
 [data-look="fris"] .feed-card__action-btn:active { transform: scale(0.88); }
-[data-look="fris"] .feed-card__action-btn--followed i { animation: fris-pop 520ms var(--ease-spring); color: var(--accent-green); }
-[data-look="fris"] .feed-card__reaction-icon { animation: fris-pop 520ms var(--ease-spring) backwards; }
+[data-look="fris"] .cl-nav-item:active { transform: scale(0.98); }
+[data-look="fris"] .cl-nav-item--active { background: var(--bg-selected); box-shadow: inset 2px 0 0 var(--text-primary); }
+[data-look="fris"] .cl-nav-item__icon { transition: transform 320ms var(--ease-spring); }
+[data-look="fris"] .cl-nav-item:hover .cl-nav-item__icon { transform: translateX(2px); }
 
-@keyframes fris-pick-in {
-  from { opacity: 0; transform: translateY(6px) scale(0.85); }
-  to   { opacity: 1; transform: none; }
+[data-look="fris"] .feed-card__action-btn--followed i { animation: fris-pop 480ms var(--ease-spring); color: var(--accent-green); }
+[data-look="fris"] .feed-card__reaction-icon { animation: fris-pop 480ms var(--ease-spring) backwards; }
+[data-look="fris"] .feed-reaction-picker { animation: fris-pick-in 260ms var(--ease-spring); transform-origin: bottom right; }
+[data-look="fris"] .feed-reaction-picker__btn i { transition: transform 240ms var(--ease-spring); }
+[data-look="fris"] .feed-reaction-picker__btn:hover i { transform: scale(1.3); }
+
+/* ── Mobiele onderbalk: zwevende balk met lijn onder het actieve item ──────── */
+
+.bottom-nav__pill { display: none; }
+
+@media (max-width: 768px) {
+  [data-look="fris"] .bottom-nav {
+    left: 12px;
+    right: 12px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    height: 58px;
+    padding: 0 6px;
+    border: var(--fris-rule);
+    border-radius: var(--radius-xl);
+    background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
+    box-shadow: 0 10px 30px -16px rgba(26, 26, 46, 0.35);
+  }
+  [data-look="fris"] .bottom-nav-item { position: relative; z-index: 1; color: var(--text-secondary); }
+  [data-look="fris"] .bottom-nav-item i {
+    font-size: 20px;
+    color: var(--nav-icon-brand, var(--nav-c, var(--text-secondary)));
+    transition: transform 320ms var(--ease-spring);
+  }
+  [data-look="fris"] .bottom-nav-item--active { color: var(--text-primary); font-weight: 600; }
+  [data-look="fris"] .bottom-nav-item--active i { transform: translateY(-2px); }
+  [data-look="fris"] .bottom-nav__pill {
+    display: block;
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    width: calc((100% - 12px) / 5);
+    height: 2px;
+    background: var(--text-primary);
+    transform: translateX(calc(var(--slot, 0) * 100%)) scaleX(0.4);
+    transition: transform var(--fris-dur-move) var(--ease-spring);
+  }
 }
-[data-look="fris"] .feed-reaction-picker { animation: fris-pick-in 280ms var(--ease-spring); transform-origin: bottom right; }
-[data-look="fris"] .feed-reaction-picker__btn i { transition: transform 260ms var(--ease-spring); }
-[data-look="fris"] .feed-reaction-picker__btn:hover i { transform: scale(1.35) rotate(-10deg); }
-[data-look="fris"] .feed-reaction-picker__btn:active i { transform: scale(0.9); }
 
-[data-look="fris"] .feed-trending-item { transition: background-color 200ms var(--ease-default); }
-
-/* ── Toggle zelf ───────────────────────────────────────────────────────────── */
+/* ── Toggle ────────────────────────────────────────────────────────────────── */
 
 .look-toggle-btn--on { color: var(--accent-purple); }
-.look-toggle-btn--on i { animation: fris-pop 620ms var(--ease-spring); }
+.look-toggle-btn--on i { animation: fris-pop 520ms var(--ease-spring); }
 
 .look-switch {
   position: relative;
@@ -500,7 +555,7 @@
   height: 14px;
   border-radius: 50%;
   background: var(--bg-surface);
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 1px 2px rgba(26, 26, 46, 0.2);
   transition: transform 260ms var(--ease-spring);
 }
 .look-switch--on { background: var(--accent-green); }
@@ -508,6 +563,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   [data-look="fris"] *,
+  [data-look="fris"] *::before,
   [data-look="fris"] *::after {
     animation: none !important;
     transition: none !important;

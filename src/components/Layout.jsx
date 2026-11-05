@@ -9,6 +9,7 @@ import ModalScrollLock from './ModalScrollLock'
 import DemoBanner from './DemoBanner'
 import { useTheme } from '../contexts/ThemeContext'
 import { useProject } from '../contexts/ProjectContext'
+import BuuurWord from './BuuurWord'
 
 // Alleen demobezoekers krijgen de rondleiding; de rest laadt de code niet.
 const DemoTour = lazy(() => import('./DemoTour'))
@@ -47,6 +48,7 @@ function LookToggle() {
 
 export default function Layout() {
   const { readOnly } = useProject()
+  const { look } = useTheme()
   return (
     <div className={`app-layout ${readOnly ? 'app-layout--demo' : ''}`}>
       <a href="#main-content" className="skip-link">Ga naar inhoud</a>
@@ -62,7 +64,7 @@ export default function Layout() {
           <ThemeToggle />
           <NotificationBell />
         </div>
-        <Suspense fallback={<div className="loading-page"><p>Laden...</p></div>}>
+        <Suspense fallback={<div className="loading-page">{look === 'fris' ? <BuuurWord loading /> : <p>Laden...</p>}</div>}>
           <Outlet />
         </Suspense>
       </main>
