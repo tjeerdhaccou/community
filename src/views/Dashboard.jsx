@@ -14,9 +14,7 @@ import { useToast } from '../components/Toast'
 import { friendlyError } from '../lib/logger'
 import { navColor } from '../lib/navigation'
 import { useTheme } from '../contexts/ThemeContext'
-import { useSidebarSignals } from '../hooks/useSidebarSignals'
-import FrisGreeting from '../components/FrisGreeting'
-import FrisWeek from '../components/FrisWeek'
+import FrisFront from '../components/FrisFront'
 
 export default function Dashboard() {
   const { project, role, loading, basePath, onboardingActive, readOnly } = useProject()
@@ -38,7 +36,7 @@ export default function Dashboard() {
   const { activePhase } = useRoadmap(project?.id)
   const signatureCount = useSignatureRequestCount()
   const { look } = useTheme()
-  const { unread } = useSidebarSignals()
+  const fris = look === 'fris'
   const toast = useToast()
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, paymentRequests: [], stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
@@ -144,6 +142,8 @@ export default function Dashboard() {
     const href = `/verzoeken/${pr.id}${pr.access_token ? `?t=${pr.access_token}` : ''}`
     actionItems.push({
       id: `pay-${pr.id}`,
+      kicker: 'Betaling',
+      color: 'var(--accent-orange)',
       iconClass: 'fa-euro-sign',
       iconStyle: { background: 'var(--tag-orange-bg)', color: 'var(--accent-orange)' },
       title: `${isAgreed ? 'Rond je betaling af' : 'Openstaand betaalverzoek'}: ${(pr.amount_cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: pr.currency || 'EUR' })}`,
@@ -155,6 +155,7 @@ export default function Dashboard() {
   if (feed.intakeRequest) {
     actionItems.push({
       id: 'intake-req',
+      kicker: 'Profiel',
       iconClass: 'fa-clipboard-user',
       iconStyle: { background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' },
       title: 'Vul je gegevens aan',
@@ -165,6 +166,7 @@ export default function Dashboard() {
   if (feed.docRequests > 0) {
     actionItems.push({
       id: 'doc-req',
+      kicker: 'Documenten',
       iconClass: 'fa-file-circle-question',
       iconStyle: { background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' },
       title: `${feed.docRequests} ${feed.docRequests === 1 ? 'documentverzoek' : 'documentverzoeken'}`,
@@ -175,6 +177,7 @@ export default function Dashboard() {
   if (signatureCount > 0) {
     actionItems.push({
       id: 'sig-req',
+      kicker: 'Tekenen',
       iconClass: 'fa-signature',
       iconStyle: { background: 'rgba(245, 166, 35, 0.12)', color: 'var(--accent-orange, #F5A623)' },
       title: `${signatureCount} ${signatureCount === 1 ? 'tekenverzoek' : 'tekenverzoeken'}`,
@@ -185,6 +188,8 @@ export default function Dashboard() {
   if (feed.intakePending > 0 && canDo(role, 'manage_intake')) {
     actionItems.push({
       id: 'admin-intake',
+      kicker: 'Aanmeldingen',
+      color: navColor('members'),
       iconClass: 'fa-clipboard-list',
       iconStyle: null,
       title: `${feed.intakePending} nieuwe ${feed.intakePending === 1 ? 'aanmelding' : 'aanmeldingen'}`,
@@ -198,22 +203,19 @@ export default function Dashboard() {
 
   return (
     <div className="view-dashboard">
-      {look === 'fris' && (
-        <FrisGreeting
-          projectName={project.name}
+      {fris && (
+        <FrisFront
+          project={project}
+          phaseName={activePhase?.subtitle || activePhase?.name}
           firstName={(profile?.full_name || '').split(' ')[0]}
           basePath={basePath}
-          signatureCount={signatureCount}
-          docRequests={feed.docRequests}
-          paymentCount={feed.paymentRequests.length}
-          unread={unread}
-          nextEvent={feed.nextEvent}
+          actionItems={actionItems}
+          feed={feed}
         />
       )}
-      {look === 'fris' && <FrisWeek projectId={project.id} basePath={basePath} />}
 
       {/* Header with project info */}
-      {look !== 'fris' && <div className="dash-header">
+      {!fris && <div className="dash-header">
         <div className="dash-header__info">
           {project.logo_url && <img src={project.logo_url} alt={project.name + ' logo'} className="dash-header__logo" />}
           <div>
@@ -229,7 +231,7 @@ export default function Dashboard() {
       </div>}
 
       {/* Stats row — meteen onder de header voor projectcontext in één oogopslag */}
-      <div className="dash-stats">
+      {!fris && <div className="dash-stats">
         <div className="dash-stat" onClick={() => navigate(`${basePath}/members`)} role="button" tabIndex={0}>
           <i className="fa-solid fa-user-tag dash-stat__icon" style={{ color: navColor('mijn-dossier') }} />
           <span className="dash-stat__value">{ROLE_LABELS[role] || role}</span>
@@ -250,7 +252,7 @@ export default function Dashboard() {
           <span className="dash-stat__value">{activePhase?.subtitle || activePhase?.name || '—'}</span>
           <span className="dash-stat__label">Fase</span>
         </div>
-      </div>
+      </div>}
 
       {/* Guest/aspirant statusstrip — passieve info, compact zodat het niet
           concurreert met de actie-sectie eronder. */}
@@ -270,7 +272,7 @@ export default function Dashboard() {
       {/* Alle "actie vereist" items in één sectie zodat het dashboard rustiger
           leest. Volgorde staat in actionItems hierboven; > COLLAPSE_THRESHOLD
           items wordt de rest ingeklapt achter "Toon alle". */}
-      {actionItems.length > 0 && (
+      {!fris && actionItems.length > 0 && (
         <div className="dash-actions">
           <div className="dash-actions__header">
             <h3 className="dash-actions__title">Wat wacht op jou</h3>
@@ -318,7 +320,7 @@ export default function Dashboard() {
       {!readOnly && <MemberWelcome />}
 
       {/* Activity feed grid */}
-      <div className="dash-feed">
+      {!fris && <div className="dash-feed">
         {/* Next event */}
         {feed.nextEvent && (
           <div className="dash-card dash-card--event" onClick={() => navigate(`${basePath}/events?open=${feed.nextEvent.id}`)} role="button" tabIndex={0}>
@@ -392,7 +394,7 @@ export default function Dashboard() {
             <i className="fa-solid fa-arrow-right dash-card__arrow" />
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Project info modal */}
       {infoOpen && (
