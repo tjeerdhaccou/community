@@ -6,6 +6,7 @@ import { HERO, MAKER, STRIP, DOELGROEPEN, STAPPEN, MODULES, OVER, QUOTE, PLANS, 
 import PostCard from '../components/PostCard'
 import EventCard from '../components/EventCard'
 import ChatAvatar from '../components/Chat/Avatar'
+import { loadFonts } from '../lib/fonts'
 import './Chat.css'
 import '../styles/landing.css'
 
@@ -19,7 +20,7 @@ const DEMO_URL = `https://demoproject.${MAIN_DOMAIN}`
 const DEMO_NAV = ['', 'mijn-dossier', 'chat', 'updates', 'community', 'events', 'roadmap', 'documenten', 'members', 'organisatie']
 
 function bubbleStyle(name) {
-  return { '--lp-b-bg': `var(--lp-bub-${name}-bg)`, '--lp-b-fg': `var(--lp-bub-${name}-fg)` }
+  return { '--lp-b-bg': `var(--lp-bub-${name}-bg)`, '--lp-b-fg': `var(--lp-bub-${name}-fg)`, '--lp-b-ic': `var(--lp-ic-${name})` }
 }
 
 const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -278,8 +279,39 @@ function Checks({ items }) {
   )
 }
 
-// Statisch dashboard van het demoproject, opgebouwd uit dezelfde tokens als de
-// app. Geen screenshot: dit volgt licht/donker en blijft scherp op elk scherm.
+const DAYS_LONG = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag']
+const MONTHS = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
+const cap = s => s.replace(/^./, c => c.toUpperCase())
+
+function greetingFor(hour) {
+  if (hour < 6) return 'Goedenacht'
+  if (hour < 12) return 'Goedemorgen'
+  if (hour < 18) return 'Goedemiddag'
+  return 'Goedenavond'
+}
+
+// Kop die woord voor woord "inkt": elk woord kleurt vanuit lichtgrijs naar
+// inkt, net als de begroeting op het dashboard in de Fris-look. Wat na de
+// laatste komma staat wordt cursief.
+function InkTitle({ text, delay = 120 }) {
+  const cut = text.lastIndexOf(', ')
+  const parts = cut > 0 ? [text.slice(0, cut + 1), text.slice(cut + 2)] : [text]
+  let n = 0
+  const words = (str, italic) => str.split(' ').map((w, i, all) => {
+    const el = <span key={`${italic}-${i}`} className="lp-ink" style={{ '--i': n++, '--ink-d': `${delay}ms` }}>{w}</span>
+    return i < all.length - 1 ? [el, ' '] : el
+  })
+  return (
+    <>
+      {words(parts[0], false)}
+      {parts[1] && <>{' '}<em>{words(parts[1], true)}</em></>}
+    </>
+  )
+}
+
+// Statisch dashboard van het demoproject in de Fris-look van de app: de dag
+// groot, één begroetingszin, en rijen met stippellijnen. Geen screenshot: dit
+// blijft scherp op elk scherm en toont altijd de dag van vandaag.
 function ProductFrame() {
   const items = NAV_SECTIONS.flatMap(s => s.items.map(item => ({ ...item, section: s.label })))
     .filter(item => DEMO_NAV.includes(item.to))
@@ -289,9 +321,10 @@ function ProductFrame() {
     if (!last || last.label !== item.section) sections.push({ label: item.section, items: [item] })
     else last.items.push(item)
   }
+  const now = new Date()
 
   return (
-    <div className="lp-app" role="img" aria-label="Het dashboard van een project in Buuur, met zijbalk, kengetallen en het eerstvolgende event">
+    <div className="lp-app" role="img" aria-label="Het dashboard van een project in Buuur: de dag van vandaag, een begroeting met wat er klaarstaat en het eerstvolgende event">
       <aside className="lp-app__side">
         <div className="lp-app__proj"><i className="fa-solid fa-people-roof" aria-hidden="true" /> Demoproject</div>
         {sections.map(section => (
@@ -306,29 +339,33 @@ function ProductFrame() {
         ))}
       </aside>
       <div className="lp-app__main">
-        <div className="lp-app__banner"><i className="fa-solid fa-eye" aria-hidden="true" /> Dit is een demo. Je kijkt rond in een voorbeeldproject.</div>
-        <div className="lp-app__title"><b>Demoproject</b><span>Nieuwe woongemeenschap waar iedereen aan deel kan nemen.</span></div>
-        <div className="lp-tiles">
-          <div className="lp-tile"><b>Lid</b><span>Jouw rol</span></div>
-          <div className="lp-tile"><CountUp to={53} /><span>Leden</span></div>
-          <div className="lp-tile"><CountUp to={11} /><span>Nieuws</span></div>
-          <div className="lp-tile"><b>Voorlopig Ontwerp</b><span>Fase</span></div>
+        <div className="lp-app__top">Demoproject</div>
+        <div className="lp-app__day">
+          <b>{cap(DAYS_LONG[now.getDay()])}<i className="lp-app__dot" /></b>
+          <span>{now.getDate()} {MONTHS[now.getMonth()]}<br />{now.getFullYear()}</span>
         </div>
-        <div className="lp-mini">
-          <div className="lp-mini__k"><i className="fa-solid fa-calendar-check" style={{ color: 'var(--clean-upcoming)' }} aria-hidden="true" /> Eerstvolgende event</div>
-          <div className="lp-mini__t">Informatieavond voor nieuwe leden</div>
-          <div className="lp-mini__m">20 sep · 21:00 · Buurthuis De Meevaart, Amsterdam</div>
-        </div>
-        <div className="lp-mini">
-          <div className="lp-mini__k"><i className="fa-solid fa-bullhorn" style={{ color: 'var(--clean-today)' }} aria-hidden="true" /> Laatste update</div>
-          <div className="lp-mini__t">Definitief ontwerp is klaar</div>
-          <div className="lp-mini__m">Sophie van der Berg · 4 dagen geleden</div>
-        </div>
-        <div className="lp-mini">
-          <div className="lp-mini__k"><i className="fa-solid fa-users" style={{ color: 'var(--accent-pink)' }} aria-hidden="true" /> Nieuwste leden</div>
-          <div className="lp-avs">
-            <span className="lp-av">S</span><span className="lp-av">H</span><span className="lp-av">T</span><span className="lp-av">T</span>
-            <span className="lp-av lp-av--plus">+</span>
+        <p className="lp-app__sentence">
+          {greetingFor(now.getHours())}, <em className="lp-app__ink">Sanne</em>. Je hebt{' '}
+          <span className="lp-app__ink"><i className="fa-solid fa-signature" style={{ color: 'var(--nav-dossier)' }} /> 1&nbsp;tekenverzoek</span> en{' '}
+          <span className="lp-app__ink"><i className="fa-solid fa-bullhorn" style={{ color: 'var(--clean-today)' }} /> nieuw projectnieuws</span>.
+        </p>
+        <div className="lp-app__rows">
+          <div className="lp-app__row">
+            <i className="fa-solid fa-calendar-check" style={{ color: 'var(--clean-upcoming)' }} aria-hidden="true" />
+            <span className="lp-app__t">Informatieavond voor nieuwe leden</span>
+            <span className="lp-app__m">za 20:00</span>
+          </div>
+          <div className="lp-app__row">
+            <i className="fa-solid fa-bullhorn" style={{ color: 'var(--clean-today)' }} aria-hidden="true" />
+            <span className="lp-app__t">Definitief ontwerp is klaar</span>
+            <span className="lp-app__m">4 dagen</span>
+          </div>
+          <div className="lp-app__row">
+            <i className="fa-solid fa-users" style={{ color: 'var(--accent-pink)' }} aria-hidden="true" />
+            <span className="lp-app__t"><CountUp to={53} /> leden, 4 nieuw</span>
+            <span className="lp-avs">
+              <span className="lp-av">S</span><span className="lp-av">H</span><span className="lp-av">T</span>
+            </span>
           </div>
         </div>
       </div>
@@ -462,11 +499,12 @@ export default function Landing() {
   useEffect(() => {
     const prev = document.title
     document.title = 'Buuur, eerst buren, dan bouwen'
+    loadFonts(['Instrument Serif'])
     return () => { document.title = prev }
   }, [])
 
   return (
-    <div className="lp" ref={rootRef}>
+    <div className="lp" data-look="fris" ref={rootRef}>
       <nav className="lp-nav" aria-label="Hoofdnavigatie">
         <div className="lp-nav__in">
           <Link to="/" className="lp-logo">
@@ -495,8 +533,8 @@ export default function Landing() {
         <div className="lp-wrap">
           <div className="lp-hero">
             <div className="lp-hero__text" data-reveal>
-              <Eyebrow><i className="fa-solid fa-people-roof" aria-hidden="true" /> {HERO.eyebrow}</Eyebrow>
-              <h1>{HERO.title}</h1>
+              <Eyebrow>{HERO.eyebrow}</Eyebrow>
+              <h1><InkTitle text={HERO.title} /></h1>
               <p className="lp-lead">{HERO.lead}</p>
               <div className="lp-hero__cta">
                 <Link to={primaryTo} className="lp-btn">{primaryLabel} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></Link>

@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { loadFonts } from '../lib/fonts'
 import { START } from '../content/landing'
 import '../styles/landing.css'
 
 const SEGMENTS = START.segments
 
 function bubbleStyle(name) {
-  return { '--lp-b-bg': `var(--lp-bub-${name}-bg)`, '--lp-b-fg': `var(--lp-bub-${name}-fg)` }
+  return { '--lp-b-bg': `var(--lp-bub-${name}-bg)`, '--lp-b-fg': `var(--lp-bub-${name}-fg)`, '--lp-b-ic': `var(--lp-ic-${name})` }
 }
 
 export default function Start() {
@@ -28,6 +29,8 @@ export default function Start() {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => { loadFonts(['Instrument Serif']) }, [])
 
   function pickSegment(key) {
     setSearchParams({ segment: key })
@@ -66,7 +69,7 @@ export default function Start() {
   const firstName = form.name.trim().split(' ')[0]
 
   return (
-    <div className="lp">
+    <div className="lp" data-look="fris">
       <nav className="lp-nav" aria-label="Hoofdnavigatie">
         <div className="lp-nav__in">
           <Link to="/" className="lp-logo">
