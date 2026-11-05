@@ -454,3 +454,25 @@
 
 /* Vergrendelde pagina (sheet/gesprek open): niets mag erachter meescrollen. */
 html.scroll-locked, html.scroll-locked body { overscroll-behavior: none; }
+
+/* ── Groepsiconen (Font Awesome in een paletkleur, zie lib/groupIcons.js) ── */
+.chat-av--glyph { background: var(--bg-hover); }
+.grp-icon__btn { font-size: 19px; display: flex; align-items: center; justify-content: center; }
+.grp-icon__menu { display: flex; flex-direction: column; gap: 8px; width: 264px; padding: 10px; }
+.grp-icon__grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
+.grp-icon__grid button {
+  height: 44px; border: none; border-radius: var(--radius-sm); background: transparent; cursor: pointer; font-size: 18px;
+  transition: background-color 150ms, transform 150ms var(--ease-spring);
+}
+.grp-icon__grid button:hover { background: var(--bg-hover); transform: scale(1.08); }
+.grp-icon__grid button.on { background: var(--bg-active); }
+.grp-icon__colors { display: flex; justify-content: space-between; align-items: center; gap: 4px; padding: 10px 6px 4px; border-top: 1px solid var(--border-default); }
+.grp-icon__colors .grp-icon__swatch {
+  flex: none; padding: 0; width: 26px; height: 26px; border-radius: 50%; border: none; cursor: pointer; background: var(--swatch);
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 2px transparent; transition: box-shadow 150ms, transform 150ms var(--ease-spring);
+}
+.grp-icon__colors .grp-icon__swatch:hover { background: var(--swatch); transform: scale(1.12); }
+.grp-icon__colors .grp-icon__swatch.on { background: var(--swatch); box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--swatch); }
+@media (max-width: 768px) {
+  .modal-overlay--sheet .grp-icon__menu { width: auto; }
+}

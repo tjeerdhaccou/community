@@ -69,7 +69,7 @@ function digestEmail(name: string | null, project: string, groups: { title: stri
   const total = groups.reduce((n, g) => n + g.unread, 0)
   const rows = groups.map((g) => `
     <div style="border-top:1px solid #ECE8E1;padding:12px 0;display:flex">
-      <div style="font-size:14px;font-weight:600">${g.emoji ? escapeHtml(g.emoji) + ' ' : ''}${escapeHtml(g.title)} <span style="color:#9BA1B0;font-weight:400">· ${g.unread} ${g.unread === 1 ? 'nieuw bericht' : 'nieuwe berichten'}</span></div>
+      <div style="font-size:14px;font-weight:600">${g.emoji && !String(g.emoji).startsWith('fa:') ? escapeHtml(g.emoji) + ' ' : ''}${escapeHtml(g.title)} <span style="color:#9BA1B0;font-weight:400">· ${g.unread} ${g.unread === 1 ? 'nieuw bericht' : 'nieuwe berichten'}</span></div>
       <div style="font-size:14px;color:#5A5F72;margin-top:3px;line-height:1.5">${escapeHtml(snippet(g.last, 140))}</div>
     </div>`).join('')
   return shell(`<p style="font-size:16px;margin:0 0 4px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 10px">${periode} ${total} ${total === 1 ? 'nieuw bericht' : 'nieuwe berichten'} in je groepen bij ${escapeHtml(project)}.</p>${rows}<div style="margin-top:22px">${button(link, 'Open de chat')}</div>`, unsub)

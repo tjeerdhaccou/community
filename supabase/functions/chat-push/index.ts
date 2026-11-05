@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
   const text = msg.body?.trim() ? msg.body.trim() : '📎 Bijlage'
   const isGroup = t.kind === 'group'
   const payload = JSON.stringify({
-    title: isGroup ? `${t.emoji ? t.emoji + ' ' : ''}${t.title}` : ((msg.sender as Row)?.full_name || 'Nieuw bericht'),
+    title: isGroup ? `${t.emoji && !String(t.emoji).startsWith('fa:') ? t.emoji + ' ' : ''}${t.title}` : ((msg.sender as Row)?.full_name || 'Nieuw bericht'),
     body: isGroup ? `${sender}: ${text}` : text,
     url: threadLink(t.project, t.id),
     tag: `chat-${t.id}`,

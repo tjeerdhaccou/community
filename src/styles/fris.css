@@ -957,3 +957,8 @@ html[data-look="fris"][data-theme="dark"] .tour-root {
   --tour-bg-2: #4762FF;
   --tour-grad: linear-gradient(160deg, #3A56FF 0%, #213CE6 100%);
 }
+
+/* Groepsiconen in de chat: zacht grijs rondje, icoon in kleur */
+[data-look="fris"] .chat-av--glyph { background: var(--fris-fill); border: none; }
+[data-look="fris"] .grp-icon__btn { background: var(--fris-fill); border: none; border-radius: 14px; }
+[data-look="fris"] .grp-icon__menu { border-radius: 18px; }
