@@ -62,7 +62,7 @@ export default function Dashboard() {
         supabase.from('meetings').select('*').eq('project_id', project.id).gte('date', new Date().toISOString()).order('date', { ascending: true }).limit(1),
         supabase.from('updates').select('*, author:profiles(id, full_name, avatar_url)').eq('project_id', project.id).order('created_at', { ascending: false }).limit(1),
         supabase.from('posts').select('*, author:profiles(id, full_name, avatar_url)').eq('project_id', project.id).eq('is_hidden', false).order('created_at', { ascending: false }).limit(3),
-        supabase.from('memberships').select('*, profile:profiles(id, full_name, avatar_url)').eq('project_id', project.id).order('joined_at', { ascending: false }).limit(5),
+        supabase.from('memberships').select('*, profile:profiles(id, full_name, avatar_url)').eq('project_id', project.id).order('joined_at', { ascending: false }).limit(readOnly ? 30 : 5),
         supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('project_id', project.id).neq('role', 'guest'),
         supabase.from('updates').select('id', { count: 'exact', head: true }).eq('project_id', project.id),
         supabase.from('intake_responses').select('id', { count: 'exact', head: true }).eq('project_id', project.id).eq('status', 'pending'),
@@ -84,7 +84,11 @@ export default function Dashboard() {
         nextEvent: eventRes.data?.[0] || null,
         latestUpdate: updateRes.data?.[0] || null,
         latestPosts: postsRes.data || [],
-        newMembers: membersRes.data || [],
+        // In de demo staan testaccounts zonder foto tussen de nieuwste leden;
+        // daar tonen we alleen de demo-personen met een foto.
+        newMembers: readOnly
+          ? (membersRes.data || []).filter((m) => m.profile?.avatar_url).slice(0, 8)
+          : (membersRes.data || []),
         intakePending: intakeRes.count || 0,
         docRequests: docReqRes.count || 0,
         intakeRequest: intakeReqRes.data?.[0] || null,
@@ -95,7 +99,7 @@ export default function Dashboard() {
 
     loadFeed()
     return () => { stale = true }
-  }, [project?.id])
+  }, [project?.id, readOnly])
 
   // Realtime: verwijder een betaalverzoek-banner zodra 'ie paid/refunded/cancelled/expired
   // wordt (bv. Mollie webhook update de status). Zonder deze subscription bleef

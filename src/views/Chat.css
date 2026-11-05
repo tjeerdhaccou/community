@@ -483,18 +483,14 @@ html.scroll-locked, html.scroll-locked body { overscroll-behavior: none; }
 @media (min-width: 769px) {
   [data-look="fris"] .chat-list { position: relative; transition: width 320ms var(--ease-smooth); }
   [data-look="fris"] .chat-rail__toggle {
-    display: flex; align-items: center; justify-content: center;
-    position: absolute; top: 18px; right: -16px; z-index: 3;
-    width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
-    background: var(--bg-surface); color: var(--text-secondary); font-size: 12px;
-    box-shadow: 0 0 0 1px var(--border-default), 0 4px 12px -4px rgba(26, 26, 46, 0.2);
-    opacity: 0; transition: opacity 180ms, transform 180ms var(--ease-spring), color 150ms;
+    display: flex; align-items: center; justify-content: center; flex: none;
+    width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
+    background: transparent; color: var(--text-tertiary); font-size: 13px;
+    transition: background-color 150ms, color 150ms, transform 160ms var(--ease-spring);
   }
-  [data-look="fris"] .chat-list:hover .chat-rail__toggle,
-  [data-look="fris"] .chat-rail__toggle:focus-visible,
-  [data-look="fris"] .chat-list--rail .chat-rail__toggle { opacity: 1; }
-  [data-look="fris"] .chat-rail__toggle:hover { color: var(--text-primary); transform: scale(1.08); }
-
+  [data-look="fris"] .chat-rail__toggle:hover { background: var(--fris-fill); color: var(--text-primary); }
+  [data-look="fris"] .chat-rail__toggle:active { transform: scale(0.92); }
+  [data-look="fris"] .chat-list--rail .chat-rail__toggle { order: -1; }
   [data-look="fris"] .chat-list--rail { width: 76px; overflow: visible; }
   [data-look="fris"] .chat-list--rail .chat-list__search {
     flex-direction: column; align-items: center; gap: 8px; padding: 12px 0 8px;
