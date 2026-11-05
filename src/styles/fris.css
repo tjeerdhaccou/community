@@ -63,19 +63,19 @@
 
 /* Elke view komt zacht binnen bij navigatie (de Outlet mount opnieuw). */
 [data-look="fris"] .main-content > *:not(.main-topbar) {
-  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) both;
+  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards;
 }
 
 /* Dashboard: de blokken na elkaar */
 [data-look="fris"] .main-content > .view-dashboard { animation: none; }
 [data-look="fris"] .view-dashboard > * {
-  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) both;
+  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards;
 }
 [data-look="fris"] .view-dashboard > :nth-child(2) { animation-delay: 80ms; }
 [data-look="fris"] .view-dashboard > :nth-child(3) { animation-delay: 160ms; }
 [data-look="fris"] .view-dashboard > :nth-child(4) { animation-delay: 240ms; }
 [data-look="fris"] .view-dashboard > :nth-child(n+5) { animation-delay: 320ms; }
-[data-look="fris"] .dash-feed > * { animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) both; }
+[data-look="fris"] .dash-feed > * { animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards; }
 [data-look="fris"] .dash-feed > :nth-child(1) { animation-delay: 380ms; }
 [data-look="fris"] .dash-feed > :nth-child(2) { animation-delay: 440ms; }
 [data-look="fris"] .dash-feed > :nth-child(3) { animation-delay: 500ms; }
@@ -136,7 +136,7 @@
 
 .fris-ink {
   color: var(--text-primary);
-  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) both;
+  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) backwards;
 }
 
 .fris-chip {
@@ -154,7 +154,7 @@
   text-decoration-thickness: 1.5px;
   text-underline-offset: 0.15em;
   transition: text-decoration-color 200ms var(--ease-default);
-  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) both;
+  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) backwards;
 }
 .fris-chip:hover { text-decoration-color: currentColor; }
 .fris-chip:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
@@ -163,7 +163,7 @@
   font-size: 0.72em;
   margin-right: 0.22em;
   vertical-align: 0.06em;
-  animation: fris-pop 620ms var(--ease-spring) var(--fris-delay, 0ms) both;
+  animation: fris-pop 620ms var(--ease-spring) var(--fris-delay, 0ms) backwards;
 }
 
 /* ── Dashboard: rijen met stippellijnen in plaats van kaarten ──────────────── */
@@ -284,6 +284,197 @@
     transition: transform var(--fris-dur-move) var(--ease-spring);
   }
 }
+
+/* ── Weekstrip (FrisWeek) ──────────────────────────────────────────────────── */
+
+.fris-week { margin: -4px 0 28px; max-width: 640px; }
+.fris-week__strip {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  padding-bottom: 12px;
+  border-bottom: var(--fris-rule);
+}
+.fris-week__marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc((100% - 12px) / 7);
+  height: calc(100% - 12px);
+  box-sizing: border-box;
+  border: 1.5px solid var(--border-default);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+  transform: translateX(calc(var(--slot, 0) * (100% + 2px)));
+  transition: transform var(--fris-dur-move) var(--ease-spring);
+}
+.fris-week__day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-height: 60px;
+  padding: 9px 0 7px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  font: inherit;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color 200ms var(--ease-default), transform var(--fris-dur-press) var(--ease-spring);
+}
+.fris-week__day:active { transform: scale(0.94); }
+.fris-week__day--selected { color: var(--text-primary); }
+.fris-week__num { font-size: 20px; font-weight: 600; line-height: 1; }
+.fris-week__label { font-size: 10px; font-weight: 600; letter-spacing: 0.04em; color: var(--text-secondary); }
+.fris-week__day--today .fris-week__label { color: var(--accent-red); }
+.fris-week__dot { width: 4px; height: 4px; border-radius: 50%; }
+.fris-week__dot--on { background: var(--dot-c); }
+
+.fris-week__list { animation: fris-rise 380ms var(--fris-ease-enter) backwards; }
+.fris-week__list--b { animation-name: fris-rise-b; }
+@keyframes fris-rise-b { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.fris-week__empty {
+  margin: 0;
+  padding: 16px 4px;
+  font-size: 15px;
+  color: var(--text-secondary);
+  border-bottom: var(--fris-rule);
+}
+.fris-week__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 56px;
+  padding: 0 4px;
+  border: none;
+  border-bottom: var(--fris-rule);
+  background: none;
+  font: inherit;
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 200ms var(--ease-default);
+}
+.fris-week__row:hover { background: var(--bg-hover); }
+.fris-week__ic { font-size: 18px; transition: transform 320ms var(--ease-spring); }
+.fris-week__row:hover .fris-week__ic { transform: scale(1.18) rotate(-8deg); }
+.fris-week__title { flex: 1; min-width: 0; font-size: 16px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fris-week__meta { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+.fris-week__chev {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 200ms, transform 260ms var(--ease-spring);
+}
+.fris-week__row:hover .fris-week__chev { opacity: 1; transform: none; }
+
+/* ── Filters (prikbord, nieuws, events, documenten, leden) ─────────────────── */
+
+[data-look="fris"] .tag-filter { gap: 4px 20px; }
+[data-look="fris"] .tag-filter__pill {
+  position: relative;
+  padding: 10px 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  transition: color 200ms var(--ease-default);
+}
+[data-look="fris"] .tag-filter__pill::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 360ms var(--ease-spring);
+}
+[data-look="fris"] .tag-filter__pill:hover { color: var(--text-primary); border-color: transparent; }
+[data-look="fris"] .tag-filter__pill--active,
+[data-look="fris"] .tag-filter__pill--active:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+[data-look="fris"] .tag-filter__pill--active::after { transform: scaleX(1); }
+
+/* ── Prikbord: berichten als rijen ─────────────────────────────────────────── */
+
+[data-look="fris"] .feed-composer-prompt {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: var(--fris-rule);
+  padding: 14px 4px;
+}
+[data-look="fris"] .feed-composer-prompt:hover { box-shadow: none; background: var(--bg-hover); }
+
+[data-look="fris"] .feed-list { gap: 0; border-top: var(--fris-rule); }
+[data-look="fris"] .feed-card {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: var(--fris-rule);
+  padding: 20px 8px;
+  transition: background-color 200ms var(--ease-default);
+}
+[data-look="fris"] .feed-card:hover {
+  background: var(--bg-hover);
+  box-shadow: none;
+  transform: none;
+}
+[data-look="fris"] .feed-list > * { animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards; }
+[data-look="fris"] .feed-list > :nth-child(2) { animation-delay: 60ms; }
+[data-look="fris"] .feed-list > :nth-child(3) { animation-delay: 120ms; }
+[data-look="fris"] .feed-list > :nth-child(4) { animation-delay: 180ms; }
+[data-look="fris"] .feed-list > :nth-child(n+5) { animation-delay: 240ms; }
+
+/* Tag als gekleurd stipje + tekst in plaats van een pil (inline style zet de achtergrond) */
+[data-look="fris"] .feed-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent !important;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+[data-look="fris"] .feed-card__tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+[data-look="fris"] .feed-card__action-btn {
+  transition: transform var(--fris-dur-press) var(--ease-spring), color 200ms, background-color 200ms;
+}
+[data-look="fris"] .feed-card__action-btn:active { transform: scale(0.88); }
+[data-look="fris"] .feed-card__action-btn--followed i { animation: fris-pop 520ms var(--ease-spring); color: var(--accent-green); }
+[data-look="fris"] .feed-card__reaction-icon { animation: fris-pop 520ms var(--ease-spring) backwards; }
+
+@keyframes fris-pick-in {
+  from { opacity: 0; transform: translateY(6px) scale(0.85); }
+  to   { opacity: 1; transform: none; }
+}
+[data-look="fris"] .feed-reaction-picker { animation: fris-pick-in 280ms var(--ease-spring); transform-origin: bottom right; }
+[data-look="fris"] .feed-reaction-picker__btn i { transition: transform 260ms var(--ease-spring); }
+[data-look="fris"] .feed-reaction-picker__btn:hover i { transform: scale(1.35) rotate(-10deg); }
+[data-look="fris"] .feed-reaction-picker__btn:active i { transform: scale(0.9); }
+
+[data-look="fris"] .feed-trending-item { transition: background-color 200ms var(--ease-default); }
 
 /* ── Toggle zelf ───────────────────────────────────────────────────────────── */
 
