@@ -44,7 +44,7 @@ function RoadmapItem({ item }) {
 }
 
 function RoadmapPhase({ phase, index }) {
-  const { style } = useTheme()
+  const { style, look } = useTheme()
   const [open, setOpen] = useState(phase.status === 'active')
 
   const doneItems = phase.items?.filter(i => i.is_done).length || 0
@@ -57,7 +57,9 @@ function RoadmapPhase({ phase, index }) {
   const slot = index % 6
   const numStyle = style === 'crowdbuilding'
     ? { background: `var(--rm-phase-${slot}-bg)`, color: `var(--rm-phase-${slot}-fg)` }
-    : { background: phase.color }
+    : look === 'fris'
+      ? { color: phase.color }
+      : { background: phase.color }
 
   return (
     <div className={`roadmap-phase ${open ? 'roadmap-phase--open' : ''} roadmap-phase--${phase.status}`}>

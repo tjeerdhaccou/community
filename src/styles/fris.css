@@ -126,7 +126,7 @@
 }
 .fris-greeting__sentence {
   margin: 24px 0 0;
-  max-width: 640px;
+  max-width: 980px;
   font-family: var(--font-display);
   font-size: clamp(28px, 4.2vw, 40px);
   line-height: 1.18;
@@ -287,7 +287,7 @@
 
 /* ── Weekstrip (FrisWeek) ──────────────────────────────────────────────────── */
 
-.fris-week { margin: -4px 0 28px; max-width: 640px; }
+.fris-week { margin: -4px 0 28px; }
 .fris-week__strip {
   position: relative;
   display: grid;
@@ -720,3 +720,165 @@
   animation: fris-rise 320ms var(--fris-ease-enter) backwards;
 }
 [data-look="fris"] .modal-header h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+
+/* ============================================================================
+   Kleur: knalliger. Basisblauw richting Yves Klein, de modulekleuren
+   verzadigder. Projectbranding (app_accent_color) wint nog steeds, want die
+   wordt inline op :root gezet.
+   ============================================================================ */
+
+[data-look="fris"] {
+  --fris-blue:           #2341FF;
+  --accent-primary:      var(--fris-blue);
+  --accent-blue:         var(--fris-blue);
+  --accent-blue-rgb:     35, 65, 255;
+  --border-focus:        var(--fris-blue);
+  --tag-blue-bg:         rgba(35, 65, 255, 0.10);
+  --tag-blue-text:       #1B34D9;
+
+  --accent-yellow:       #FFC107;
+  --accent-orange:       #FF8A00;
+  --accent-red:          #FF3B30;
+  --accent-green:        #14C964;
+  --accent-pink:         #FF2D78;
+  --accent-purple:       #8A3FFC;
+
+  --clean-inbox:         var(--fris-blue);
+  --clean-today:         #FFB800;
+  --clean-upcoming:      #FF3B30;
+  --clean-anytime:       #14C964;
+  --nav-dossier:         #00B8A9;
+  --nav-prikbord:        #FF8A00;
+  --nav-roadmap:         #5A4BFF;
+  --nav-documenten:      #8A3FFC;
+  --nav-leden:           #FF2D78;
+  --nav-organisatie:     #E0A100;
+}
+[data-look="fris"][data-theme="dark"] {
+  --fris-blue:           #6B80FF;
+  --accent-blue-rgb:     107, 128, 255;
+  --tag-blue-bg:         rgba(107, 128, 255, 0.18);
+  --tag-blue-text:       #9AA8FF;
+}
+
+/* ============================================================================
+   Schoonheidsfoutjes
+   ============================================================================ */
+
+/* Rijen: inhoud en hover-pijl niet tegen de rand. De hover wordt een zacht
+   afgerond vlak; de stippellijn eronder valt dan even weg, zodat er geen
+   gebogen stippellijn ontstaat. */
+[data-look="fris"] .dash-card { padding: 18px 16px; }
+[data-look="fris"] .feed-card { padding: 20px 16px; }
+[data-look="fris"] .fris-week__row { padding: 0 16px; }
+[data-look="fris"] .fris-week__empty { padding: 16px; }
+[data-look="fris"] .dash-intake-alert { padding: 16px; }
+[data-look="fris"] :is(.dash-card, .dash-intake-alert, .feed-card, .event-card, .update-card, .member-row, .fris-week__row, .chat-conv) {
+  transition: background-color 200ms var(--ease-default), border-color 200ms var(--ease-default), border-radius 200ms var(--ease-default);
+}
+[data-look="fris"] :is(.dash-card, .dash-intake-alert, .feed-card, .event-card, .update-card, .member-row, .fris-week__row):hover {
+  background: var(--fris-fill);
+  border-radius: 16px;
+  border-bottom-color: transparent;
+}
+[data-look="fris"] :is(.dash-card__arrow, .dash-intake-alert__arrow) { align-self: center; margin-right: 4px; }
+
+/* Dashboard-statistieken in dezelfde lijn: geen kaartjes, zacht vlak bij hover */
+[data-look="fris"] .dash-stat { border-radius: 16px; }
+[data-look="fris"] .dash-stat:hover { background: var(--fris-fill); box-shadow: none; transform: none; }
+
+/* Chat: geen verticale lijn; gesprekken met wat lucht zodat het geselecteerde
+   vlak nergens tegenaan ligt */
+[data-look="fris"] .chat-list { border-right: none; }
+[data-look="fris"] .view-chat { gap: 32px; }
+[data-look="fris"] .chat-convs { padding: 0 2px 8px; }
+[data-look="fris"] .chat-conv { border-radius: 16px; }
+[data-look="fris"] .chat-conv:hover,
+[data-look="fris"] .chat-conv--active,
+[data-look="fris"] .chat-conv--active:hover { border-bottom-color: transparent; box-shadow: none; }
+[data-look="fris"] .chat-head { padding: 6px 0 16px; }
+[data-look="fris"] .chat-foot { padding: 12px 0 4px; }
+
+/* Push-banner in de chat: zacht vlak in plaats van een blauwe kaart */
+[data-look="fris"] .push-banner { background: var(--fris-fill); box-shadow: none; border: none; border-radius: 20px; }
+[data-look="fris"] .push-banner__ic { background: var(--text-primary); color: var(--bg-surface); }
+
+/* Sidebar: geen losse scheidingslijn onder de projectnaam */
+[data-look="fris"] .sidebar-project-header { border-bottom: none; padding-bottom: 12px; }
+[data-look="fris"] .cl-nav-item { border-radius: 14px; }
+[data-look="fris"] .cl-nav-item--active { background: var(--fris-fill-strong); color: var(--text-primary); }
+
+/* ============================================================================
+   Strakker: geen ronde kaarten met zachte schaduw meer. Lijsten zijn rijen
+   met een stippellijn en een recht hover-vlak; losse panelen zijn vlak.
+   (Overschrijft de afgeronde hover hierboven.)
+   ============================================================================ */
+
+/* Rijen */
+[data-look="fris"] :is(
+  .dash-card, .dash-intake-alert, .feed-card, .update-card, .post-card, .event-card,
+  .member-row, .pro-update-card, .agenda-item, .decision-item, .action-item,
+  .file-row, .doc-archive-item, .doc-row, .adviseur-card, .roadmap-phase
+) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  border-bottom: var(--fris-dot);
+}
+[data-look="fris"] :is(
+  .dash-card, .dash-intake-alert, .feed-card, .update-card, .post-card, .event-card,
+  .member-row, .pro-update-card, .agenda-item, .decision-item, .action-item,
+  .file-row, .doc-archive-item, .doc-row, .adviseur-card, .fris-week__row
+):hover {
+  background: var(--fris-fill);
+  border-radius: 0;
+  border-bottom-color: var(--border-subtle);
+  box-shadow: none;
+  transform: none;
+}
+/* Een update-kaart met foto: de foto niet afgerond, het hover-vlak zit al op de
+   binnenste rij */
+[data-look="fris"] .update-card:hover { background: transparent; }
+[data-look="fris"] .update-card .feed-card { border-bottom: none; }
+[data-look="fris"] .update-card img { border-radius: 0; }
+
+/* Roadmap: fasen als rijen, nummer los in de fasekleur */
+[data-look="fris"] .roadmap-phase--open { box-shadow: none; }
+[data-look="fris"] .roadmap-phase__head { padding: 18px 16px; }
+[data-look="fris"] .roadmap-phase__head:hover { background: var(--fris-fill); }
+[data-look="fris"] .roadmap-phase__num {
+  width: 36px;
+  background: transparent;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* Panelen: vlak, geen schaduw of ronde kaart */
+[data-look="fris"] :is(
+  .profile-section, .settings-section, .member-welcome, .profile-progress, .dash-stepper,
+  .members-pending-banner, .dash-guest-banner, .ledenwerving-card, .ledenwerving-url-bar
+) {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  padding-left: 0;
+  padding-right: 0;
+  border-bottom: var(--fris-dot);
+}
+
+/* Tegels in een grid: zacht grijs vlak, kleine hoek, geen schaduw */
+[data-look="fris"] :is(.request-card, .docs-grid__card, .member-card, .project-card, .org-project-card) {
+  background: var(--fris-fill);
+  box-shadow: none;
+  border-radius: 6px;
+}
+[data-look="fris"] :is(.request-card, .docs-grid__card, .member-card, .project-card, .org-project-card):hover {
+  background: var(--fris-fill-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Chat: geen stippellijn onder gesprekken, alleen ruimte; het geselecteerde
+   gesprek is een afgerond vlak zoals een gekozen dag */
+[data-look="fris"] .chat-conv { border-bottom: none; margin-bottom: 2px; }
