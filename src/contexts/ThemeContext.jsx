@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { safeStorage } from '../lib/safeStorage'
 import { accentVars, ACCENT_VAR_NAMES } from '../lib/brandAccent'
+import { loadFonts } from '../lib/fonts'
+
+const LOOK_KEY = 'buuur-look'
 
 const ThemeContext = createContext(null)
 
@@ -37,6 +40,17 @@ export function ThemeProvider({ children, projectBranding, scope }) {
     : () => {}
   const toggleDark = () => setDark(!dark)
 
+  // "Fris" is een opt-in beta-laag bovenop de Clean-stijl, per browser onthouden.
+  // Bij het CrowdBuilding-thema valt hij weg: die huisstijl blijft leidend.
+  const [lookPref, setLookPref] = useState(() => (safeStorage.getItem(LOOK_KEY) === 'fris' ? 'fris' : 'clean'))
+  const lookAvailable = !!storageKey && style === 'clean'
+  const look = lookAvailable ? lookPref : 'clean'
+  const toggleLook = () => {
+    const next = lookPref === 'fris' ? 'clean' : 'fris'
+    safeStorage.setItem(LOOK_KEY, next)
+    setLookPref(next)
+  }
+
   // data-theme = stijl × licht/donker.
   const dataTheme = !storageKey
     ? 'light'
@@ -47,6 +61,16 @@ export function ThemeProvider({ children, projectBranding, scope }) {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dataTheme)
   }, [dataTheme])
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (look === 'fris') {
+      loadFonts(['Instrument Serif'])
+      root.setAttribute('data-look', 'fris')
+    } else {
+      root.removeAttribute('data-look')
+    }
+  }, [look])
 
   // Zonder handmatige keuze het thema bijwerken wanneer het tabblad weer zichtbaar
   // wordt — zo wordt het 's avonds donker zonder herladen.
@@ -89,7 +113,7 @@ export function ThemeProvider({ children, projectBranding, scope }) {
   }, [projectBranding?.app_accent_color, projectBranding?.app_structure_color, dark])
 
   return (
-    <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey }}>
+    <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey, look, lookAvailable, toggleLook }}>
       {children}
     </ThemeContext.Provider>
   )

@@ -13,6 +13,9 @@ import { useSignatureRequestCount } from '../hooks/useSignatureRequestCount'
 import { useToast } from '../components/Toast'
 import { friendlyError } from '../lib/logger'
 import { navColor } from '../lib/navigation'
+import { useTheme } from '../contexts/ThemeContext'
+import { useSidebarSignals } from '../hooks/useSidebarSignals'
+import FrisGreeting from '../components/FrisGreeting'
 
 export default function Dashboard() {
   const { project, role, loading, basePath, onboardingActive, readOnly } = useProject()
@@ -33,6 +36,8 @@ export default function Dashboard() {
   }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
   const { activePhase } = useRoadmap(project?.id)
   const signatureCount = useSignatureRequestCount()
+  const { look } = useTheme()
+  const { unread } = useSidebarSignals()
   const toast = useToast()
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, paymentRequests: [], stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
@@ -192,8 +197,21 @@ export default function Dashboard() {
 
   return (
     <div className="view-dashboard">
+      {look === 'fris' && (
+        <FrisGreeting
+          projectName={project.name}
+          firstName={(profile?.full_name || '').split(' ')[0]}
+          basePath={basePath}
+          signatureCount={signatureCount}
+          docRequests={feed.docRequests}
+          paymentCount={feed.paymentRequests.length}
+          unread={unread}
+          nextEvent={feed.nextEvent}
+        />
+      )}
+
       {/* Header with project info */}
-      <div className="dash-header">
+      {look !== 'fris' && <div className="dash-header">
         <div className="dash-header__info">
           {project.logo_url && <img src={project.logo_url} alt={project.name + ' logo'} className="dash-header__logo" />}
           <div>
@@ -206,7 +224,7 @@ export default function Dashboard() {
             <i className="fa-solid fa-circle-info" /> Over dit project
           </button>
         )}
-      </div>
+      </div>}
 
       {/* Stats row — meteen onder de header voor projectcontext in één oogopslag */}
       <div className="dash-stats">

@@ -86,11 +86,13 @@ export default function BottomNav() {
   function dotFor(to) {
     return (to === 'community' && unread.board) || (to === 'updates' && unread.updates) || (to === 'events' && unread.events)
   }
+  const activeSlot = moreActive || moreOpen ? primary.length : primary.findIndex((i) => isActive(i.to))
   const moreHasSignal = moreSections.some((s) => s.items.some((i) => badgeFor(i.to) || dotFor(i.to)))
 
   return (
     <>
       <nav className="bottom-nav" role="navigation" aria-label="Mobiele navigatie">
+        {activeSlot >= 0 && <span className="bottom-nav__pill" style={{ '--slot': activeSlot }} aria-hidden="true" />}
         {primary.map((item) => {
           const badge = badgeFor(item.to)
           return (
@@ -101,12 +103,12 @@ export default function BottomNav() {
               className={`bottom-nav-item ${isActive(item.to) ? 'bottom-nav-item--active' : ''}`}
               aria-current={isActive(item.to) ? 'page' : undefined}
             >
-              <span className="bottom-nav-item__ic">
+              <span className="bottom-nav-item__ic" style={{ '--nav-c': item.color }}>
                 <i className={item.icon} aria-hidden="true" />
                 {badge && <span className="bottom-nav-badge">{badge}</span>}
                 {!badge && dotFor(item.to) && <span className="bottom-nav-dot" aria-label="Nieuw" />}
               </span>
-              <span>{item.shortLabel || item.label}</span>
+              <span className="bottom-nav-item__label">{item.shortLabel || item.label}</span>
             </button>
           )
         })}
@@ -121,7 +123,7 @@ export default function BottomNav() {
             <i className="fa-solid fa-ellipsis" aria-hidden="true" />
             {moreHasSignal && !moreOpen && <span className="bottom-nav-dot" aria-label="Nieuw" />}
           </span>
-          <span>Meer</span>
+          <span className="bottom-nav-item__label">Meer</span>
         </button>
       </nav>
 

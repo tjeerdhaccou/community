@@ -1,0 +1,324 @@
+/* ============================================================================
+   FRIS — opt-in beta-look bovenop de Clean-stijl
+   Actief via html[data-look="fris"] (ThemeContext, toggle in topbar/gebruikersmenu).
+   Nooit samen met het CrowdBuilding-thema. Alles hier is een overlay: zonder
+   het attribuut verandert er niets.
+   ============================================================================ */
+
+[data-look="fris"] {
+  --font-display:        'Instrument Serif', Georgia, 'Times New Roman', serif;
+
+  --fris-dur-press:      160ms;
+  --fris-dur-move:       420ms;
+  --fris-dur-enter:      560ms;
+  --fris-ease-enter:     cubic-bezier(0.2, 0.8, 0.2, 1);
+  --fris-rule:           1.5px dotted var(--border-subtle);
+  --fris-ink-from:       var(--text-faint);
+}
+
+/* Licht: wit papier in plaats van de warme tint */
+[data-look="fris"][data-theme="warm"] {
+  --bg-page:             #FFFFFF;
+  --bg-hover:            #F5F6F8;
+  --bg-active:           #ECEEF2;
+  --bg-selected:         #F0F2F6;
+  --border-default:      #ECEEF2;
+  --border-subtle:       #DCDFE6;
+}
+
+[data-look="fris"][data-theme="dark"] {
+  --fris-ink-from:       var(--text-faint);
+}
+
+/* ── Typografie ────────────────────────────────────────────────────────────── */
+
+[data-look="fris"] .view-header h1,
+[data-look="fris"] .dash-header h1 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 46px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* ── Binnenkomst ───────────────────────────────────────────────────────────── */
+
+@keyframes fris-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes fris-pop {
+  0%   { opacity: 0; transform: scale(0.3) rotate(-14deg); }
+  60%  { opacity: 1; transform: scale(1.18) rotate(4deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes fris-ink { from { color: var(--fris-ink-from); } }
+@keyframes fris-ping {
+  0%       { box-shadow: 0 0 0 0 currentColor; }
+  80%,100% { box-shadow: 0 0 0 8px transparent; }
+}
+@keyframes fris-bounce {
+  0%   { transform: none; }
+  35%  { transform: translateY(-5px) scale(1.12); }
+  65%  { transform: translateY(1px) scale(0.96); }
+  100% { transform: none; }
+}
+
+/* Elke view komt zacht binnen bij navigatie (de Outlet mount opnieuw). */
+[data-look="fris"] .main-content > *:not(.main-topbar) {
+  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) both;
+}
+
+/* Dashboard: de blokken na elkaar */
+[data-look="fris"] .main-content > .view-dashboard { animation: none; }
+[data-look="fris"] .view-dashboard > * {
+  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) both;
+}
+[data-look="fris"] .view-dashboard > :nth-child(2) { animation-delay: 80ms; }
+[data-look="fris"] .view-dashboard > :nth-child(3) { animation-delay: 160ms; }
+[data-look="fris"] .view-dashboard > :nth-child(4) { animation-delay: 240ms; }
+[data-look="fris"] .view-dashboard > :nth-child(n+5) { animation-delay: 320ms; }
+[data-look="fris"] .dash-feed > * { animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) both; }
+[data-look="fris"] .dash-feed > :nth-child(1) { animation-delay: 380ms; }
+[data-look="fris"] .dash-feed > :nth-child(2) { animation-delay: 440ms; }
+[data-look="fris"] .dash-feed > :nth-child(3) { animation-delay: 500ms; }
+[data-look="fris"] .dash-feed > :nth-child(n+4) { animation-delay: 560ms; }
+
+/* ── Begroeting (FrisGreeting) ─────────────────────────────────────────────── */
+
+.fris-greeting { margin-bottom: 28px; }
+.fris-greeting__top {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.fris-greeting__day {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+.fris-greeting__weekday {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+.fris-greeting__dot {
+  width: 13px;
+  height: 13px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  color: var(--accent-red);
+  animation: fris-ping 2.6s var(--fris-ease-enter) 1.4s infinite;
+}
+.fris-greeting__date {
+  margin: 0;
+  padding-top: 4px;
+  text-align: right;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.fris-greeting__sentence {
+  margin: 24px 0 0;
+  max-width: 640px;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4.2vw, 40px);
+  line-height: 1.18;
+  color: var(--text-tertiary);
+}
+.fris-greeting__sentence em { font-style: italic; }
+
+.fris-ink {
+  color: var(--text-primary);
+  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) both;
+}
+
+.fris-chip {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: inherit;
+  border-radius: 6px;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 0.15em;
+  transition: text-decoration-color 200ms var(--ease-default);
+  animation: fris-ink 700ms var(--ease-smooth) var(--fris-delay, 0ms) both;
+}
+.fris-chip:hover { text-decoration-color: currentColor; }
+.fris-chip:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.fris-chip__ic {
+  display: inline-block;
+  font-size: 0.72em;
+  margin-right: 0.22em;
+  vertical-align: 0.06em;
+  animation: fris-pop 620ms var(--ease-spring) var(--fris-delay, 0ms) both;
+}
+
+/* ── Dashboard: rijen met stippellijnen in plaats van kaarten ──────────────── */
+
+[data-look="fris"] .dash-card,
+[data-look="fris"] .dash-intake-alert,
+[data-look="fris"] .dash-stat {
+  background: transparent;
+  box-shadow: none;
+  border-radius: var(--radius-md);
+}
+[data-look="fris"] .dash-feed { gap: 0; }
+[data-look="fris"] .dash-card {
+  border-bottom: var(--fris-rule);
+  border-radius: 0;
+  padding: 18px 4px;
+  transition: background-color 200ms var(--ease-default);
+}
+[data-look="fris"] .dash-card:hover {
+  transform: none;
+  box-shadow: none;
+  background: var(--bg-hover);
+}
+[data-look="fris"] .dash-intake-alert {
+  margin-bottom: 0;
+  border-bottom: var(--fris-rule);
+  border-radius: 0;
+}
+[data-look="fris"] .dash-intake-alert:hover { background: var(--bg-hover); transform: none; }
+[data-look="fris"] .dash-card__arrow,
+[data-look="fris"] .dash-intake-alert__arrow {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 200ms, transform 260ms var(--ease-spring);
+}
+[data-look="fris"] .dash-card:hover .dash-card__arrow,
+[data-look="fris"] .dash-intake-alert:hover .dash-intake-alert__arrow {
+  opacity: 1;
+  transform: none;
+}
+[data-look="fris"] .dash-card__label i {
+  display: inline-block;
+  transition: transform 320ms var(--ease-spring);
+}
+[data-look="fris"] .dash-card:hover .dash-card__label i { transform: scale(1.18) rotate(-8deg); }
+
+/* ── Indrukken en hover ────────────────────────────────────────────────────── */
+
+[data-look="fris"] :is(.btn-primary, .btn-secondary, .theme-toggle-btn, .bottom-nav-item, .cl-nav-item, .dash-stat, .fris-chip) {
+  transition: transform var(--fris-dur-press) var(--ease-spring), background-color 200ms, color 200ms, text-decoration-color 200ms;
+}
+[data-look="fris"] :is(.btn-primary, .btn-secondary, .theme-toggle-btn, .bottom-nav-item, .dash-stat):active { transform: scale(0.94); }
+[data-look="fris"] .cl-nav-item:active { transform: scale(0.98); }
+[data-look="fris"] .cl-nav-item__icon { transition: transform 320ms var(--ease-spring); }
+[data-look="fris"] .cl-nav-item:hover .cl-nav-item__icon { transform: scale(1.15) rotate(-8deg); }
+
+[data-look="fris"] :is(.sidebar-dot, .bottom-nav-dot) {
+  color: var(--accent-blue);
+  animation: fris-ping 2.6s var(--fris-ease-enter) 1s infinite;
+}
+
+/* ── Mobiele onderbalk: zwevende pil met glijdende selectie ────────────────── */
+
+.bottom-nav__pill { display: none; }
+
+@media (max-width: 768px) {
+  [data-look="fris"] .bottom-nav {
+    left: 50%;
+    right: auto;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    height: 56px;
+    padding: 6px;
+    gap: 2px;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg-hover) 88%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
+    box-shadow: var(--shadow-md);
+  }
+  [data-look="fris"] .bottom-nav-item {
+    position: relative;
+    z-index: 1;
+    flex: none;
+    width: 56px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 999px;
+  }
+  [data-look="fris"] .bottom-nav-item i {
+    font-size: 20px;
+    color: var(--nav-icon-brand, var(--nav-c, var(--text-secondary)));
+  }
+  [data-look="fris"] .bottom-nav-item--active i {
+    animation: fris-bounce 520ms var(--ease-spring);
+  }
+  [data-look="fris"] .bottom-nav-item__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  [data-look="fris"] .bottom-nav__pill {
+    display: block;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    width: 56px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-sm);
+    transform: translateX(calc(var(--slot, 0) * 58px));
+    transition: transform var(--fris-dur-move) var(--ease-spring);
+  }
+}
+
+/* ── Toggle zelf ───────────────────────────────────────────────────────────── */
+
+.look-toggle-btn--on { color: var(--accent-purple); }
+.look-toggle-btn--on i { animation: fris-pop 620ms var(--ease-spring); }
+
+.look-switch {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 18px;
+  margin-left: auto;
+  border-radius: 999px;
+  background: var(--bg-active);
+  transition: background-color 200ms var(--ease-default);
+}
+.look-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+  transition: transform 260ms var(--ease-spring);
+}
+.look-switch--on { background: var(--accent-green); }
+.look-switch--on::after { transform: translateX(12px); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-look="fris"] *,
+  [data-look="fris"] *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -6,6 +6,7 @@ import { signOut } from '../lib/auth'
 import { isProjectDomain } from '../lib/subdomain'
 import { useSidebarSignals } from '../hooks/useSidebarSignals'
 import { NAV_SECTIONS, isNavItemVisible } from '../lib/navigation'
+import { useTheme } from '../contexts/ThemeContext'
 
 export default function Sidebar() {
   const { profile, isOrgAdmin, primaryOrgId, primaryOrgSlug } = useAuth()
@@ -13,6 +14,7 @@ export default function Sidebar() {
   const navigate = useNavigate()
   const location = useLocation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const { look, lookAvailable, toggleLook } = useTheme()
   const [openSections, setOpenSections] = useState({})
   const menuRef = useRef(null)
   const isProfessional = role === 'professional'
@@ -184,6 +186,19 @@ export default function Sidebar() {
               <i className="fa-solid fa-bell" />
               <span>Notificaties</span>
             </div>
+            {lookAvailable && (
+              <div
+                className="sidebar-user-menu-item"
+                onClick={toggleLook}
+                role="switch"
+                aria-checked={look === 'fris'}
+                tabIndex={0}
+              >
+                <i className="fa-solid fa-wand-magic-sparkles" />
+                <span>Nieuwe look (beta)</span>
+                <span className={`look-switch ${look === 'fris' ? 'look-switch--on' : ''}`} aria-hidden="true" />
+              </div>
+            )}
             <div className="sidebar-user-menu-divider" />
             <div className="sidebar-user-menu-item sidebar-user-menu-item--danger" onClick={handleSignOut}>
               <i className="fa-solid fa-right-from-bracket" />
