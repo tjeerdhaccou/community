@@ -840,7 +840,8 @@
    binnenste rij */
 [data-look="fris"] .update-card:hover { background: transparent; }
 [data-look="fris"] .update-card .feed-card { border-bottom: none; }
-[data-look="fris"] .update-card img { border-radius: 0; }
+[data-look="fris"] .update-card__image { padding: 16px 16px 0; }
+[data-look="fris"] :is(.update-card__image img, .feed-card__image, .feed-card__image img, .post-detail-image img) { border-radius: 12px; }
 
 /* Roadmap: fasen als rijen, nummer los in de fasekleur */
 [data-look="fris"] .roadmap-phase--open { box-shadow: none; }
@@ -887,3 +888,72 @@
 .fris-greeting__day { gap: 16px; }
 .fris-greeting__weekday { font-size: clamp(38px, 9vw, 56px); }
 .fris-greeting__dot { display: none; }
+
+/* ============================================================================
+   Ronde 3: mobiel, chat en demo-tour
+   ============================================================================ */
+
+/* Chat: geselecteerd gesprek is een recht vlak over de volle breedte, net als
+   de hover op andere rijen; zo valt het niet op tegen de rand. */
+[data-look="fris"] .chat-convs { padding: 0 0 8px; }
+[data-look="fris"] .chat-conv,
+[data-look="fris"] .chat-conv:hover,
+[data-look="fris"] .chat-conv--active,
+[data-look="fris"] .chat-conv--active:hover { border-radius: 0; margin-bottom: 0; }
+[data-look="fris"] .chat-conv { padding: 14px 16px; }
+[data-look="fris"] .chat-foot { padding: 12px 0 4px 4px; }
+[data-look="fris"] .chat-inputrow { gap: 8px; }
+
+@media (max-width: 768px) {
+  /* De desktop-regels hierboven zetten de zijpadding op 0; op mobiel heeft de
+     chat geen paginapadding, dus alles kreeg geen lucht meer (terugknop half
+     buiten beeld, verzendknop tegen de rand). */
+  [data-look="fris"] .chat-list__search { padding: 12px 16px 8px; }
+  [data-look="fris"] .push-banner { margin: 10px 16px 0; }
+  [data-look="fris"] .chat-convs__label { padding: 16px 16px 6px; }
+  [data-look="fris"] .chat-head { padding: 10px 16px 12px 12px; gap: 10px; }
+  [data-look="fris"] .chat-head__back {
+    width: 40px;
+    height: 40px;
+    margin-left: 0;
+    border-radius: 50%;
+    background: var(--fris-fill);
+    color: var(--text-primary);
+    justify-content: center;
+    align-items: center;
+  }
+  [data-look="fris"] .chat-head__title { font-size: 19px; }
+  [data-look="fris"] .chat-body { padding: 12px 16px 8px; }
+  [data-look="fris"] .chat-foot { padding: 8px 16px 10px 10px; }
+  [data-look="fris"] body.chat-thread-open .chat-foot { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  [data-look="fris"] .chat-send { width: 44px; height: 44px; }
+  [data-look="fris"] .chat-input { min-height: 44px; padding: 11px 16px; }
+
+  /* Mobiel algemeen: kop en rijen iets compacter, nergens tegen de rand */
+  [data-look="fris"] .view-header { margin-bottom: 18px; }
+  [data-look="fris"] .view-header h1 { font-size: 36px; }
+  [data-look="fris"] .fris-greeting { margin-bottom: 20px; }
+  [data-look="fris"] .fris-greeting__sentence { margin-top: 16px; font-size: 27px; }
+  [data-look="fris"] .fris-week { margin-bottom: 20px; }
+  [data-look="fris"] .fris-week__num { font-size: 18px; }
+  [data-look="fris"] :is(.dash-card, .feed-card, .dash-intake-alert) { padding: 16px 12px; }
+  [data-look="fris"] .fris-week__row { padding: 0 12px; }
+  [data-look="fris"] .event-card { padding: 14px 12px; gap: 12px; }
+  [data-look="fris"] .member-row { padding: 12px; }
+  [data-look="fris"] .roadmap-phase__head { padding: 16px 12px; }
+  [data-look="fris"] .update-card__image { padding: 12px 12px 0; }
+  [data-look="fris"] .tag-filter { gap: 4px; }
+  [data-look="fris"] .dash-stats { gap: 4px; }
+}
+
+/* Demo-rondleiding in het Yves Klein-blauw in plaats van indigo */
+html[data-look="fris"] .tour-root {
+  --tour-bg: #2341FF;
+  --tour-bg-2: #3A56FF;
+  --tour-grad: linear-gradient(160deg, #3350FF 0%, #1B34D9 100%);
+}
+html[data-look="fris"][data-theme="dark"] .tour-root {
+  --tour-bg: #2A47FF;
+  --tour-bg-2: #4762FF;
+  --tour-grad: linear-gradient(160deg, #3A56FF 0%, #213CE6 100%);
+}
