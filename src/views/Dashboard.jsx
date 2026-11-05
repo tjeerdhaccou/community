@@ -16,6 +16,7 @@ import { navColor } from '../lib/navigation'
 import { useTheme } from '../contexts/ThemeContext'
 import { useSidebarSignals } from '../hooks/useSidebarSignals'
 import FrisGreeting from '../components/FrisGreeting'
+import FrisWeek from '../components/FrisWeek'
 
 export default function Dashboard() {
   const { project, role, loading, basePath, onboardingActive, readOnly } = useProject()
@@ -209,6 +210,7 @@ export default function Dashboard() {
           nextEvent={feed.nextEvent}
         />
       )}
+      {look === 'fris' && <FrisWeek projectId={project.id} basePath={basePath} />}
 
       {/* Header with project info */}
       {look !== 'fris' && <div className="dash-header">
