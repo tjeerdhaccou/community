@@ -126,7 +126,7 @@
 }
 .fris-greeting__sentence {
   margin: 24px 0 0;
-  max-width: 980px;
+  max-width: 640px;
   font-family: var(--font-display);
   font-size: clamp(28px, 4.2vw, 40px);
   line-height: 1.18;
@@ -882,3 +882,8 @@
 /* Chat: geen stippellijn onder gesprekken, alleen ruimte; het geselecteerde
    gesprek is een afgerond vlak zoals een gekozen dag */
 [data-look="fris"] .chat-conv { border-bottom: none; margin-bottom: 2px; }
+
+/* Dag voluit, zonder stip; past ook op mobiel naast de datum */
+.fris-greeting__day { gap: 16px; }
+.fris-greeting__weekday { font-size: clamp(38px, 9vw, 56px); }
+.fris-greeting__dot { display: none; }
