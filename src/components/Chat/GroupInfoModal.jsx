@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import GroupIconPicker from './GroupIconPicker'
+import { encodeGroupIcon, parseGroupIcon, DEFAULT_GROUP_ICON } from '../../lib/groupIcons'
 import Avatar from './Avatar'
 import MemberPicker from './MemberPicker'
 import { useBodyScrollLock, isNarrowScreen } from '../../lib/scrollLock'
 
-const EMOJI_CHOICES = ['💬', '🌱', '💶', '🏘️', '🔨', '🚲', '🧒', '🎉', '📐', '⚡', '🌳', '🍽️', '🎨', '📣', '🔒']
 
 /**
  * Groepsinformatie: leden, dempen, verlaten; voor owner/moderator ook
@@ -15,7 +16,7 @@ export default function GroupInfoModal({ thread, me, canManage, onAddMembers, on
   const [selected, setSelected] = useState(new Set())
   const [title, setTitle] = useState(thread.title || '')
   const [topic, setTopic] = useState(thread.topic || '')
-  const [emoji, setEmoji] = useState(thread.emoji || '💬')
+  const [emoji, setEmoji] = useState(() => { const g = parseGroupIcon(thread.emoji); return g ? encodeGroupIcon(g.icon, g.color) : DEFAULT_GROUP_ICON })
   const [joinPolicy, setJoinPolicy] = useState(thread.joinPolicy)
   const [busy, setBusy] = useState(false)
 
@@ -118,11 +119,7 @@ export default function GroupInfoModal({ thread, me, canManage, onAddMembers, on
               <div className="form-group">
                 <label htmlFor="grp-edit-title">Naam</label>
                 <div className="grp-namerow">
-                  <div className="grp-emoji">
-                    <select value={emoji} onChange={(e) => setEmoji(e.target.value)} aria-label="Emoji" className="grp-emoji__select">
-                      {EMOJI_CHOICES.map((e) => <option key={e} value={e}>{e}</option>)}
-                    </select>
-                  </div>
+                  <GroupIconPicker value={emoji} onChange={setEmoji} />
                   <input id="grp-edit-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={60} required />
                 </div>
               </div>

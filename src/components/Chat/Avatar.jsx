@@ -1,11 +1,18 @@
+import { parseGroupIcon, groupColorCss } from '../../lib/groupIcons'
+
 /**
- * Avatar voor de chat: foto → emoji (groep) → icoon → initialen.
+ * Avatar voor de chat: foto → groepsicoon → icoon → initialen.
  * Volledig token-gedreven via .chat-av in Chat.css.
  */
 export default function Avatar({ url, name, emoji, icon, size = 40, className = '' }) {
   const style = { width: size, height: size, fontSize: Math.round(size * 0.38) }
-  if (emoji) {
-    return <span className={`chat-av chat-av--emoji ${className}`} style={{ ...style, fontSize: Math.round(size * 0.5) }}>{emoji}</span>
+  const groupIcon = parseGroupIcon(emoji)
+  if (groupIcon) {
+    return (
+      <span className={`chat-av chat-av--glyph ${className}`} style={{ ...style, fontSize: Math.round(size * 0.42), color: groupColorCss(groupIcon.color) }}>
+        <i className={`fa-solid fa-${groupIcon.icon}`} aria-hidden="true" />
+      </span>
+    )
   }
   if (url) return <img className={`chat-av ${className}`} style={style} src={url} alt={name || ''} />
   if (icon) {

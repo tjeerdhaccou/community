@@ -1,20 +1,20 @@
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import MemberPicker from './MemberPicker'
+import GroupIconPicker from './GroupIconPicker'
+import { DEFAULT_GROUP_ICON } from '../../lib/groupIcons'
 import { useBodyScrollLock, isNarrowScreen } from '../../lib/scrollLock'
 
-const EMOJI_CHOICES = ['💬', '🌱', '💶', '🏘️', '🔨', '🚲', '🧒', '🎉', '📐', '⚡', '🌳', '🍽️', '🎨', '📣', '🔒']
 
-/** Nieuwe thema-groep: naam, thema, emoji, open/besloten en optioneel leden. */
+/** Nieuwe thema-groep: naam, thema, icoon, open/besloten en optioneel leden. */
 export default function NewGroupModal({ onCreate, onClose }) {
   useBodyScrollLock(true)
   const { user } = useAuth()
   const [title, setTitle] = useState('')
   const [topic, setTopic] = useState('')
-  const [emoji, setEmoji] = useState('💬')
+  const [emoji, setEmoji] = useState(DEFAULT_GROUP_ICON)
   const [joinPolicy, setJoinPolicy] = useState('open')
   const [selected, setSelected] = useState(new Set())
-  const [showPicker, setShowPicker] = useState(false)
   const [saving, setSaving] = useState(false)
 
   function toggle(id) {
@@ -45,16 +45,7 @@ export default function NewGroupModal({ onCreate, onClose }) {
           <div className="form-group">
             <label htmlFor="grp-title">Naam</label>
             <div className="grp-namerow">
-              <div className="grp-emoji">
-                <button type="button" className="grp-emoji__btn" onClick={() => setShowPicker((s) => !s)} aria-label="Kies een emoji" aria-expanded={showPicker}>{emoji}</button>
-                {showPicker && (
-                  <div className="grp-emoji__menu">
-                    {EMOJI_CHOICES.map((e) => (
-                      <button type="button" key={e} className={e === emoji ? 'on' : ''} onClick={() => { setEmoji(e); setShowPicker(false) }}>{e}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <GroupIconPicker value={emoji} onChange={setEmoji} />
               <input id="grp-title" autoFocus={!isNarrowScreen()} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Bijv. Duurzaamheid" maxLength={60} required />
             </div>
           </div>
