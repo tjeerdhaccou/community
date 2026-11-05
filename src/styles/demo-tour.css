@@ -268,3 +268,22 @@
   .tour-card--welcome p { font-size: 15px; }
   .tour-card--welcome .tour-card__actions { max-width: none; }
 }
+
+/* ===== Tour op mobiel: binnen het scherm en boven de zwevende onderbalk =====
+   Alle kaartjes rekenden met content-box: width calc(100% - 32px) plus
+   padding liep buiten het scherm. Border-box voor de hele tour. */
+.tour-root, .tour-root * { box-sizing: border-box; }
+.tour-brief, .tour-tip, .tour-toast { border-radius: 20px; }
+
+@media (max-width: 768px) {
+  .tour-brief { padding: 16px 16px 14px; gap: 12px; }
+  .tour-brief h3 { font-size: 17px; margin: 2px 0 4px; }
+  .tour-brief p { font-size: 14px; }
+  .tour-brief__body { padding-right: 22px; }
+  .tour-brief__actions { flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; }
+  .tour-brief__actions .btn-primary { min-height: 44px; border-radius: 999px; }
+  .tour-brief .tour-x { top: 8px; right: 8px; }
+
+  /* Fris-look: de onderbalk zweeft (56px hoog, 12px van de onderkant). */
+  html[data-look="fris"] .tour-root { --tour-nav-h: calc(56px + max(12px, env(safe-area-inset-bottom))); }
+}
