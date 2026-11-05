@@ -14,6 +14,8 @@ import Avatar from '../components/Chat/Avatar'
 import PushBanner from '../components/Chat/PushBanner'
 import { lockBodyScroll, isNarrowScreen } from '../lib/scrollLock'
 import { promptDemoSignup } from '../lib/demo'
+import { useTheme } from '../contexts/ThemeContext'
+import { safeStorage } from '../lib/safeStorage'
 import './Chat.css'
 
 const EMOJI = ['👍', '🙏', '😊', '🎉', '❤️', '👋', '😅', '🤔', '👌', '🙌', '✅', '🚀']
@@ -169,6 +171,16 @@ export default function Chat() {
   const [mentionIds, setMentionIds] = useState(() => new Set())
 
   const bodyRef = useRef(null)
+  // Fris-look op desktop: de gesprekkenlijst is een smalle iconenbalk die je
+  // kunt uitklappen. De keuze wordt per browser onthouden.
+  const { look } = useTheme()
+  const [railOpen, setRailOpen] = useState(() => safeStorage.getItem('buuur-chat-rail') === 'open')
+  const rail = look === 'fris' && !railOpen
+  function setRail(open) {
+    safeStorage.setItem('buuur-chat-rail', open ? 'open' : 'closed')
+    setRailOpen(open)
+  }
+
   // Demo: berichten verschijnen alleen lokaal in het gesprek, er wordt niets opgeslagen.
   const [demoSent, setDemoSent] = useState({})
   const fileRef = useRef(null)
@@ -482,6 +494,8 @@ export default function Chat() {
         key={t.id}
         type="button"
         className={`chat-conv ${t.id === selectedId ? 'chat-conv--active' : ''} ${t.muted ? 'chat-conv--muted' : ''}`}
+        title={rail ? t.title : undefined}
+        aria-label={rail ? `${t.title}${t.unread > 0 ? `, ${t.unread} ongelezen` : ''}` : undefined}
         data-tour={t.kind === 'group' ? 'chat-group' : undefined}
         onClick={() => openThread(t.id)}
       >
@@ -505,9 +519,25 @@ export default function Chat() {
   return (
     <div className={`view-chat ${mobileThread ? 'view-chat--thread' : ''}`}>
       {/* ── Gesprekkenlijst + zoeken ─────────────────────────────────────── */}
-      <aside className="chat-list">
-        {chatOn && <PushBanner />}
+      <aside className={`chat-list ${rail ? 'chat-list--rail' : ''}`}>
+        {look === 'fris' && (
+          <button
+            type="button"
+            className="chat-rail__toggle"
+            onClick={() => setRail(rail)}
+            aria-label={rail ? 'Gesprekkenlijst uitklappen' : 'Gesprekkenlijst inklappen'}
+            title={rail ? 'Uitklappen' : 'Inklappen'}
+          >
+            <i className={`fa-solid ${rail ? 'fa-angles-right' : 'fa-angles-left'}`} aria-hidden="true" />
+          </button>
+        )}
+        {chatOn && !rail && <PushBanner />}
         <div className="chat-list__search">
+          {rail && (
+            <button type="button" className="chat-rail__btn" onClick={() => setRail(true)} aria-label="Zoek in gesprekken" title="Zoeken">
+              <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
+            </button>
+          )}
           <div className={`chat-search ${searching ? 'chat-search--active' : ''}`}>
             <i className="fa-solid fa-magnifying-glass" aria-hidden="true" />
             <input
