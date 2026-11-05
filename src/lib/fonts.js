@@ -20,6 +20,7 @@ const SPECS = {
   Kreon: 'Kreon:wght@400;600',
   'Source Sans 3': 'Source+Sans+3:wght@400;600',
   Ubuntu: 'Ubuntu:wght@500;700',
+  'Instrument Serif': 'Instrument+Serif:ital@0;1',
 }
 
 export function loadFonts(families) {
