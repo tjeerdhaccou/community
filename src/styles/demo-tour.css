@@ -230,3 +230,41 @@
   .tour-root *, .tour-root *::before, .tour-root *::after { animation: none !important; transition: none !important; }
   .tour-spark { display: none; }
 }
+
+/* ===== Welkomstkaart: rustiger opgebouwd =====
+   De vier opdracht-bubbels draaien op 78px rond de sleutel; met een vak van
+   116px hoog staken ze boven en onder uit en plakten ze op mobiel tegen de
+   bovenrand. Het vak is nu even hoog als de cirkel die ze beschrijven. */
+.tour-card, .tour-card--welcome { box-sizing: border-box; }
+.tour-card--welcome { padding: 36px 32px 26px; }
+.tour-card--welcome .tour-card__art { width: 200px; height: 168px; margin: 0 auto 22px; }
+.tour-card--welcome .tour-art__bub {
+  width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 13px;
+  transform: rotate(calc(var(--i) * 90deg + 45deg)) translate(64px) rotate(calc(var(--i) * -90deg - 45deg));
+}
+.tour-card--welcome .tour-art__ring { width: 68px; height: 68px; font-size: 28px; }
+.tour-card--welcome .tour-card__kicker { color: var(--tour-ink-2); letter-spacing: .1em; }
+.tour-card--welcome h2 { font-size: 28px; margin: 10px 0 12px; }
+.tour-card--welcome p { max-width: 34ch; margin: 0 auto; }
+.tour-card--welcome .tour-card__actions {
+  flex-direction: column; align-items: stretch; gap: 10px; max-width: 300px; margin: 26px auto 0;
+}
+.tour-card--welcome .tour-card__actions .btn-primary,
+.tour-card--welcome .tour-card__actions .btn-secondary { justify-content: center; min-height: 50px; border-radius: 999px; font-size: 16px; }
+.tour-card--welcome .tour-card__actions .btn-secondary { background: rgba(255, 255, 255, .1); border-color: transparent; }
+.tour-card--welcome .tour-card__actions .btn-secondary:hover { background: rgba(255, 255, 255, .18); }
+.tour-card--welcome .tour-card__note { margin-top: 18px; }
+
+@media (max-width: 768px) {
+  .tour-overlay { padding: 16px; }
+  .tour-card--welcome { padding: 30px 22px 22px; border-radius: 24px; }
+  .tour-card--welcome .tour-card__art { width: 176px; height: 148px; margin-bottom: 18px; }
+  .tour-card--welcome .tour-art__bub {
+    width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 12px; font-size: 15px;
+    transform: rotate(calc(var(--i) * 90deg + 45deg)) translate(56px) rotate(calc(var(--i) * -90deg - 45deg));
+  }
+  .tour-card--welcome .tour-art__ring { width: 60px; height: 60px; font-size: 25px; }
+  .tour-card--welcome h2 { font-size: 25px; }
+  .tour-card--welcome p { font-size: 15px; }
+  .tour-card--welcome .tour-card__actions { max-width: none; }
+}
