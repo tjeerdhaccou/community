@@ -16,6 +16,7 @@ import { lockBodyScroll, isNarrowScreen } from '../lib/scrollLock'
 import { promptDemoSignup } from '../lib/demo'
 import { useTheme } from '../contexts/ThemeContext'
 import { safeStorage } from '../lib/safeStorage'
+import { DEMO_DM_SCRIPTS } from '../content/demoChats'
 import './Chat.css'
 
 const EMOJI = ['👍', '🙏', '😊', '🎉', '❤️', '👋', '😅', '🤔', '👌', '🙌', '✅', '🚀']
@@ -142,12 +143,57 @@ export default function Chat() {
 
   const teamName = project?.name ? `Team ${project.name}` : 'Support'
 
+  // Demo: voorbeeld-privégesprekken met demo-personen (zie content/demoChats.js).
+  const [demoPeople, setDemoPeople] = useState([])
+  const [demoReadIds, setDemoReadIds] = useState(() => new Set())
+  useEffect(() => {
+    if (!readOnly || !project?.id) return
+    let stale = false
+    supabase
+      .from('memberships')
+      .select('profile:profiles(id, full_name, avatar_url)')
+      .eq('project_id', project.id)
+      .order('joined_at', { ascending: true })
+      .limit(40)
+      .then(({ data }) => {
+        if (stale) return
+        const people = (data || []).map((m) => m.profile).filter((p) => p?.avatar_url && p?.full_name)
+        setDemoPeople(people.slice(0, DEMO_DM_SCRIPTS.length))
+      })
+    return () => { stale = true }
+  }, [readOnly, project?.id])
+  const demoThreads = useMemo(() => {
+    if (!readOnly) return []
+    const now = Date.now()
+    return demoPeople.map((p, i) => {
+      const script = DEMO_DM_SCRIPTS[i]
+      const id = `demo-dm-${p.id}`
+      const messages = script.messages.map((m, j) => ({
+        id: `${id}-${j}`,
+        body: m.text,
+        created_at: new Date(now - m.ago * 60000).toISOString(),
+        mine: m.from === 'me',
+        senderName: m.from === 'me' ? null : p.full_name,
+        senderAvatar: m.from === 'me' ? null : p.avatar_url,
+        attachment: null, deleted: false, edited: false, read: true,
+      }))
+      const last = messages[messages.length - 1]
+      return {
+        id, source: 'demo', kind: 'direct', title: p.full_name, avatarUrl: p.avatar_url,
+        last: { body: last.body, created_at: last.created_at, mine: last.mine, senderName: null },
+        last_message_at: last.created_at,
+        unread: demoReadIds.has(id) ? 0 : script.unread,
+        muted: false, archived: false, messages,
+      }
+    })
+  }, [readOnly, demoPeople, demoReadIds])
+
   // Eén gesorteerde lijst per sectie.
   const directThreads = useMemo(() => {
     const s = support.conversations.map((c) => normalizeSupport(c, teamName, project?.logo_url))
     const d = chat.threads.filter((t) => t.kind === 'direct')
-    return [...s, ...d].sort((a, b) => (b.last_message_at || '').localeCompare(a.last_message_at || ''))
-  }, [support.conversations, chat.threads, teamName, project?.logo_url])
+    return [...s, ...d, ...demoThreads].sort((a, b) => (b.last_message_at || '').localeCompare(a.last_message_at || ''))
+  }, [support.conversations, chat.threads, teamName, project?.logo_url, demoThreads])
 
   const groupThreads = useMemo(
     () => chat.threads.filter((t) => t.kind === 'group'),
@@ -192,6 +238,7 @@ export default function Chat() {
   const messages = useMemo(() => {
     if (!selected) return []
     const local = demoSent[selected.id] || []
+    if (selected.source === 'demo') return [...selected.messages, ...local]
     if (selected.source === 'support') {
       return [...selected.messages.map((m) => ({
         id: m.id, body: m.body, created_at: m.created_at,
@@ -233,7 +280,8 @@ export default function Chat() {
     if (!selected) return
     if (selected.source === 'chat') chat.loadMessages(selected.id)
     if (selected.unread > 0) {
-      if (selected.source === 'support') support.markRead(selected.id)
+      if (selected.source === 'demo') setDemoReadIds((prev) => new Set(prev).add(selected.id))
+      else if (selected.source === 'support') support.markRead(selected.id)
       else chat.markRead(selected.id)
     }
   }, [selected?.id, selected?.unread, selected?.source]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -520,17 +568,6 @@ export default function Chat() {
     <div className={`view-chat ${mobileThread ? 'view-chat--thread' : ''}`}>
       {/* ── Gesprekkenlijst + zoeken ─────────────────────────────────────── */}
       <aside className={`chat-list ${rail ? 'chat-list--rail' : ''}`}>
-        {look === 'fris' && (
-          <button
-            type="button"
-            className="chat-rail__toggle"
-            onClick={() => setRail(rail)}
-            aria-label={rail ? 'Gesprekkenlijst uitklappen' : 'Gesprekkenlijst inklappen'}
-            title={rail ? 'Uitklappen' : 'Inklappen'}
-          >
-            <i className={`fa-solid ${rail ? 'fa-angles-right' : 'fa-angles-left'}`} aria-hidden="true" />
-          </button>
-        )}
         {chatOn && !rail && <PushBanner />}
         <div className="chat-list__search">
           {rail && (
@@ -572,6 +609,17 @@ export default function Chat() {
                 </div>
               )}
             </div>
+          )}
+          {look === 'fris' && (
+            <button
+              type="button"
+              className="chat-rail__toggle"
+              onClick={() => setRail(rail)}
+              aria-label={rail ? 'Gesprekkenlijst uitklappen' : 'Gesprekkenlijst inklappen'}
+              title={rail ? 'Uitklappen' : 'Inklappen'}
+            >
+              <i className={`fa-solid ${rail ? 'fa-angles-right' : 'fa-angles-left'}`} aria-hidden="true" />
+            </button>
           )}
         </div>
 
