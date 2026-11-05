@@ -169,6 +169,8 @@ export default function Chat() {
   const [mentionIds, setMentionIds] = useState(() => new Set())
 
   const bodyRef = useRef(null)
+  // Demo: berichten verschijnen alleen lokaal in het gesprek, er wordt niets opgeslagen.
+  const [demoSent, setDemoSent] = useState({})
   const fileRef = useRef(null)
   const newMenuRef = useRef(null)
 
@@ -177,17 +179,18 @@ export default function Chat() {
   // Berichten van de geselecteerde thread (support: vooraf geladen; chat: lazy).
   const messages = useMemo(() => {
     if (!selected) return []
+    const local = demoSent[selected.id] || []
     if (selected.source === 'support') {
-      return selected.messages.map((m) => ({
+      return [...selected.messages.map((m) => ({
         id: m.id, body: m.body, created_at: m.created_at,
         mine: m.sender_role === 'user',
         senderName: m.sender_role === 'user' ? null : teamName,
         senderAvatar: null,
         attachment: m.attachment_path ? { bucket: 'support-attachments', path: m.attachment_path, name: m.attachment_name, type: m.attachment_type } : null,
         deleted: false, edited: false, read: !!m.read_at,
-      }))
+      })), ...local]
     }
-    return (chat.messagesByThread[selected.id] || []).map((m) => ({
+    return [...(chat.messagesByThread[selected.id] || []).map((m) => ({
       id: m.id, body: m.body, created_at: m.created_at,
       mine: m.sender_id === me,
       senderId: m.sender_id,
@@ -195,8 +198,8 @@ export default function Chat() {
       senderAvatar: m.sender?.avatar_url || null,
       attachment: m.attachment_path && !m.deleted_at ? { bucket: 'chat-attachments', path: m.attachment_path, name: m.attachment_name, type: m.attachment_type } : null,
       deleted: !!m.deleted_at, edited: !!m.edited_at, read: false,
-    }))
-  }, [selected, chat.messagesByThread, me, teamName])
+    })), ...local]
+  }, [selected, chat.messagesByThread, me, teamName, demoSent])
 
   // ?thread=<id> deeplink (e-mails, notificaties) → selecteren.
   useEffect(() => {
@@ -319,7 +322,22 @@ export default function Chat() {
 
   async function handleSend(e) {
     e.preventDefault()
-    if (readOnly) { promptDemoSignup(); return }
+    if (readOnly) {
+      const demoText = draft.trim()
+      if (!demoText || !selected) { promptDemoSignup(); return }
+      const first = Object.keys(demoSent).length === 0
+      setDemoSent((prev) => ({
+        ...prev,
+        [selected.id]: [...(prev[selected.id] || []), {
+          id: `demo-${Date.now()}`, body: demoText, created_at: new Date().toISOString(),
+          mine: true, senderName: null, senderAvatar: null, attachment: null,
+          deleted: false, edited: false, read: false,
+        }],
+      }))
+      setDraft(''); setFile(null); setShowEmoji(false)
+      if (first) toast.success('Dit is een demo: je bericht is alleen voor jou zichtbaar.')
+      return
+    }
     const text = draft.trim()
     if (!text && !file) return
     const sentFile = file
