@@ -926,6 +926,8 @@
   [data-look="fris"] .chat-body { padding: 12px 16px 8px; }
   [data-look="fris"] .chat-foot { padding: 8px 16px 10px 10px; }
   [data-look="fris"] body.chat-thread-open .chat-foot { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+  [data-look="fris"] body.chat-thread-open.chat-kb-open .chat-foot { padding-bottom: 8px; }
+  [data-look="fris"] body.chat-thread-open .chat-head { padding-top: max(10px, env(safe-area-inset-top)); }
   [data-look="fris"] .chat-send { width: 44px; height: 44px; }
   [data-look="fris"] .chat-input { min-height: 44px; padding: 11px 16px; }
 

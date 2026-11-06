@@ -321,7 +321,40 @@ export default function Chat() {
     // Op mobiel: pagina-scroll vergrendelen zodat alleen de berichtenlijst scrolt
     // (geen rubber-banding van de hele pagina, geen verspringende composer).
     const unlock = mobileThread && isNarrowScreen() ? lockBodyScroll() : null
-    return () => { document.body.classList.remove('chat-thread-open'); unlock?.() }
+
+    // iOS laat het toetsenbord over de pagina schuiven in plaats van hem te
+    // verkleinen, en schuift dan de hele pagina omhoog: kop en berichten
+    // verdwenen boven het scherm. Het gesprek volgt daarom precies het
+    // zichtbare deel (visualViewport): hoogte, en waar Safari naartoe is
+    // geschoven. Zo blijft de kop bovenin en de composer boven het toetsenbord.
+    const vv = window.visualViewport
+    const root = document.documentElement
+    function fit() {
+      if (!vv) return
+      root.style.setProperty('--chat-vv-h', `${Math.round(vv.height)}px`)
+      root.style.setProperty('--chat-vv-top', `${Math.round(vv.offsetTop)}px`)
+      root.style.setProperty('--chat-vv-left', `${Math.round(vv.offsetLeft)}px`)
+      root.style.setProperty('--chat-vv-w', `${Math.round(vv.width)}px`)
+      // Toetsenbord open: het zichtbare deel is flink kleiner dan het venster.
+      document.body.classList.toggle('chat-kb-open', vv.height < window.innerHeight - 120)
+      const el = bodyRef.current
+      if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 200) el.scrollTop = el.scrollHeight
+    }
+    const fitted = mobileThread && isNarrowScreen() && vv
+    if (fitted) {
+      fit()
+      vv.addEventListener('resize', fit)
+      vv.addEventListener('scroll', fit)
+    }
+    return () => {
+      document.body.classList.remove('chat-thread-open'); unlock?.()
+      if (fitted) {
+        vv.removeEventListener('resize', fit)
+        vv.removeEventListener('scroll', fit)
+        ;['--chat-vv-h', '--chat-vv-top', '--chat-vv-left', '--chat-vv-w'].forEach((n) => root.style.removeProperty(n))
+        document.body.classList.remove('chat-kb-open')
+      }
+    }
   }, [mobileThread])
 
   // Toetsenbord open/dicht (visualViewport verandert): onderaan blijven als we daar al waren.
