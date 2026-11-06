@@ -15,6 +15,8 @@ import { friendlyError } from '../lib/logger'
 import { navColor } from '../lib/navigation'
 import { useTheme } from '../contexts/ThemeContext'
 import { useSidebarSignals } from '../hooks/useSidebarSignals'
+import { usePendingProposals } from '../hooks/useProposals'
+import { timeLeft } from '../lib/decisions'
 import FrisGreeting from '../components/FrisGreeting'
 import FrisWeek from '../components/FrisWeek'
 
@@ -39,6 +41,7 @@ export default function Dashboard() {
   const signatureCount = useSignatureRequestCount()
   const { look } = useTheme()
   const { unread } = useSidebarSignals()
+  const pendingProposals = usePendingProposals()
   const toast = useToast()
   const [feed, setFeed] = useState({ nextEvent: null, latestUpdate: null, latestPosts: [], newMembers: [], intakePending: 0, docRequests: 0, intakeRequest: null, paymentRequests: [], stats: { members: 0, updates: 0 } })
   const [infoOpen, setInfoOpen] = useState(false)
@@ -154,6 +157,17 @@ export default function Dashboard() {
       subtitle: `${pr.title}${pr.reference ? ` · ref ${pr.reference}` : ''}`,
       onClick: () => { window.location.href = href },
       onDismiss: () => dismissPaymentRequest(pr.id),
+    })
+  })
+  // Besluiten die op jouw reactie wachten (deadline dichtstbij eerst)
+  pendingProposals.forEach((pp) => {
+    actionItems.push({
+      id: `proposal-${pp.id}`,
+      iconClass: 'fa-check-to-slot',
+      iconStyle: { background: 'var(--tag-blue-bg)', color: 'var(--accent-primary)' },
+      title: `Reageer op: ${pp.title}`,
+      subtitle: `${pp.form === 'vote' ? 'Stemming' : 'Consentvoorstel'} · ${timeLeft(pp.deadline)}`,
+      onClick: () => navigate(`${basePath}/besluiten/${pp.id}`),
     })
   })
   if (feed.intakeRequest) {

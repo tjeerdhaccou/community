@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 5190
+    },
+    {
+      "name": "community-dev-subdomain",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["VITE_MAIN_DOMAIN=localhost", "npm", "run", "dev"],
+      "port": 5190
     }
   ]
 }

@@ -34,6 +34,8 @@ export const NAV_SECTIONS = [
     label: 'Project',
     items: [
       { to: 'roadmap', icon: 'fa-solid fa-road', color: 'var(--nav-roadmap, #5B6BD6)', bubble: 'periwinkle', label: 'Roadmap', action: 'view_roadmap', membersOnly: true, feature: 'roadmap' },
+      // Besluitvorming: opt-in-module (features.decisions === true), leesbaar vanaf aspirant.
+      { to: 'besluiten', icon: 'fa-solid fa-check-to-slot', color: 'var(--nav-besluiten, #2B8FD9)', bubble: 'navy', label: 'Besluiten', action: 'view_internal_updates', membersOnly: true, feature: 'decisions' },
       // Library only: projectdocumenten + adviseur-documenten. Eigen bestanden
       // staan onder "Mijn dossier".
       { to: 'documenten', icon: 'fa-solid fa-folder-open', color: 'var(--nav-documenten, #9B59B6)', bubble: 'pink', label: 'Projectdossier', membersOnly: true },

@@ -35,7 +35,8 @@ export default function NotificationBell() {
 
     // Navigate to related content
     const { related_type, related_id } = notification
-    if (related_type === 'post') navigate(`${basePath}/community`)
+    if (related_type === 'proposal') navigate(`${basePath}/besluiten/${related_id}`)
+    else if (related_type === 'post') navigate(`${basePath}/community`)
     else if (related_type === 'update') navigate(`${basePath}/updates`)
     else if (related_type === 'event') navigate(`${basePath}/events`)
     else if (related_type === 'document') navigate(`${basePath}/documenten`)

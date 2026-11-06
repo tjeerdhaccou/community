@@ -171,6 +171,14 @@ export const NOTIFICATION_CONFIG = {
   new_comment:          { icon: 'fa-solid fa-comment',       color: '#4A90D9' },
   new_reply:            { icon: 'fa-solid fa-reply',         color: '#4A90D9' },
   new_update_comment:   { icon: 'fa-solid fa-comment',       color: '#F4B400' },
+  // Besluitvorming (edge function decision-notify, migratie 112)
+  proposal_published:   { icon: 'fa-solid fa-check-to-slot', color: '#2D8CFF' },
+  proposal_new_version: { icon: 'fa-solid fa-code-branch',   color: '#2D8CFF' },
+  proposal_reminder:    { icon: 'fa-solid fa-hourglass-half', color: '#F09020' },
+  proposal_question:    { icon: 'fa-solid fa-circle-question', color: '#4A90D9' },
+  proposal_answered:    { icon: 'fa-solid fa-reply',         color: '#4A90D9' },
+  proposal_objection:   { icon: 'fa-solid fa-circle-exclamation', color: '#F09020' },
+  proposal_closed:      { icon: 'fa-solid fa-gavel',         color: '#3BD269' },
 }
 
 // ===== Event types =====
