@@ -407,7 +407,24 @@
   .chat-input { min-height: 42px; padding: 10px 14px; }
 
   body.chat-thread-open .bottom-nav { display: none; }
-  body.chat-thread-open .view-chat { height: 100dvh; }
+  /* Gesprek open: vast op het zichtbare deel van het scherm (zie Chat.jsx,
+     visualViewport). Zonder toetsenbord is dat het hele scherm; met
+     toetsenbord krimpt het venster en blijft de kop bovenin staan. */
+  body.chat-thread-open .view-chat {
+    position: fixed;
+    z-index: 60;
+    top: var(--chat-vv-top, 0px);
+    left: var(--chat-vv-left, 0px);
+    width: var(--chat-vv-w, 100vw);
+    height: var(--chat-vv-h, 100dvh);
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  body.chat-thread-open .chat-thread { min-height: 0; height: 100%; }
+  body.chat-thread-open .chat-body { flex: 1; min-height: 0; }
+  body.chat-thread-open .chat-head { padding-top: max(10px, env(safe-area-inset-top)); }
+  /* Met toetsenbord geen ruimte voor de thuisbalk onder de composer. */
+  body.chat-thread-open.chat-kb-open .chat-foot { padding-bottom: 8px; }
   /* Toetsenbord open: het venster krimpt (interactive-widget=resizes-content);
      de composer blijft onderaan en de berichten scrollen mee. */
   body.chat-thread-open .chat-foot { padding-bottom: max(10px, env(safe-area-inset-bottom)); }
