@@ -9,6 +9,7 @@ import { useSupportConversation } from './useSupportConversation'
 import { useMemberChatUnread } from './useMemberChat'
 import { setAppBadge } from '../lib/push'
 import { useUnreadIndicators, markSeen as markSeenLocal } from './useUnreadIndicators'
+import { usePendingProposals } from './useProposals'
 
 /**
  * Eén centrale bron voor alle sidebar-signalen. Twee semantische categorieën:
@@ -89,6 +90,9 @@ export function useSidebarSignals() {
   // PWA-appicoon (Android/desktop): aantal ongelezen chatberichten.
   useEffect(() => { setAppBadge(chatUnread) }, [chatUnread])
 
+  // ---- Actions: voorstellen die op mijn reactie (of die van mijn huishouden) wachten
+  const pendingProposals = usePendingProposals()
+
   // ---- Unread dots: prikbord, projectnieuws, events (cross-device via useUnreadIndicators)
   const { hasNewBoard, hasNewUpdates, hasNewEvents } = useUnreadIndicators(project?.id)
 
@@ -97,6 +101,7 @@ export function useSidebarSignals() {
       leden: intakePendingCount + unreviewedUploadCount,
       dossier: docRequestCount + signatureRequestCount,
       chat: chatUnread,
+      besluiten: pendingProposals.length,
     },
     unread: {
       board: hasNewBoard,

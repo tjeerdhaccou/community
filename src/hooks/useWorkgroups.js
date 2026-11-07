@@ -30,7 +30,7 @@ export function useWorkgroups() {
 
     const { data: wgData } = await supabase
       .from('workgroups')
-      .select('id, name, description, type, icon, sort_order')
+      .select('id, name, description, type, icon, sort_order, is_board')
       .eq('project_id', projectId)
       .order('type')
       .order('sort_order')

@@ -86,6 +86,9 @@ export default function Sidebar() {
         {item.to === 'mijn-dossier' && actions.dossier > 0 && (
           <span className="sidebar-badge">{actions.dossier}</span>
         )}
+        {item.to === 'besluiten' && actions.besluiten > 0 && (
+          <span className="sidebar-badge">{actions.besluiten}</span>
+        )}
         {item.to === 'chat' && actions.chat > 0 && (
           <span className="sidebar-badge">{actions.chat > 9 ? '9+' : actions.chat}</span>
         )}

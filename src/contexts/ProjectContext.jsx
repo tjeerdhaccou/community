@@ -7,6 +7,9 @@ import { onboardingEnabled } from '../lib/constants'
 
 const ProjectContext = createContext(null)
 
+// Modules die standaard UIT staan (zie featureEnabled).
+const OPT_IN_FEATURES = new Set(['decisions'])
+
 export function ProjectProvider({ children, slugOverride, initialProject }) {
   const params = useParams()
   const slug = slugOverride || params.slug
@@ -110,10 +113,14 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
   const isSubdomain = isProjectDomain()
   const basePath = isSubdomain ? '' : `/p/${project?.slug || ''}`
 
-  // Feature is enabled unless explicitly set to false (so new features added later default to on)
+  // Feature is enabled unless explicitly set to false (so new features added later default to on).
+  // Uitzondering: opt-in-modules die een eenmalige inrichting vragen staan pas
+  // aan bij features[key] === true (besluitvorming: regels + huishoudens, en de
+  // database dwingt het ook af via decisions_enabled()).
   function featureEnabled(key) {
-    if (!project) return true
+    if (!project) return OPT_IN_FEATURES.has(key) ? false : true
     const features = project.features || {}
+    if (OPT_IN_FEATURES.has(key)) return features[key] === true
     return features[key] !== false
   }
 

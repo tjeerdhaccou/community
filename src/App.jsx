@@ -22,6 +22,8 @@ const Community = lazy(() => import('./views/Community'))
 const Events = lazy(() => import('./views/Events'))
 const Settings = lazy(() => import('./views/Settings'))
 const Roadmap = lazy(() => import('./views/Roadmap'))
+const Besluiten = lazy(() => import('./views/Besluiten'))
+const BesluitDetail = lazy(() => import('./views/BesluitDetail'))
 const ProfessionalUpdates = lazy(() => import('./views/ProfessionalUpdates'))
 const AdviseurTeam = lazy(() => import('./views/AdviseurTeam'))
 const Profile = lazy(() => import('./views/Profile'))
@@ -412,6 +414,8 @@ function NormalRoutes() {
         <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
         <Route path="events" element={<FeatureRoute feature="events"><Events /></FeatureRoute>} />
         <Route path="roadmap" element={<FeatureRoute feature="roadmap"><Roadmap /></FeatureRoute>} />
+        <Route path="besluiten" element={<FeatureRoute feature="decisions"><Besluiten /></FeatureRoute>} />
+        <Route path="besluiten/:id" element={<FeatureRoute feature="decisions"><BesluitDetail /></FeatureRoute>} />
         <Route path="documents" element={<FeatureRoute feature="documents"><DocumentArchive /></FeatureRoute>} />
         <Route path="members" element={<FeatureRoute feature="members"><Leden /></FeatureRoute>} />
         <Route path="ledenwerving" element={<FeatureRoute feature="ledenwerving"><Ledenwerving /></FeatureRoute>} />
@@ -516,6 +520,8 @@ function ProjectSubdomainApp({ slug, initialProject }) {
           <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
           <Route path="events" element={<FeatureRoute feature="events"><Events /></FeatureRoute>} />
           <Route path="roadmap" element={<FeatureRoute feature="roadmap"><Roadmap /></FeatureRoute>} />
+          <Route path="besluiten" element={<FeatureRoute feature="decisions"><Besluiten /></FeatureRoute>} />
+          <Route path="besluiten/:id" element={<FeatureRoute feature="decisions"><BesluitDetail /></FeatureRoute>} />
           <Route path="documents" element={<FeatureRoute feature="documents"><DocumentArchive /></FeatureRoute>} />
           <Route path="members" element={<FeatureRoute feature="members"><Leden /></FeatureRoute>} />
           <Route path="aan-de-slag" element={<Onboarding />} />

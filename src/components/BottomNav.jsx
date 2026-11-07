@@ -81,6 +81,7 @@ export default function BottomNav() {
     if (to === 'chat' && actions.chat > 0) return actions.chat > 9 ? '9+' : String(actions.chat)
     if (to === 'mijn-dossier' && actions.dossier > 0) return String(actions.dossier)
     if (to === 'members' && actions.leden > 0) return String(actions.leden)
+    if (to === 'besluiten' && actions.besluiten > 0) return String(actions.besluiten)
     return null
   }
   function dotFor(to) {
