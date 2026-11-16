@@ -326,14 +326,20 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [resending, setResending] = useState(null)
+  // Bevestiging na versturen of opnieuw versturen: zonder deze regel leek het
+  // alsof er niets gebeurde (het formulier werd alleen leeggemaakt).
+  const [notice, setNotice] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
     if (!email.trim()) return
     setError(null)
+    setNotice(null)
     setSaving(true)
     try {
-      await onInvite({ email: email.trim(), name: name.trim(), personalMessage: personalMessage.trim(), assignedRole })
+      const sentTo = email.trim()
+      await onInvite({ email: sentTo, name: name.trim(), personalMessage: personalMessage.trim(), assignedRole })
+      setNotice(`Uitnodiging verstuurd naar ${sentTo}. Je kunt meteen de volgende uitnodigen.`)
       setEmail('')
       setName('')
       setPersonalMessage('')
@@ -347,8 +353,11 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
 
   async function handleResend(invite) {
     setResending(invite.id)
+    setError(null)
+    setNotice(null)
     try {
       await onResend(invite)
+      setNotice(`Uitnodiging opnieuw verstuurd naar ${invite.email}.`)
     } catch (err) {
       setError(err.message || 'Opnieuw versturen mislukt.')
     } finally {
@@ -418,7 +427,12 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
           <span className="form-hint">De uitgenodigde kan deze rol zelf niet aanpassen.</span>
         </div>
 
-        {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
+        {error && <p role="alert" style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
+        {notice && !error && (
+          <p role="status" style={{ color: 'var(--tag-green-text, #27A854)', fontSize: '14px', fontWeight: 500 }}>
+            <i className="fa-solid fa-circle-check" aria-hidden="true" /> {notice}
+          </p>
+        )}
 
         <div className="modal-actions" style={{ justifyContent: 'flex-end' }}>
           <button type="submit" className="btn-primary" disabled={saving || !email.trim()}>
