@@ -10,13 +10,19 @@ import '../styles/intake.css'
 // Het blauw van Fris: de terugval als een project nergens een kleur heeft staan.
 const FRIS_BLUE = '#2341FF'
 
+// De twee kleuren van het CrowdBuilding-thema (zie clean-tokens.css):
+// Rebellious Coral voor de knop, Invested Blue voor structuur.
+const CROWDBUILDING_COLORS = { accent: '#FF5C54', structure: '#130F33' }
+
 // Huisstijl van het project voor dit formulier. Eerst de kleuren uit "Branding"
-// in het CMS (zoals de ledenomgeving ze gebruikt), anders de kleuren van de
-// publieke projectpagina, anders het Fris-blauw.
+// in het CMS (zoals de ledenomgeving ze gebruikt), dan de CrowdBuilding-kleuren
+// als het project die stijl heeft, anders de kleuren van de publieke
+// projectpagina, anders het Fris-blauw.
 function intakeColors(project) {
   if (project?.app_accent_color || project?.app_structure_color) {
     return { accent: project.app_accent_color, structure: project.app_structure_color }
   }
+  if (usesCrowdbuilding(project)) return CROWDBUILDING_COLORS
   if (project?.brand_accent_color || project?.brand_primary_color) {
     return { accent: project.brand_accent_color, structure: project.brand_primary_color }
   }
@@ -54,17 +60,15 @@ export default function IntakeForm({ slugOverride } = {}) {
   }, [projectIdent])
 
   // Fris is hier de vaste basis, ook voor bezoekers die Fris niet aan hebben
-  // staan. Alleen bij de CrowdBuilding-stijl blijft het oude uiterlijk staan:
-  // Fris en CrowdBuilding gaan nooit samen.
-  const fris = !usesCrowdbuilding(project)
+  // staan en ook bij de CrowdBuilding-stijl. Daar zetten we niet het
+  // CrowdBuilding-thema aan (Fris en dat thema gaan nooit samen), maar nemen we
+  // alleen de twee kleuren ervan over als accent.
   // Altijd licht: dit formulier rendert nooit in dark mode.
-  const brandVars = fris
-    ? accentVars(intakeColors(project), false)
-    : accentVars({ accent: project?.app_accent_color, structure: project?.app_structure_color }, false)
+  const brandVars = accentVars(intakeColors(project), false)
 
   useEffect(() => {
-    if (fris) loadFonts(['Instrument Serif'])
-  }, [fris])
+    loadFonts(['Instrument Serif'])
+  }, [])
 
   // Thema en projectkleuren ook op <html>, zodat wat buiten het formulier valt
   // (de cookiebalk) dezelfde kleuren draagt.
@@ -72,7 +76,7 @@ export default function IntakeForm({ slugOverride } = {}) {
     if (!project) return
     const root = document.documentElement
     const prevTheme = root.getAttribute('data-theme')
-    root.setAttribute('data-theme', fris ? 'warm' : 'crowdbuilding')
+    root.setAttribute('data-theme', 'warm')
     Object.entries(brandVars).forEach(([name, value]) => root.style.setProperty(name, value))
 
     return () => {
@@ -170,9 +174,7 @@ export default function IntakeForm({ slugOverride } = {}) {
 
   // De Fris-tokens gelden vanaf dit element; de projectkleuren staan er inline
   // op, want anders wint het Fris-blauw van wat er op <html> staat.
-  const pageProps = fris
-    ? { className: 'join-page intake-fris', 'data-look': 'fris', style: brandVars }
-    : { className: 'join-page' }
+  const pageProps = { className: 'join-page intake-fris', 'data-look': 'fris', style: brandVars }
 
   if (loading) {
     return (
@@ -191,7 +193,7 @@ export default function IntakeForm({ slugOverride } = {}) {
       <div {...pageProps}>
         <div className="join-card intake-state">
           <div className="join-card__content">
-            {fris && project?.logo_url && (
+            {project?.logo_url && (
               <img src={project.logo_url} alt={project.name + ' logo'} className="join-card__logo" />
             )}
             <div className="join-card__icon join-card__icon--error">
@@ -211,7 +213,7 @@ export default function IntakeForm({ slugOverride } = {}) {
         <div className="join-card intake-state intake-state--done" role="status">
           <div className="join-card__content" style={{ paddingTop: 32 }}>
             {project.logo_url && (
-              <img src={project.logo_url} alt={project.name + ' logo'} className="join-card__logo" style={fris ? undefined : { marginTop: 0 }} />
+              <img src={project.logo_url} alt={project.name + ' logo'} className="join-card__logo" />
             )}
             <div className="intake-success-icon" style={{ color: brandColor }}>
               <i className="fa-solid fa-circle-check" />
@@ -241,10 +243,9 @@ export default function IntakeForm({ slugOverride } = {}) {
               src={project.logo_url}
               alt={project.name + ' logo'}
               className="join-card__logo"
-              style={fris ? undefined : project.cover_image_url ? { marginTop: -78, position: 'relative', zIndex: 2 } : { marginTop: 20 }}
             />
           )}
-          {fris && <p className="intake-eyebrow">Aanmelden</p>}
+          <p className="intake-eyebrow">Aanmelden</p>
           <h1 className="join-card__title">{project.name}</h1>
           {project.tagline && <p className="join-card__tagline">{project.tagline}</p>}
 
@@ -354,7 +355,7 @@ export default function IntakeForm({ slugOverride } = {}) {
               style={{ background: 'var(--accent-cta)', color: 'var(--accent-on-cta)' }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
-              {fris && !submitting && <i className="fa-solid fa-arrow-right" aria-hidden="true" />}
+              {!submitting && <i className="fa-solid fa-arrow-right" aria-hidden="true" />}
             </button>
           </form>
         </div>

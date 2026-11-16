@@ -5,7 +5,7 @@
    Serif, zachte vlakken, pilknoppen) gelden hier altijd, los van de schakelaar
    voor ingelogde leden. De projectkleuren staan inline op hetzelfde element
    (accentVars uit lib/brandAccent.js), dus contrast is daar al geregeld.
-   Bij de CrowdBuilding-stijl ontbreekt .intake-fris en blijft alles zoals het was.
+   Ook bij de CrowdBuilding-stijl: dan komen alleen de twee kleuren daarvan mee.
    ============================================================================ */
 
 .intake-fris {
