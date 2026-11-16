@@ -109,6 +109,14 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
     // unmount open modals.
   }, [slug, user?.id])
 
+  // Projectrij opnieuw ophalen na een wijziging (bv. Instellingen opslaan), zodat
+  // branding, de sidebar en de "Aan de slag"-checklist meteen de nieuwe stand tonen.
+  async function refreshProject() {
+    if (!project?.id) return
+    const { data } = await supabase.from('projects').select('*').eq('id', project.id).single()
+    if (data) setProject(data)
+  }
+
   const branding = project ? {
     brand_primary_color: project.brand_primary_color,
     brand_accent_color: project.brand_accent_color,
@@ -143,7 +151,7 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
   const onboardingActive = onboardingEnabled(project?.features, isLightProject)
 
   return (
-    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain, featureEnabled, isLightProject, onboardingActive, isDemo, readOnly }}>
+    <ProjectContext.Provider value={{ project, milestones, role, membership, loading, error, branding, basePath, isSubdomain, featureEnabled, isLightProject, onboardingActive, isDemo, readOnly, refreshProject }}>
       {children}
     </ProjectContext.Provider>
   )

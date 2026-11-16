@@ -7,9 +7,15 @@ import { exportProjectData, exportMembersCSV } from '../lib/dataExport'
 import useIntakeQuestions from '../hooks/useIntakeQuestions'
 import IntakeQuestionEditor from '../components/IntakeQuestionEditor'
 import ImageCropper from '../components/ImageCropper'
+import { useLocation } from 'react-router-dom'
+import { parseHex } from '../lib/brandAccent'
 
 export default function Settings() {
-  const { project, milestones, loading: projectLoading } = useProject()
+  const { project, milestones, loading: projectLoading, isLightProject, refreshProject } = useProject()
+  const { hash } = useLocation()
+  // Eigen kleuren (buuur light): leeg = de standaardkleuren van buuur.
+  const [appAccent, setAppAccent] = useState('')
+  const [appStructure, setAppStructure] = useState('')
   const [name, setName] = useState('')
   const [tagline, setTagline] = useState('')
   const [location, setLocation] = useState('')
@@ -44,6 +50,8 @@ export default function Settings() {
       setDescription(project.description || '')
       setPrimaryColor(project.brand_primary_color || '#4A90D9')
       setAccentColor(project.brand_accent_color || '#3BD269')
+      setAppAccent(project.app_accent_color || '')
+      setAppStructure(project.app_structure_color || '')
       setDefaultTheme(project.default_theme === 'light' ? 'warm' : (project.default_theme || 'inherit'))
       setLogoUrl(project.logo_url || '')
       setLogoPreview(project.logo_url || '')
@@ -120,8 +128,21 @@ export default function Settings() {
     setCoverPreview('')
   }
 
+  // Deeplink vanuit "Aan de slag" (settings#branding, settings#aanmeldformulier).
+  useEffect(() => {
+    if (!hash || projectLoading) return
+    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [hash, projectLoading])
+
+  const accentInvalid = !!appAccent && !parseHex(appAccent)
+  const structureInvalid = !!appStructure && !parseHex(appStructure)
+
   async function handleSave(e) {
     e.preventDefault()
+    if (isLightProject && (accentInvalid || structureInvalid)) {
+      alert('Een van de kleuren is geen geldige hexkleur, bijvoorbeeld #2F6BFF.')
+      return
+    }
     setSaving(true)
     setSaved(false)
 
@@ -140,6 +161,11 @@ export default function Settings() {
         slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-') || null,
         public_description: publicDescription.trim() || null,
         public_contact_email: publicContactEmail.trim() || null,
+        // Kleuren beheert een light-groep zelf; bij pro doet de organisatie dat in het CMS.
+        ...(isLightProject ? {
+          app_accent_color: normalizeHex(appAccent),
+          app_structure_color: normalizeHex(appStructure),
+        } : {}),
       })
       .eq('id', project.id)
 
@@ -149,6 +175,8 @@ export default function Settings() {
     } else {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+      // Nieuwe stand doorgeven aan de rest van de app (kleuren, sidebar, Aan de slag).
+      await refreshProject()
     }
     setSaving(false)
   }
@@ -159,12 +187,19 @@ export default function Settings() {
     <div className="view-settings">
       <div className="view-header">
         <h1>Instellingen</h1>
+        <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
+          Hier regel je hoe jullie groep heet, eruitziet en gevonden wordt. Wijzigingen gaan pas in nadat je
+          onderaan op <strong>Wijzigingen opslaan</strong> klikt.
+        </p>
       </div>
 
       <form onSubmit={handleSave} className="settings-form">
         {/* Project info */}
         <section className="settings-section">
           <h2>Project informatie</h2>
+          <p className="form-hint" style={{ marginBottom: 16 }}>
+            De naam en tagline staan in de zijbalk en op je publieke pagina. De beschrijving zien leden op het dashboard.
+          </p>
 
           <div className="form-group">
             <label>Naam</label>
@@ -188,8 +223,11 @@ export default function Settings() {
         </section>
 
         {/* Branding */}
-        <section className="settings-section">
-          <h2>Branding</h2>
+        <section className="settings-section" id="branding">
+          <h2>Logo en uitstraling</h2>
+          <p className="form-hint" style={{ marginBottom: 16 }}>
+            Een logo{isLightProject ? ' en een eigen kleur maken' : ' maakt'} de omgeving herkenbaar als die van jullie.
+          </p>
 
           <div className="form-group">
             <label>Project logo</label>
@@ -240,11 +278,36 @@ export default function Settings() {
           </div>
         </section>
 
+        {isLightProject && (
+          <section className="settings-section">
+            <h2>Kleuren</h2>
+            <p className="form-hint" style={{ marginBottom: 16 }}>
+              Kies een kleur uit jullie logo of huisstijl. Wij zorgen dat tekst erop leesbaar blijft, ook in donkere modus.
+              Laat leeg om de standaardkleuren van buuur te houden.
+            </p>
+            <ColorField
+              label="Actiekleur"
+              hint="Voor knoppen en de belangrijkste acties."
+              value={appAccent}
+              onChange={setAppAccent}
+              invalid={accentInvalid}
+            />
+            <ColorField
+              label="Structuurkleur"
+              hint="Voor labels, iconen en links. Leeg laten betekent: volgt de actiekleur."
+              value={appStructure}
+              onChange={setAppStructure}
+              invalid={structureInvalid}
+            />
+          </section>
+        )}
+
         {/* Public project page */}
         <section className="settings-section">
           <h2>Publieke projectpagina</h2>
           <p className="form-hint" style={{ marginBottom: 16 }}>
             Een openbare pagina voor omwonenden en geïnteresseerden. Toont projectinfo, tijdlijn, publieke updates en events.
+            De inhoud bouw je in de Pagina bouwer; hier zet je de pagina aan of uit.
           </p>
 
           <label className="intake-toggle">
@@ -301,10 +364,11 @@ export default function Settings() {
         </section>
 
         {/* Intake form */}
-        <section className="settings-section">
-          <h2>Intake formulier</h2>
+        <section className="settings-section" id="aanmeldformulier">
+          <h2>Aanmeldformulier</h2>
           <p className="form-hint" style={{ marginBottom: 16 }}>
-            Een publiek aanmeldformulier dat je kunt delen op je website of social media.
+            Een publiek formulier waarmee geïnteresseerden zich aanmelden. Deel de link op je website of social media;
+            aanmeldingen komen binnen bij Leden, onder Ledenwerving.
           </p>
 
           <label className="intake-toggle">
@@ -313,7 +377,7 @@ export default function Settings() {
               checked={intakeEnabled}
               onChange={e => setIntakeEnabled(e.target.checked)}
             />
-            <span>Intake formulier actief</span>
+            <span>Aanmeldformulier actief</span>
           </label>
 
           {intakeEnabled && (
@@ -402,6 +466,43 @@ export default function Settings() {
           onCancel={() => setCropSrc(null)}
         />
       )}
+    </div>
+  )
+}
+
+// '#abc' of 'aabbcc' → '#aabbcc'; leeg of ongeldig → null.
+function normalizeHex(value) {
+  const rgb = parseHex(value)
+  return rgb ? '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join('') : null
+}
+
+function ColorField({ label, hint, value, onChange, invalid }) {
+  const id = `set-color-${label.toLowerCase()}`
+  return (
+    <div className="form-group">
+      <label htmlFor={id}>{label}</label>
+      <p className="form-hint">{hint}</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+        <input
+          type="color"
+          aria-label={`${label} kiezen`}
+          value={normalizeHex(value) || '#2F6BFF'}
+          onChange={e => onChange(e.target.value)}
+          style={{ width: 44, height: 36, padding: 2, border: 'none', background: 'none', cursor: 'pointer', flex: 'none' }}
+        />
+        <input
+          id={id}
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="Bijvoorbeeld #2F6BFF"
+          style={{ maxWidth: 180 }}
+        />
+        {value && (
+          <button type="button" className="btn-secondary btn-sm" onClick={() => onChange('')}>Wissen</button>
+        )}
+      </div>
+      {invalid && <p className="form-hint" style={{ color: 'var(--accent-red)' }}>Geen geldige hexkleur.</p>}
     </div>
   )
 }

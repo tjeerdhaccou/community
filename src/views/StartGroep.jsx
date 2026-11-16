@@ -264,7 +264,7 @@ export default function StartGroep() {
           <span id="sg-slug-hint" className="lp-sg__hint">
             {form.slug && !slugValid
               ? 'Gebruik 3 tot 40 tekens: kleine letters, cijfers en koppeltekens.'
-              : 'Op dit adres vinden je leden de groep. Later wijzigen kan niet zelf.'}
+              : 'Op dit adres vinden je leden de groep.'}
           </span>
         </div>
         <div className="lp-field">
