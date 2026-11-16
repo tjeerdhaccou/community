@@ -27,7 +27,7 @@ export default function DocumentArchive() {
     <div className="view-documents">
       <div className="view-header">
         <div className="view-header__row">
-          <h1>Dossier</h1>
+          <h1>Documentarchief</h1>
           {canDo(role, 'moderate_board') && (
             <button className="btn-primary" onClick={() => setModalOpen(true)}>
               <i className="fa-solid fa-plus" /> Document toevoegen
@@ -73,7 +73,7 @@ export default function DocumentArchive() {
                 </div>
               </div>
               <div className="doc-archive-item__actions">
-                <a href={doc.file_path} onClick={(e) => { e.preventDefault(); downloadProjectFile(doc.file_path, { fileName: doc.file_name }) }} className="btn-icon" title="Download">
+                <a href={doc.file_path} onClick={(e) => { e.preventDefault(); downloadProjectFile(doc.file_path, { fileName: doc.file_name }) }} className="btn-icon" title="Downloaden">
                   <i className="fa-solid fa-download" />
                 </a>
                 {canDo(role, 'moderate_board') && (

@@ -42,7 +42,7 @@ export default function Login() {
     } catch (err) {
       console.error('Email submit error:', err)
       if (err?.message?.includes('check_invited_email')) {
-        setError('De invite-controle is nog niet ingesteld. Vraag de beheerder om de database migratie te draaien.')
+        setError('Inloggen lukt nu niet door een fout aan onze kant. Probeer het later opnieuw.')
       } else {
         setError(`Er ging iets mis: ${err?.message || 'Onbekende fout'}`)
       }
@@ -85,7 +85,7 @@ export default function Login() {
       }
     } catch (err) {
       console.error('OTP verify error:', err)
-      setError('Ongeldige code. Controleer je email en probeer opnieuw.')
+      setError('Ongeldige code. Controleer je e-mail en probeer het opnieuw.')
     } finally {
       setLoading(false)
     }
@@ -130,14 +130,14 @@ export default function Login() {
             {error && <p className="login-error">{error}</p>}
 
             <button type="submit" className="cl-btn cl-btn--primary login-submit-btn" disabled={loading || !email.trim()}>
-              {loading ? 'Controleren...' : 'Verificatiecode versturen'}
+              {loading ? 'Versturen...' : 'Inlogcode versturen'}
             </button>
           </form>
 
           <p className="login-terms" style={{ marginTop: 24, fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
             Door in te loggen ga je akkoord met onze{' '}
             <a href="/voorwaarden" style={{ color: 'var(--accent-primary)' }}>algemene voorwaarden</a>{' '}
-            en ons <a href="/privacy" style={{ color: 'var(--accent-primary)' }}>privacybeleid</a>.
+            en onze <a href="/privacy" style={{ color: 'var(--accent-primary)' }}>privacyverklaring</a>.
           </p>
         </div>
       </div>

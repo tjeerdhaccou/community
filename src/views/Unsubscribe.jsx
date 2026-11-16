@@ -47,7 +47,7 @@ export default function Unsubscribe() {
             <i className="fa-solid fa-circle-check" style={{ fontSize: 40, color: 'var(--accent-green, #3BD269)', marginBottom: 20 }} />
             <h1 style={{ margin: '0 0 12px', fontSize: 22 }}>Je bent uitgeschreven</h1>
             <p style={{ margin: '0 0 24px', fontSize: 15, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
-              Je krijgt geen mail meer over <strong>{label}</strong>. Je kan dit
+              Je krijgt geen mail meer over <strong>{label}</strong>. Je kunt dit
               altijd weer aanzetten via je profiel-instellingen.
             </p>
             <Link to="/" className="btn-primary" style={{ textDecoration: 'none' }}>
@@ -62,7 +62,7 @@ export default function Unsubscribe() {
             <h1 style={{ margin: '0 0 12px', fontSize: 22 }}>Uitschrijven niet gelukt</h1>
             <p style={{ margin: '0 0 24px', fontSize: 15, lineHeight: 1.6, color: 'var(--text-secondary)' }}>
               {errorMsg}<br />
-              Je kan ook handmatig uitschrijven via je profiel-instellingen.
+              Je kunt je ook zelf uitschrijven via Mijn profiel.
             </p>
             <Link to="/" className="btn-primary" style={{ textDecoration: 'none' }}>
               Naar Buuur

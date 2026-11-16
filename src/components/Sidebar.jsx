@@ -185,7 +185,7 @@ export default function Sidebar() {
               onClick={() => { setUserMenuOpen(false); navigate(`${basePath}/profile`); setTimeout(() => document.getElementById('notif-section')?.scrollIntoView({ behavior: 'smooth' }), 100) }}
             >
               <i className="fa-solid fa-bell" />
-              <span>Notificaties</span>
+              <span>Meldingen</span>
             </div>
             <div className="sidebar-user-menu-divider" />
             <div className="sidebar-user-menu-item sidebar-user-menu-item--danger" onClick={handleSignOut}>

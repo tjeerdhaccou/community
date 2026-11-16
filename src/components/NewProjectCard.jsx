@@ -141,7 +141,7 @@ export default function NewProjectCard({ orgId, onCreated, onCancel }) {
               <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Stad, wijk" />
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Tagline</label>
+              <label>Slogan</label>
               <input type="text" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Korte beschrijving" />
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>

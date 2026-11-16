@@ -290,7 +290,7 @@ export default function Dashboard() {
       {role === 'guest' && (
         <div className="dash-status-strip">
           <i className="fa-solid fa-clock dash-status-strip__icon" />
-          <span>Je aanvraag wordt beoordeeld. Publieke updates en documenten kun je alvast bekijken.</span>
+          <span>Je aanvraag wordt beoordeeld. Openbaar nieuws en documenten kun je alvast bekijken.</span>
         </div>
       )}
       {role === 'aspirant' && (
@@ -374,7 +374,7 @@ export default function Dashboard() {
         {feed.latestUpdate && (
           <div className="dash-card dash-card--update" onClick={() => navigate(`${basePath}/updates`)} role="button" tabIndex={0}>
             <div className="dash-card__content">
-              <span className="dash-card__label"><i className="fa-solid fa-bullhorn" style={{ color: navColor('updates') }} /> Laatste update</span>
+              <span className="dash-card__label"><i className="fa-solid fa-bullhorn" style={{ color: navColor('updates') }} /> Laatste nieuws</span>
               <h3 className="dash-card__title">{feed.latestUpdate.title}</h3>
               <span className="dash-card__meta">
                 {feed.latestUpdate.author?.full_name} · {timeAgo(feed.latestUpdate.created_at)}

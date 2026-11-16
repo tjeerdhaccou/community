@@ -379,7 +379,7 @@ export default function PageBuilder() {
       {/* Header */}
       <div className="view-header">
         <div>
-          <h1><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 10, color: 'var(--accent-primary)' }} />Pagina bouwer</h1>
+          <h1><i className="fa-solid fa-wand-magic-sparkles" style={{ marginRight: 10, color: 'var(--accent-primary)' }} />Paginabouwer</h1>
           <p className="view-header__sub">Bouw de publieke pagina voor je project</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -400,7 +400,7 @@ export default function PageBuilder() {
               }}
             />
             <span className="pb-toggle__slider" />
-            <span className="pb-toggle__label">{isPublic ? 'Live' : 'Concept'}</span>
+            <span className="pb-toggle__label">{isPublic ? 'Gepubliceerd' : 'Concept'}</span>
           </label>
           {publicUrl && (
             <button type="button" className="btn-secondary" onClick={openPreview} disabled={publishing || conceptSaving} title="Bekijk concept zonder te publiceren">
@@ -457,7 +457,7 @@ export default function PageBuilder() {
             <button
               type="button"
               className="pb-color-theme-chip pb-color-theme-chip--active"
-              title="Aangepast palet — beheer je in het CMS (projectinstellingen)"
+              title="Eigen kleuren — pas je aan bij de instellingen van het project"
             >
               <div className="pb-color-theme-chip__swatches">
                 {['primary', 'secondary', 'accent', 'muted', 'background'].map((k) => (
@@ -514,7 +514,7 @@ export default function PageBuilder() {
       {heroSection && (
         <div className="pb-hero-editor">
           <div className="pb-hero-editor__label">
-            <i className="fa-solid fa-panorama" /> Hero
+            <i className="fa-solid fa-panorama" /> Openingsbeeld
           </div>
           <div className="pb-hero-editor__body">
             <div className="pb-hero-editor__image">
@@ -541,12 +541,12 @@ export default function PageBuilder() {
             </div>
             <div className="pb-hero-editor__fields">
               <div className="form-group">
-                <label>Heading</label>
+                <label>Kop</label>
                 <input type="text" value={heroSection.title || ''} onChange={e => updateSection(heroSection.id, 'title', e.target.value)} placeholder="Projectnaam of headline" />
               </div>
               <div className="form-group">
                 <label>Subtekst</label>
-                <textarea value={heroSection.body || ''} onChange={e => updateSection(heroSection.id, 'body', e.target.value)} rows={3} placeholder="Tagline of korte introductie" />
+                <textarea value={heroSection.body || ''} onChange={e => updateSection(heroSection.id, 'body', e.target.value)} rows={3} placeholder="Slogan of korte introductie" />
               </div>
             </div>
           </div>
@@ -558,7 +558,7 @@ export default function PageBuilder() {
         <div className="pb-cta-editor__header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <i className="fa-solid fa-bullhorn" />
-            <span>CTA Banner</span>
+            <span>Actieblok</span>
           </div>
           {!ctaSection ? (
             <button type="button" className="btn-secondary btn-sm" onClick={ensureCta} disabled={!project?.intake_enabled}>
@@ -627,7 +627,7 @@ export default function PageBuilder() {
         {contentSections.length === 0 && (
           <div className="page-builder__empty">
             <i className="fa-solid fa-layer-group" />
-            <p>Nog geen secties. Voeg je eerste content blok toe.</p>
+            <p>Nog geen secties. Voeg je eerste blok toe.</p>
           </div>
         )}
 

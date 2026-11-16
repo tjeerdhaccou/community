@@ -207,7 +207,7 @@ export default function Settings() {
           </div>
 
           <div className="form-group">
-            <label>Tagline</label>
+            <label>Slogan</label>
             <input type="text" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Korte omschrijving" />
           </div>
 
@@ -230,8 +230,8 @@ export default function Settings() {
           </p>
 
           <div className="form-group">
-            <label>Project logo</label>
-            <p className="form-hint">Vierkant logo, wordt getoond in de sidebar en op kaarten.</p>
+            <label>Projectlogo</label>
+            <p className="form-hint">Vierkant logo, wordt getoond in de zijbalk en op kaarten.</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 8 }}>
               {logoPreview ? (
                 <img src={logoPreview} alt="Logo" style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', objectFit: 'cover' }} />
@@ -255,7 +255,7 @@ export default function Settings() {
           </div>
 
           <div className="form-group">
-            <label>Cover afbeelding</label>
+            <label>Omslagfoto</label>
             <p className="form-hint">Wordt getoond op de aanmeldpagina en het aanmeldformulier.</p>
             {coverPreview ? (
               <div className="settings-cover-preview">
@@ -271,7 +271,7 @@ export default function Settings() {
               </div>
             ) : (
               <button type="button" className="btn-secondary" onClick={() => coverRef.current?.click()} disabled={uploadingCover}>
-                <i className="fa-solid fa-image" /> {uploadingCover ? 'Uploaden...' : 'Cover afbeelding kiezen'}
+                <i className="fa-solid fa-image" /> {uploadingCover ? 'Uploaden...' : 'Omslagfoto kiezen'}
               </button>
             )}
             <input ref={coverRef} type="file" accept="image/*" onChange={handleCoverSelect} style={{ display: 'none' }} />
@@ -306,7 +306,7 @@ export default function Settings() {
         <section className="settings-section">
           <h2>Publieke projectpagina</h2>
           <p className="form-hint" style={{ marginBottom: 16 }}>
-            Een openbare pagina voor omwonenden en geïnteresseerden. De inhoud bouw je in de Pagina bouwer; hier zet je de pagina aan of uit.
+            Een openbare pagina voor omwonenden en geïnteresseerden. De inhoud bouw je in de Paginabouwer; hier zet je de pagina aan of uit.
           </p>
 
           <label className="intake-toggle">
@@ -321,7 +321,7 @@ export default function Settings() {
           {isPublic && (
             <>
               <div className="form-group">
-                <label htmlFor="set-slug">URL-slug</label>
+                <label htmlFor="set-slug">Webadres</label>
                 <input
                   id="set-slug"
                   type="text"
@@ -348,7 +348,7 @@ export default function Settings() {
                 <span className="form-hint">Laat leeg om de standaard projectbeschrijving te gebruiken.</span>
               </div>
               <div className="form-group">
-                <label htmlFor="set-pub-email">Contact e-mail (publiek)</label>
+                <label htmlFor="set-pub-email">Contact-e-mail (openbaar)</label>
                 <input
                   id="set-pub-email"
                   type="email"
@@ -382,7 +382,7 @@ export default function Settings() {
           {intakeEnabled && (
             <>
               <div className="intake-url-box">
-                <label>Formulier URL</label>
+                <label>Link naar extern formulier</label>
                 <div className="intake-url-row">
                   <input
                     type="text"
@@ -565,7 +565,7 @@ function DataExportSection({ projectId, projectSlug }) {
 
       {result && result !== 'error' && !result.csv && (
         <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-green)' }}>
-          <i className="fa-solid fa-check" /> Export gedownload: {result.leden} leden, {result.prikbord} berichten, {result.updates} updates, {result.evenementen} evenementen, {result.documenten} documenten, {result.intake_reacties} intake-reacties
+          <i className="fa-solid fa-check" /> Export gedownload: {result.leden} leden, {result.prikbord} berichten, {result.updates} nieuwsberichten, {result.evenementen} events, {result.documenten} documenten, {result.intake_reacties} aanmeldingen
         </p>
       )}
       {result?.csv && (

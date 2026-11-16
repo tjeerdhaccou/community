@@ -63,7 +63,7 @@ export default function EventCard({ event, onRsvp, onClick }) {
           )}
           {visInfo && event.visibility !== 'members' && (
             <span className="event-card__vis-tag">
-              <i className={visInfo.icon} /> {event.visibility === 'public' ? 'Publiek' : 'Aspirant+'}
+              <i className={visInfo.icon} /> {event.visibility === 'public' ? 'Iedereen' : 'Alleen leden'}
             </span>
           )}
           {almostFull && (

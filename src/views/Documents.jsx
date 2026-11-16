@@ -60,7 +60,7 @@ export default function Documents() {
 
     // Projectdossier — aspirant+ (all member-visibility docs)
     if (canDo(role, 'view_all_docs')) {
-      t.push({ key: 'dossier', label: 'Projectdossier', icon: 'fa-solid fa-folder-open' })
+      t.push({ key: 'dossier', label: 'Voor alle leden', icon: 'fa-solid fa-folder-open' })
     }
 
     // Dynamic workgroup tabs — for groups the user belongs to
@@ -151,7 +151,7 @@ export default function Documents() {
     <div className="view-documents-unified">
       <div className="view-header">
         <div className="view-header__row">
-          <h1>Documenten</h1>
+          <h1>Projectdossier</h1>
         </div>
       </div>
 
@@ -309,7 +309,7 @@ function DocumentRow({ doc, showCategory }) {
             <i className="fa-solid fa-arrow-up-right-from-square" />
           </a>
         ) : (
-          <a href={href} onClick={openFile} className="doc-row__btn" title="Download">
+          <a href={href} onClick={openFile} className="doc-row__btn" title="Downloaden">
             <i className="fa-solid fa-download" />
           </a>
         )}

@@ -491,7 +491,7 @@ export default function Tekenen() {
           <i className="fa-solid fa-circle-xmark" style={{ color: 'var(--accent-red, #E53E3E)' }} />
           <h3 className="empty-inline__title">Geweigerd</h3>
           <p>Je hebt dit verzoek geweigerd{signer.decline_reason ? `: "${signer.decline_reason}"` : ''}.</p>
-          <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Neem contact op met de organisatie als je dit ongedaan wilt maken.</p>
+          <p style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>Neem contact op met het projectteam als je dit ongedaan wilt maken.</p>
         </div>
       </div>
     )

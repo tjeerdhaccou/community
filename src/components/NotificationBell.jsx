@@ -57,8 +57,8 @@ export default function NotificationBell() {
       <button
         className={`notification-bell__trigger ${unreadCount > 0 ? 'notification-bell__trigger--has-unread' : ''}`}
         onClick={() => setOpen(!open)}
-        title="Notificaties"
-        aria-label="Notificaties"
+        title="Meldingen"
+        aria-label="Meldingen"
       >
         <i className="fa-solid fa-bell" />
         {unreadCount > 0 && (
@@ -71,7 +71,7 @@ export default function NotificationBell() {
       {open && (
         <div className="notification-dropdown">
           <div className="notification-dropdown__header">
-            <h3>Notificaties</h3>
+            <h3>Meldingen</h3>
             {unreadCount > 0 && (
               <button className="notification-dropdown__mark-all" onClick={handleMarkAll}>
                 Alles gelezen
@@ -83,7 +83,7 @@ export default function NotificationBell() {
             {notifications.length === 0 ? (
               <div className="notification-dropdown__empty">
                 <i className="fa-regular fa-bell-slash" />
-                <p>Geen notificaties</p>
+                <p>Geen meldingen</p>
               </div>
             ) : (
               notifications.slice(0, 20).map(n => (

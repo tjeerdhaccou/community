@@ -90,7 +90,7 @@ export default function Ledenwerving() {
           className={`tag-filter__pill ${tab === 'form' ? 'tag-filter__pill--active' : ''}`}
           onClick={() => setTab('form')}
         >
-          Formulier instellingen
+          Aanmeldformulier
         </button>
       </div>
 
@@ -116,7 +116,7 @@ export default function Ledenwerving() {
             <div className="ledenwerving-empty">
               <i className="fa-solid fa-clipboard-list" />
               <h3>Aanmeldformulier is niet actief</h3>
-              <p>Ga naar "Formulier instellingen" om het aanmeldformulier aan te zetten en vragen te configureren.</p>
+              <p>Ga naar het tabblad "Aanmeldformulier" om het formulier aan te zetten en de vragen in te stellen.</p>
               <button className="btn-primary" onClick={() => setTab('form')}>
                 <i className="fa-solid fa-gear" /> Formulier instellen
               </button>
@@ -197,7 +197,7 @@ export default function Ledenwerving() {
           </div>
 
           <div className="ledenwerving-card">
-            <h3>Cover afbeelding</h3>
+            <h3>Omslagfoto</h3>
             <p className="form-hint">Wordt bovenaan het aanmeldformulier getoond.</p>
             {coverPreview ? (
               <div className="settings-cover-preview">

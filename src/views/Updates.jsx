@@ -89,7 +89,7 @@ export default function Updates() {
   async function handleTogglePin(update) {
     try {
       await togglePin(update.id, !!update.is_pinned)
-      toast.success(update.is_pinned ? 'Update losgemaakt' : 'Update vastgepind')
+      toast.success(update.is_pinned ? 'Nieuwsbericht losgemaakt' : 'Nieuwsbericht vastgepind')
     } catch (err) {
       toast.error(err.message || 'Vastpinnen mislukt')
     }
@@ -100,7 +100,7 @@ export default function Updates() {
     try {
       await deleteUpdate(confirmDelete.id)
       if (selectedUpdate?.id === confirmDelete.id) setSelectedUpdate(null)
-      toast.success('Update verwijderd')
+      toast.success('Nieuwsbericht verwijderd')
     } catch (err) {
       toast.error(err.message || 'Verwijderen mislukt')
     } finally {
@@ -115,7 +115,7 @@ export default function Updates() {
           <h1>Projectnieuws</h1>
           {canDo(role, 'publish_update') && (
             <button className="btn-primary" onClick={handleNew}>
-              <i className="fa-solid fa-plus" /> Nieuwe update
+              <i className="fa-solid fa-plus" /> Nieuws plaatsen
             </button>
           )}
         </div>
@@ -144,7 +144,7 @@ export default function Updates() {
           <i className="fa-solid fa-bullhorn" />
           <p>Nog geen projectnieuws{activeTag !== 'Alles' ? ` met tag "${activeTag}"` : ''}</p>
           {canDo(role, 'publish_update') && (
-            <button className="btn-secondary" onClick={handleNew}>Eerste update plaatsen</button>
+            <button className="btn-secondary" onClick={handleNew}>Eerste nieuwsbericht plaatsen</button>
           )}
         </div>
       ) : (
@@ -187,7 +187,7 @@ export default function Updates() {
 
       {confirmDelete && (
         <ConfirmModal
-          message={`Weet je zeker dat je de update "${confirmDelete.title}" wilt verwijderen? Bijlagen en reacties worden ook verwijderd. Deze actie kan niet ongedaan worden gemaakt.`}
+          message={`Weet je zeker dat je het nieuwsbericht "${confirmDelete.title}" wilt verwijderen? Bijlagen en reacties worden ook verwijderd. Deze actie kan niet ongedaan worden gemaakt.`}
           confirmLabel="Verwijderen"
           danger
           onConfirm={confirmDeleteUpdate}

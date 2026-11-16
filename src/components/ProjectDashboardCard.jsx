@@ -327,7 +327,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             <input type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Stad, buurt" />
           </div>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label>Tagline</label>
+            <label>Slogan</label>
             <input type="text" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Korte omschrijving" />
           </div>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
@@ -351,9 +351,9 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             { key: 'roadmap', label: 'Roadmap', icon: 'fa-solid fa-road' },
             { key: 'members', label: 'Leden', icon: 'fa-solid fa-users' },
             { key: 'ledenwerving', label: 'Ledenwerving', icon: 'fa-solid fa-clipboard-list' },
-            { key: 'documents', label: 'Documenten', icon: 'fa-solid fa-folder-open' },
+            { key: 'documents', label: 'Documentarchief', icon: 'fa-solid fa-folder-open' },
             { key: 'team', label: 'Team', icon: 'fa-solid fa-helmet-safety' },
-            { key: 'page_builder', label: 'Pagina bouwer', icon: 'fa-solid fa-wand-magic-sparkles' },
+            { key: 'page_builder', label: 'Paginabouwer', icon: 'fa-solid fa-wand-magic-sparkles' },
             // "Aan de slag" volgt een eigen default (aan voor light, uit voor pro/MO).
             { key: 'onboarding', label: 'Aan de slag', icon: 'fa-solid fa-rocket' },
           ].map(f => (
@@ -433,7 +433,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         {intakeEnabled && (
           <div className="org-edit__grid" style={{ marginTop: 16 }}>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Formulier URL</label>
+              <label>Link naar extern formulier</label>
               <div className="intake-url-row">
                 <input type="text" readOnly value={intakeUrl} className="intake-url-input" />
                 <button type="button" className="btn-secondary btn-sm" onClick={() => navigator.clipboard.writeText(intakeUrl)}>
@@ -472,7 +472,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
         {isPublic && (
           <div className="org-edit__grid" style={{ marginTop: 16 }}>
             <div className="form-group">
-              <label>URL-slug</label>
+              <label>Webadres</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 14, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>/project/</span>
                 <input
@@ -534,7 +534,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
                 onChange={e => handleRoleChange(m.id, e.target.value)}
                 style={{ fontSize: 13, padding: '4px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}
               >
-                <option value="admin">Admin</option>
+                <option value="admin">Beheerder</option>
                 <option value="moderator">Moderator</option>
                 <option value="member">Lid</option>
               </select>
@@ -549,7 +549,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             type="email"
             value={addEmail}
             onChange={e => setAddEmail(e.target.value)}
-            placeholder="E-mailadres van nieuwe admin"
+            placeholder="E-mailadres van de nieuwe beheerder"
             style={{ flex: 1, fontSize: 13, padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-default)' }}
             onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddAdmin())}
           />

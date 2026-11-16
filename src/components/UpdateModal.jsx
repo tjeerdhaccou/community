@@ -157,7 +157,7 @@ export default function UpdateModal({ update, onSave, onClose, onDelete, onAddAt
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{isEdit ? 'Update bewerken' : 'Nieuwe update'}</h2>
+          <h2>{isEdit ? 'Nieuwsbericht bewerken' : 'Nieuws plaatsen'}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Sluiten">
             <i className="fa-solid fa-xmark" />
           </button>
@@ -171,7 +171,7 @@ export default function UpdateModal({ update, onSave, onClose, onDelete, onAddAt
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder="Titel van de update"
+              placeholder="Titel van het nieuwsbericht"
               required
               autoFocus={!isTouchDevice}
             />
@@ -183,7 +183,7 @@ export default function UpdateModal({ update, onSave, onClose, onDelete, onAddAt
               id="update-body"
               value={body}
               onChange={e => setBody(e.target.value)}
-              placeholder="Schrijf hier je update..."
+              placeholder="Wat is er nieuw?"
               rows={5}
               required
             />

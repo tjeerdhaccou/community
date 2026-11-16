@@ -54,7 +54,7 @@ export default function AdviseurTeam() {
       <div className="view-header">
         <div className="view-header__row">
           <div>
-            <h1>Adviseurs Team</h1>
+            <h1>Adviseursteam</h1>
             <p className="view-header__subtitle">{professionals.length} adviseur{professionals.length !== 1 ? 's' : ''} betrokken bij dit project</p>
           </div>
           {canDo(role, 'invite_professional') && (

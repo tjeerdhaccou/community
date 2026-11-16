@@ -31,7 +31,7 @@ export default function UpdateCard({ update, onEdit, onTogglePin, onReaction, on
           )}
           <span className="update-card__visibility">
             <i className={`fa-solid ${update.is_public ? 'fa-eye' : 'fa-lock'}`} />
-            {update.is_public ? 'Openbaar' : 'Intern'}
+            {update.is_public ? 'Openbaar' : 'Alleen leden'}
           </span>
         </div>
 

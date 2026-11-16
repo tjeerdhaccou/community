@@ -69,7 +69,7 @@ export const ROLE_LABELS = {
   aspirant: 'Aspirant-lid',
   member: 'Lid',
   moderator: 'Moderator',
-  admin: 'Admin',
+  admin: 'Beheerder',
 }
 
 export const ROLE_COLORS = {

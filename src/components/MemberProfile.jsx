@@ -530,7 +530,7 @@ function MemberDossier({ profileId, projectId }) {
           <h4><i className="fa-solid fa-file" /> Documenten</h4>
           <button className="btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
             <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-upload'}`} />
-            {uploading ? 'Uploaden...' : 'Upload'}
+            {uploading ? 'Uploaden...' : 'Uploaden'}
           </button>
           <input ref={fileInputRef} type="file" onChange={handleFileUpload} style={{ display: 'none' }} />
         </div>

@@ -80,7 +80,7 @@ export default function Onboarding() {
       desc: 'Vertel bezoekers waar jullie project over gaat. Klaar zodra er één blok op je pagina staat.',
       done: counts.sections > 0,
       to: 'page-builder',
-      cta: 'Open paginabouwer',
+      cta: 'Open de Paginabouwer',
     },
     {
       key: 'intake',
@@ -109,8 +109,8 @@ export default function Onboarding() {
       title: 'Nodig je eerste leden uit',
       desc: 'Breng je groep samen: verstuur je eerste uitnodiging per mail.',
       done: counts.invites > 0 || counts.members > 1,
-      to: 'members?tab=werving',
-      cta: 'Naar ledenwerving',
+      to: 'members',
+      cta: 'Naar Leden',
     },
   ]
 

@@ -201,7 +201,7 @@ export default function EventModal({ event, onSave, onClose, onDelete }) {
             </div>
           ) : (
             <div className="form-group">
-              <label>Meeting link</label>
+              <label>Deelnamelink</label>
               <input type="url" value={onlineUrl} onChange={e => setOnlineUrl(e.target.value)} placeholder="https://meet.google.com/... of https://zoom.us/..." />
             </div>
           )}
