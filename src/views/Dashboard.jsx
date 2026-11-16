@@ -25,16 +25,19 @@ export default function Dashboard() {
   const { profile, isPlatformAdmin } = useAuth()
   const navigate = useNavigate()
 
-  // Verse group-admins naar "Aan de slag" tot de checklist klaar/weggeklikt is.
+  // Verse group-admins gaan één keer vanzelf naar "Aan de slag". Zodra ze de
+  // checklist hebben gezien (de pagina zet zelf de seen-sleutel) is het
+  // dashboard gewoon het dashboard, met bovenaan een kaart die naar de
+  // checklist verwijst tot die klaar of weggeklikt is.
   // Alleen als onboarding voor dit project actief is (light-groepen; pro/MO-
   // projecten worden door de org begeleid en krijgen geen checklist).
-  // Platform admins die rondkijken slaan we over; de session-guard voorkomt
-  // een redirect-loop nadat de admin in dezelfde sessie heeft weggeklikt.
+  // Platform admins die rondkijken slaan we over.
   useEffect(() => {
     if (loading || !project || role !== 'admin' || isPlatformAdmin) return
     if (!onboardingActive) return
     if (project.onboarding_dismissed) return
     if (safeStorage.getItem(`buuur-onboarding-skip-${project.id}`)) return
+    if (safeStorage.getItem(`buuur-onboarding-seen-${project.id}`)) return
     navigate(`${basePath}/aan-de-slag`, { replace: true })
   }, [loading, project, role, isPlatformAdmin, onboardingActive, basePath, navigate])
   const { activePhase } = useRoadmap(project?.id)
@@ -146,6 +149,18 @@ export default function Dashboard() {
   // renderen. Volgorde = urgentie: geld eerst, dan profiel/documenten, dan
   // admin-taken.
   const actionItems = []
+  // Inrichten nog niet af: verwijs naar de checklist in plaats van door te sturen.
+  if (role === 'admin' && onboardingActive && !project.onboarding_dismissed
+      && !safeStorage.getItem(`buuur-onboarding-skip-${project.id}`)) {
+    actionItems.push({
+      id: 'onboarding',
+      iconClass: 'fa-rocket',
+      iconStyle: { background: 'var(--tag-green-bg)', color: 'var(--accent-green)' },
+      title: 'Maak je groep af',
+      subtitle: 'Nog een paar stappen in Aan de slag: logo, pagina, aanmeldformulier en je eerste leden',
+      onClick: () => navigate(`${basePath}/aan-de-slag`),
+    })
+  }
   feed.paymentRequests.forEach((pr) => {
     const isAgreed = pr.status === 'agreed'
     const href = `/verzoeken/${pr.id}${pr.access_token ? `?t=${pr.access_token}` : ''}`

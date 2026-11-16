@@ -20,6 +20,11 @@ export default function Onboarding() {
     if (project && !onboardingActive) navigate(basePath || '/', { replace: true })
   }, [project, onboardingActive, basePath, navigate])
 
+  // Gezien: het dashboard stuurt hierna niet meer vanzelf door.
+  useEffect(() => {
+    if (project?.id) safeStorage.setItem(`buuur-onboarding-seen-${project.id}`, '1')
+  }, [project?.id])
+
   useEffect(() => {
     if (!project?.id) return
     let active = true
@@ -36,7 +41,7 @@ export default function Onboarding() {
       setLoading(false)
 
       // Alles klaar? Dan de checklist afronden zodat de auto-redirect stopt.
-      const complete = !!project.logo_url && (sec.count || 0) > 0 && !!project.intake_enabled
+      const complete = !!(project.logo_url || project.app_accent_color) && (sec.count || 0) > 0 && !!project.intake_enabled
         && (grp.count || 0) > 0 && ((inv.count || 0) > 0 || (mem.count || 0) > 1)
       const key = `buuur-onboarding-skip-${project.id}`
       if (complete && !project.onboarding_dismissed && !safeStorage.getItem(key)) {
@@ -62,9 +67,9 @@ export default function Onboarding() {
       icon: 'fa-solid fa-palette',
       color: 'var(--accent-purple, #7B5EA7)',
       title: 'Logo & uitstraling',
-      desc: 'Geef je community een herkenbaar gezicht met een logo en kleuren.',
-      done: !!project?.logo_url,
-      to: 'settings',
+      desc: 'Upload een logo of kies je eigen kleur. Klaar zodra een van de twee is opgeslagen.',
+      done: !!(project?.logo_url || project?.app_accent_color),
+      to: 'settings#branding',
       cta: 'Naar instellingen',
     },
     {
@@ -72,7 +77,7 @@ export default function Onboarding() {
       icon: 'fa-solid fa-wand-magic-sparkles',
       color: 'var(--accent-primary, #4A90D9)',
       title: 'Vul je openbare pagina',
-      desc: 'Vertel bezoekers waar jullie project over gaat met de paginabouwer.',
+      desc: 'Vertel bezoekers waar jullie project over gaat. Klaar zodra er één blok op je pagina staat.',
       done: counts.sections > 0,
       to: 'page-builder',
       cta: 'Open paginabouwer',
@@ -82,9 +87,9 @@ export default function Onboarding() {
       icon: 'fa-solid fa-clipboard-list',
       color: 'var(--accent-orange, #F09020)',
       title: 'Zet je aanmeldformulier op',
-      desc: 'Laat geïnteresseerden zich aanmelden bij jullie groep.',
+      desc: 'Laat geïnteresseerden zich aanmelden. Zet het formulier aan in Instellingen en sla op.',
       done: !!project?.intake_enabled,
-      to: 'settings',
+      to: 'settings#aanmeldformulier',
       cta: 'Naar instellingen',
     },
     {
@@ -92,7 +97,7 @@ export default function Onboarding() {
       icon: 'fa-solid fa-people-group',
       color: 'var(--accent-primary, #4A90D9)',
       title: 'Maak een groep',
-      desc: 'Organiseer je community in commissies of doelgroepen.',
+      desc: 'Verdeel het werk over commissies of werkgroepen, zoals Bouw of Financiën.',
       done: counts.groups > 0,
       to: 'organisatie?tab=groepen',
       cta: 'Naar groepen',
@@ -102,7 +107,7 @@ export default function Onboarding() {
       icon: 'fa-solid fa-paper-plane',
       color: 'var(--accent-green, #3BD269)',
       title: 'Nodig je eerste leden uit',
-      desc: 'Breng je groep samen — nodig de eerste bewoners uit.',
+      desc: 'Breng je groep samen: verstuur je eerste uitnodiging per mail.',
       done: counts.invites > 0 || counts.members > 1,
       to: 'members?tab=werving',
       cta: 'Naar ledenwerving',
