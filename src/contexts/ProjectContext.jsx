@@ -10,6 +10,11 @@ const ProjectContext = createContext(null)
 // Modules die standaard UIT staan (zie featureEnabled).
 const OPT_IN_FEATURES = new Set(['decisions'])
 
+// Onderdelen die bij buuur pro horen (org met procesbegeleider). Voor een
+// light-groep staan ze altijd uit, wat er ook in projects.features staat:
+// support = supportchat met het team, dossier = mijn dossier + tekenen.
+const PRO_ONLY_FEATURES = new Set(['support', 'dossier', 'pro_updates', 'team', 'decisions'])
+
 export function ProjectProvider({ children, slugOverride, initialProject }) {
   const params = useParams()
   const slug = slugOverride || params.slug
@@ -83,13 +88,17 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
 
       // Org-thema + milestones parallel ophalen — geen onderlinge afhankelijkheid.
       // Org-fetch faalt stil voor leden zonder leesrecht → thema valt terug op project/warm.
-      const [orgRes, milestonesRes] = await Promise.all([
+      // Soort org (light/pro) via een RPC: leden van een light-groep mogen de
+      // org-rij zelf niet lezen.
+      const [orgRes, milestonesRes, kindRes] = await Promise.all([
         proj.organization_id
           ? supabase.from('organizations').select('default_theme, kind').eq('id', proj.organization_id).single()
           : Promise.resolve({ data: null }),
         supabase.from('milestones').select('*').eq('project_id', proj.id).order('sort_order'),
+        supabase.rpc('get_project_org_kind', { p_project_id: proj.id }),
       ])
-      setOrg(orgRes.data)
+      const kind = kindRes.data || orgRes.data?.kind
+      setOrg(orgRes.data || kind ? { ...(orgRes.data || {}), kind } : null)
       setMilestones(milestonesRes.data || [])
       setLoading(false)
     }
@@ -113,19 +122,20 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
   const isSubdomain = isProjectDomain()
   const basePath = isSubdomain ? '' : `/p/${project?.slug || ''}`
 
+  // Light = initiatiefgroep (buuur light); pro = echte organisatie met procesbegeleider.
+  const isLightProject = org?.kind === 'personal'
+
   // Feature is enabled unless explicitly set to false (so new features added later default to on).
   // Uitzondering: opt-in-modules die een eenmalige inrichting vragen staan pas
   // aan bij features[key] === true (besluitvorming: regels + huishoudens, en de
   // database dwingt het ook af via decisions_enabled()).
   function featureEnabled(key) {
+    if (isLightProject && PRO_ONLY_FEATURES.has(key)) return false
     if (!project) return OPT_IN_FEATURES.has(key) ? false : true
     const features = project.features || {}
     if (OPT_IN_FEATURES.has(key)) return features[key] === true
     return features[key] !== false
   }
-
-  // Light = initiatiefgroep (buuur light); pro = echte organisatie met procesbegeleider.
-  const isLightProject = org?.kind === 'personal'
 
   // "Aan de slag"-checklist: standaard aan voor light-groepen, uit voor pro/MO-
   // projecten (die worden door de org begeleid). Per project te overschrijven

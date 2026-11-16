@@ -17,7 +17,7 @@ export const NAV_SECTIONS = [
     // 1-click bereikbaarheid, niet weggemoffeld als tab in Documenten.
     label: 'Voor jou',
     items: [
-      { to: 'mijn-dossier', icon: 'fa-solid fa-file-shield', color: 'var(--nav-dossier, #2BAFA0)', bubble: 'navy', label: 'Mijn dossier', shortLabel: 'Dossier', membersOnly: true },
+      { to: 'mijn-dossier', icon: 'fa-solid fa-file-shield', color: 'var(--nav-dossier, #2BAFA0)', bubble: 'navy', label: 'Mijn dossier', shortLabel: 'Dossier', membersOnly: true, feature: 'dossier' },
       // Chat: support + ledenchat (1-op-1 en thema-groepen) op één pagina.
       { to: 'chat', icon: 'fa-solid fa-comments', color: 'var(--clean-anytime, #3BD269)', bubble: 'green', label: 'Chat' },
     ]
