@@ -1424,6 +1424,30 @@ select.input {
   color: var(--accent-on-fill);
 }
 
+/* Leden: groepen op een eigen regel onder de rolfilters, met een klein label */
+.members-groups-filter {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: -10px;
+  margin-bottom: 20px;
+}
+.members-groups-filter .tag-filter-wrap { flex: 1; min-width: 0; margin-bottom: 0; }
+.tag-filter__label {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary, #9BA1B0);
+  line-height: 32px; /* gelijk met de pills ernaast (Fris) */
+}
+@media (max-width: 768px) {
+  .members-groups-filter { flex-direction: column; gap: 2px; margin-top: -6px; margin-bottom: 14px; }
+  .members-groups-filter .tag-filter-wrap--scroll { margin-bottom: 0; }
+  .tag-filter__label { line-height: 1.4; }
+}
+
 .tag-filter__divider {
   flex-shrink: 0;
   align-self: center;

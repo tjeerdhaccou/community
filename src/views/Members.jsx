@@ -126,21 +126,25 @@ export default function Members() {
             {f.label}
           </button>
         ))}
-        {commissies.length > 0 && (
-          <>
-            <span className="tag-filter__divider" aria-hidden="true" />
+      </CollapsibleTagFilter>
+
+      {/* Groepen op een eigen regel, zodat ze niet tussen de rollen door lopen */}
+      {commissies.length > 0 && (
+        <div className="members-groups-filter">
+          <span className="tag-filter__label">Groepen</span>
+          <CollapsibleTagFilter>
             {commissies.map(c => (
               <button
                 key={c.id}
                 className={`tag-filter__pill ${filter === `wg:${c.id}` ? 'tag-filter__pill--active' : ''}`}
-                onClick={() => setFilter(`wg:${c.id}`)}
+                onClick={() => setFilter(filter === `wg:${c.id}` ? 'all' : `wg:${c.id}`)}
               >
-                <i className="fa-solid fa-users" style={{ marginRight: '5px', fontSize: '11px' }} /> {c.name}
+                {c.name}
               </button>
             ))}
-          </>
-        )}
-      </CollapsibleTagFilter>
+          </CollapsibleTagFilter>
+        </div>
+      )}
 
       {/* buuur light: stand van de gratis leden (toont niets als er geen grens geldt) */}
       {canDo(role, 'invite_members') && (
