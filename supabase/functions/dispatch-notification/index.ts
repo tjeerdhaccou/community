@@ -81,6 +81,29 @@ const IN_APP_ONLY: Set<Type> = new Set(['document_request_submitted'])
 // houdt de mail tegen.
 const DIRECT_TYPES: Set<Type> = new Set(['signature_request', 'document_request'])
 
+
+// ── Wie roept aan? ────────────────────────────────────────────────────────
+// verify_jwt laat ook de openbare anon-sleutel en anonieme demosessies door, en
+// deze functie werkt met de service-sleutel. De controle hieronder is dus de
+// enige rem: zonder echte, ingelogde gebruiker met de juiste rol doen we niets.
+async function callerFromRequest(admin: any, req: Request): Promise<{ id: string } | null> {
+  const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  if (!jwt) return null
+  try {
+    const { data } = await admin.auth.getUser(jwt)
+    const user = data?.user
+    if (!user || user.is_anonymous) return null
+    return { id: user.id }
+  } catch {
+    return null
+  }
+}
+
+async function isPlatformAdmin(admin: any, userId: string): Promise<boolean> {
+  const { data } = await admin.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle()
+  return data?.is_platform_admin === true
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -104,6 +127,31 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     })
+
+    // Alleen iemand die bij dit project hoort mag de leden ervan een melding
+    // sturen: een lid, een beheerder van de organisatie of een platformbeheerder.
+    // Zonder deze controle kon iedereen met de openbare sleutel (of een lid van
+    // een ander project) alle leden van een willekeurig project mailen.
+    {
+      const caller = await callerFromRequest(admin, req)
+      if (!caller) return json({ error: 'Forbidden' }, 403)
+      let allowed = await isPlatformAdmin(admin, caller.id)
+      if (!allowed) {
+        const { count } = await admin.from('memberships')
+          .select('id', { count: 'exact', head: true })
+          .eq('project_id', project_id).eq('profile_id', caller.id)
+        allowed = (count ?? 0) > 0
+      }
+      if (!allowed) {
+        const { data: proj } = await admin.from('projects').select('organization_id').eq('id', project_id).maybeSingle()
+        if (proj?.organization_id) {
+          const { data: om } = await admin.from('org_members')
+            .select('role, project_ids').eq('organization_id', proj.organization_id).eq('profile_id', caller.id).maybeSingle()
+          allowed = om?.role === 'admin' && (om.project_ids == null || (om.project_ids as string[]).includes(project_id))
+        }
+      }
+      if (!allowed) return json({ error: 'Forbidden' }, 403)
+    }
 
     // Haal project + activity context op
     const ctx = await loadContext(admin, type as Type, project_id, reference_id, actor_id)

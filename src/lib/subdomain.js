@@ -19,6 +19,21 @@ export function isProductionHost() {
   return h === MAIN_DOMAIN || h.endsWith(`.${MAIN_DOMAIN}`)
 }
 
+/**
+ * Mag dit adres de sessietokens meekrijgen? Alleen het hoofddomein en
+ * subdomeinen daarvan (en localhost tijdens ontwikkelen). Een adres uit de
+ * database (projects.custom_domain) of uit een cookie is geen garantie: zonder
+ * deze controle gaan access- en refresh-token naar elk domein dat daar staat.
+ */
+export function isTrustedSessionTarget(targetUrl) {
+  let url
+  try { url = new URL(targetUrl, window.location.origin) } catch { return false }
+  const h = url.hostname
+  if (h === MAIN_DOMAIN || h.endsWith(`.${MAIN_DOMAIN}`)) return url.protocol === 'https:'
+  if (!isProductionHost() && (h === 'localhost' || h === '127.0.0.1')) return true
+  return false
+}
+
 export function isOrgDomain() {
   return getSubdomain() === 'my'
 }
@@ -42,8 +57,8 @@ export async function navigateToSubdomain(targetUrl) {
 
   if (session) {
     const url = new URL(targetUrl)
-    // If target is a different origin, pass session tokens
-    if (url.origin !== window.location.origin) {
+    // If target is a different origin, pass session tokens (alleen naar eigen domeinen)
+    if (url.origin !== window.location.origin && isTrustedSessionTarget(targetUrl)) {
       const callbackUrl = `${url.origin}/auth/callback`
       window.location.href = `${callbackUrl}#access_token=${session.access_token}&refresh_token=${session.refresh_token}&returnPath=${encodeURIComponent(url.pathname + url.search)}`
       return
@@ -64,7 +79,7 @@ export function openSubdomainInNewTab(targetUrl) {
     const { supabase } = await import('./supabase')
     const { data: { session } } = await supabase.auth.getSession()
     const url = new URL(targetUrl)
-    if (session && url.origin !== window.location.origin) {
+    if (session && url.origin !== window.location.origin && isTrustedSessionTarget(targetUrl)) {
       newWindow.location.href = `${url.origin}/auth/callback#access_token=${session.access_token}&refresh_token=${session.refresh_token}&returnPath=${encodeURIComponent(url.pathname + url.search)}`
     } else {
       newWindow.location.href = targetUrl

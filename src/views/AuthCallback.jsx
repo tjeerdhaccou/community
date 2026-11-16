@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { getReturnCookie, sendOtpCode } from '../lib/auth'
 import { redirectByRole } from '../lib/loginRedirect'
+import { isTrustedSessionTarget } from '../lib/subdomain'
+
+// Alleen een pad binnen deze site; geen '//host' of volledig adres.
+function safeReturnPath(raw) {
+  if (!raw) return '/dashboard'
+  let path
+  try { path = decodeURIComponent(raw) } catch { return '/dashboard' }
+  return /^\/(?![\/\\])/.test(path) ? path : '/dashboard'
+}
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -18,7 +27,9 @@ export default function AuthCallback() {
     async function redirectAfterLogin() {
       // Check cookie first (set by subdomain before OAuth redirect)
       const returnUrl = getReturnCookie()
-      if (returnUrl) {
+      // Tokens alleen meegeven aan een eigen (sub)domein; de cookie is door elk
+      // subdomein te zetten en dus geen betrouwbare bron.
+      if (returnUrl && isTrustedSessionTarget(returnUrl)) {
         // Pass session tokens to subdomain via URL hash so it can restore the session.
         // Preserve the original path+search as returnPath so the subdomain auth-callback
         // sends the user to where they actually wanted to go, not just to '/'.
@@ -59,7 +70,7 @@ export default function AuthCallback() {
           if (data?.session) {
             const returnPath = hashParams.get('returnPath')
             window.history.replaceState(null, '', window.location.pathname)
-            navigate(returnPath ? decodeURIComponent(returnPath) : '/dashboard', { replace: true })
+            navigate(safeReturnPath(returnPath), { replace: true })
             return
           }
           fail()
