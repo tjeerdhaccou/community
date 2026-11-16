@@ -113,6 +113,29 @@ async function addVercelDomain(slug: string): Promise<void> {
   console.log(`Vercel domain added: ${domain}`)
 }
 
+
+// ── Wie roept aan? ────────────────────────────────────────────────────────
+// verify_jwt laat ook de openbare anon-sleutel en anonieme demosessies door, en
+// deze functie werkt met de service-sleutel. De controle hieronder is dus de
+// enige rem: zonder echte, ingelogde gebruiker met de juiste rol doen we niets.
+async function callerFromRequest(admin: any, req: Request): Promise<{ id: string } | null> {
+  const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  if (!jwt) return null
+  try {
+    const { data } = await admin.auth.getUser(jwt)
+    const user = data?.user
+    if (!user || user.is_anonymous) return null
+    return { id: user.id }
+  } catch {
+    return null
+  }
+}
+
+async function isPlatformAdmin(admin: any, userId: string): Promise<boolean> {
+  const { data } = await admin.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle()
+  return data?.is_platform_admin === true
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -132,6 +155,48 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid slug format' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // Alleen een platformbeheerder of een organisatiebrede beheerder van de
+    // organisatie waar dit project (of deze organisatie) bij hoort, en alleen
+    // voor de slug die er in de database bij staat. Zonder deze controle kon
+    // iedereen met de openbare sleutel DNS-records aanmaken en custom_domain
+    // van elk project overschrijven.
+    {
+      const authUrl = Deno.env.get('SUPABASE_URL') || ''
+      const _authExplicit = Deno.env.get('SB_SECRET_KEY') || ''
+      const authKey =
+        (Deno.env.get('SUPABASE_SECRET_KEYS') || '').match(/sb_secret_[A-Za-z0-9_-]+/)?.[0] ||
+        (_authExplicit.startsWith('sb_secret_') ? _authExplicit : '') ||
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+      if (!authUrl || !authKey) {
+        return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      const authAdmin = createClient(authUrl, authKey, { auth: { autoRefreshToken: false, persistSession: false } })
+      const caller = await callerFromRequest(authAdmin, req)
+      if (!caller) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+      // project_id is in de praktijk het id van een project of van een organisatie
+      const { data: proj } = await authAdmin.from('projects').select('slug, organization_id').eq('id', project_id).maybeSingle()
+      const { data: org } = proj ? { data: null } : await authAdmin.from('organizations').select('id, slug').eq('id', project_id).maybeSingle()
+      const orgId = proj?.organization_id ?? org?.id ?? null
+      const knownSlug = proj?.slug ?? org?.slug ?? null
+      let allowed = false
+      if (orgId && knownSlug === slug) {
+        if (await isPlatformAdmin(authAdmin, caller.id)) {
+          allowed = true
+        } else {
+          const { data: om } = await authAdmin.from('org_members')
+            .select('role, project_ids').eq('organization_id', orgId).eq('profile_id', caller.id).maybeSingle()
+          allowed = om?.role === 'admin' && om?.project_ids == null
+        }
+      }
+      if (!allowed) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
     }
 
     const results: Record<string, string> = {}

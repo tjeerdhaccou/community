@@ -1,6 +1,7 @@
 // storage-backup
 // Back-up en integriteitscontrole van geüploade bestanden, binnen Supabase.
-// Zie migratie 103. Aangeroepen door pg_cron (geen JWT → deploy met --no-verify-jwt):
+// Zie migratie 103. Aangeroepen door pg_cron (geen JWT → deploy met --no-verify-jwt),
+// met een eenmalig kaartje uit de database (migratie 122):
 //   { "mode": "sync" }    elk kwartier: nieuwe/gewijzigde objecten → backup-files
 //   { "mode": "verify" }  elke nacht: blob achter elke metadata-rij aanwezig?
 //                         nee → terugzetten uit back-up; verwijderde bronnen na
@@ -69,13 +70,30 @@ async function sendAlert(subject: string, lines: string[]) {
   }).catch((e) => console.error('[storage-backup] mail mislukt', e))
 }
 
+
+// Kaartje van de database. Deze functie wordt zonder JWT aangeroepen (pg_cron of
+// een trigger via pg_net). De database maakt per aanroep een eenmalig kaartje
+// (public.cron_ticket, migratie 122) en stuurt het mee; wij halen het hier weg.
+// Zonder geldig kaartje van hooguit vijf minuten oud doen we niets.
+// deno-lint-ignore no-explicit-any
+async function kaartjeGeldig(sb: any, ticket: unknown, doel: string): Promise<boolean> {
+  if (typeof ticket !== 'string' || !/^[0-9a-f-]{36}$/i.test(ticket)) return false
+  const { data, error } = await sb.from('cron_tickets').delete()
+    .eq('id', ticket).eq('doel', doel)
+    .gt('created_at', new Date(Date.now() - 5 * 60_000).toISOString())
+    .select('id')
+  return !error && (data?.length ?? 0) === 1
+}
+
 Deno.serve(async (req) => {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return new Response('missing config', { status: 500 })
   let mode = 'sync'
-  try { const b = await req.json(); if (b?.mode) mode = String(b.mode) } catch { /* default */ }
+  let ticket: unknown = null
+  try { const b = await req.json(); if (b?.mode) mode = String(b.mode); ticket = b?.ticket } catch { /* default */ }
   if (!['sync', 'verify'].includes(mode)) return new Response('mode must be sync|verify', { status: 400 })
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+  if (!(await kaartjeGeldig(sb, ticket, 'storage-backup'))) return new Response('forbidden', { status: 403 })
   const { data: run } = await sb.from('storage_backup_runs').insert({ mode }).select('id').single()
   const stats = { checked: 0, copied: 0, missing: 0, restored: 0, unrecoverable: 0, pruned: 0 }
   const problems: string[] = []
@@ -172,10 +190,10 @@ Deno.serve(async (req) => {
         [`Gecontroleerd: ${stats.checked}`, `Ontbrekend: ${stats.missing}`, `Hersteld uit back-up: ${stats.restored}`, `Onherstelbaar: ${stats.unrecoverable}`, `Opgeruimd (30 dagen na verwijderen): ${stats.pruned}`, '', ...problems],
       )
     }
-    return new Response(JSON.stringify({ ok: true, mode, ...stats, problems: problems.slice(0, 20) }), { headers: { 'Content-Type': 'application/json' } })
+    return new Response(JSON.stringify({ ok: true, mode, ...stats, problems: problems.length }), { headers: { 'Content-Type': 'application/json' } })
   } catch (e) {
     await sb.from('storage_backup_runs').update({ finished_at: new Date().toISOString(), ...stats, error: (e as Error).message }).eq('id', run?.id)
     await sendAlert('Bestandsback-up buuur: run mislukt', [(e as Error).message])
-    return new Response(JSON.stringify({ ok: false, error: (e as Error).message }), { status: 500 })
+    return new Response(JSON.stringify({ ok: false, error: 'run mislukt' }), { status: 500 })
   }
 })

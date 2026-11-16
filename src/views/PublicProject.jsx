@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import DOMPurify from 'dompurify'
 import { useParams, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { timeAgo, MONTHS_SHORT, MONTHS_LONG, DAYS_LONG } from '../lib/constants'
@@ -212,12 +213,15 @@ function Carousel({ images }) {
   )
 }
 
-// Rich text body: HTML uit Tiptap, of plain text uit oude data.
+// Rich text body: HTML uit Tiptap, of plain text uit oude data. De HTML komt
+// uit de database en is door een projectbeheerder ook buiten de editor om te
+// schrijven, dus eerst opschonen: geen scripts of event-attributen op de
+// publieke pagina.
 function RichBody({ html, className }) {
   if (!html) return null
   const isHtml = /<\w+[^>]*>/.test(html)
   if (isHtml) {
-    return <div className={className} dangerouslySetInnerHTML={{ __html: html }} />
+    return <div className={className} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html, { USE_PROFILES: { html: true } }) }} />
   }
   return <p className={className}>{html}</p>
 }

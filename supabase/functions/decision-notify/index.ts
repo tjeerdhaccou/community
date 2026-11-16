@@ -57,7 +57,23 @@ interface Ctx {
   inAppBody: string | null
 }
 
-serve(async () => {
+// Kaartje van de database. Deze functie wordt zonder JWT aangeroepen (pg_cron of
+// pg_net). De database maakt per aanroep een eenmalig kaartje (public.cron_ticket,
+// migratie 122 en 123) en stuurt het mee; wij halen het hier weg. Zonder geldig
+// kaartje van hooguit vijf minuten oud doen we niets.
+// deno-lint-ignore no-explicit-any
+async function kaartjeGeldig(sb: any, req: Request, doel: string): Promise<boolean> {
+  let ticket: unknown = null
+  try { ticket = (await req.json())?.ticket } catch { /* geen body */ }
+  if (typeof ticket !== 'string' || !/^[0-9a-f-]{36}$/i.test(ticket)) return false
+  const { data, error } = await sb.from('cron_tickets').delete()
+    .eq('id', ticket).eq('doel', doel)
+    .gt('created_at', new Date(Date.now() - 5 * 60_000).toISOString())
+    .select('id')
+  return !error && (data?.length ?? 0) === 1
+}
+
+serve(async (req) => {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     console.error('[decision-notify] Missing SUPABASE_URL or SERVICE_ROLE_KEY')
     return json({ error: 'Server misconfigured' }, 500)
@@ -65,6 +81,7 @@ serve(async () => {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+  if (!(await kaartjeGeldig(admin, req, 'decision-notify'))) return json({ error: 'forbidden' }, 403)
 
   const { data: events, error } = await admin.rpc('claim_proposal_events', { p_limit: 25 })
   if (error) {

@@ -203,6 +203,42 @@ function randomToken(): string {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
+
+// ── Wie roept aan? ────────────────────────────────────────────────────────
+// verify_jwt laat ook de openbare sleutel en anonieme demosessies door, en deze
+// functie werkt met de service-sleutel. Zonder echte, ingelogde gebruiker die
+// betaalverzoeken van dit project mag beheren doen we niets. Zelfde regel als
+// de policy payment_requests_moderator_all: moderator of beheerder van het
+// project, beheerder van de organisatie (voor dit project) of platformbeheerder.
+// deno-lint-ignore no-explicit-any
+async function callerFromRequest(admin: any, req: Request): Promise<{ id: string } | null> {
+  const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  if (!jwt) return null
+  try {
+    const { data } = await admin.auth.getUser(jwt)
+    const user = data?.user
+    if (!user || user.is_anonymous) return null
+    return { id: user.id }
+  } catch {
+    return null
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function magBetaalverzoekenBeheren(admin: any, userId: string, projectId: string): Promise<boolean> {
+  const { data: prof } = await admin.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle()
+  if (prof?.is_platform_admin === true) return true
+  const { count } = await admin.from('memberships')
+    .select('id', { count: 'exact', head: true })
+    .eq('project_id', projectId).eq('profile_id', userId).in('role', ['moderator', 'admin'])
+  if ((count ?? 0) > 0) return true
+  const { data: proj } = await admin.from('projects').select('organization_id').eq('id', projectId).maybeSingle()
+  if (!proj?.organization_id) return false
+  const { data: om } = await admin.from('org_members')
+    .select('role, project_ids').eq('organization_id', proj.organization_id).eq('profile_id', userId).maybeSingle()
+  return om?.role === 'admin' && (om.project_ids == null || (om.project_ids as string[]).includes(projectId))
+}
+
 // ---- serve -----------------------------------------------------------------
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -245,6 +281,14 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'not_found' }), {
       status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+  }
+  {
+    const caller = await callerFromRequest(admin, req)
+    if (!caller || !(await magBetaalverzoekenBeheren(admin, caller.id, req0.project_id))) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
   }
   if (req0.status !== 'draft') {
     return new Response(JSON.stringify({ error: `already_${req0.status}` }), {

@@ -18,6 +18,42 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+
+// ── Wie roept aan? ────────────────────────────────────────────────────────
+// verify_jwt laat ook de openbare anon-sleutel en anonieme demosessies door, en
+// deze functie werkt met de service-sleutel. De controle hieronder is dus de
+// enige rem: zonder echte, ingelogde gebruiker met de juiste rol doen we niets.
+async function callerFromRequest(admin: any, req: Request): Promise<{ id: string } | null> {
+  const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim()
+  if (!jwt) return null
+  try {
+    const { data } = await admin.auth.getUser(jwt)
+    const user = data?.user
+    if (!user || user.is_anonymous) return null
+    return { id: user.id }
+  } catch {
+    return null
+  }
+}
+
+async function isPlatformAdmin(admin: any, userId: string): Promise<boolean> {
+  const { data } = await admin.from('profiles').select('is_platform_admin').eq('id', userId).maybeSingle()
+  return data?.is_platform_admin === true
+}
+
+// Beheerder of moderator van een project, beheerder van een organisatie of
+// platformbeheerder. Alle mails hieronder (welkom, afwijzing, uitnodigingen)
+// worden door hen verstuurd; een gewoon lid of een bezoeker hoort hier niet.
+async function isStaff(admin: any, userId: string): Promise<boolean> {
+  if (await isPlatformAdmin(admin, userId)) return true
+  const { count: orgCount } = await admin.from('org_members')
+    .select('id', { count: 'exact', head: true }).eq('profile_id', userId).eq('role', 'admin')
+  if ((orgCount ?? 0) > 0) return true
+  const { count: modCount } = await admin.from('memberships')
+    .select('id', { count: 'exact', head: true }).eq('profile_id', userId).in('role', ['admin', 'moderator'])
+  return (modCount ?? 0) > 0
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -105,6 +141,24 @@ serve(async (req) => {
       return new Response(JSON.stringify({ success: true, id: data.id }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // Alles behalve de intakebevestiging hierboven stuurt een mail naar een
+    // adres uit het verzoek. Zonder deze controle was dit een open mailrelay
+    // vanaf noreply@buuur.nl voor iedereen met de openbare sleutel.
+    if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    {
+      const authAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+        auth: { autoRefreshToken: false, persistSession: false },
+      })
+      const caller = await callerFromRequest(authAdmin, req)
+      if (!caller || !(await isStaff(authAdmin, caller.id))) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
     }
 
     if (!memberEmail) {

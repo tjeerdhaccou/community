@@ -12,7 +12,9 @@
 //   dry_run = alleen renderen en de PDF teruggeven (vereist JWT van een
 //   org-admin); niets opslaan of mailen. Voor de voorvertoning in het CMS.
 //
-// Gedeployed met --no-verify-jwt (pg_net stuurt geen JWT). Autorisatie zit in
+// Gedeployed met --no-verify-jwt (pg_net stuurt geen JWT). De trigger stuurt een
+// eenmalig kaartje mee (migratie 122); zonder kaartje of beheerder doen we niets.
+// Autorisatie zit verder in
 // RLS: alleen org-admins kunnen de countersign_*-velden zetten. Deze function
 // voert alleen uit wat de DB zegt dat moet gebeuren (status = completed,
 // enabled, nog niet bevestigd) en is daarmee idempotent — een ongewenste
@@ -415,6 +417,21 @@ async function sendEmail(args: {
 // Handler
 // ---------------------------------------------------------------------------
 
+
+// Kaartje van de database. Deze functie wordt zonder JWT aangeroepen (pg_cron of
+// een trigger via pg_net). De database maakt per aanroep een eenmalig kaartje
+// (public.cron_ticket, migratie 122) en stuurt het mee; wij halen het hier weg.
+// Zonder geldig kaartje van hooguit vijf minuten oud doen we niets.
+// deno-lint-ignore no-explicit-any
+async function kaartjeGeldig(sb: any, ticket: unknown, doel: string): Promise<boolean> {
+  if (typeof ticket !== 'string' || !/^[0-9a-f-]{36}$/i.test(ticket)) return false
+  const { data, error } = await sb.from('cron_tickets').delete()
+    .eq('id', ticket).eq('doel', doel)
+    .gt('created_at', new Date(Date.now() - 5 * 60_000).toISOString())
+    .select('id')
+  return !error && (data?.length ?? 0) === 1
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return json({ error: 'Server misconfigured' }, 500)
@@ -434,7 +451,7 @@ Deno.serve(async (req) => {
   let callerName: string | null = null
   if (jwt && jwt !== SUPABASE_ANON_KEY && jwt !== SERVICE_ROLE_KEY) {
     const { data } = await admin.auth.getUser(jwt)
-    callerId = data?.user?.id ?? null
+    callerId = data?.user && !data.user.is_anonymous ? data.user.id : null
   }
 
   const { data: request, error: reqErr } = await admin
@@ -465,6 +482,11 @@ Deno.serve(async (req) => {
   if (dryRun) {
     if (!callerId) return json({ error: 'forbidden' }, 403)
   } else {
+    // Echt tegentekenen: een beheerder (JWT) of de trigger, die een eenmalig
+    // kaartje uit de database meestuurt. Het id kennen is niet genoeg.
+    if (!callerId && !(await kaartjeGeldig(admin, body?.ticket, 'countersign-request'))) {
+      return json({ error: 'forbidden' }, 403)
+    }
     if (request.status !== 'completed') return json({ ok: true, skipped: 'not completed' })
     if (!request.countersign_enabled) return json({ ok: true, skipped: 'countersign not enabled' })
     if (request.countersigned_at) return json({ ok: true, skipped: 'already countersigned', file_path: request.countersigned_file_path })

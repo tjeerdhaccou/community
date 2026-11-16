@@ -83,6 +83,21 @@ function json(status: number, body: unknown) {
   })
 }
 
+// Terugkeeradres na betaling: alleen naar buuur.nl of een subdomein ervan. Een
+// adres uit het verzoek dat ergens anders heen wijst negeren we, anders stuurt
+// Mollie de betaler na het afrekenen door naar een site naar keuze.
+function veiligTerugkeeradres(url: unknown): string | null {
+  if (typeof url !== 'string' || !url) return null
+  try {
+    const u = new URL(url)
+    if (u.protocol !== 'https:') return null
+    const host = u.hostname.toLowerCase()
+    return host === 'buuur.nl' || host.endsWith('.buuur.nl') ? u.toString() : null
+  } catch {
+    return null
+  }
+}
+
 function euroFromCents(cents: number): string {
   return (cents / 100).toFixed(2)
 }
@@ -204,7 +219,7 @@ serve(async (req) => {
   // Return URL — waar Mollie de gebruiker na iDEAL naartoe stuurt
   const projectSlug = (pr.project as any)?.slug
   const memberBase = projectSlug ? `https://${projectSlug}.buuur.nl` : APP_BASE_URL
-  const finalReturnUrl = returnUrl || `${memberBase}/verzoeken/${pr.id}?paid=1${providedToken ? `&t=${providedToken}` : ''}`
+  const finalReturnUrl = veiligTerugkeeradres(returnUrl) || `${memberBase}/verzoeken/${pr.id}?paid=1${providedToken ? `&t=${providedToken}` : ''}`
 
   // Mollie payment aanmaken
   const molliePayload: Record<string, unknown> = {
