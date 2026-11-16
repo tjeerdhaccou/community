@@ -161,7 +161,7 @@ export type EmailBrand = {
   logoUrl?: string | null
   /** Knoppen en call-to-actions (projects.app_accent_color). */
   accentColor?: string | null
-  /** Links, streep en accenten (projects.app_structure_color). */
+  /** Links, citaatvlakken en accenten (projects.app_structure_color). */
   structureColor?: string | null
 }
 
@@ -205,14 +205,14 @@ export function emailParagraph(html: string, opts: { muted?: boolean; small?: bo
   return `<p class="${cls}" style="margin:0 0 16px;font-family:${FRIS.font.sans};font-size:${size}px;line-height:1.6;color:${color};">${html}</p>`
 }
 
-/** Persoonlijk bericht of citaat, in een lichte tint met een streep in de steunkleur. */
+/** Persoonlijk bericht of citaat, op een lichte tint van de steunkleur (bewust zonder gekleurde zijrand). */
 export function emailQuote(theme: EmailTheme, label: string | null, text: string) {
   const body = escapeHtml(text).replace(/\n/g, '<br/>')
   const labelHtml = label
     ? `<p class="fx-muted" style="margin:0 0 6px;font-family:${FRIS.font.sans};font-size:13px;line-height:1.4;color:${FRIS.light.muted};">${escapeHtml(label)}</p>`
     : ''
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 20px;border-collapse:separate;">
-  <tr><td class="fx-quote" bgcolor="${theme.structure.tint}" style="background:${theme.structure.tint};border-left:3px solid ${theme.structure.fill};border-radius:${FRIS.radius.block}px;padding:14px 18px;">
+  <tr><td class="fx-quote" bgcolor="${theme.structure.tint}" style="background:${theme.structure.tint};border-radius:${FRIS.radius.block}px;padding:14px 18px;">
     ${labelHtml}<p class="fx-ink" style="margin:0;font-family:${FRIS.font.sans};font-size:15px;line-height:1.6;color:${FRIS.light.ink};">${body}</p>
   </td></tr>
 </table>`
@@ -325,7 +325,6 @@ export function renderEmailLayout(opts: EmailLayoutOptions, theme = resolveEmail
         <tr><td style="padding:0 8px 16px;">${renderHeader(opts.brand, theme)}</td></tr>
         <tr><td>
           <table role="presentation" class="fx-card" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${light.card}" style="background:${light.card};border:1px solid ${light.border};border-radius:${FRIS.radius.card}px;border-collapse:separate;overflow:hidden;">
-            <tr><td height="4" bgcolor="${theme.structure.fill}" style="height:4px;line-height:4px;font-size:0;background:${theme.structure.fill};border-radius:${FRIS.radius.card}px ${FRIS.radius.card}px 0 0;">&nbsp;</td></tr>
             <tr><td class="fx-pad" style="padding:36px 40px 36px;">
               <h1 class="fx-h1" style="margin:0 0 20px;font-family:${FRIS.font.display};font-weight:400;font-size:32px;line-height:1.15;letter-spacing:-0.01em;color:${light.ink};">${escapeHtml(opts.heading)}</h1>
               ${opts.bodyHtml}
