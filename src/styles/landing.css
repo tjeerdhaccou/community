@@ -443,6 +443,36 @@ textarea.lp-input { resize: vertical; }
   .lp-steps, .lp-mods { grid-template-columns: 1fr 1fr; }
   .lp-section { padding: 64px 0; }
 }
+/* ===== /start-groep: pitch links, formulier rechts ===== */
+.lp-sg { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 4vw, 72px); align-items: start; padding-top: clamp(32px, 4vw, 64px); }
+.lp-sg__pitch .lp-start__head { text-align: left; margin-bottom: 0; }
+.lp-sg__pitch .lp-start__head h1 { margin: 16px 0; }
+.lp-sg__pitch .lp-start__head p { margin: 0; }
+.lp-sg__img { margin-top: 32px; border-radius: var(--radius-xl); overflow: hidden; aspect-ratio: 4 / 3; }
+.lp-sg__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lp-sg__card { background: var(--fris-fill); border-radius: var(--radius-xl); padding: clamp(22px, 2.6vw, 40px); position: sticky; top: 96px; }
+.lp-sg__card .lp-input { background: var(--bg-surface); }
+.lp-sg__card h2 { font-size: 22px; font-weight: 600; letter-spacing: -.015em; margin-bottom: 6px; }
+.lp-sg__card h2 + p { color: var(--text-secondary); font-size: 15px; margin-bottom: 22px; }
+.lp-sg__slug { display: flex; align-items: center; gap: 10px; }
+.lp-sg__slug .lp-input { flex: 1; min-width: 0; }
+.lp-sg__slug span { font-weight: 600; color: var(--text-secondary); }
+.lp-sg__hint { font-size: 13px; color: var(--text-secondary); padding-left: 4px; }
+.lp-sg__consent { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--text-secondary); }
+.lp-sg__consent input { flex: none; width: auto; margin-top: 3px; }
+.lp-sg__consent span { flex: 1; }
+.lp-sg__busy { text-align: center; padding: 48px 0; color: var(--text-secondary); }
+.lp-faq { display: grid; grid-template-columns: 1fr 1fr; column-gap: clamp(20px, 2.4vw, 40px); border-top: var(--fris-dot); }
+.lp-faq > div { padding: 24px 4px; border-bottom: var(--fris-dot); }
+.lp-faq h3 { font-size: 18px; font-weight: 600; letter-spacing: -.01em; margin-bottom: 6px; }
+.lp-faq p { color: var(--text-secondary); font-size: 15px; }
+.lp-sg-final { text-align: center; padding-bottom: clamp(64px, 7vw, 112px); }
+@media (max-width: 900px) {
+  .lp-sg { grid-template-columns: 1fr; }
+  .lp-sg__card { position: static; }
+  .lp-sg__img { display: none; }
+  .lp-faq { grid-template-columns: 1fr; }
+}
 @media (max-width: 1000px) {
   .lp-nav__links > a[href^="#"] { display: none; }
 }
