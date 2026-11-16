@@ -14,18 +14,17 @@ const FRIS_BLUE = '#2341FF'
 // Rebellious Coral voor de knop, Invested Blue voor structuur.
 const CROWDBUILDING_COLORS = { accent: '#FF5C54', structure: '#130F33' }
 
-// Huisstijl van het project voor dit formulier. Eerst de kleuren uit "Branding"
-// in het CMS (zoals de ledenomgeving ze gebruikt), dan de CrowdBuilding-kleuren
-// als het project die stijl heeft, anders de kleuren van de publieke
-// projectpagina, anders het Fris-blauw.
+// Huisstijl van het project voor dit formulier. Alleen de kleuren uit "Branding"
+// in het CMS tellen (zoals in de ledenomgeving), dan de CrowdBuilding-kleuren
+// als het project die stijl heeft, anders het Fris-blauw. Bewust niet
+// brand_primary_color/brand_accent_color: die horen bij het kleurenthema van de
+// publieke pagina en zijn bij elk project gevuld, ook als de beheerder nooit
+// een eigen kleur koos.
 function intakeColors(project) {
   if (project?.app_accent_color || project?.app_structure_color) {
     return { accent: project.app_accent_color, structure: project.app_structure_color }
   }
   if (usesCrowdbuilding(project)) return CROWDBUILDING_COLORS
-  if (project?.brand_accent_color || project?.brand_primary_color) {
-    return { accent: project.brand_accent_color, structure: project.brand_primary_color }
-  }
   return { accent: FRIS_BLUE, structure: FRIS_BLUE }
 }
 
@@ -137,6 +136,12 @@ export default function IntakeForm({ slugOverride } = {}) {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // Lege velden en vinkjes vangt de browser af (required). Dit is alleen voor
+    // een naam of adres van louter spaties.
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      setError('Vul je voornaam, achternaam en e-mailadres in.')
+      return
+    }
     setSubmitting(true)
     setError(null)
 
@@ -156,7 +161,7 @@ export default function IntakeForm({ slugOverride } = {}) {
         terms_accepted_at: now,
         terms_version: CONSENT_VERSION,
         // Aparte toestemming voor het delen van gegevens met initiatiefnemers/leden.
-        // De verzendknop staat uit tot dit vinkje aan is, dus hier altijd gezet.
+        // Het vinkje is verplicht (required), dus hier altijd gezet.
         data_sharing_consent_at: now,
       })
 
@@ -340,12 +345,12 @@ export default function IntakeForm({ slugOverride } = {}) {
 
             {/* Consent */}
             <label className="intake-consent">
-              <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} />
+              <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} required />
               <span>Ik ga akkoord dat mijn gegevens gedeeld worden met de initiatiefnemers en leden van {project.name}.</span>
             </label>
 
             <label className="intake-consent">
-              <input type="checkbox" checked={termsConsent} onChange={e => setTermsConsent(e.target.checked)} />
+              <input type="checkbox" checked={termsConsent} onChange={e => setTermsConsent(e.target.checked)} required />
               <span>
                 Ik ga akkoord met de{' '}
                 <a href="/voorwaarden" target="_blank" rel="noopener noreferrer">algemene voorwaarden</a>{' '}
@@ -359,7 +364,7 @@ export default function IntakeForm({ slugOverride } = {}) {
             <button
               type="submit"
               className="btn-primary join-card__btn"
-              disabled={submitting || !firstName.trim() || !lastName.trim() || !email.trim() || !consent || !termsConsent}
+              disabled={submitting}
               style={{ background: 'var(--accent-cta)', color: 'var(--accent-on-cta)' }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
