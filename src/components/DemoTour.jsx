@@ -6,14 +6,17 @@ import { getDemoInfoUrl } from '../lib/demo'
 import { TOUR_WELCOME, TOUR_MISSIONS, TOUR_FINISH, TOUR_UI } from '../content/demoTour'
 import '../styles/demo-tour.css'
 
-// Rondleiding voor bezoekers van de klik-demo: "verzamel je sleutelbos".
-// Vier opdrachten door de echte app; per opdracht wijst een spotlight het
-// element aan en levert een klik erop een sleutel op. Niets blokkeert: de
-// bezoeker kan altijd sluiten en later verder via de sleutelbos rechtsonder.
+// Rondleiding voor bezoekers van de klik-demo: "Zo werkt Buuur".
+// Genummerde stappen door de echte app; per stap wijst een spotlight het
+// element aan. Een klik op dat element of op "Volgende stap" rondt de stap af.
+// Niets blokkeert: de bezoeker kan altijd sluiten en later verder via de
+// voortgangsknop rechtsonder.
 //
 // Voortgang staat in sessionStorage: een nieuw bezoek begint opnieuw.
+// v2: de stappen zijn veranderd; oude voortgang (vier sleutels) telt niet mee.
 
-const STORAGE_KEY = 'buuur-demo-tour'
+const STORAGE_KEY = 'buuur-demo-tour-v2'
+const TOTAL = TOUR_MISSIONS.length
 const FIND_TIMEOUT_MS = 6000
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -29,10 +32,6 @@ function saveState(state) {
   try { window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch { /* idem */ }
 }
 
-function bubbleStyle(name) {
-  return { '--tour-b-bg': `var(--tour-bub-${name}-bg)`, '--tour-b-fg': `var(--tour-bub-${name}-fg)` }
-}
-
 // Zoekt het doelelement en volgt zijn positie (scrollen, resizen, layout-shift).
 function useTarget(selector, active) {
   const [el, setEl] = useState(null)
@@ -45,7 +44,9 @@ function useTarget(selector, active) {
     const started = Date.now()
     let timer
     const look = () => {
-      const found = document.querySelector(selector)
+      // Het eerste zichtbare element: sommige onderdelen (zoals de statistieken
+      // op het dashboard) zijn op mobiel verborgen.
+      const found = [...document.querySelectorAll(selector)].find(n => n.offsetWidth > 0 && n.offsetHeight > 0)
       if (found) {
         setEl(found)
         found.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' })
@@ -76,7 +77,7 @@ function useTarget(selector, active) {
 }
 
 // Hoogte van de cookiemelding onderin. Zolang die staat, schuiven kaartjes en
-// sleutelbos erboven, anders vallen ze eronder weg.
+// de voortgangsknop erboven, anders vallen ze eronder weg.
 function useCookieBarHeight() {
   const [h, setH] = useState(0)
   useEffect(() => {
@@ -91,14 +92,10 @@ function useCookieBarHeight() {
   return h
 }
 
-function Keys({ done }) {
+function Progress({ value }) {
   return (
-    <span className="tour-keys" aria-hidden="true">
-      {TOUR_MISSIONS.map(m => (
-        <span key={m.id} className={`tour-key ${done.includes(m.id) ? 'tour-key--on' : ''}`}>
-          <i className="fa-solid fa-key" />
-        </span>
-      ))}
+    <span className="tour-progress" aria-hidden="true">
+      <span className="tour-progress__bar" style={{ width: `${(value / TOTAL) * 100}%` }} />
     </span>
   )
 }
@@ -107,17 +104,14 @@ function WelcomeCard({ onStart, onLater }) {
   return (
     <div className="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-welcome-title">
       <div className="tour-card tour-card--welcome">
-        <div className="tour-card__art" aria-hidden="true">
-          {TOUR_MISSIONS.map((m, i) => (
-            <span key={m.id} className="tour-art__bub" style={{ ...bubbleStyle(m.bubble), '--i': i }}>
-              <i className={m.icon} />
-            </span>
-          ))}
-          <span className="tour-art__ring"><i className="fa-solid fa-key" /></span>
-        </div>
         <span className="tour-card__kicker">{TOUR_WELCOME.kicker}</span>
         <h2 id="tour-welcome-title">{TOUR_WELCOME.title}</h2>
         <p>{TOUR_WELCOME.body}</p>
+        <ol className="tour-steps">
+          {TOUR_MISSIONS.map(m => (
+            <li key={m.id}><i className={m.icon} aria-hidden="true" /> {m.title}</li>
+          ))}
+        </ol>
         <div className="tour-card__actions">
           <button type="button" className="btn-primary" onClick={onStart} autoFocus>
             {TOUR_WELCOME.primary} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
@@ -135,10 +129,7 @@ function FinishCard({ onClose }) {
   return (
     <div className="tour-overlay" role="dialog" aria-modal="true" aria-labelledby="tour-finish-title">
       <div className="tour-card tour-card--finish">
-        <div className="tour-card__art tour-card__art--finish" aria-hidden="true">
-          <span className="tour-art__ring tour-art__ring--big"><i className="fa-solid fa-key" /></span>
-          {Array.from({ length: 10 }, (_, i) => <span key={i} className="tour-spark" style={{ '--i': i }} />)}
-        </div>
+        <span className="tour-card__icon" aria-hidden="true"><i className="fa-solid fa-check" /></span>
         <span className="tour-card__kicker">{TOUR_FINISH.kicker}</span>
         <h2 id="tour-finish-title">{TOUR_FINISH.title}</h2>
         <p>{TOUR_FINISH.body}</p>
@@ -156,16 +147,18 @@ function FinishCard({ onClose }) {
   )
 }
 
-// Briefing onderaan het scherm: wat de opdracht is en een knop erheen.
+// Briefing onderaan het scherm: wat de stap laat zien en een knop erheen.
 function BriefCard({ mission, index, onGo, onSkip, onClose }) {
   return (
     <div className="tour-brief" role="dialog" aria-labelledby="tour-brief-title">
       <button type="button" className="tour-x" onClick={onClose} aria-label={TOUR_UI.close}><i className="fa-solid fa-xmark" /></button>
-      <span className="tour-bub" style={bubbleStyle(mission.bubble)}><i className={mission.icon} aria-hidden="true" /></span>
+      <span className="tour-bub"><i className={mission.icon} aria-hidden="true" /></span>
       <div className="tour-brief__body">
-        <span className="tour-card__kicker">Opdracht {index + 1} van {TOUR_MISSIONS.length}</span>
+        <span className="tour-card__kicker">Stap {index + 1} van {TOTAL}</span>
+        <Progress value={index} />
         <h3 id="tour-brief-title">{mission.title}</h3>
         <p>{mission.brief}</p>
+        {mission.pro && <p className="tour-pro"><i className="fa-solid fa-briefcase" aria-hidden="true" /> {mission.pro}</p>}
         <div className="tour-brief__actions">
           <button type="button" className="btn-primary btn-sm" onClick={onGo} autoFocus>
             {mission.go} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
@@ -190,7 +183,7 @@ function Spotlight({ rect }) {
   )
 }
 
-function Tip({ mission, rect, onSkip, onClose }) {
+function Tip({ mission, index, rect, onNext, onClose }) {
   const ref = useRef(null)
   const [pos, setPos] = useState(null)
 
@@ -198,7 +191,12 @@ function Tip({ mission, rect, onSkip, onClose }) {
     const tip = ref.current
     if (!tip) return
     const vw = window.innerWidth, vh = window.innerHeight
-    if (!rect || vw < 600) { setPos(null); return } // mobiel en zonder doel: paneel onderin
+    if (!rect || vw < 600) {
+      // Mobiel en zonder doel: paneel onderin, of bovenin als het doel zelf
+      // onderin staat (zoals de hulpknop), anders valt het paneel eroverheen.
+      setPos(rect && rect.top > vh / 2 ? { sheetTop: true } : null)
+      return
+    }
     const w = tip.offsetWidth, h = tip.offsetHeight, gap = 16
     const below = rect.top + rect.height + gap
     const top = below + h < vh - 12 ? below : Math.max(12, rect.top - h - gap)
@@ -207,72 +205,81 @@ function Tip({ mission, rect, onSkip, onClose }) {
     setPos({ top, left, arrow, up: top > rect.top })
   }, [rect])
 
-  const floating = !!pos
+  const floating = !!pos && !pos.sheetTop
   return (
     <div
       ref={ref}
-      className={`tour-tip ${floating ? 'tour-tip--float' : 'tour-tip--sheet'} ${pos?.up ? 'tour-tip--below' : ''}`}
+      className={`tour-tip ${floating ? 'tour-tip--float' : 'tour-tip--sheet'} ${pos?.sheetTop ? 'tour-tip--sheet-top' : ''} ${pos?.up ? 'tour-tip--below' : ''}`}
       style={floating ? { top: pos.top, left: pos.left, '--arrow': `${pos.arrow}px` } : undefined}
       role="dialog"
       aria-labelledby="tour-tip-title"
     >
       <button type="button" className="tour-x" onClick={onClose} aria-label={TOUR_UI.close}><i className="fa-solid fa-xmark" /></button>
-      <h3 id="tour-tip-title"><i className={mission.icon} aria-hidden="true" /> {mission.title}</h3>
+      <span className="tour-card__kicker">Stap {index + 1} van {TOTAL}</span>
+      <h3 id="tour-tip-title">{mission.title}</h3>
       <p>{rect ? mission.tip : TOUR_UI.fallback}</p>
+      {mission.pro && <p className="tour-pro"><i className="fa-solid fa-briefcase" aria-hidden="true" /> {mission.pro}</p>}
       <div className="tour-tip__actions">
-        <button type="button" className="tour-link" onClick={onSkip}>{rect ? TOUR_UI.skip : TOUR_UI.next}</button>
+        <button type="button" className="btn-primary btn-sm" onClick={onNext}>
+          {index + 1 === TOTAL ? TOUR_UI.finish : TOUR_UI.next} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+        </button>
       </div>
     </div>
   )
 }
 
-function EarnedToast({ next, count, onNext, onDismiss }) {
+// Bevestiging na een afgeronde stap, met een knop naar de volgende.
+function DoneToast({ count, next, onNext, onFinish, onDismiss }) {
   useEffect(() => {
     const t = setTimeout(onDismiss, 9000)
     return () => clearTimeout(t)
   }, [onDismiss])
   return (
     <div className="tour-toast" role="status">
-      <span className="tour-toast__key" aria-hidden="true"><i className="fa-solid fa-key" /></span>
+      <span className="tour-toast__check" aria-hidden="true"><i className="fa-solid fa-check" /></span>
       <div className="tour-toast__body">
-        <b>{TOUR_UI.earned} {count} van {TOUR_MISSIONS.length}</b>
+        <b>{next ? `Stap ${count} van ${TOTAL} afgerond` : TOUR_UI.lastDone}</b>
         {next && <span>{TOUR_UI.next}: {next.title}</span>}
       </div>
-      {next && (
-        <button type="button" className="btn-primary btn-sm" onClick={onNext}>
-          {TOUR_UI.next} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
-        </button>
-      )}
+      <button type="button" className="btn-primary btn-sm" onClick={next ? onNext : onFinish}>
+        {next ? TOUR_UI.next : TOUR_UI.finish} <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+      </button>
     </div>
   )
 }
 
-function Keyring({ state, open, onToggle, onResume, onRestart, onStop, onPick }) {
+// Voortgangsknop rechtsonder, met de lijst van stappen.
+function ProgressMenu({ state, open, onToggle, onResume, onRestart, onStop, onPick }) {
   const count = state.done.length
   return (
     <div className="tour-ring">
       {open && (
-        <div className="tour-ring__panel" role="dialog" aria-label={TOUR_UI.keyring}>
+        <div className="tour-ring__panel" role="dialog" aria-label={TOUR_UI.label}>
           <div className="tour-ring__head">
             <b>{TOUR_WELCOME.title}</b>
-            <span>{count} van {TOUR_MISSIONS.length} sleutels</span>
+            <span>{count} van {TOTAL} stappen</span>
+            <Progress value={count} />
           </div>
-          <ul className="tour-ring__list">
-            {TOUR_MISSIONS.map(m => {
+          <ol className="tour-ring__list">
+            {TOUR_MISSIONS.map((m, i) => {
               const done = state.done.includes(m.id)
               return (
                 <li key={m.id}>
-                  <button type="button" className={`tour-ring__item ${done ? 'tour-ring__item--done' : ''}`} onClick={() => onPick(m.id)}>
-                    <span className="tour-bub tour-bub--sm" style={bubbleStyle(m.bubble)}>
-                      <i className={done ? 'fa-solid fa-key' : m.icon} aria-hidden="true" />
+                  <button
+                    type="button"
+                    className={`tour-ring__item ${done ? 'tour-ring__item--done' : ''}`}
+                    onClick={() => onPick(m.id)}
+                    aria-label={`${i + 1}. ${m.title}${done ? ' (afgerond)' : ''}`}
+                  >
+                    <span className="tour-ring__num" aria-hidden="true">
+                      {done ? <i className="fa-solid fa-check" /> : i + 1}
                     </span>
                     <span>{m.title}</span>
-                    {done && <i className="fa-solid fa-check tour-ring__check" aria-label="Gedaan" />}
                   </button>
                 </li>
               )
             })}
-          </ul>
+          </ol>
           <div className="tour-ring__foot">
             {state.status === 'done'
               ? <button type="button" className="tour-link" onClick={onRestart}>{TOUR_UI.restart}</button>
@@ -283,8 +290,9 @@ function Keyring({ state, open, onToggle, onResume, onRestart, onStop, onPick })
         </div>
       )}
       <button type="button" className="tour-ring__btn" onClick={onToggle} aria-expanded={open}>
-        <Keys done={state.done} />
-        <span className="tour-ring__label">{TOUR_UI.keyring} <b>{count}/{TOUR_MISSIONS.length}</b></span>
+        <i className="fa-solid fa-list-check" aria-hidden="true" />
+        <span className="tour-ring__label">{TOUR_UI.label}</span>
+        <b className="tour-ring__count">{count}/{TOTAL}</b>
       </button>
     </div>
   )
@@ -296,9 +304,9 @@ export default function DemoTour() {
   const navigate = useNavigate()
   const [state, setState] = useState(loadState)
   const [ringOpen, setRingOpen] = useState(false)
-  const [earned, setEarned] = useState(null) // { count, next } na een verdiende sleutel
-  const [paused, setPaused] = useState(false) // na een sleutel: wacht tot de bezoeker verder wil
-  const [forced, setForced] = useState(null) // opdracht gekozen in de sleutelbos
+  const [earned, setEarned] = useState(null) // { count, next } na een afgeronde stap
+  const [paused, setPaused] = useState(false) // na een stap: wacht tot de bezoeker verder wil
+  const [forced, setForced] = useState(null) // stap gekozen in het voortgangsmenu
   const cookieBar = useCookieBarHeight()
 
   const update = useCallback(next => {
@@ -323,17 +331,28 @@ export default function DemoTour() {
   const stateRef = useRef(state)
   stateRef.current = state
 
-  const complete = useCallback(id => {
+  // advance: de bezoeker koos zelf "Volgende stap", dus zonder bevestiging door
+  // naar de briefing van de volgende stap. Bij een klik op het element zelf
+  // volgt eerst een bevestiging,
+  // zodat de bezoeker ziet wat er openging (ook na de laatste stap: de
+  // slotkaart komt pas daarna).
+  const complete = useCallback((id, { advance = false } = {}) => {
     const prev = stateRef.current
     if (prev.done.includes(id)) return
     const done = [...prev.done, id]
     const next = TOUR_MISSIONS.find(m => !done.includes(m.id)) || null
     update({ ...prev, done, status: next ? prev.status : 'done' })
     setForced(null)
-    if (next) { setEarned({ count: done.length, next }); setPaused(true) }
+    if (advance) {
+      setEarned(null)
+      setPaused(false)
+      return
+    }
+    setEarned({ count: done.length, next })
+    setPaused(true)
   }, [update])
 
-  // Een klik op het aangewezen element levert de sleutel op. De klik zelf gaat
+  // Een klik op het aangewezen element rondt de stap af. De klik zelf gaat
   // gewoon door, dus de bezoeker ziet meteen wat er achter zit.
   useEffect(() => {
     if (!el || !mission) return
@@ -342,7 +361,7 @@ export default function DemoTour() {
     return () => el.removeEventListener('click', onClick, { capture: true })
   }, [el, mission, complete])
 
-  // Escape sluit de rondleiding (de sleutelbos blijft staan).
+  // Escape sluit de rondleiding (de voortgangsknop blijft staan).
   useEffect(() => {
     if (state.status !== 'active' && state.status !== 'welcome') return
     const onKey = e => { if (e.key === 'Escape') update(prev => ({ ...prev, status: 'idle' })) }
@@ -373,11 +392,11 @@ export default function DemoTour() {
   }
 
   const stop = () => { update(prev => ({ ...prev, status: 'idle' })); setRingOpen(false); setEarned(null) }
-  const skip = () => mission && complete(mission.id)
+  const advance = () => mission && complete(mission.id, { advance: true })
 
   const showBrief = !!mission && !paused && !onPage
   // Op smalle schermen staan briefing, toast en tip onderin, precies waar de
-  // sleutelbos staat. Dan wijkt de sleutelbos even.
+  // voortgangsknop staat. Dan wijkt die even.
   const busy = showBrief || !!earned || (showTip && !!(rect || missing))
 
   const layer = (
@@ -386,28 +405,29 @@ export default function DemoTour() {
         <WelcomeCard onStart={start} onLater={() => update(prev => ({ ...prev, status: 'idle' }))} />
       )}
 
-      {state.status === 'done' && !state.finishSeen && (
+      {state.status === 'done' && !state.finishSeen && !earned && (
         <FinishCard onClose={() => update(prev => ({ ...prev, finishSeen: true }))} />
       )}
 
       {showBrief && (
-        <BriefCard mission={mission} index={index} onGo={() => go(mission)} onSkip={skip} onClose={stop} />
+        <BriefCard mission={mission} index={index} onGo={() => go(mission)} onSkip={advance} onClose={stop} />
       )}
 
       {showTip && rect && <Spotlight rect={rect} />}
-      {showTip && (rect || missing) && <Tip mission={mission} rect={rect} onSkip={skip} onClose={stop} />}
+      {showTip && (rect || missing) && <Tip mission={mission} index={index} rect={rect} onNext={advance} onClose={stop} />}
 
       {earned && (
-        <EarnedToast
+        <DoneToast
           count={earned.count}
           next={earned.next}
-          onNext={() => go(earned.next)}
+          onNext={() => { setEarned(null); setPaused(false) }}
+          onFinish={() => { setEarned(null); setPaused(false) }}
           onDismiss={() => { setEarned(null); setPaused(false) }}
         />
       )}
 
       {state.status !== 'welcome' && (
-        <Keyring
+        <ProgressMenu
           state={state}
           open={ringOpen}
           onToggle={() => setRingOpen(o => !o)}
