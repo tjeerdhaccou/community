@@ -108,6 +108,8 @@ export default function StartGroep() {
       location
         ? supabase.from('projects').update({ location }).eq('id', data.project_id)
         : Promise.resolve(),
+      // Welkomstmail aan de initiatiefnemer (hooguit één keer per groep).
+      supabase.functions.invoke('light-welcome-email', { body: { project_id: data.project_id } }),
       // Melding aan het buuur-team via de bestaande leads-mail.
       supabase.from('leads').insert({
         segment: 'bewoner',

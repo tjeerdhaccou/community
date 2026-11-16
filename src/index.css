@@ -4421,6 +4421,33 @@ select.input {
 .members-search__clear:hover { color: var(--text-primary); }
 
 /* Members pending banner */
+/* buuur light: stand van de gratis leden in het ledenbeheer */
+.light-quota {
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.light-quota__head { display: flex; align-items: center; gap: 10px; color: var(--text-primary); }
+.light-quota__head > i { color: var(--accent-green, #3BD269); font-size: 16px; }
+.light-quota--full .light-quota__head > i { color: var(--accent-orange, #F09020); }
+.light-quota__bar { flex: 1; max-width: 220px; height: 6px; border-radius: 9999px; background: var(--bg-hover); overflow: hidden; margin-left: auto; }
+.light-quota__bar span { display: block; height: 100%; border-radius: inherit; background: var(--accent-green, #3BD269); }
+.light-quota--full .light-quota__bar span { background: var(--accent-orange, #F09020); }
+.light-quota p { margin: 0; }
+.light-quota__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.light-quota__actions label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-primary); cursor: pointer; }
+.light-quota__actions .btn-primary { margin-left: auto; }
+.light-quota__done { color: var(--text-primary); }
+.light-quota__done i { color: var(--accent-green, #3BD269); }
+.light-quota__error { color: var(--accent-red); }
+
 .members-pending-banner {
   display: flex;
   align-items: center;
