@@ -131,11 +131,28 @@ function chatEnabled(features: Row | null): boolean {
 
 /* ── Main ─────────────────────────────────────────────────────────────────── */
 
-Deno.serve(async () => {
+// Kaartje van de database. Deze functie wordt zonder JWT aangeroepen (pg_cron of
+// pg_net). De database maakt per aanroep een eenmalig kaartje (public.cron_ticket,
+// migratie 122 en 123) en stuurt het mee; wij halen het hier weg. Zonder geldig
+// kaartje van hooguit vijf minuten oud doen we niets.
+// deno-lint-ignore no-explicit-any
+async function kaartjeGeldig(sb: any, req: Request, doel: string): Promise<boolean> {
+  let ticket: unknown = null
+  try { ticket = (await req.json())?.ticket } catch { /* geen body */ }
+  if (typeof ticket !== 'string' || !/^[0-9a-f-]{36}$/i.test(ticket)) return false
+  const { data, error } = await sb.from('cron_tickets').delete()
+    .eq('id', ticket).eq('doel', doel)
+    .gt('created_at', new Date(Date.now() - 5 * 60_000).toISOString())
+    .select('id')
+  return !error && (data?.length ?? 0) === 1
+}
+
+Deno.serve(async (req) => {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return new Response(JSON.stringify({ error: 'missing config' }), { status: 500 })
   }
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+  if (!(await kaartjeGeldig(admin, req, 'chat-notify-email'))) return new Response('forbidden', { status: 403 })
   const cutoff = new Date(Date.now() - DELAY_MINUTES * 60_000).toISOString()
   let dmSent = 0, mentionSent = 0, digestSent = 0, groupDirectSent = 0
 
