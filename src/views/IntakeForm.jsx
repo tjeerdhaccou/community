@@ -78,11 +78,19 @@ export default function IntakeForm({ slugOverride } = {}) {
     const prevTheme = root.getAttribute('data-theme')
     root.setAttribute('data-theme', 'warm')
     Object.entries(brandVars).forEach(([name, value]) => root.style.setProperty(name, value))
+    // De cookiemelding leest buiten een project deze drie namen (zie fris.css).
+    const publicVars = {
+      '--public-cta': brandVars['--accent-cta'],
+      '--public-on-cta': brandVars['--accent-on-cta'],
+      '--public-text': brandVars['--accent-primary'],
+    }
+    Object.entries(publicVars).forEach(([name, value]) => root.style.setProperty(name, value))
 
     return () => {
       if (prevTheme) root.setAttribute('data-theme', prevTheme)
       else root.removeAttribute('data-theme')
       ACCENT_VAR_NAMES.forEach((name) => root.style.removeProperty(name))
+      Object.keys(publicVars).forEach((name) => root.style.removeProperty(name))
     }
   }, [project])
 
