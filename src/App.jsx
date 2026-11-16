@@ -59,6 +59,7 @@ const PlatformAdmin = lazy(() => import('./views/PlatformAdmin'))
 const OrgOnboarding = lazy(() => import('./views/OrgOnboarding'))
 const Landing = lazy(() => import('./views/Landing'))
 const Start = lazy(() => import('./views/Start'))
+const StartGroep = lazy(() => import('./views/StartGroep'))
 const PostLoginRedirect = lazy(() => import('./views/PostLoginRedirect'))
 
 const RouteFallback = () => <div className="loading-page"><p>Laden...</p></div>
@@ -383,6 +384,7 @@ function NormalRoutes() {
 
       <Route path="/" element={<Landing />} />
       <Route path="/start" element={<Start />} />
+      <Route path="/start-groep" element={<StartGroep />} />
       <Route path="/d/:code" element={<AuthGuard><DocumentShare /></AuthGuard>} />
       <Route path="/dashboard" element={<AuthGuard><PostLoginRedirect /></AuthGuard>} />
 

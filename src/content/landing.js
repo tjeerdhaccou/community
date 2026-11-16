@@ -123,8 +123,8 @@ export const DOELGROEPEN = {
         'Roadmap die iedereen laat zien waar je staat',
       ],
       cta: 'Start met buuur light',
-      ctaTo: '/start?segment=bewoner',
-      ctaNote: 'Je omgeving staat er binnen een middag.',
+      ctaTo: '/start-groep',
+      ctaNote: 'Gratis tot 10 leden. Je omgeving staat er binnen een middag.',
       image: { src: `${IMG}/rol-initiatief.webp`, alt: 'Twee bewoners aan het werk in een plantenbak' },
     },
   ],
@@ -224,20 +224,21 @@ export const PLANS = {
     {
       key: 'light',
       featured: false,
-      tag: 'Voor één initiatief',
+      tag: 'Voor één initiatief · gratis tot 10 leden',
       tagTint: 'green',
       name: 'buuur light',
       sub: 'Voor wooncoöperaties, bouwgroepen en bewonersgroepen',
       body:
         'Eén projectomgeving voor je groep, om te groeien van los idee naar hechte club. ' +
-        'Je start vandaag, zonder gedoe.',
+        'Je start vandaag, zonder gedoe, en tot 10 leden kost het niets.',
       points: [
+        'Gratis tot 10 leden, zonder betaalgegevens',
         'Prikbord, events, documenten en roadmap',
         'Eigen pagina met aanmeldformulier voor nieuwe leden',
         'Eigen adres op buuur.nl',
       ],
       cta: 'Start met buuur light',
-      ctaTo: '/start?segment=bewoner',
+      ctaTo: '/start-groep',
     },
   ],
 }
@@ -353,7 +354,7 @@ export const START = {
       title: 'Ik wil hier samen wonen',
       desc: 'Je bent toekomstig bewoner, zoekt een woonproject of bent onderdeel van een bewonersgroep.',
       formTitle: 'Vertel ons over je woonwens',
-      formIntro: 'Laat je gegevens achter. We nemen contact op zodra buuur light voor jullie klaarstaat, of eerder als er een project bij je past.',
+      formIntro: 'Laat je gegevens achter, dan nemen we contact op als er een project bij je past. Heb je al een groep? Die start je direct zelf.',
       situations: [
         'Ik oriënteer me nog',
         'Ik zoek een bestaand woonproject',
@@ -368,4 +369,66 @@ export const START = {
   successBody: 'Bedankt {naam}, we hebben je bericht ontvangen en nemen snel contact met je op.',
   successCta: 'Terug naar de homepage',
   error: 'Er ging iets mis bij het versturen. Probeer het opnieuw of mail ons op hallo@buuur.nl.',
+}
+
+// Pagina /start-groep: zelf een buuur light-groep starten.
+export const START_GROEP = {
+  eyebrow: 'buuur light · gratis tot 10 leden',
+  title: 'Start je groep',
+  intro:
+    'Jullie hebben een naam en een droom. Geef je initiatief een eigen plek waar iedereen weet ' +
+    'wat er speelt, in plaats van drie WhatsApp-groepen en een zoekgeraakte mail met notulen.',
+  points: [
+    'Gratis tot 10 leden, zonder betaalgegevens',
+    'Binnen een paar minuten live op je eigen adres',
+    'Geen wachtwoorden: iedereen logt in met een code uit de mail',
+  ],
+  image: { src: `${IMG}/rol-initiatief.webp`, alt: 'Twee bewoners aan het werk in een plantenbak' },
+  steps: {
+    eyebrow: 'Zo werkt het',
+    title: 'In drie stappen van idee naar eigen plek.',
+    items: [
+      {
+        title: 'Vul het formulier in',
+        body: 'Je naam, de naam van je initiatief en een webadres. Je krijgt een code in je mail om je adres te bevestigen.',
+      },
+      {
+        title: 'Richt je plek in',
+        body: 'Je komt direct in je groep, met een korte checklist: logo en kleur, een eerste bericht en je publieke pagina.',
+      },
+      {
+        title: 'Haal je mensen erbij',
+        body: 'Nodig je medebewoners uit per mail of deel je aanmeldformulier. Wie meedoet maak je lid, wie meehelpt beheerder.',
+      },
+    ],
+  },
+  modules: {
+    eyebrow: 'Dit zit erin',
+    title: 'Alles wat een groep nodig heeft om op gang te komen.',
+    // Titels uit MODULES die bij buuur light horen.
+    titles: ['Projectnieuws', 'Prikbord', 'Events', 'Chat', 'Roadmap', 'Projectdossier', 'Leden', 'Pagina bouwer'],
+  },
+  faq: {
+    eyebrow: 'Goed om te weten',
+    title: 'Vragen die we vaak horen.',
+    items: [
+      {
+        q: 'Wat kost het?',
+        a: 'Tot 10 leden is buuur light gratis en vragen we geen betaalgegevens. Groeit je groep verder, dan gaat het over op een betaald abonnement. Dat laten we je ruim van tevoren weten.',
+      },
+      {
+        q: 'Wie kan er bij onze groep?',
+        a: 'Alleen mensen die jij uitnodigt of toelaat. Wat er op je publieke pagina staat bepaal je zelf.',
+      },
+      {
+        q: 'Kunnen we met meerdere mensen beheren?',
+        a: 'Ja. In de ledenlijst maak je andere leden beheerder of moderator, zodat het niet op één persoon leunt.',
+      },
+      {
+        q: 'En als ons project serieus wordt?',
+        a: 'Dan kun je doorgroeien naar buuur pro, met een procesbegeleider, documentverzoeken en ondertekenen. Je groep en alles wat erin staat blijft gewoon bestaan.',
+      },
+    ],
+  },
+  finalCta: 'Start je groep',
 }
