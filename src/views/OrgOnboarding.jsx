@@ -1,196 +1,125 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { logger } from '../lib/logger'
 
+function toSlug(value) {
+  return value
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+}
+
+// Zelfde regel als create_initiative_group in de database.
+const SLUG_OK = /^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/
+
+/**
+ * Eerste scherm voor wie inlogt zonder groep: start zelf een initiatief
+ * (buuur light). De database maakt in één keer de onzichtbare org, het project
+ * en het beheerderschap aan. Organisaties die meerdere groepen begeleiden
+ * (buuur pro) lopen via het contactformulier.
+ */
 export default function OrgOnboarding() {
-  const { user, reload } = useAuth()
+  const { reload } = useAuth()
   const navigate = useNavigate()
-  const [step, setStep] = useState('type') // type | details | creating
-  const [orgType, setOrgType] = useState(null) // 'professional' | 'group'
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
-  const [projectName, setProjectName] = useState('')
+  const [slugTouched, setSlugTouched] = useState(false)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState(null)
 
-  async function handleCreate() {
-    if (!name.trim() || !slug.trim()) return
+  const slugValid = SLUG_OK.test(slug)
+  const canSubmit = name.trim().length >= 2 && slugValid && !creating
+
+  async function handleCreate(e) {
+    e.preventDefault()
+    if (!canSubmit) return
     setCreating(true)
     setError(null)
 
-    try {
-      const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
+    const { data, error: rpcError } = await supabase.rpc('create_initiative_group', {
+      p_group_name: name.trim(),
+      p_slug: slug,
+    })
 
-      // 1. Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({
-          name: name.trim(),
-          slug: cleanSlug,
-          created_by: user.id,
-        })
-        .select()
-        .single()
-      if (orgError) throw orgError
-
-      // 2. Add user as org admin
-      const { error: memberError } = await supabase
-        .from('org_members')
-        .insert({ organization_id: org.id, profile_id: user.id, role: 'admin' })
-      if (memberError) throw memberError
-
-      // 3. For standalone groups: also create first project
-      if (orgType === 'group' && projectName.trim()) {
-        const projectSlug = projectName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-        const { data: project, error: projError } = await supabase
-          .from('projects')
-          .insert({
-            organization_id: org.id,
-            name: projectName.trim(),
-            slug: projectSlug,
-          })
-          .select()
-          .single()
-        if (projError) throw projError
-
-        // Add user as project admin
-        await supabase.from('memberships').insert({
-          profile_id: user.id,
-          project_id: project.id,
-          role: 'admin',
-        })
-
-        // Setup subdomain (non-blocking)
-        supabase.functions.invoke('setup-project-domain', {
-          body: { slug: projectSlug, project_id: project.id },
-        }).catch(() => {})
-      }
-
-      // Setup org subdomain (non-blocking)
-      supabase.functions.invoke('setup-project-domain', {
-        body: { slug: cleanSlug, project_id: org.id },
-      }).catch(() => {})
-
-      // Refresh auth context to pick up new memberships
-      await reload()
-
-      // Redirect
-      if (orgType === 'group') {
-        navigate('/', { replace: true })
-      } else {
-        navigate(`/org/${cleanSlug}`, { replace: true })
-      }
-    } catch (err) {
-      setError(err.message || 'Er ging iets mis')
+    if (rpcError) {
+      logger.error('create_initiative_group failed', rpcError)
+      // De functie geeft zelf een Nederlandse melding (naam bezet, limiet, ...).
+      setError(rpcError.code === 'P0001' || rpcError.code === '42501'
+        ? rpcError.message
+        : 'Het aanmaken is niet gelukt. Probeer het opnieuw.')
       setCreating(false)
+      return
     }
+
+    // Nieuwe membership ophalen, daarna door naar het project.
+    await reload()
+    navigate(`/p/${data.slug}`, { replace: true })
   }
 
   return (
     <div className="onboarding-page">
       <div className="onboarding-card">
         <div className="onboarding-card__header">
-          <h1>Welkom bij BUUUR</h1>
-          <p>Stel je organisatie in om te beginnen</p>
+          <h1>Start je groep</h1>
+          <p>Een eigen plek om elkaar op de hoogte te houden: nieuws, prikbord, agenda en chat.</p>
         </div>
 
-        {step === 'type' && (
-          <div className="onboarding-card__content">
-            <p className="onboarding-card__question">Hoe ga je het platform gebruiken?</p>
-            <div className="onboarding-types">
-              <button
-                className={`onboarding-type ${orgType === 'professional' ? 'onboarding-type--active' : ''}`}
-                onClick={() => setOrgType('professional')}
-              >
-                <div className="onboarding-type__icon" style={{ background: 'rgba(74,144,217,0.14)', color: 'var(--tag-blue-text, #3A7BC8)' }}>
-                  <i className="fa-solid fa-briefcase" />
-                </div>
-                <strong>Ik begeleid meerdere groepen</strong>
-                <p>Als procesbegeleider, ontwikkelaar of adviseur beheer je meerdere woonprojecten</p>
-              </button>
-              <button
-                className={`onboarding-type ${orgType === 'group' ? 'onboarding-type--active' : ''}`}
-                onClick={() => setOrgType('group')}
-              >
-                <div className="onboarding-type__icon" style={{ background: 'rgba(59,210,105,0.14)', color: 'var(--tag-green-text, #27A854)' }}>
-                  <i className="fa-solid fa-house-chimney-user" />
-                </div>
-                <strong>Ik heb een woongroep</strong>
-                <p>Je hebt één woonproject en wilt een eigen community platform</p>
-              </button>
-            </div>
-            <button
-              className="btn-primary onboarding-card__next"
-              disabled={!orgType}
-              onClick={() => setStep('details')}
-            >
-              Verder <i className="fa-solid fa-arrow-right" />
-            </button>
+        <form className="onboarding-card__content" onSubmit={handleCreate}>
+          <div className="form-group">
+            <label htmlFor="onb-name">Naam van je initiatief</label>
+            <input
+              id="onb-name"
+              type="text"
+              value={name}
+              maxLength={80}
+              onChange={e => {
+                setName(e.target.value)
+                if (!slugTouched) setSlug(toSlug(e.target.value))
+              }}
+              placeholder="bijv. Vlinderhaven"
+              autoFocus
+            />
           </div>
-        )}
 
-        {step === 'details' && (
-          <div className="onboarding-card__content">
-            <button className="onboarding-card__back" onClick={() => setStep('type')}>
-              <i className="fa-solid fa-arrow-left" /> Terug
-            </button>
-
-            <div className="form-group">
-              <label>{orgType === 'group' ? 'Naam van je woongroep' : 'Naam van je organisatie'}</label>
+          <div className="form-group">
+            <label htmlFor="onb-slug">Webadres</label>
+            <div className="onboarding-slug-row">
               <input
+                id="onb-slug"
                 type="text"
-                value={name}
+                value={slug}
+                maxLength={40}
                 onChange={e => {
-                  setName(e.target.value)
-                  setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
-                  if (orgType === 'group') setProjectName(e.target.value)
+                  setSlugTouched(true)
+                  setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))
                 }}
-                placeholder={orgType === 'group' ? 'bijv. Vlinderhaven' : 'bijv. CommonCity'}
-                autoFocus
               />
+              <span className="onboarding-slug-suffix">.buuur.nl</span>
             </div>
-
-            <div className="form-group">
-              <label>Webadres</label>
-              <div className="onboarding-slug-row">
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                />
-                <span className="onboarding-slug-suffix">.buuur.nl</span>
-              </div>
-            </div>
-
-            {orgType === 'group' && (
-              <div className="form-group">
-                <label>Projectnaam</label>
-                <input
-                  type="text"
-                  value={projectName}
-                  onChange={e => setProjectName(e.target.value)}
-                  placeholder="Naam van je eerste project"
-                />
-                <span className="form-hint">Je kunt dit later wijzigen</span>
-              </div>
+            {slug && !slugValid && (
+              <span className="form-hint">Gebruik 3 tot 40 tekens: kleine letters, cijfers en koppeltekens.</span>
             )}
-
-            {error && <p style={{ color: 'var(--accent-red)', fontSize: 13 }}>{error}</p>}
-
-            <button
-              className="btn-primary onboarding-card__next"
-              disabled={creating || !name.trim() || !slug.trim() || (orgType === 'group' && !projectName.trim())}
-              onClick={handleCreate}
-            >
-              {creating ? (
-                <><i className="fa-solid fa-spinner fa-spin" /> Aanmaken...</>
-              ) : (
-                <>{orgType === 'group' ? 'Community starten' : 'Organisatie aanmaken'} <i className="fa-solid fa-arrow-right" /></>
-              )}
-            </button>
           </div>
-        )}
+
+          {error && <p role="alert" style={{ color: 'var(--accent-red)', fontSize: 13 }}>{error}</p>}
+
+          <button type="submit" className="btn-primary onboarding-card__next" disabled={!canSubmit}>
+            {creating ? (
+              <><i className="fa-solid fa-spinner fa-spin" /> Aanmaken...</>
+            ) : (
+              <>Groep starten <i className="fa-solid fa-arrow-right" /></>
+            )}
+          </button>
+
+          <p className="form-hint" style={{ textAlign: 'center', marginTop: 16 }}>
+            Begeleid je als organisatie meerdere groepen?{' '}
+            <Link to="/start?segment=professional">Neem contact op</Link>
+          </p>
+        </form>
       </div>
     </div>
   )

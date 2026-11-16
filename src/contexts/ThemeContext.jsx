@@ -3,14 +3,12 @@ import { safeStorage } from '../lib/safeStorage'
 import { accentVars, ACCENT_VAR_NAMES } from '../lib/brandAccent'
 import { loadFonts } from '../lib/fonts'
 
-const LOOK_KEY = 'buuur-look'
-
 const ThemeContext = createContext(null)
 
-// 's Avonds (19:00–07:00 lokale tijd) standaard donker tonen.
-function isEveningNow() {
-  const hour = new Date().getHours()
-  return hour >= 19 || hour < 7
+// Zonder eigen keuze volgt licht/donker de instelling van het apparaat.
+const DEVICE_DARK = '(prefers-color-scheme: dark)'
+function deviceWantsDark() {
+  return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia(DEVICE_DARK).matches
 }
 
 export function ThemeProvider({ children, projectBranding, scope }) {
@@ -22,16 +20,17 @@ export function ThemeProvider({ children, projectBranding, scope }) {
   const style = projectBranding?.default_theme === 'crowdbuilding' ? 'crowdbuilding' : 'clean'
 
   // LICHT/DONKER-AS is wél een gebruikerskeuze (knop rechtsboven). Zonder
-  // handmatige keuze 's avonds automatisch donker.
+  // handmatige keuze volgt hij het apparaat; de knop wint daar altijd van, dus
+  // donker is ook op een donker ingesteld apparaat uit te zetten.
   const [dark, setDarkState] = useState(() => {
     if (!storageKey) return false
     const stored = safeStorage.getItem(storageKey)
     if (stored === 'dark') return true
     if (stored === 'light') return false
-    return isEveningNow()
+    return deviceWantsDark()
   })
 
-  // Expliciete keuze: opslaan én de avond-automatiek uitschakelen voor deze scope.
+  // Expliciete keuze: opslaan, en daarmee het apparaat niet meer volgen voor deze scope.
   const setDark = storageKey
     ? (next) => {
         safeStorage.setItem(storageKey, next ? 'dark' : 'light')
@@ -40,16 +39,10 @@ export function ThemeProvider({ children, projectBranding, scope }) {
     : () => {}
   const toggleDark = () => setDark(!dark)
 
-  // "Fris" is een opt-in beta-laag bovenop de Clean-stijl, per browser onthouden.
-  // Bij het CrowdBuilding-thema valt hij weg: die huisstijl blijft leidend.
-  const [lookPref, setLookPref] = useState(() => (safeStorage.getItem(LOOK_KEY) === 'fris' ? 'fris' : 'clean'))
-  const lookAvailable = !!storageKey && style === 'clean'
-  const look = lookAvailable ? lookPref : 'clean'
-  const toggleLook = () => {
-    const next = lookPref === 'fris' ? 'clean' : 'fris'
-    safeStorage.setItem(LOOK_KEY, next)
-    setLookPref(next)
-  }
+  // Fris is de vaste look bovenop de Clean-stijl, voor elk project en elke
+  // organisatie. Bij het CrowdBuilding-thema valt hij weg: die huisstijl blijft
+  // leidend. Schermen buiten een project (geen scope) regelen hun look zelf.
+  const look = storageKey && style === 'clean' ? 'fris' : 'clean'
 
   // data-theme = stijl × licht/donker.
   const dataTheme = !storageKey
@@ -72,18 +65,18 @@ export function ThemeProvider({ children, projectBranding, scope }) {
     }
   }, [look])
 
-  // Zonder handmatige keuze het thema bijwerken wanneer het tabblad weer zichtbaar
-  // wordt — zo wordt het 's avonds donker zonder herladen.
+  // Zonder handmatige keuze meebewegen als het apparaat van licht naar donker
+  // gaat (of terug), zonder herladen.
   useEffect(() => {
-    if (!storageKey) return
-    const onVisible = () => {
-      if (document.visibilityState !== 'visible') return
+    if (!storageKey || !window.matchMedia) return
+    const query = window.matchMedia(DEVICE_DARK)
+    const onChange = () => {
       const stored = safeStorage.getItem(storageKey)
       if (stored === 'dark' || stored === 'light') return
-      setDarkState(isEveningNow())
+      setDarkState(query.matches)
     }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
+    query.addEventListener('change', onChange)
+    return () => query.removeEventListener('change', onChange)
   }, [storageKey])
 
   // Steunkleur van het project vervangt het blauw uit het functionele palet.
@@ -113,7 +106,7 @@ export function ThemeProvider({ children, projectBranding, scope }) {
   }, [projectBranding?.app_accent_color, projectBranding?.app_structure_color, dark])
 
   return (
-    <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey, look, lookAvailable, toggleLook }}>
+    <ThemeContext.Provider value={{ dark, setDark, toggleDark, style, scoped: !!storageKey, look }}>
       {children}
     </ThemeContext.Provider>
   )

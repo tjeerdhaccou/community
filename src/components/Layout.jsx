@@ -28,25 +28,8 @@ function ThemeToggle() {
   )
 }
 
-function LookToggle() {
-  const { look, lookAvailable, toggleLook } = useTheme()
-  if (!lookAvailable) return null
-  const on = look === 'fris'
-  return (
-    <button
-      className={`theme-toggle-btn look-toggle-btn ${on ? 'look-toggle-btn--on' : ''}`}
-      onClick={toggleLook}
-      title={on ? 'Terug naar de vertrouwde look' : 'Probeer de nieuwe look (beta)'}
-      aria-label="Nieuwe look (beta)"
-      aria-pressed={on}
-    >
-      <i className="fa-solid fa-wand-magic-sparkles" />
-    </button>
-  )
-}
-
 export default function Layout() {
-  const { readOnly } = useProject()
+  const { readOnly, featureEnabled } = useProject()
   return (
     <div className={`app-layout ${readOnly ? 'app-layout--demo' : ''}`}>
       <a href="#main-content" className="skip-link">Ga naar inhoud</a>
@@ -58,7 +41,6 @@ export default function Layout() {
         <div className="main-topbar">
           {readOnly && <DemoBanner />}
           <GlobalSearch />
-          <LookToggle />
           <ThemeToggle />
           <NotificationBell />
         </div>
@@ -68,8 +50,9 @@ export default function Layout() {
       </main>
       <BottomNav />
       {/* In de demo een voorbeeldgesprek dat lokaal blijft: zo zien bezoekers
-          dat de hulpknop er is, zonder dat er iets naar de database gaat. */}
-      {readOnly ? <DemoSupportWidget /> : <SupportWidget />}
+          dat de hulpknop er is, zonder dat er iets naar de database gaat.
+          In echte projecten alleen als de module Support aan staat. */}
+      {readOnly ? <DemoSupportWidget /> : featureEnabled('support') && <SupportWidget />}
       {readOnly && <Suspense fallback={null}><DemoTour /></Suspense>}
       <ModalScrollLock />
     </div>

@@ -138,6 +138,9 @@ export default function Chat() {
     chatOn && (project?.chat_group_creation === 'moderators' ? canDo(role, 'moderate_board') : true)
   const canModerate = canDo(role, 'moderate_board')
 
+  // Supportchat met het team hoort bij buuur pro; een light-groep heeft alleen
+  // ledenchat.
+  const supportOn = featureEnabled('support')
   const support = useSupportChat()
   const chat = useMemberChat({ enabled: chatOn })
 
@@ -190,10 +193,10 @@ export default function Chat() {
 
   // Eén gesorteerde lijst per sectie.
   const directThreads = useMemo(() => {
-    const s = support.conversations.map((c) => normalizeSupport(c, teamName, project?.logo_url))
+    const s = supportOn ? support.conversations.map((c) => normalizeSupport(c, teamName, project?.logo_url)) : []
     const d = chat.threads.filter((t) => t.kind === 'direct')
     return [...s, ...d, ...demoThreads].sort((a, b) => (b.last_message_at || '').localeCompare(a.last_message_at || ''))
-  }, [support.conversations, chat.threads, teamName, project?.logo_url, demoThreads])
+  }, [supportOn, support.conversations, chat.threads, teamName, project?.logo_url, demoThreads])
 
   const groupThreads = useMemo(
     () => chat.threads.filter((t) => t.kind === 'group'),
@@ -435,6 +438,7 @@ export default function Chat() {
     if (!text && !file) return
     const sentFile = file
     setDraft(''); setFile(null); setShowEmoji(false)
+    if (!selected && !supportOn) return
     try {
       if (!selected || selected.source === 'support') {
         const id = await support.sendMessage(selected?.id ?? null, text, sentFile)
@@ -558,6 +562,8 @@ export default function Chat() {
       return p?.full_name && text.includes(`@${p.full_name}`)
     })
   }
+  // Light zonder gekozen gesprek: er is geen team om aan te schrijven.
+  const noThread = !selected && !supportOn
   const canPost = !!selected && (selected.source === 'support' || (!selected.archived && chatOn))
   const isNarrow = typeof window !== 'undefined' && window.matchMedia?.('(max-width: 768px)').matches
   const composerPlaceholder = !selected ? 'Stel je vraag aan het team…'
@@ -675,7 +681,7 @@ export default function Chat() {
           <div className="chat-convs">
             <div className="chat-convs__label">Direct</div>
             {directThreads.length === 0 ? (
-              <p className="chat-convs__empty">Je gesprek met het team verschijnt hier.</p>
+              <p className="chat-convs__empty">{supportOn ? 'Je gesprek met het team verschijnt hier.' : 'Je privégesprekken verschijnen hier.'}</p>
             ) : directThreads.map(renderConv)}
 
             {chatOn && (
@@ -720,20 +726,21 @@ export default function Chat() {
           <div className="chat-head__avwrap">
             <Avatar
               size={42}
-              url={selected?.avatarUrl || ((!selected || selected.source === 'support') ? project?.logo_url : null)}
-              name={selected?.title || teamName}
+              url={selected?.avatarUrl || (!noThread && (!selected || selected.source === 'support') ? project?.logo_url : null)}
+              name={selected?.title || (noThread ? 'Chat' : teamName)}
               emoji={selected?.emoji}
-              icon={!selected || selected.source === 'support' ? 'fa-solid fa-headset' : isGroup ? 'fa-solid fa-hashtag' : null}
+              icon={noThread ? 'fa-regular fa-comments' : !selected || selected.source === 'support' ? 'fa-solid fa-headset' : isGroup ? 'fa-solid fa-hashtag' : null}
             />
-            {(!selected || selected.source === 'support') && <span className="chat-head__on" />}
+            {!noThread && (!selected || selected.source === 'support') && <span className="chat-head__on" />}
           </div>
           <div className="chat-head__txt">
             <div className="chat-head__title">
-              {selected?.title || teamName}
+              {selected?.title || (noThread ? 'Chat' : teamName)}
               {isGroup && selected.joinPolicy === 'invite' && <i className="fa-solid fa-lock chat-head__lock" aria-label="Besloten groep" />}
             </div>
             <div className="chat-head__sub">
-              {!selected || selected.source === 'support' ? 'Reageert meestal binnen één werkdag'
+              {noThread ? 'Kies een gesprek of begin een nieuw gesprek'
+                : !selected || selected.source === 'support' ? 'Reageert meestal binnen één werkdag'
                 : isGroup ? (
                   <>
                     <span className="chat-stack">
@@ -769,7 +776,12 @@ export default function Chat() {
           ) : !selected || messages.length === 0 ? (
             <div className="chat-empty">
               <div className="chat-empty__ic"><i className="fa-regular fa-comment-dots" aria-hidden="true" /></div>
-              {!selected || selected.source === 'support' ? (
+              {noThread ? (
+                <>
+                  <div className="chat-empty__t">Nog geen gesprek gekozen</div>
+                  <div className="chat-empty__s">Kies links een gesprek, of begin er een met een lid of een groep.</div>
+                </>
+              ) : !selected || selected.source === 'support' ? (
                 <>
                   <div className="chat-empty__t">Waarmee kunnen we je helpen?</div>
                   <div className="chat-empty__s">Stel je vraag aan het team. We reageren zo snel mogelijk.</div>
@@ -834,7 +846,7 @@ export default function Chat() {
           )}
         </div>
 
-        {canPost || !selected ? (
+        {canPost || (!selected && supportOn) ? (
           <form className="chat-foot" onSubmit={handleSend}>
             {file && (
               <div className="chat-filechip">

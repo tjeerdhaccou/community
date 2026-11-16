@@ -1,6 +1,8 @@
 /* ============================================================================
-   FRIS — opt-in beta-look bovenop de Clean-stijl
-   Actief via html[data-look="fris"] (ThemeContext, toggle in topbar/gebruikersmenu).
+   FRIS — de vaste look bovenop de Clean-stijl
+   Actief via html[data-look="fris"]: ThemeContext zet dat voor elk project en
+   elke organisatie. Schermen vóór het inloggen dragen het attribuut op hun
+   eigen buitenste element (usePublicFris), net als de landing.
    Nooit samen met het CrowdBuilding-thema. Alles hier is een overlay: zonder
    het attribuut verandert er niets.
    ============================================================================ */
@@ -481,31 +483,6 @@
 .look-toggle-btn--on { color: var(--accent-purple); }
 .look-toggle-btn--on i { animation: fris-pop 620ms var(--ease-spring); }
 
-.look-switch {
-  position: relative;
-  flex: none;
-  width: 30px;
-  height: 18px;
-  margin-left: auto;
-  border-radius: 999px;
-  background: var(--bg-active);
-  transition: background-color 200ms var(--ease-default);
-}
-.look-switch::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-xs);
-  transition: transform 260ms var(--ease-spring);
-}
-.look-switch--on { background: var(--accent-green); }
-.look-switch--on::after { transform: translateX(12px); }
-
 @media (prefers-reduced-motion: reduce) {
   [data-look="fris"] *,
   [data-look="fris"] *::after {
@@ -964,3 +941,206 @@ html[data-look="fris"][data-theme="dark"] .tour-root {
 [data-look="fris"] .chat-av--glyph { background: var(--fris-fill); border: none; }
 [data-look="fris"] .grp-icon__btn { background: var(--fris-fill); border: none; border-radius: 14px; }
 [data-look="fris"] .grp-icon__menu { border-radius: 18px; }
+
+/* ============================================================================
+   Vóór het inloggen: e-mailadres, code, verlopen link
+   Het buitenste element draagt zelf data-look="fris" en data-theme="warm"
+   (usePublicFris), met de steunkleur van het project inline. Geen kaart: alles
+   staat los op het witte papier.
+   ============================================================================ */
+
+:is(.login-page, .auth-expired)[data-look="fris"] {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+.auth-expired[data-look="fris"] { height: 100vh; height: 100dvh; min-height: 0; overflow-y: auto; }
+
+[data-look="fris"] :is(.login-card, .auth-expired__card) {
+  max-width: 400px;
+  padding: 0 !important;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+[data-look="fris"] :is(.login-card, .auth-expired__card) > *,
+[data-look="fris"] :is(.login-form, .auth-expired__form) > * {
+  animation: fris-rise var(--fris-dur-enter) var(--fris-ease-enter) backwards;
+}
+[data-look="fris"] :is(.login-form, .auth-expired__form) { animation: none; gap: 12px; }
+[data-look="fris"] :is(.login-card, .auth-expired__card) > :nth-child(2) { animation-delay: 60ms; }
+[data-look="fris"] :is(.login-card, .auth-expired__card) > :nth-child(3) { animation-delay: 120ms; }
+[data-look="fris"] :is(.login-form, .auth-expired__form) > * { animation-delay: 180ms; }
+[data-look="fris"] :is(.login-card, .auth-expired__card) > :nth-child(n+5) { animation-delay: 260ms; }
+
+[data-look="fris"] .login-logo {
+  width: 76px !important;
+  height: 76px !important;
+  border-radius: 22px !important;
+  margin-bottom: 24px !important;
+}
+[data-look="fris"] :is(.login-title, .auth-expired__card h1) {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(42px, 11vw, 54px);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+[data-look="fris"] .auth-expired__card h1 { font-size: clamp(36px, 9.5vw, 44px); }
+[data-look="fris"] :is(.login-subtitle, .auth-expired__card > p) {
+  margin: 0 0 28px;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-wrap: pretty;
+}
+[data-look="fris"] .login-subtitle strong { color: var(--text-primary); font-weight: 600; overflow-wrap: anywhere; }
+
+/* Invoer: zacht grijs vlak; bij focus wit met een ring in de steunkleur. */
+[data-look="fris"] :is(.login-form, .auth-expired__form) input {
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fris-fill);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 17px;
+  text-align: center;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+[data-look="fris"] :is(.login-form, .auth-expired__form) input::placeholder { color: var(--text-faint); }
+[data-look="fris"] :is(.login-form, .auth-expired__form) input:focus {
+  outline: none;
+  background: var(--bg-page);
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+[data-look="fris"] .login-otp-input {
+  min-height: 68px !important;
+  padding: 14px 8px 14px 18px !important;
+  font-size: 30px !important;
+  font-weight: 600 !important;
+  letter-spacing: 10px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-look="fris"] :is(.login-form, .auth-expired__form) .cl-btn--primary {
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 26px;
+  border-radius: 999px;
+  background: var(--accent-cta);
+  color: var(--accent-on-cta);
+  box-shadow: none;
+  font-size: 17px;
+  font-weight: 600;
+  transition: filter 0.2s, opacity 0.2s, transform var(--fris-dur-press) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+[data-look="fris"] :is(.login-form, .auth-expired__form) .cl-btn--primary:hover { filter: brightness(0.93); transform: none; box-shadow: none; }
+[data-look="fris"] :is(.login-form, .auth-expired__form) .cl-btn--primary:active { transform: scale(0.97); }
+[data-look="fris"] :is(.login-form, .auth-expired__form) .cl-btn--primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-page), 0 0 0 4px var(--border-focus);
+}
+[data-look="fris"] :is(.login-form, .auth-expired__form) .cl-btn--primary:disabled { opacity: 0.4; filter: none; transform: none; }
+
+[data-look="fris"] :is(.login-error, .auth-expired__error) {
+  margin: 0;
+  padding: 12px 18px;
+  border-radius: 18px;
+  background: var(--tag-red-bg);
+  color: var(--tag-red-text);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
+}
+
+[data-look="fris"] :is(.login-otp-icon, .auth-expired__icon) {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: var(--tag-brand-bg, var(--fris-fill));
+  color: var(--accent-primary);
+  font-size: 24px;
+}
+[data-look="fris"] .auth-expired__icon { background: var(--fris-fill); color: var(--text-secondary); }
+
+[data-look="fris"] .login-terms { margin-top: 28px !important; font-size: 14px !important; line-height: 1.55; color: var(--text-secondary) !important; }
+[data-look="fris"] :is(.login-terms a, .login-resend-btn) { color: var(--accent-primary) !important; text-decoration: underline; text-underline-offset: 3px; }
+[data-look="fris"] .login-resend { margin-top: 24px; font-size: 15px; color: var(--text-secondary); }
+[data-look="fris"] .login-resend-btn { font-size: 15px; cursor: pointer; }
+[data-look="fris"] :is(.login-back-btn, .auth-expired__back) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px auto 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+[data-look="fris"] :is(.login-back-btn, .auth-expired__back):hover { background: var(--fris-fill); color: var(--text-primary); }
+
+@media (max-width: 600px) {
+  /* Bovenaan beginnen: zo blijft het veld zichtbaar als het toetsenbord opent. */
+  :is(.login-page, .auth-expired)[data-look="fris"] { align-items: flex-start; padding: 12vh 24px 120px; }
+}
+
+/* ============================================================================
+   Cookiemelding: zwevend vlak met pilknop
+   Staat buiten elk thema (App.jsx). Binnen een project erft hij de kleuren van
+   <html>. Daarbuiten is er geen Fris-attribuut op <html>: dan het Fris-blauw,
+   of de steunkleur die usePublicFris als --public-* op <html> zet.
+   ============================================================================ */
+
+:root:not([data-look="fris"]):not([data-theme^="crowdbuilding"]) .cookie-consent {
+  --accent-cta:     var(--public-cta, #2341FF);
+  --accent-on-cta:  var(--public-on-cta, #FFFFFF);
+  --accent-primary: var(--public-text, #2341FF);
+  --bg-surface:     #FFFFFF;
+  --border-default: #ECEEF2;
+}
+:root:not([data-theme^="crowdbuilding"]) .cookie-consent {
+  left: 16px;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px 14px 14px 22px;
+  border: 1px solid var(--border-default);
+  border-radius: 28px;
+  box-shadow: 0 10px 40px rgba(20, 20, 40, 0.10);
+}
+:root:not([data-theme^="crowdbuilding"]) .cookie-consent__content p { font-size: 14px; line-height: 1.5; }
+:root:not([data-theme^="crowdbuilding"]) .cookie-consent__content a { text-underline-offset: 3px; }
+:root:not([data-theme^="crowdbuilding"]) .cookie-consent__btn {
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  background: var(--accent-cta);
+  color: var(--accent-on-cta);
+  box-shadow: none;
+  font-weight: 600;
+}
+:root:not([data-theme^="crowdbuilding"]) .cookie-consent__btn:hover { filter: brightness(0.93); transform: none; box-shadow: none; }
+@media (max-width: 600px) {
+  :root:not([data-theme^="crowdbuilding"]) .cookie-consent { left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); padding: 18px; border-radius: 24px; }
+  :root:not([data-theme^="crowdbuilding"]) .cookie-consent__btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cookie-consent { animation: none; }
+}
