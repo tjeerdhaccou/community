@@ -1,5 +1,4 @@
 import { supabase } from './supabase'
-import { getCaptchaToken } from './captcha'
 
 // Cookie helpers scoped to root domain (shared across subdomains)
 function setReturnCookie(url) {
@@ -56,12 +55,10 @@ export async function checkInvitedEmail(email, subdomainSlug = null) {
 }
 
 export async function sendOtpCode(email) {
-  const captchaToken = await getCaptchaToken()
   const { data, error } = await supabase.auth.signInWithOtp({
     email: email.toLowerCase().trim(),
     options: {
       shouldCreateUser: true,
-      captchaToken,
     },
   })
   if (error) throw error
@@ -88,9 +85,8 @@ export async function signOut() {
 // dus alle write-RLS blijft weigeren (read-only). Opruimen gebeurt via
 // cleanup_anonymous_users() (zie migratie 097).
 export async function signInToDemo() {
-  const captchaToken = await getCaptchaToken()
   const { data, error } = await supabase.auth.signInAnonymously({
-    options: { data: { full_name: 'Demo-bezoeker' }, captchaToken },
+    options: { data: { full_name: 'Demo-bezoeker' } },
   })
   if (error) throw error
   return data
