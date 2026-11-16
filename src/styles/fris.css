@@ -925,11 +925,18 @@
   [data-look="fris"] .dash-stats { gap: 4px; }
 }
 
-/* Demo-rondleiding in het Yves Klein-blauw in plaats van indigo */
+/* Demo-rondleiding in het Yves Klein-blauw. Op het blauwe kaartje zijn de
+   knoppen, de voortgangsbalk en de vinkjes wit; de spotlight blijft blauw,
+   want een witte rand valt weg op de lichte pagina. */
 html[data-look="fris"] .tour-root {
   --tour-bg: #2341FF;
   --tour-bg-2: #3A56FF;
   --tour-grad: linear-gradient(160deg, #3350FF 0%, #1B34D9 100%);
+  --tour-line: rgba(255, 255, 255, .16);
+  --tour-ink-3: rgba(255, 255, 255, .7);
+  --tour-accent: #FFFFFF;
+  --tour-accent-ink: #2341FF;
+  --tour-ring: #2341FF;
 }
 html[data-look="fris"][data-theme="dark"] .tour-root {
   --tour-bg: #2A47FF;

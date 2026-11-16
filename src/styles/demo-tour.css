@@ -120,7 +120,7 @@
 /* ===== Spotlight ===== */
 .tour-spot {
   position: fixed; border-radius: 12px;
-  box-shadow: 0 0 0 9999px color-mix(in srgb, #0B0D14 45%, transparent), 0 0 0 2px var(--tour-accent);
+  box-shadow: 0 0 0 9999px color-mix(in srgb, #0B0D14 45%, transparent), 0 0 0 2px var(--tour-ring, var(--tour-accent));
   transition: top .25s var(--tour-ease), left .25s var(--tour-ease), width .25s var(--tour-ease), height .25s var(--tour-ease);
   animation: tour-fade .3s var(--tour-ease);
 }
