@@ -32,6 +32,12 @@ export default function Members() {
   const members = isPlatformAdmin
     ? allMembers
     : allMembers.filter(m => !m.profile?.is_platform_admin)
+  // Eén bron voor uitnodigingen: de lijst hieronder en het uitnodigingsvenster
+  // delen dezelfde stand, zodat een nieuwe uitnodiging er meteen tussen staat.
+  const inviteApi = useMemberInvites()
+  const pendingInvites = canDo(role, 'invite_members') ? inviteApi.invites.filter(i => i.status === 'pending') : []
+  const [inviteBusy, setInviteBusy] = useState(null)
+  const [inviteNotice, setInviteNotice] = useState(null)
   const { pending: intakeResponses, updateStatus: updateIntakeStatus } = useIntakeResponses(project?.id, project?.name, getProjectBaseUrl(project))
   const { questions: intakeQuestions } = useIntakeQuestions(project?.id)
   const { allWorkgroups, workgroupIdsByProfile, workgroupsForProfile } = useWorkgroups()
@@ -71,7 +77,7 @@ export default function Members() {
         <div className="view-header__row">
           <div>
             <h1>Leden</h1>
-            <p className="view-header__subtitle">{active.length} leden{guests.length > 0 && canDo(role, 'invite_members') ? ` · ${guests.length} geïnteresseerd` : ''}</p>
+            <p className="view-header__subtitle">{active.length} leden{guests.length > 0 && canDo(role, 'invite_members') ? ` · ${guests.length} geïnteresseerd` : ''}{pendingInvites.length > 0 ? ` · ${pendingInvites.length} uitgenodigd` : ''}</p>
           </div>
           {canDo(role, 'invite_members') && (
             <button className="btn-primary" onClick={() => setShowInvite(true)}>
@@ -104,6 +110,7 @@ export default function Members() {
         {[
           { key: 'all', label: `Alle (${active.length})` },
           ...(guests.length > 0 && canDo(role, 'invite_members') ? [{ key: 'pending', label: `Geïnteresseerden (${guests.length})` }] : []),
+          ...(pendingInvites.length > 0 ? [{ key: 'invited', label: `Uitgenodigd (${pendingInvites.length})` }] : []),
           ...(unreviewedUploadCount > 0 && canReviewUploads ? [{ key: 'uploads', label: `Nieuwe uploads (${unreviewedUploadCount})` }] : []),
           { key: 'admin', label: 'Admins' },
           { key: 'moderator', label: 'Moderators' },
@@ -165,6 +172,66 @@ export default function Members() {
 
       {loading ? (
         <div className="loading-inline"><p>Leden laden...</p></div>
+      ) : filter === 'invited' ? (
+        /* Openstaande uitnodigingen: wie is uitgenodigd maar heeft nog niet ingelogd */
+        <div className="members-list">
+          {inviteNotice && (
+            <p role="status" className="form-hint" style={{ color: 'var(--tag-green-text, #27A854)', marginBottom: 8 }}>
+              <i className="fa-solid fa-circle-check" aria-hidden="true" /> {inviteNotice}
+            </p>
+          )}
+          {pendingInvites.length === 0 ? (
+            <div className="empty-inline">
+              <i className="fa-solid fa-envelope-open" />
+              <p>Geen openstaande uitnodigingen</p>
+            </div>
+          ) : pendingInvites.map(inv => (
+            <div key={inv.id} className="member-row">
+              <div className="member-row__left">
+                <div className="member-row__avatar member-row__avatar--placeholder">
+                  {(inv.name || inv.email)[0].toUpperCase()}
+                </div>
+                <div>
+                  <span className="member-row__name">{inv.name || inv.email}</span>
+                  <span className="member-row__meta">
+                    {inv.name ? `${inv.email} · ` : ''}uitgenodigd op {new Date(inv.created_at).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}
+                    {inv.inviter?.full_name ? ` door ${inv.inviter.full_name}` : ''}
+                  </span>
+                </div>
+              </div>
+              <div className="member-row__right" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className="invite-role-badge" style={tagStyle(ROLE_COLORS[inv.assigned_role || 'guest'])}>
+                  {inv.assigned_role && inv.assigned_role !== 'guest' ? ROLE_LABELS[inv.assigned_role] : 'Gast'}
+                </span>
+                <button
+                  className="btn-secondary btn-sm"
+                  disabled={inviteBusy === inv.id}
+                  onClick={async () => {
+                    setInviteBusy(inv.id); setInviteNotice(null)
+                    try {
+                      await inviteApi.resendInvite(inv)
+                      setInviteNotice(`Uitnodiging opnieuw verstuurd naar ${inv.email}.`)
+                    } catch (err) { alert(err.message || 'Opnieuw versturen mislukt.') }
+                    setInviteBusy(null)
+                  }}
+                >
+                  {inviteBusy === inv.id ? 'Versturen…' : 'Opnieuw versturen'}
+                </button>
+                <button
+                  className="btn-icon-sm"
+                  title="Uitnodiging intrekken"
+                  aria-label={`Uitnodiging voor ${inv.email} intrekken`}
+                  onClick={async () => {
+                    try { await inviteApi.revokeInvite(inv.id); setInviteNotice(`Uitnodiging voor ${inv.email} ingetrokken.`) }
+                    catch (err) { alert(err.message || 'Intrekken mislukt.') }
+                  }}
+                >
+                  <i className="fa-solid fa-xmark" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="empty-inline">
           <i className="fa-solid fa-users" />
@@ -249,7 +316,7 @@ export default function Members() {
       )}
 
       {showInvite && (
-        <InviteModal projectName={project?.name} project={project} onClose={() => setShowInvite(false)} />
+        <InviteModal projectName={project?.name} project={project} inviteApi={inviteApi} onClose={() => setShowInvite(false)} />
       )}
 
       {selectedIntake && (
@@ -273,9 +340,9 @@ export default function Members() {
   )
 }
 
-function InviteModal({ projectName, project, onClose }) {
+function InviteModal({ projectName, project, inviteApi, onClose }) {
   const [tab, setTab] = useState('personal')
-  const { invites, createInvite, revokeInvite, resendInvite } = useMemberInvites()
+  const { invites, createInvite, revokeInvite, resendInvite } = inviteApi
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -339,7 +406,7 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
     try {
       const sentTo = email.trim()
       await onInvite({ email: sentTo, name: name.trim(), personalMessage: personalMessage.trim(), assignedRole })
-      setNotice(`Uitnodiging verstuurd naar ${sentTo}. Je kunt meteen de volgende uitnodigen.`)
+      setNotice(`Uitnodiging verstuurd naar ${sentTo}. Je vindt hem terug bij Leden, onder Uitgenodigd.`)
       setEmail('')
       setName('')
       setPersonalMessage('')
