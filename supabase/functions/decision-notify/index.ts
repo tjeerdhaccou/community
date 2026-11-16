@@ -20,6 +20,17 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  type EmailBrand,
+  type EmailTheme,
+  emailFooterLink,
+  emailParagraph,
+  emailQuote,
+  emailText,
+  escapeHtml,
+  renderEmailLayout,
+  resolveEmailTheme,
+} from '../_shared/email-layout.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
@@ -47,11 +58,19 @@ const ROLE_LEVELS: Record<string, number> = {
 }
 
 interface Ctx {
-  project: { id: string; name: string; slug: string; custom_domain: string | null; logo_url: string | null }
+  project: {
+    id: string; name: string; slug: string; custom_domain: string | null; logo_url: string | null
+    app_accent_color: string | null; app_structure_color: string | null
+  }
   subject: string
   intro: string
   heading: string
+  /** Platte tekst onder de intro (samenvatting of uitslag). */
   body: string
+  /** Geciteerde inhoud van een lid (vraag, antwoord, bezwaar). */
+  quote?: { label: string; text: string }
+  /** Korte regel na de inhoud, bijv. tot wanneer je kunt reageren. */
+  note?: string
   linkPath: string
   inAppTitle: string
   inAppBody: string | null
@@ -115,7 +134,7 @@ async function handleEvent(admin: any, ev: any) {
 
   const { data: project } = await admin
     .from('projects')
-    .select('id, name, slug, custom_domain, logo_url')
+    .select('id, name, slug, custom_domain, logo_url, app_accent_color, app_structure_color')
     .eq('id', proposal.project_id)
     .single()
   if (!project) return { skipped: 'project_not_found' }
@@ -204,7 +223,8 @@ async function buildContext(admin: any, type: EventType, p: any, project: any, g
         subject: `Nieuw ${formLabel}: ${p.title}`,
         intro: `${groupName} vraagt je reactie op een ${formLabel} in ${project.name}.`,
         heading: p.title,
-        body: `${truncate(p.summary, 400)}\n\nReageren kan tot ${deadline}.`,
+        body: truncate(p.summary, 400),
+        note: deadline ? `Reageren kan tot ${deadline}.` : undefined,
         inAppTitle: `Nieuw ${formLabel}: ${p.title}`,
         inAppBody: `Reageren kan tot ${deadline}`,
       }
@@ -214,7 +234,8 @@ async function buildContext(admin: any, type: EventType, p: any, project: any, g
         subject: `Nieuwe versie: ${p.title}`,
         intro: `${groupName} heeft de bezwaren verwerkt en versie ${p.version} gepubliceerd. Je eerdere reactie telt niet meer mee, dus reageer opnieuw.`,
         heading: p.title,
-        body: `${truncate(p.summary, 400)}\n\nReageren kan tot ${deadline}.`,
+        body: truncate(p.summary, 400),
+        note: deadline ? `Reageren kan tot ${deadline}.` : undefined,
         inAppTitle: `Nieuwe versie (${p.version}): ${p.title}`,
         inAppBody: 'Reageer opnieuw op de aangepaste versie',
       }
@@ -224,7 +245,8 @@ async function buildContext(admin: any, type: EventType, p: any, project: any, g
         subject: `Herinnering: je reactie op "${p.title}"`,
         intro: `Je hebt nog niet gereageerd op dit ${formLabel} van ${groupName}.`,
         heading: p.title,
-        body: `${truncate(p.summary, 300)}\n\nReageren kan nog tot ${deadline}.`,
+        body: truncate(p.summary, 300),
+        note: deadline ? `Reageren kan nog tot ${deadline}.` : undefined,
         inAppTitle: `Herinnering: ${p.title}`,
         inAppBody: `Reageren kan tot ${deadline}`,
       }
@@ -236,7 +258,8 @@ async function buildContext(admin: any, type: EventType, p: any, project: any, g
         subject: `Nieuwe vraag bij "${p.title}"`,
         intro: `${who} stelde een vraag bij een voorstel van ${groupName}.`,
         heading: p.title,
-        body: truncate(q?.body || '', 600),
+        body: '',
+        quote: q?.body ? { label: `Vraag van ${who}`, text: truncate(q.body, 600) } : undefined,
         inAppTitle: `Vraag bij: ${p.title}`,
         inAppBody: truncate(q?.body || '', 120),
       }
@@ -248,7 +271,8 @@ async function buildContext(admin: any, type: EventType, p: any, project: any, g
         subject: `${groupName} beantwoordde je vraag`,
         intro: `Je vraag bij "${p.title}" is beantwoord.`,
         heading: p.title,
-        body: truncate(a?.body || '', 600),
+        body: '',
+        quote: a?.body ? { label: `Antwoord van ${groupName}`, text: truncate(a.body, 600) } : undefined,
         inAppTitle: `Antwoord op je vraag: ${p.title}`,
         inAppBody: truncate(a?.body || '', 120),
       }
@@ -265,7 +289,8 @@ async function buildContext(admin: any, type: EventType, p: any, project: any, g
         subject: `Bezwaar op "${p.title}"`,
         intro: `Er is een bezwaar ingediend op het voorstel van ${groupName}.`,
         heading: p.title,
-        body: truncate(motivation, 600),
+        body: '',
+        quote: motivation ? { label: 'Toelichting bij het bezwaar', text: truncate(motivation, 600) } : undefined,
         inAppTitle: `Bezwaar op: ${p.title}`,
         inAppBody: truncate(motivation, 120),
       }
@@ -332,13 +357,20 @@ async function deliver(admin: any, type: EventType, ctx: Ctx, recipientIds: stri
   let sent = 0
   let failed = 0
   if (RESEND_API_KEY && mail.length > 0) {
+    const brand: EmailBrand = {
+      name: ctx.project.name,
+      logoUrl: ctx.project.logo_url,
+      accentColor: ctx.project.app_accent_color,
+      structureColor: ctx.project.app_structure_color,
+    }
+    const theme = resolveEmailTheme(brand)
     for (const batch of chunk(mail, 100)) {
       const tokens = await Promise.all(batch.map(r => signUnsubscribeToken(r.id)))
       const emails = batch.map((r, i) => ({
         from: `${FROM_NAME} <${FROM_EMAIL}>`,
         to: [r.email],
         subject: ctx.subject,
-        html: renderEmail(ctx, r.full_name, tokens[i]),
+        html: renderEmail(ctx, brand, theme, r.full_name, tokens[i]),
       }))
       const res = await fetch('https://api.resend.com/emails/batch', {
         method: 'POST',
@@ -384,13 +416,6 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out
 }
 
-function esc(s: string | null | undefined): string {
-  if (!s) return ''
-  return String(s)
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;').replaceAll("'", '&#039;')
-}
-
 function truncate(s: string, len: number): string {
   if (!s) return ''
   return s.length > len ? s.slice(0, len) + '…' : s
@@ -427,43 +452,29 @@ function b64url(bytes: Uint8Array): string {
   return btoa(bin).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
 }
 
-function renderEmail(ctx: Ctx, recipientName: string | null, unsubToken: string): string {
+function renderEmail(ctx: Ctx, brand: EmailBrand, theme: EmailTheme, recipientName: string | null, unsubToken: string): string {
   const linkUrl = `${projectBaseUrl(ctx.project)}${ctx.linkPath}`
-  const greeting = recipientName ? `Hoi ${esc(recipientName.split(' ')[0])}` : 'Hoi'
+  const greeting = recipientName ? `Hoi ${escapeHtml(recipientName.split(' ')[0])},` : 'Hoi,'
   const settingsUrl = `https://${MAIN_DOMAIN}/profile#notif-section`
   const unsubUrl = unsubToken ? `https://${MAIN_DOMAIN}/unsubscribe?token=${encodeURIComponent(unsubToken)}` : settingsUrl
-  return `<!DOCTYPE html>
-<html lang="nl">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a2e;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7;padding:32px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-        <tr><td style="padding:24px 32px 16px;border-bottom:1px solid #f0f0f4;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            ${ctx.project.logo_url ? `<td width="40" style="vertical-align:middle;"><img src="${esc(ctx.project.logo_url)}" alt="${esc(ctx.project.name)}" width="32" height="32" style="border-radius:8px;display:block;"></td>` : ''}
-            <td style="vertical-align:middle;padding-left:${ctx.project.logo_url ? '12px' : '0'};"><span style="font-size:14px;color:#6b7280;font-weight:500;">${esc(ctx.project.name)}</span></td>
-          </tr></table>
-        </td></tr>
-        <tr><td style="padding:32px;">
-          <p style="margin:0 0 8px;font-size:15px;color:#4a4a6a;">${greeting},</p>
-          ${ctx.intro ? `<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;">${esc(ctx.intro)}</p>` : ''}
-          <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#1a1a2e;font-weight:600;">${esc(ctx.heading)}</h1>
-          ${ctx.body ? `<div style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;white-space:pre-wrap;">${esc(ctx.body)}</div>` : ''}
-          <p style="margin:32px 0 0;">
-            <a href="${esc(linkUrl)}" style="display:inline-block;background:#4A90D9;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">Bekijk en reageer</a>
-          </p>
-        </td></tr>
-        <tr><td style="padding:20px 32px 28px;border-top:1px solid #f0f0f4;background:#fafafc;">
-          <p style="margin:0;font-size:12px;line-height:1.6;color:#9ba1b0;">
-            Je ontvangt deze mail omdat je lid bent van <strong>${esc(ctx.project.name)}</strong> op Buuur.<br>
-            <a href="${esc(settingsUrl)}" style="color:#9ba1b0;text-decoration:underline;">Beheer je notificaties</a> ·
-            <a href="${esc(unsubUrl)}" style="color:#9ba1b0;text-decoration:underline;">Uitschrijven van dit type</a>
-          </p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+  const bodyHtml = [
+    emailParagraph(greeting),
+    ctx.intro ? emailParagraph(escapeHtml(ctx.intro)) : '',
+    ctx.body ? emailParagraph(emailText(ctx.body)) : '',
+    ctx.quote ? emailQuote(theme, ctx.quote.label, ctx.quote.text) : '',
+    ctx.note ? emailParagraph(escapeHtml(ctx.note), { muted: true }) : '',
+  ].join('')
+  return renderEmailLayout({
+    subject: ctx.subject,
+    preheader: ctx.intro,
+    brand,
+    heading: ctx.heading,
+    bodyHtml,
+    button: { label: 'Bekijk en reageer', url: linkUrl },
+    footerNote: `Je ontvangt deze mail omdat je lid bent van ${ctx.project.name} op buuur.`,
+    footerHtml: [
+      emailFooterLink(settingsUrl, 'Beheer je notificaties'),
+      emailFooterLink(unsubUrl, 'Uitschrijven van dit type'),
+    ].join(' · '),
+  }, theme)
 }

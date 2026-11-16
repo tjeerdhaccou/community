@@ -10,6 +10,15 @@
 // Idempotent via notification_log. Zelfstandig; raakt dispatch-notification niet.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  type EmailBrand,
+  emailFooterLink,
+  emailParagraph,
+  emailQuote,
+  escapeHtml,
+  renderEmailLayout,
+  resolveEmailTheme,
+} from '../_shared/email-layout.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
@@ -32,47 +41,105 @@ type Row = Record<string, any>
 
 /* ── HTML ─────────────────────────────────────────────────────────────────── */
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
+const FOOTER_NOTE = 'Je krijgt deze mail omdat je meedoet aan de chat van je project.'
+
+// Huisstijl uit de project-join (logo en steunkleuren); zonder project buuur-blauw.
+function projectBrand(project: Row | null | undefined): EmailBrand | null {
+  if (!project?.name) return null
+  return {
+    name: project.name,
+    logoUrl: project.logo_url,
+    accentColor: project.app_accent_color,
+    structureColor: project.app_structure_color,
+  }
 }
-function shell(inner: string, unsubLink: string | null): string {
-  const foot = unsubLink
-    ? `<p style="font-size:12px;color:#9BA1B0;margin:24px 0 0">Je krijgt deze mail omdat je meedoet aan de chat van je project. <a href="${unsubLink}" style="color:#9BA1B0">Geen chat-mails meer</a>.</p>`
-    : ''
-  return `<!doctype html><html><body style="margin:0;background:#F3F1ED;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1A1A2E"><div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border-radius:16px;padding:28px 26px">${inner}${foot}</div></div></body></html>`
+
+function greeting(name: string | null): string {
+  return emailParagraph(name ? `Hoi ${escapeHtml(name.split(' ')[0])},` : 'Hoi,')
 }
-function button(link: string, label: string): string {
-  return `<a href="${link}" style="display:inline-block;background:#4A90D9;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:9999px">${label}</a>`
+
+function unsubFooter(unsub: string | null): string | undefined {
+  return unsub ? emailFooterLink(unsub, 'Geen chat-mails meer') : undefined
 }
+
 function snippet(s: string, n = 300): string {
   const t = (s || '').trim()
   return t.length > n ? t.slice(0, n) + '…' : t
 }
 
-function dmEmail(name: string | null, from: string, body: string, project: string, link: string, unsub: string | null): string {
-  const hi = name ? `Hoi ${escapeHtml(name.split(' ')[0])},` : 'Hoi,'
-  return shell(`<p style="font-size:16px;margin:0 0 12px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 16px"><b style="color:#1A1A2E">${escapeHtml(from)}</b> heeft je een bericht gestuurd in ${escapeHtml(project)}:</p><div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:0 0 22px">${escapeHtml(snippet(body))}</div>${button(link, 'Bekijk en reageer')}`, unsub)
+function dmEmail(subject: string, name: string | null, from: string, body: string, project: string, brand: EmailBrand | null, link: string, unsub: string | null): string {
+  const theme = resolveEmailTheme(brand)
+  return renderEmailLayout({
+    subject,
+    preheader: `${from}: ${snippet(body, 90)}`,
+    brand,
+    heading: `Nieuw bericht van ${from}`,
+    bodyHtml:
+      greeting(name) +
+      emailParagraph(`<strong>${escapeHtml(from)}</strong> heeft je een bericht gestuurd in ${escapeHtml(project)}:`) +
+      emailQuote(theme, null, snippet(body)),
+    button: { label: 'Bekijk en reageer', url: link },
+    footerNote: FOOTER_NOTE,
+    footerHtml: unsubFooter(unsub),
+  }, theme)
 }
 
-function mentionEmail(name: string | null, from: string, group: string, body: string, project: string, link: string, unsub: string | null): string {
-  const hi = name ? `Hoi ${escapeHtml(name.split(' ')[0])},` : 'Hoi,'
-  return shell(`<p style="font-size:16px;margin:0 0 12px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 16px"><b style="color:#1A1A2E">${escapeHtml(from)}</b> noemde je in <b style="color:#1A1A2E">${escapeHtml(group)}</b> (${escapeHtml(project)}):</p><div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:0 0 22px">${escapeHtml(snippet(body))}</div>${button(link, 'Open de groep')}`, unsub)
+function mentionEmail(subject: string, name: string | null, from: string, group: string, body: string, project: string, brand: EmailBrand | null, link: string, unsub: string | null): string {
+  const theme = resolveEmailTheme(brand)
+  return renderEmailLayout({
+    subject,
+    preheader: `${from} in ${group}: ${snippet(body, 80)}`,
+    brand,
+    heading: `${from} noemde je`,
+    bodyHtml:
+      greeting(name) +
+      emailParagraph(`<strong>${escapeHtml(from)}</strong> noemde je in <strong>${escapeHtml(group)}</strong> (${escapeHtml(project)}):`) +
+      emailQuote(theme, null, snippet(body)),
+    button: { label: 'Open de groep', url: link },
+    footerNote: FOOTER_NOTE,
+    footerHtml: unsubFooter(unsub),
+  }, theme)
 }
 
-function groupDirectEmail(name: string | null, from: string, group: string, body: string, project: string, link: string, unsub: string | null): string {
-  const hi = name ? `Hoi ${escapeHtml(name.split(' ')[0])},` : 'Hoi,'
-  return shell(`<p style="font-size:16px;margin:0 0 12px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 16px">Nieuw bericht van <b style="color:#1A1A2E">${escapeHtml(from)}</b> in <b style="color:#1A1A2E">${escapeHtml(group)}</b> (${escapeHtml(project)}):</p><div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:0 0 22px">${escapeHtml(snippet(body))}</div>${button(link, 'Open de groep')}`, unsub)
+function groupDirectEmail(subject: string, name: string | null, from: string, group: string, body: string, project: string, brand: EmailBrand | null, link: string, unsub: string | null): string {
+  const theme = resolveEmailTheme(brand)
+  return renderEmailLayout({
+    subject,
+    preheader: `${from}: ${snippet(body, 90)}`,
+    brand,
+    heading: `Nieuw bericht in ${group}`,
+    bodyHtml:
+      greeting(name) +
+      emailParagraph(`Nieuw bericht van <strong>${escapeHtml(from)}</strong> in <strong>${escapeHtml(group)}</strong> (${escapeHtml(project)}):`) +
+      emailQuote(theme, null, snippet(body)),
+    button: { label: 'Open de groep', url: link },
+    footerNote: FOOTER_NOTE,
+    footerHtml: unsubFooter(unsub),
+  }, theme)
 }
 
-function digestEmail(name: string | null, project: string, groups: { title: string; emoji: string | null; unread: number; last: string }[], link: string, unsub: string | null, periode: string): string {
-  const hi = name ? `Hoi ${escapeHtml(name.split(' ')[0])},` : 'Hoi,'
+function digestEmail(subject: string, name: string | null, project: string, brand: EmailBrand | null, groups: { title: string; emoji: string | null; unread: number; last: string }[], link: string, unsub: string | null, periode: string): string {
+  const theme = resolveEmailTheme(brand)
   const total = groups.reduce((n, g) => n + g.unread, 0)
-  const rows = groups.map((g) => `
-    <div style="border-top:1px solid #ECE8E1;padding:12px 0;display:flex">
-      <div style="font-size:14px;font-weight:600">${g.emoji && !String(g.emoji).startsWith('fa:') ? escapeHtml(g.emoji) + ' ' : ''}${escapeHtml(g.title)} <span style="color:#9BA1B0;font-weight:400">· ${g.unread} ${g.unread === 1 ? 'nieuw bericht' : 'nieuwe berichten'}</span></div>
-      <div style="font-size:14px;color:#5A5F72;margin-top:3px;line-height:1.5">${escapeHtml(snippet(g.last, 140))}</div>
-    </div>`).join('')
-  return shell(`<p style="font-size:16px;margin:0 0 4px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 10px">${periode} ${total} ${total === 1 ? 'nieuw bericht' : 'nieuwe berichten'} in je groepen bij ${escapeHtml(project)}.</p>${rows}<div style="margin-top:22px">${button(link, 'Open de chat')}</div>`, unsub)
+  const berichten = (n: number) => `${n} ${n === 1 ? 'nieuw bericht' : 'nieuwe berichten'}`
+  // Per groep: titel en aantal als label, het laatste bericht als citaat.
+  const rows = groups.map((g) => {
+    const emoji = g.emoji && !String(g.emoji).startsWith('fa:') ? `${g.emoji} ` : ''
+    return emailQuote(theme, `${emoji}${g.title} · ${berichten(g.unread)}`, snippet(g.last, 140))
+  }).join('')
+  return renderEmailLayout({
+    subject,
+    preheader: `${periode} ${berichten(total)} in je groepen bij ${project}.`,
+    brand,
+    heading: `${periode} in je groepen`,
+    bodyHtml:
+      greeting(name) +
+      emailParagraph(`${escapeHtml(periode)} ${berichten(total)} in je groepen bij ${escapeHtml(project)}.`) +
+      rows,
+    button: { label: 'Open de chat', url: link },
+    footerNote: FOOTER_NOTE,
+    footerHtml: unsubFooter(unsub),
+  }, theme)
 }
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */
@@ -181,7 +248,7 @@ Deno.serve(async (req) => {
     .select(`
       thread_id, profile_id, last_read_at, muted_until,
       profile:profiles!profile_id(email, full_name),
-      thread:chat_threads!thread_id(id, kind, title, emoji, archived_at, project_id, project:projects(name, slug, custom_domain, features))
+      thread:chat_threads!thread_id(id, kind, title, emoji, archived_at, project_id, project:projects(name, slug, custom_domain, features, logo_url, app_accent_color, app_structure_color))
     `)
   const parts = (partRows ?? []) as Row[]
 
@@ -209,8 +276,9 @@ Deno.serve(async (req) => {
 
     const from = m.sender?.full_name || 'Een lid'
     const link = threadLink(t.project, t.id)
-    const ok = await send([cp.profile.email], `Nieuw bericht van ${from}`,
-      dmEmail(cp.profile.full_name, from, m.body || '📎 Bijlage', t.project?.name || 'je project', link, await unsubLink(cp.profile_id)))
+    const subject = `Nieuw bericht van ${from}`
+    const ok = await send([cp.profile.email], subject,
+      dmEmail(subject, cp.profile.full_name, from, m.body || '📎 Bijlage', t.project?.name || 'je project', projectBrand(t.project), link, await unsubLink(cp.profile_id)))
     if (ok) dmSent++
     await admin.from('notification_log').insert({
       user_id: cp.profile_id, project_id: t.project_id, notification_type: 'chat_dm',
@@ -221,7 +289,7 @@ Deno.serve(async (req) => {
   // ── 2. @mentions in groepen ──────────────────────────────────────────────
   const { data: mentionMsgs } = await admin
     .from('chat_messages')
-    .select('id, body, created_at, mentions, thread_id, sender:profiles!sender_id(full_name), thread:chat_threads!thread_id(id, kind, title, archived_at, project_id, project:projects(name, slug, custom_domain, features))')
+    .select('id, body, created_at, mentions, thread_id, sender:profiles!sender_id(full_name), thread:chat_threads!thread_id(id, kind, title, archived_at, project_id, project:projects(name, slug, custom_domain, features, logo_url, app_accent_color, app_structure_color))')
     .neq('mentions', '{}').is('deleted_at', null)
     .lt('created_at', cutoff).gt('created_at', new Date(Date.now() - 24 * 3600_000).toISOString())
     .limit(200)
@@ -237,8 +305,9 @@ Deno.serve(async (req) => {
       if (logged && logged.length > 0) continue
 
       const from = m.sender?.full_name || 'Een lid'
-      const ok = await send([cp.profile.email], `${from} noemde je in ${t.title}`,
-        mentionEmail(cp.profile.full_name, from, t.title, m.body || '📎 Bijlage', t.project?.name || 'je project', threadLink(t.project, t.id), await unsubLink(uid)))
+      const subject = `${from} noemde je in ${t.title}`
+      const ok = await send([cp.profile.email], subject,
+        mentionEmail(subject, cp.profile.full_name, from, t.title, m.body || '📎 Bijlage', t.project?.name || 'je project', projectBrand(t.project), threadLink(t.project, t.id), await unsubLink(uid)))
       if (ok) mentionSent++
       await admin.from('notification_log').insert({
         user_id: uid, project_id: t.project_id, notification_type: 'chat_mention',
@@ -295,9 +364,10 @@ Deno.serve(async (req) => {
     if (logged && logged.length > 0) continue
 
     const from = m.sender?.full_name || 'Een lid'
-    const ok = await send([cp.profile.email], `Nieuw bericht in ${t.title}`,
-      groupDirectEmail(cp.profile.full_name, from, t.title, m.body || '📎 Bijlage', t.project?.name || 'je project',
-        threadLink(t.project, t.id), await unsubLink(cp.profile_id, 'pref_chat_groups')))
+    const subject = `Nieuw bericht in ${t.title}`
+    const ok = await send([cp.profile.email], subject,
+      groupDirectEmail(subject, cp.profile.full_name, from, t.title, m.body || '📎 Bijlage', t.project?.name || 'je project',
+        projectBrand(t.project), threadLink(t.project, t.id), await unsubLink(cp.profile_id, 'pref_chat_groups')))
     if (ok) groupDirectSent++
     await admin.from('notification_log').insert({
       user_id: cp.profile_id, project_id: t.project_id, notification_type: 'chat_group_direct',
@@ -348,8 +418,9 @@ Deno.serve(async (req) => {
         : threadLink(t.project, '').replace(/\?thread=$/, '')
       const total = groups.reduce((n, g) => n + g.unread, 0)
       const periode = pref === 'weekly' ? 'Deze week' : 'Vandaag'
-      const ok = await send([cp.profile.email], `${total} ${total === 1 ? 'nieuw bericht' : 'nieuwe berichten'} in je groepen`,
-        digestEmail(cp.profile.full_name, t.project?.name || 'je project', groups, link, await unsubLink(cp.profile_id, 'pref_chat_groups'), periode))
+      const subject = `${total} ${total === 1 ? 'nieuw bericht' : 'nieuwe berichten'} in je groepen`
+      const ok = await send([cp.profile.email], subject,
+        digestEmail(subject, cp.profile.full_name, t.project?.name || 'je project', projectBrand(t.project), groups, link, await unsubLink(cp.profile_id, 'pref_chat_groups'), periode))
       if (ok) digestSent++
       await admin.from('notification_log').insert({
         user_id: cp.profile_id, project_id: t.project_id, notification_type: 'chat_digest',

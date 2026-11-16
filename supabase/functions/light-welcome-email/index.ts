@@ -9,6 +9,16 @@
 //   * per org hooguit één mail: organizations.welcome_sent_at wordt atomair geclaimd.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  emailLink,
+  emailParagraph,
+  escapeHtml,
+  FRIS,
+  loadProjectEmailBrand,
+  renderEmailLayout,
+  resolveEmailTheme,
+  type EmailBrand,
+} from '../_shared/email-layout.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
@@ -28,27 +38,33 @@ const CORS = {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
 }
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
-}
 
-function welcomeEmail(firstName: string, groupName: string, url: string, limit: number): string {
+function welcomeEmail(subject: string, firstName: string, groupName: string, url: string, limit: number, brand: EmailBrand | null): string {
+  const theme = resolveEmailTheme(brand)
   const step = (n: number, title: string, body: string) =>
-    `<tr><td style="vertical-align:top;padding:0 12px 14px 0;font-size:22px;font-style:italic;color:#4A90D9">${n}</td>` +
-    `<td style="padding:0 0 14px"><strong style="font-size:15px">${title}</strong><br><span style="font-size:14px;color:#5A5F72">${body}</span></td></tr>`
-  const inner = `
-<h1 style="font-size:22px;margin:0 0 12px">Welkom bij buuur, ${escapeHtml(firstName)}</h1>
-<p style="font-size:15px;line-height:1.55;margin:0 0 18px">${escapeHtml(groupName)} heeft nu een eigen plek. Je vindt je groep op:</p>
-<p style="margin:0 0 22px"><a href="${url}" style="display:inline-block;background:#4A90D9;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:9999px">${escapeHtml(url.replace('https://', ''))}</a></p>
-<p style="font-size:15px;font-weight:600;margin:0 0 12px">Zo kom je op gang</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 8px">
+    `<tr><td class="fx-link" style="vertical-align:top;padding:0 14px 14px 0;font-family:${FRIS.font.display};font-size:24px;line-height:1.1;color:${theme.structure.text};">${n}</td>` +
+    `<td style="padding:0 0 14px;font-family:${FRIS.font.sans};">` +
+    `<span class="fx-ink" style="font-size:15px;font-weight:600;line-height:1.4;color:${FRIS.light.ink};">${escapeHtml(title)}</span><br/>` +
+    `<span class="fx-muted" style="font-size:14px;line-height:1.5;color:${FRIS.light.muted};">${escapeHtml(body)}</span></td></tr>`
+  const steps = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:0 0 8px;">
 ${step(1, 'Geef je groep een gezicht', 'Logo, kleur en een korte omschrijving onder Instellingen.')}
 ${step(2, 'Schrijf een eerste bericht', 'Vertel in Projectnieuws wie jullie zijn en waar je naartoe wilt.')}
 ${step(3, 'Haal je mensen erbij', 'Nodig ze uit via Leden, of deel het aanmeldformulier van je publieke pagina.')}
-</table>
-<p style="font-size:14px;line-height:1.55;color:#5A5F72;margin:14px 0 0">Inloggen gaat zonder wachtwoord: je vult je e-mailadres in en krijgt een code. buuur light is gratis tot ${limit} leden. Daarna kost het € 29 per maand of € 290 per jaar (incl. btw); dat vraag je zelf aan in je ledenlijst.</p>
-<p style="font-size:14px;line-height:1.55;color:#5A5F72;margin:14px 0 0">Loop je ergens op vast? Beantwoord deze mail, dan helpen we je verder.</p>`
-  return `<!doctype html><html><body style="margin:0;background:#F3F1ED;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1A1A2E"><div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border-radius:16px;padding:28px 26px">${inner}</div></div></body></html>`
+</table>`
+  return renderEmailLayout({
+    subject,
+    preheader: `${groupName} heeft nu een eigen plek op buuur. Zo kom je op gang.`,
+    brand,
+    heading: `Welkom bij buuur, ${firstName}`,
+    bodyHtml:
+      emailParagraph(`${escapeHtml(groupName)} heeft nu een eigen plek. Je vindt je groep op ${emailLink(theme, url, url.replace('https://', ''))}.`) +
+      emailParagraph('<strong>Zo kom je op gang</strong>') +
+      steps,
+    button: { label: 'Naar je groep', url },
+    afterButtonHtml:
+      emailParagraph(`Inloggen gaat zonder wachtwoord: je vult je e-mailadres in en krijgt een code. buuur light is gratis tot ${limit} leden. Daarna kost het € 29 per maand of € 290 per jaar (incl. btw); dat vraag je zelf aan in je ledenlijst.`, { muted: true, small: true }) +
+      emailParagraph('Loop je ergens op vast? Beantwoord deze mail, dan helpen we je verder.', { muted: true, small: true }),
+  }, theme)
 }
 
 Deno.serve(async (req) => {
@@ -85,6 +101,8 @@ Deno.serve(async (req) => {
     .select('first_name, full_name').eq('id', user.id).maybeSingle()
   const firstName = (profile?.first_name || profile?.full_name || '').trim().split(' ')[0] || 'initiatiefnemer'
   const url = `https://${project.slug}.${MAIN_DOMAIN}`
+  const subject = `${project.name} staat klaar op buuur`
+  const brand = (await loadProjectEmailBrand(admin, projectId)) ?? { name: project.name }
 
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -93,8 +111,8 @@ Deno.serve(async (req) => {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: [user.email],
       reply_to: `hallo@${MAIN_DOMAIN}`,
-      subject: `${project.name} staat klaar op buuur`,
-      html: welcomeEmail(firstName, project.name, url, org.member_limit ?? 10),
+      subject,
+      html: welcomeEmail(subject, firstName, project.name, url, org.member_limit ?? 10, brand),
     }),
   })
 

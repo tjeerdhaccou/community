@@ -27,6 +27,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'https://esm.sh/pdf-lib@1.17.1'
+import { emailParagraph, escapeHtml, renderEmailLayout, type EmailBrand } from '../_shared/email-layout.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
@@ -88,10 +89,6 @@ function toBase64(bytes: Uint8Array): string {
     bin += String.fromCharCode(...bytes.subarray(i, i + chunk))
   }
   return btoa(bin)
-}
-
-function esc(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
 function safeFileName(s: string): string {
@@ -356,36 +353,30 @@ function projectBaseUrl(project: Row | null): string {
 
 function renderEmail(args: { recipientName: string | null; orgName: string; project: Row | null; title: string; linkUrl: string }): string {
   const { recipientName, orgName, project, title, linkUrl } = args
-  const greeting = recipientName ? `Hoi ${esc(recipientName.split(' ')[0])}` : 'Hoi'
+  const greeting = recipientName ? `Hoi ${escapeHtml(recipientName.split(' ')[0])}` : 'Hoi'
   const projectName = project?.name ?? orgName
-  return `<!DOCTYPE html>
-<html lang="nl">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a2e;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7;padding:32px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-        <tr><td style="padding:24px 32px 16px;border-bottom:1px solid #f0f0f4;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-            ${project?.logo_url ? `<td width="40" style="vertical-align:middle;"><img src="${esc(project.logo_url)}" alt="${esc(projectName)}" width="32" height="32" style="border-radius:8px;display:block;"></td>` : ''}
-            <td style="vertical-align:middle;padding-left:${project?.logo_url ? '12px' : '0'};"><span style="font-size:14px;color:#6b7280;font-weight:500;">${esc(projectName)}</span></td>
-          </tr></table>
-        </td></tr>
-        <tr><td style="padding:32px;">
-          <p style="margin:0 0 8px;font-size:15px;color:#4a4a6a;">${greeting},</p>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;">${esc(orgName)} heeft jouw getekende document ook ondertekend. Daarmee is het rond.</p>
-          <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#1a1a2e;font-weight:600;">${esc(title)}</h1>
-          <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;">De volledig getekende versie zit als PDF bij deze mail. Je vindt hem ook terug onder <strong>Mijn documenten</strong>, met het certificaat van ondertekening als laatste pagina.</p>
-          <p style="margin:32px 0 0;"><a href="${esc(linkUrl)}" style="display:inline-block;background:#4A90D9;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">Bekijk in ${esc(projectName)}</a></p>
-        </td></tr>
-        <tr><td style="padding:20px 32px 28px;border-top:1px solid #f0f0f4;background:#fafafc;">
-          <p style="margin:0;font-size:12px;line-height:1.6;color:#9ba1b0;">Je ontvangt deze mail omdat je dit document hebt ondertekend via <strong>${esc(projectName)}</strong> op Buuur. Bewaar hem goed.</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`
+  const brand: EmailBrand | null = project
+    ? {
+        name: project.name ?? orgName,
+        logoUrl: project.logo_url,
+        accentColor: project.app_accent_color,
+        structureColor: project.app_structure_color,
+      }
+    : orgName ? { name: orgName } : null
+  return renderEmailLayout({
+    subject: `Bevestigd: ${title}`,
+    preheader: `${orgName} heeft het document ook ondertekend. Daarmee is het rond.`,
+    brand,
+    heading: title,
+    bodyHtml:
+      emailParagraph(`${greeting},`) +
+      emailParagraph(`${escapeHtml(orgName)} heeft jouw getekende document ook ondertekend. Daarmee is het rond.`) +
+      emailParagraph(
+        'De volledig getekende versie zit als PDF bij deze mail. Je vindt hem ook terug onder <strong>Mijn documenten</strong>, met het certificaat van ondertekening als laatste pagina.',
+      ),
+    button: { label: `Bekijk in ${projectName}`, url: linkUrl },
+    footerNote: `Je ontvangt deze mail omdat je dit document hebt ondertekend via ${projectName} op buuur. Bewaar hem goed.`,
+  })
 }
 
 async function sendEmail(args: {
@@ -459,7 +450,7 @@ Deno.serve(async (req) => {
     .select(`
       *,
       org:organizations!org_id(id, name, reply_to_email),
-      project:projects!project_id(id, name, slug, custom_domain, logo_url),
+      project:projects!project_id(id, name, slug, custom_domain, logo_url, app_accent_color, app_structure_color),
       signers:signature_request_signers(*, profile:profiles!profile_id(full_name, email))
     `)
     .eq('id', requestId)

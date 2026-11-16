@@ -12,6 +12,14 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
+import {
+  emailDetails,
+  emailParagraph,
+  escapeHtml,
+  renderEmailLayout,
+  resolveEmailTheme,
+  type EmailBrand,
+} from '../_shared/email-layout.ts'
 
 const SUPABASE_URL   = Deno.env.get('SUPABASE_URL') || ''
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
@@ -82,9 +90,6 @@ function wrapText(text: string, maxChars: number): string[] {
   }
   if (cur) lines.push(cur)
   return lines
-}
-function escapeHtml(s: string): string {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
 }
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60) || 'overeenkomst'
@@ -216,7 +221,7 @@ serve(async (req) => {
       payment_request:payment_requests(
         id, project_id, status, amount_cents, currency, title, reference,
         recipient_name, recipient_email, recipient_profile_id, agreed_at, agreed_ip, agreement_template_id,
-        project:projects(id, name, slug, logo_url, organization_id,
+        project:projects(id, name, slug, logo_url, app_accent_color, app_structure_color, organization_id,
                           organization:organizations(id, name, slug, logo_url, from_display_name, reply_to_email))
       )
     `)
@@ -342,19 +347,37 @@ serve(async (req) => {
 
         if (RESEND_API_KEY && !upErr) {
           const attachment = { filename: `${slugify(pr.title)}-getekend.pdf`, content: base64FromBytes(pdfBytes) }
-          const html = `
-            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a;padding:24px;">
-              <h1 style="font-size:20px;margin:0 0 16px;">Betaling ontvangen</h1>
-              <p style="font-size:15px;line-height:1.55;margin:0 0 12px;">Beste ${escapeHtml(pr.recipient_name)},</p>
-              <p style="font-size:15px;line-height:1.55;margin:0 0 12px;">
-                We hebben je betaling van <strong>${escapeHtml(formatEuro(pr.amount_cents))}</strong> voor
-                <em>${escapeHtml(pr.title)}</em> ontvangen. In de bijlage vind je de definitieve overeenkomst met bevestiging.
-              </p>
-              <p style="font-size:13px;color:#666;line-height:1.5;margin:20px 0 0;">
-                Bedankt — ${escapeHtml(org?.name || 'de organisatie')}
-              </p>
-            </div>
-          `
+          const brand: EmailBrand | null = project
+            ? {
+                name: project.name || '',
+                logoUrl: project.logo_url,
+                accentColor: project.app_accent_color,
+                structureColor: project.app_structure_color,
+              }
+            : org?.name ? { name: org.name, logoUrl: org.logo_url } : null
+          const theme = resolveEmailTheme(brand)
+          const amountText = formatEuro(pr.amount_cents)
+          const detailRows = [
+            { label: 'Bedrag', value: amountText },
+            { label: 'Omschrijving', value: pr.title },
+          ]
+          if (pr.reference) detailRows.push({ label: 'Referentie', value: pr.reference })
+          const html = renderEmailLayout(
+            {
+              subject: `Betaling ontvangen: ${pr.title}`,
+              preheader: `We hebben je betaling van ${amountText} ontvangen.`,
+              brand,
+              heading: 'Betaling ontvangen',
+              bodyHtml:
+                emailParagraph(`Beste ${escapeHtml(pr.recipient_name)},`) +
+                emailParagraph(
+                  `We hebben je betaling van <strong>${escapeHtml(amountText)}</strong> voor <em>${escapeHtml(pr.title)}</em> ontvangen. In de bijlage vind je de definitieve overeenkomst met bevestiging.`,
+                ) +
+                emailDetails(detailRows) +
+                emailParagraph(`Bedankt — ${escapeHtml(org?.name || 'de organisatie')}`, { muted: true }),
+            },
+            theme,
+          )
           const orgDisplay = (org?.from_display_name || '').trim() || org?.name || FROM_NAME
           const fromName = `${orgDisplay} via buuur`
           const mailBody: Record<string, unknown> = {
