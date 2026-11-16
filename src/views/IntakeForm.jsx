@@ -4,6 +4,28 @@ import { supabase } from '../lib/supabase'
 import { CONSENT_VERSION } from '../lib/constants'
 import { getIntakeField } from '../lib/intakeFields'
 import { accentVars, ACCENT_VAR_NAMES } from '../lib/brandAccent'
+import { loadFonts } from '../lib/fonts'
+import '../styles/intake.css'
+
+// Het blauw van Fris: de terugval als een project nergens een kleur heeft staan.
+const FRIS_BLUE = '#2341FF'
+
+// Huisstijl van het project voor dit formulier. Eerst de kleuren uit "Branding"
+// in het CMS (zoals de ledenomgeving ze gebruikt), anders de kleuren van de
+// publieke projectpagina, anders het Fris-blauw.
+function intakeColors(project) {
+  if (project?.app_accent_color || project?.app_structure_color) {
+    return { accent: project.app_accent_color, structure: project.app_structure_color }
+  }
+  if (project?.brand_accent_color || project?.brand_primary_color) {
+    return { accent: project.brand_accent_color, structure: project.brand_primary_color }
+  }
+  return { accent: FRIS_BLUE, structure: FRIS_BLUE }
+}
+
+function usesCrowdbuilding(project) {
+  return (project?.default_theme || project?.organization?.default_theme) === 'crowdbuilding'
+}
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -16,6 +38,7 @@ export default function IntakeForm({ slugOverride } = {}) {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState(null)
+  const [inactive, setInactive] = useState(false)
 
   // Form fields
   const [firstName, setFirstName] = useState('')
@@ -30,24 +53,27 @@ export default function IntakeForm({ slugOverride } = {}) {
     loadForm()
   }, [projectIdent])
 
-  // Pas het projectthema toe op het publieke formulier, zodat de achtergrond
-  // (en overige tokens) matchen met de getthemede site i.p.v. de default.
+  // Fris is hier de vaste basis, ook voor bezoekers die Fris niet aan hebben
+  // staan. Alleen bij de CrowdBuilding-stijl blijft het oude uiterlijk staan:
+  // Fris en CrowdBuilding gaan nooit samen.
+  const fris = !usesCrowdbuilding(project)
+  // Altijd licht: dit formulier rendert nooit in dark mode.
+  const brandVars = fris
+    ? accentVars(intakeColors(project), false)
+    : accentVars({ accent: project?.app_accent_color, structure: project?.app_structure_color }, false)
+
+  useEffect(() => {
+    if (fris) loadFonts(['Instrument Serif'])
+  }, [fris])
+
+  // Thema en projectkleuren ook op <html>, zodat wat buiten het formulier valt
+  // (de cookiebalk) dezelfde kleuren draagt.
   useEffect(() => {
     if (!project) return
-    const resolvedTheme = project.default_theme || project.organization?.default_theme || 'clean'
-    const style = resolvedTheme === 'crowdbuilding' ? 'crowdbuilding' : 'clean'
     const root = document.documentElement
     const prevTheme = root.getAttribute('data-theme')
-    root.setAttribute('data-theme', style === 'crowdbuilding' ? 'crowdbuilding' : 'warm')
-
-    // Het intakeformulier is de deur vanaf de eigen website van het project naar
-    // ons, dus hier telt hun steunkleur wel. Altijd licht: dit formulier rendert
-    // nooit in dark mode.
-    const vars = accentVars(
-      { accent: project.app_accent_color, structure: project.app_structure_color },
-      false,
-    )
-    Object.entries(vars).forEach(([name, value]) => root.style.setProperty(name, value))
+    root.setAttribute('data-theme', fris ? 'warm' : 'crowdbuilding')
+    Object.entries(brandVars).forEach(([name, value]) => root.style.setProperty(name, value))
 
     return () => {
       if (prevTheme) root.setAttribute('data-theme', prevTheme)
@@ -68,6 +94,9 @@ export default function IntakeForm({ slugOverride } = {}) {
 
       if (projectRes.error) throw projectRes.error
       if (!projectRes.data.intake_enabled) {
+        // Project wel bewaren: zo draagt ook deze melding het logo en de kleuren.
+        setProject(projectRes.data)
+        setInactive(true)
         setError('Dit aanmeldformulier is niet actief.')
         setLoading(false)
         return
@@ -139,27 +168,36 @@ export default function IntakeForm({ slugOverride } = {}) {
   // of het functionele accent als het project er geen heeft ingesteld.
   const brandColor = 'var(--accent-primary)'
 
+  // De Fris-tokens gelden vanaf dit element; de projectkleuren staan er inline
+  // op, want anders wint het Fris-blauw van wat er op <html> staat.
+  const pageProps = fris
+    ? { className: 'join-page intake-fris', 'data-look': 'fris', style: brandVars }
+    : { className: 'join-page' }
+
   if (loading) {
     return (
-      <div className="join-page">
+      <div {...pageProps}>
         <div className="join-card">
           <div className="join-card__content" style={{ textAlign: 'center', padding: '48px 24px' }}>
-            <p style={{ color: 'var(--text-tertiary)' }}>Formulier laden...</p>
+            <p className="intake-loading" style={{ color: 'var(--text-tertiary)' }}>Formulier laden...</p>
           </div>
         </div>
       </div>
     )
   }
 
-  if (error && !project) {
+  if (inactive || (error && !project)) {
     return (
-      <div className="join-page">
-        <div className="join-card">
+      <div {...pageProps}>
+        <div className="join-card intake-state">
           <div className="join-card__content">
+            {fris && project?.logo_url && (
+              <img src={project.logo_url} alt={project.name + ' logo'} className="join-card__logo" />
+            )}
             <div className="join-card__icon join-card__icon--error">
               <i className="fa-solid fa-circle-exclamation" />
             </div>
-            <h2>Niet beschikbaar</h2>
+            <h2 className="intake-state__title">Niet beschikbaar</h2>
             <p className="join-card__tagline">{error}</p>
           </div>
         </div>
@@ -169,11 +207,11 @@ export default function IntakeForm({ slugOverride } = {}) {
 
   if (submitted) {
     return (
-      <div className="join-page">
-        <div className="join-card">
+      <div {...pageProps}>
+        <div className="join-card intake-state intake-state--done" role="status">
           <div className="join-card__content" style={{ paddingTop: 32 }}>
             {project.logo_url && (
-              <img src={project.logo_url} alt={project.name + ' logo'} className="join-card__logo" style={{ marginTop: 0 }} />
+              <img src={project.logo_url} alt={project.name + ' logo'} className="join-card__logo" style={fris ? undefined : { marginTop: 0 }} />
             )}
             <div className="intake-success-icon" style={{ color: brandColor }}>
               <i className="fa-solid fa-circle-check" />
@@ -190,7 +228,7 @@ export default function IntakeForm({ slugOverride } = {}) {
   }
 
   return (
-    <div className="join-page">
+    <div {...pageProps}>
       <div className="join-card join-card--wide">
         {project.cover_image_url && (
           <div className="intake-hero">
@@ -203,9 +241,10 @@ export default function IntakeForm({ slugOverride } = {}) {
               src={project.logo_url}
               alt={project.name + ' logo'}
               className="join-card__logo"
-              style={project.cover_image_url ? { marginTop: -78, position: 'relative', zIndex: 2 } : { marginTop: 20 }}
+              style={fris ? undefined : project.cover_image_url ? { marginTop: -78, position: 'relative', zIndex: 2 } : { marginTop: 20 }}
             />
           )}
+          {fris && <p className="intake-eyebrow">Aanmelden</p>}
           <h1 className="join-card__title">{project.name}</h1>
           {project.tagline && <p className="join-card__tagline">{project.tagline}</p>}
 
@@ -221,7 +260,7 @@ export default function IntakeForm({ slugOverride } = {}) {
 
             <div className="form-row">
               <div className="form-group form-group--half">
-                <label htmlFor="intake-first">Voornaam *</label>
+                <label htmlFor="intake-first">Voornaam <Req /></label>
                 <input
                   id="intake-first"
                   type="text"
@@ -232,7 +271,7 @@ export default function IntakeForm({ slugOverride } = {}) {
                 />
               </div>
               <div className="form-group form-group--half">
-                <label htmlFor="intake-last">Achternaam *</label>
+                <label htmlFor="intake-last">Achternaam <Req /></label>
                 <input
                   id="intake-last"
                   type="text"
@@ -246,7 +285,7 @@ export default function IntakeForm({ slugOverride } = {}) {
 
             <div className="form-row">
               <div className="form-group form-group--half">
-                <label htmlFor="intake-email">E-mailadres *</label>
+                <label htmlFor="intake-email">E-mailadres <Req /></label>
                 <input
                   id="intake-email"
                   type="email"
@@ -280,7 +319,7 @@ export default function IntakeForm({ slugOverride } = {}) {
                   return (
                     <div key={q.id} className="form-group">
                       <label htmlFor={`q-${q.id}`}>
-                        {q.question_text}{q.required ? ' *' : ''}
+                        {q.question_text}{q.required && <> <Req /></>}
                       </label>
                       {field?.help && <p className="form-hint" style={{ margin: '2px 0 6px' }}>{field.help}</p>}
                       {renderQuestion(q, field, answers[q.id], val => setAnswer(q.id, val))}
@@ -306,7 +345,7 @@ export default function IntakeForm({ slugOverride } = {}) {
               </span>
             </label>
 
-            {error && <p className="join-card__error">{error}</p>}
+            {error && <p className="join-card__error" role="alert">{error}</p>}
 
             <button
               type="submit"
@@ -315,12 +354,19 @@ export default function IntakeForm({ slugOverride } = {}) {
               style={{ background: 'var(--accent-cta)', color: 'var(--accent-on-cta)' }}
             >
               {submitting ? 'Versturen...' : 'Aanmelding versturen'}
+              {fris && !submitting && <i className="fa-solid fa-arrow-right" aria-hidden="true" />}
             </button>
           </form>
         </div>
       </div>
     </div>
   )
+}
+
+// Sterretje bij een verplicht veld. Het veld zelf draagt `required`, dus voor
+// schermlezers is het teken dubbelop.
+function Req() {
+  return <span className="intake-req" aria-hidden="true">*</span>
 }
 
 function renderQuestion(question, field, value, onChange) {
