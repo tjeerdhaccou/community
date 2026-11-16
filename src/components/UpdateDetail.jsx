@@ -103,7 +103,7 @@ export default function UpdateDetail({ update, onClose, onEdit, onTogglePin, onR
             {update.is_public ? (
               <span className="update-detail__vis"><i className="fa-solid fa-eye" /> Openbaar</span>
             ) : (
-              <span className="update-detail__vis"><i className="fa-solid fa-lock" /> Intern</span>
+              <span className="update-detail__vis"><i className="fa-solid fa-lock" /> Alleen leden</span>
             )}
           </div>
 

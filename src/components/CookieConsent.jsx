@@ -28,7 +28,7 @@ export default function CookieConsent() {
       <div className="cookie-consent__content">
         <p>
           Wij gebruiken functionele opslag (thema-voorkeur) en sessie-cookies voor authenticatie.
-          Lees ons <a href="/privacy">privacybeleid</a> voor meer informatie.
+          Lees onze <a href="/privacy">privacyverklaring</a> voor meer informatie.
         </p>
         <button className="cl-btn cl-btn--primary cookie-consent__btn" onClick={accept}>
           Akkoord

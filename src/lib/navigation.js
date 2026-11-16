@@ -58,14 +58,14 @@ export const NAV_SECTIONS = [
     collapsible: true,
     items: [
       { to: 'aan-de-slag', icon: 'fa-solid fa-rocket', color: 'var(--accent-green, #3BD269)', bubble: 'green', label: 'Aan de slag', adminOnly: true, visible: (ctx) => ctx.role === 'admin' && ctx.onboardingActive },
-      { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', bubble: 'teal', label: 'Pagina bouwer', adminOnly: true, feature: 'page_builder' },
+      { to: 'page-builder', icon: 'fa-solid fa-wand-magic-sparkles', color: 'var(--accent-purple, #7B5EA7)', bubble: 'teal', label: 'Paginabouwer', adminOnly: true, feature: 'page_builder' },
       { to: 'settings', icon: 'fa-solid fa-gear', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Instellingen', adminOnly: true },
     ]
   },
 ]
 
 /** Account staat niet in de sidebar (daar zit het in het gebruikersmenu), wel in de mobiele "Meer"-sheet. */
-export const ACCOUNT_ITEM = { to: 'profile', icon: 'fa-solid fa-circle-user', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Account' }
+export const ACCOUNT_ITEM = { to: 'profile', icon: 'fa-solid fa-circle-user', color: 'var(--text-tertiary)', bubble: 'neutral', label: 'Mijn profiel' }
 
 /**
  * Volgorde van voorkeur voor de vaste plekken in de onderbalk (mobiel). De

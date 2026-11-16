@@ -3,12 +3,12 @@ export const SECTION_TYPES = [
   { value: 'text-image-right', label: 'Tekst rechts, beeld links', icon: 'fa-solid fa-table-columns' },
   { value: 'text-only', label: 'Alleen tekst', icon: 'fa-solid fa-align-left' },
   { value: 'image-full', label: 'Volledig beeld', icon: 'fa-solid fa-image' },
-  { value: 'image-carousel', label: 'Beeldcarousel', icon: 'fa-solid fa-images' },
+  { value: 'image-carousel', label: 'Fotocarrousel', icon: 'fa-solid fa-images' },
   { value: 'cards', label: 'Kaarten in kolommen', icon: 'fa-solid fa-table-cells-large' },
-  { value: 'members', label: 'Leden showcase', icon: 'fa-solid fa-users' },
-  { value: 'agenda', label: 'Volgend evenement', icon: 'fa-solid fa-calendar-check' },
-  { value: 'updates', label: 'Laatste updates', icon: 'fa-solid fa-newspaper' },
-  { value: 'footer', label: 'Footerblok', icon: 'fa-solid fa-grip-lines' },
+  { value: 'members', label: 'Ledenoverzicht', icon: 'fa-solid fa-users' },
+  { value: 'agenda', label: 'Volgend event', icon: 'fa-solid fa-calendar-check' },
+  { value: 'updates', label: 'Laatste nieuws', icon: 'fa-solid fa-newspaper' },
+  { value: 'footer', label: 'Voettekst', icon: 'fa-solid fa-grip-lines' },
 ]
 
 export const FONT_THEMES = [

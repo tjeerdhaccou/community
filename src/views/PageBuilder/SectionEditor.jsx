@@ -176,14 +176,14 @@ export default function SectionEditor({ section, index, total, colorTheme, proje
         {section.section_type === 'updates' && (
           <div className="pb-block__auto-info">
             <i className="fa-solid fa-magic" />
-            <p>Dit blok toont automatisch de laatste publieke updates van je project.</p>
+            <p>Dit blok toont automatisch het laatste openbare nieuws van je project.</p>
           </div>
         )}
 
         {section.section_type === 'agenda' && (
           <div className="pb-block__auto-info">
             <i className="fa-solid fa-calendar-check" />
-            <p>Dit blok toont automatisch het eerstvolgende publieke evenement van je project.</p>
+            <p>Dit blok toont automatisch het eerstvolgende openbare event van je project.</p>
           </div>
         )}
 
@@ -202,7 +202,7 @@ export default function SectionEditor({ section, index, total, colorTheme, proje
             {section.cta_label && (
               <>
                 <div className="form-group">
-                  <label>Knop URL</label>
+                  <label>Link van de knop</label>
                   <input type="url" value={section.cta_url || ''} onChange={e => onUpdate(section.id, 'cta_url', e.target.value)} placeholder="https://..." />
                 </div>
                 <div className="form-group">

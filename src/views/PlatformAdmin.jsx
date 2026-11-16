@@ -124,7 +124,7 @@ export default function PlatformAdmin() {
         <div className="error-boundary__card">
           <i className="fa-solid fa-lock error-boundary__icon" style={{ color: 'var(--accent-red)' }} />
           <h2>Geen toegang</h2>
-          <p>Je hebt geen platform admin rechten.</p>
+          <p>Je hebt geen platformbeheerdersrechten.</p>
         </div>
       </div>
     )
@@ -180,14 +180,14 @@ export default function PlatformAdmin() {
               <input type="text" value={newName} onChange={e => { setNewName(e.target.value); if (!newSlug) setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-')) }} placeholder="CommonCity" required />
             </div>
             <div className="form-group">
-              <label>Slug *</label>
+              <label>Webadres *</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <input type="text" value={newSlug} onChange={e => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))} placeholder="commoncity" required />
                 <span style={{ fontSize: 12, color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>.buuur.nl</span>
               </div>
             </div>
             <div className="form-group">
-              <label>Admin e-mail</label>
+              <label>E-mailadres beheerder</label>
               <input type="email" value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} placeholder="admin@organisatie.nl" />
               <span className="form-hint">Moet een bestaand account zijn. Laat leeg om later toe te voegen.</span>
             </div>

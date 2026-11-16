@@ -302,19 +302,19 @@ export default function Profile() {
   return (
     <div className="view-profile">
       <div className="view-header">
-        <h1>Mijn publieke profiel</h1>
+        <h1>Mijn profiel</h1>
         <p className="view-header__subtitle">
-          Dit zien andere leden{project?.name ? ` van ${project.name}` : ''}.
+          Je profiel zien andere leden{project?.name ? ` van ${project.name}` : ''}. Hieronder regel je ook je meldingen en je account.
         </p>
       </div>
 
       <div className="profile-public-note">
         <i className="fa-solid fa-eye" />
         <div>
-          <p>Alles op deze pagina is zichtbaar voor andere leden. Alle velden zijn optioneel.</p>
+          <p>Alles in je profiel is zichtbaar voor andere leden. Alle velden zijn optioneel.</p>
           <p className="profile-public-note__sub">
             Wil je meer privé delen? De initiatiefnemers kunnen je apart om aanvullende
-            gegevens vragen via een intakeformulier — die zijn niet zichtbaar voor medeleden.
+            gegevens vragen via een apart formulier — die zijn niet zichtbaar voor medeleden.
           </p>
         </div>
         <button type="button" className="btn-secondary btn-sm" onClick={() => setShowPreview(true)}>
@@ -474,13 +474,13 @@ export default function Profile() {
         {/* Notification preferences */}
         <div className="profile-section" id="notif-section">
           <h3 className="profile-section__title">
-            <i className="fa-solid fa-bell" /> Notificaties
+            <i className="fa-solid fa-bell" /> Meldingen
           </h3>
 
           {[
             { key: 'pref_updates', label: 'Projectnieuws', icon: 'fa-solid fa-bullhorn', desc: 'Nieuwe aankondigingen vanuit het projectteam' },
-            { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-thumbtack', desc: 'Reacties en likes op je berichten' },
-            { key: 'pref_events', label: 'Events', icon: 'fa-solid fa-calendar-check', desc: 'Nieuwe events en herinneringen' },
+            { key: 'pref_prikbord', label: 'Prikbord', icon: 'fa-solid fa-thumbtack', desc: 'Nieuwe berichten en reacties' },
+            { key: 'pref_events', label: 'Events', icon: 'fa-solid fa-calendar-check', desc: 'Nieuwe events' },
             { key: 'pref_documents', label: 'Documenten', icon: 'fa-solid fa-folder-open', desc: 'Nieuwe documenten' },
             { key: 'pref_chat', label: 'Chat', icon: 'fa-solid fa-comments', desc: 'Privéberichten en @vermeldingen die je niet gelezen hebt' },
           ].map(cat => (
@@ -568,7 +568,7 @@ export default function Profile() {
           {notifPrefs.mute_until && new Date(notifPrefs.mute_until) > new Date() && (
             <div className="notif-mute-active">
               <i className="fa-solid fa-moon" />
-              <span>Notificaties gepauzeerd tot {new Date(notifPrefs.mute_until).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}</span>
+              <span>Meldingen gepauzeerd tot {new Date(notifPrefs.mute_until).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' })}</span>
               <button className="btn-secondary btn-sm" onClick={() => saveNotifPrefs({ mute_until: null })}>
                 Hervatten
               </button>
@@ -583,7 +583,7 @@ export default function Profile() {
           </h3>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
             Op grond van de AVG heb je recht op inzage en verwijdering van je gegevens.
-            Lees ons <a href="/privacy">privacybeleid</a>.
+            Lees onze <a href="/privacy">privacyverklaring</a>.
           </p>
 
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -613,7 +613,7 @@ export default function Profile() {
                 Weet je het zeker?
               </p>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                Al je berichten, reacties, updates en lidmaatschappen worden permanent verwijderd.
+                Al je berichten, reacties, nieuwsberichten en lidmaatschappen worden permanent verwijderd.
                 Dit kan niet ongedaan worden gemaakt.
               </p>
               <div style={{ display: 'flex', gap: 12 }}>

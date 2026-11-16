@@ -65,7 +65,7 @@ export default function MemberWelcome() {
       key: 'notificaties',
       done: !!stepDone.notificaties,
       icon: 'fa-solid fa-bell',
-      title: 'Stel je notificaties in',
+      title: 'Stel je meldingen in',
       desc: 'Bepaal waarover je een e-mail wilt ontvangen.',
       path: `${basePath}/profile#notif-section`,
     },

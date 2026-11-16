@@ -530,7 +530,7 @@ function MemberDossier({ profileId, projectId }) {
           <h4><i className="fa-solid fa-file" /> Documenten</h4>
           <button className="btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
             <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-upload'}`} />
-            {uploading ? 'Uploaden...' : 'Upload'}
+            {uploading ? 'Uploaden...' : 'Uploaden'}
           </button>
           <input ref={fileInputRef} type="file" onChange={handleFileUpload} style={{ display: 'none' }} />
         </div>
@@ -922,7 +922,7 @@ function DossierRemovalRequests({ profileId, onFileRemoved }) {
             </div>
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
-                Leg uit waarom je dit verwijderingsverzoek afwijst. De member ziet deze uitleg.
+                Leg uit waarom je dit verwijderingsverzoek afwijst. Het lid ziet deze uitleg.
               </p>
               <div className="form-group">
                 <label htmlFor="reject-note">Toelichting <span style={{ color: 'var(--accent-red)' }}>*</span></label>

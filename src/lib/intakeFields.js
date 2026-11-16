@@ -59,7 +59,7 @@ export const INTAKE_FIELDS = [
   { key: 'city', label: 'Plaats', type: 'text', column: 'city', group: 'Adres' },
 
   // Huishouden
-  { key: 'household', label: 'Huishoudsamenstelling', type: 'select', column: 'household', group: 'Huishouden',
+  { key: 'household', label: 'Huishouden', type: 'select', column: 'household', group: 'Huishouden',
     help: 'Met wie woon je (samen)? Kies wat het dichtst in de buurt komt.',
     options: [
       { value: 'alleenstaand', label: 'Alleenstaand' },

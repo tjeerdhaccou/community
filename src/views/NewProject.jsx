@@ -91,7 +91,7 @@ export default function NewProject({ orgId: orgIdProp }) {
               <input id="proj-location" type="text" value={location} onChange={e => setLocation(e.target.value)} placeholder="Stad, wijk" />
             </div>
             <div className="form-group">
-              <label htmlFor="proj-tagline">Tagline</label>
+              <label htmlFor="proj-tagline">Slogan</label>
               <input id="proj-tagline" type="text" value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Korte beschrijving" />
             </div>
             <div className="form-group">

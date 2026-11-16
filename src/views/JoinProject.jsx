@@ -284,7 +284,7 @@ export default function JoinProject() {
                 <input id="join-year" type="number" value={birthYear} onChange={e => setBirthYear(e.target.value)} placeholder="bijv. 1985" min="1920" max={new Date().getFullYear()} />
               </div>
               <div className="form-group form-group--half">
-                <label htmlFor="join-household">Gezinssamenstelling</label>
+                <label htmlFor="join-household">Huishouden</label>
                 <select id="join-household" value={household} onChange={e => setHousehold(e.target.value)}>
                   <option value="">Kies…</option>
                   {HOUSEHOLD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

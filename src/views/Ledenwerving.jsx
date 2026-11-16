@@ -72,7 +72,7 @@ export default function Ledenwerving() {
           <div>
             <h1>Ledenwerving</h1>
             <p className="view-header__subtitle">
-              {pending.length > 0 ? `${pending.length} nieuwe aanmeldingen` : 'Beheer je intake formulier en aanmeldingen'}
+              {pending.length > 0 ? `${pending.length} nieuwe aanmeldingen` : 'Beheer je aanmeldformulier en aanmeldingen'}
             </p>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function Ledenwerving() {
           className={`tag-filter__pill ${tab === 'form' ? 'tag-filter__pill--active' : ''}`}
           onClick={() => setTab('form')}
         >
-          Formulier instellingen
+          Aanmeldformulier
         </button>
       </div>
 
@@ -115,8 +115,8 @@ export default function Ledenwerving() {
           {!intakeEnabled && (
             <div className="ledenwerving-empty">
               <i className="fa-solid fa-clipboard-list" />
-              <h3>Intake formulier is niet actief</h3>
-              <p>Ga naar "Formulier instellingen" om het intake formulier aan te zetten en vragen te configureren.</p>
+              <h3>Aanmeldformulier is niet actief</h3>
+              <p>Ga naar het tabblad "Aanmeldformulier" om het formulier aan te zetten en de vragen in te stellen.</p>
               <button className="btn-primary" onClick={() => setTab('form')}>
                 <i className="fa-solid fa-gear" /> Formulier instellen
               </button>
@@ -180,7 +180,7 @@ export default function Ledenwerving() {
                 checked={intakeEnabled}
                 onChange={e => setIntakeEnabled(e.target.checked)}
               />
-              <span>Intake formulier actief</span>
+              <span>Aanmeldformulier actief</span>
             </label>
 
             {intakeEnabled && (
@@ -197,8 +197,8 @@ export default function Ledenwerving() {
           </div>
 
           <div className="ledenwerving-card">
-            <h3>Cover afbeelding</h3>
-            <p className="form-hint">Wordt bovenaan het intake formulier getoond.</p>
+            <h3>Omslagfoto</h3>
+            <p className="form-hint">Wordt bovenaan het aanmeldformulier getoond.</p>
             {coverPreview ? (
               <div className="settings-cover-preview">
                 <img src={coverPreview} alt="Cover preview" />

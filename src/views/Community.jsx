@@ -114,7 +114,7 @@ export default function Community() {
           <span className="feed-composer-prompt__text">Wat wil je delen met de community?</span>
           <div className="feed-composer-prompt__actions">
             <i className="fa-solid fa-image" title="Afbeelding" />
-            <i className="fa-solid fa-square-poll-vertical" title="Poll" />
+            <i className="fa-solid fa-square-poll-vertical" title="Peiling" />
           </div>
         </div>
       )}
@@ -167,7 +167,7 @@ export default function Community() {
               </h3>
               <p>
                 {activeTag === 'Alles'
-                  ? 'Deel een vraag, idee of update met de community.'
+                  ? 'Deel een vraag, idee of nieuwtje met de community.'
                   : isGroupFilter
                     ? 'Wees de eerste die iets deelt met deze groep!'
                     : 'Wees de eerste die iets deelt in deze categorie!'

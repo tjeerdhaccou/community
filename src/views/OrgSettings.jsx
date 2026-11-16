@@ -302,7 +302,7 @@ export default function OrgSettings({ orgId: orgIdProp }) {
                         {a.profile?.full_name || 'Onbekend'}
                         {isSelf && <span className="org-admin-row__you"> (jij)</span>}
                       </span>
-                      <span className="org-admin-row__role">{a.role === 'admin' ? 'Admin' : a.role}</span>
+                      <span className="org-admin-row__role">{a.role === 'admin' ? 'Beheerder' : a.role}</span>
                     </div>
                     {isSelf && (
                       <i className="fa-solid fa-pen org-admin-row__edit-icon" />

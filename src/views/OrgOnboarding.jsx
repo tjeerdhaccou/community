@@ -68,7 +68,7 @@ export default function OrgOnboarding() {
       <div className="onboarding-card">
         <div className="onboarding-card__header">
           <h1>Start je groep</h1>
-          <p>Een eigen plek om elkaar op de hoogte te houden: nieuws, prikbord, agenda en chat.</p>
+          <p>Een eigen plek om elkaar op de hoogte te houden: nieuws, prikbord, events en chat.</p>
         </div>
 
         <form className="onboarding-card__content" onSubmit={handleCreate}>

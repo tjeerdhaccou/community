@@ -895,7 +895,7 @@ function FileDetailModal({ file, isOwn, removalRequest, hasPendingRemoval, onClo
           )}
           {(isImage || isPdf) && !previewUrl && !previewError && (
             <div className="my-docs__preview-placeholder">
-              <i className="fa-solid fa-spinner fa-spin" /> Preview laden...
+              <i className="fa-solid fa-spinner fa-spin" /> Voorbeeld laden...
             </div>
           )}
 
