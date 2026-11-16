@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { getReturnCookie, sendOtpCode } from '../lib/auth'
 import { redirectByRole } from '../lib/loginRedirect'
 import { isTrustedSessionTarget } from '../lib/subdomain'
+import { usePublicFris } from '../hooks/usePublicFris'
 
 // Alleen een pad binnen deze site; geen '//host' of volledig adres.
 function safeReturnPath(raw) {
@@ -139,6 +140,7 @@ export default function AuthCallback() {
 // voorheen zonder uitleg op /login. Hier sturen we een verse inlogcode en
 // zetten we door naar de code-invoer.
 function ExpiredLink({ navigate }) {
+  const { pageProps } = usePublicFris()
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
@@ -159,7 +161,7 @@ function ExpiredLink({ navigate }) {
   }
 
   return (
-    <div className="auth-expired">
+    <div className="auth-expired" {...pageProps}>
       <div className="auth-expired__card">
         <div className="auth-expired__icon">
           <i className="fa-solid fa-link-slash" />

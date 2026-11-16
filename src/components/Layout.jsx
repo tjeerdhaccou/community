@@ -28,23 +28,6 @@ function ThemeToggle() {
   )
 }
 
-function LookToggle() {
-  const { look, lookAvailable, toggleLook } = useTheme()
-  if (!lookAvailable) return null
-  const on = look === 'fris'
-  return (
-    <button
-      className={`theme-toggle-btn look-toggle-btn ${on ? 'look-toggle-btn--on' : ''}`}
-      onClick={toggleLook}
-      title={on ? 'Terug naar de vertrouwde look' : 'Probeer de nieuwe look (beta)'}
-      aria-label="Nieuwe look (beta)"
-      aria-pressed={on}
-    >
-      <i className="fa-solid fa-wand-magic-sparkles" />
-    </button>
-  )
-}
-
 export default function Layout() {
   const { readOnly } = useProject()
   return (
@@ -58,7 +41,6 @@ export default function Layout() {
         <div className="main-topbar">
           {readOnly && <DemoBanner />}
           <GlobalSearch />
-          <LookToggle />
           <ThemeToggle />
           <NotificationBell />
         </div>

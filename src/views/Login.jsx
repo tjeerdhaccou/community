@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { checkInvitedEmail, sendOtpCode, verifyOtpCode } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 import { getProjectSlugFromSubdomain, isProductionHost } from '../lib/subdomain'
 import { redirectByRole } from '../lib/loginRedirect'
+import { usePublicFris } from '../hooks/usePublicFris'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -11,14 +12,9 @@ export default function Login() {
   // AuthCallback stuurt na een verlopen link een verse code en zet door naar
   // hier met de e-mail al ingevuld en direct op de code-invoerstap.
   const resend = location.state || {}
-  const [projectInfo, setProjectInfo] = useState(null)
-
-  useEffect(() => {
-    const slug = getProjectSlugFromSubdomain()
-    if (!slug) return
-    supabase.from('projects').select('name, logo_url, tagline').eq('slug', slug).single()
-      .then(({ data }) => { if (data) setProjectInfo(data) })
-  }, [])
+  // Projectnaam en -logo (op een projectsubdomein) plus de Fris-look met de
+  // steunkleur van het project.
+  const { project: projectInfo, pageProps } = usePublicFris()
   const [mode, setMode] = useState(resend.step === 'otp' ? 'otp' : 'email') // email | otp
   const [email, setEmail] = useState(resend.email || '')
   const [otpCode, setOtpCode] = useState('')
@@ -109,10 +105,10 @@ export default function Login() {
   // Step 1: Enter email
   if (mode === 'email') {
     return (
-      <div className="login-page">
+      <div className="login-page" {...pageProps}>
         <div className="cl-card cl-card--elevated login-card">
           {projectInfo?.logo_url && (
-            <img src={projectInfo.logo_url} alt={projectInfo.name + ' logo'} style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', objectFit: 'cover', marginBottom: 12 }} />
+            <img className="login-logo" src={projectInfo.logo_url} alt={projectInfo.name + ' logo'} style={{ width: 64, height: 64, borderRadius: 'var(--radius-md)', objectFit: 'cover', marginBottom: 12 }} />
           )}
           <h1 className="login-title">{projectInfo?.name || 'Inloggen'}</h1>
           <p className="login-subtitle">
@@ -138,7 +134,7 @@ export default function Login() {
             </button>
           </form>
 
-          <p style={{ marginTop: 24, fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
+          <p className="login-terms" style={{ marginTop: 24, fontSize: 13, color: 'var(--text-tertiary)', textAlign: 'center' }}>
             Door in te loggen ga je akkoord met onze{' '}
             <a href="/voorwaarden" style={{ color: 'var(--accent-primary)' }}>algemene voorwaarden</a>{' '}
             en ons <a href="/privacy" style={{ color: 'var(--accent-primary)' }}>privacybeleid</a>.
@@ -150,7 +146,7 @@ export default function Login() {
 
   // Step 2: Enter OTP code
   return (
-    <div className="login-page">
+    <div className="login-page" {...pageProps}>
       <div className="cl-card cl-card--elevated login-card">
         <div className="login-otp-icon">
           <i className="fa-solid fa-envelope-circle-check" />
