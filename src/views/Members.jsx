@@ -342,7 +342,7 @@ export default function Members() {
 
 function InviteModal({ projectName, project, inviteApi, onClose }) {
   const [tab, setTab] = useState('personal')
-  const { invites, createInvite, revokeInvite, resendInvite } = inviteApi
+  const { createInvite } = inviteApi
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -370,13 +370,7 @@ function InviteModal({ projectName, project, inviteApi, onClose }) {
         </div>
 
         {tab === 'personal' ? (
-          <PersonalInvite
-            projectName={projectName}
-            invites={invites}
-            onInvite={createInvite}
-            onRevoke={revokeInvite}
-            onResend={resendInvite}
-          />
+          <PersonalInvite projectName={projectName} onInvite={createInvite} />
         ) : (
           <OpenLinkInvite projectName={projectName} project={project} />
         )}
@@ -385,16 +379,15 @@ function InviteModal({ projectName, project, inviteApi, onClose }) {
   )
 }
 
-function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) {
+function PersonalInvite({ projectName, onInvite }) {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [personalMessage, setPersonalMessage] = useState('')
   const [assignedRole, setAssignedRole] = useState('guest')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
-  const [resending, setResending] = useState(null)
-  // Bevestiging na versturen of opnieuw versturen: zonder deze regel leek het
-  // alsof er niets gebeurde (het formulier werd alleen leeggemaakt).
+  // Bevestiging na versturen. Het overzicht van wie is uitgenodigd staat in de
+  // ledenlijst (filter Uitgenodigd), niet in dit venster.
   const [notice, setNotice] = useState(null)
 
   async function handleSubmit(e) {
@@ -417,22 +410,6 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
       setSaving(false)
     }
   }
-
-  async function handleResend(invite) {
-    setResending(invite.id)
-    setError(null)
-    setNotice(null)
-    try {
-      await onResend(invite)
-      setNotice(`Uitnodiging opnieuw verstuurd naar ${invite.email}.`)
-    } catch (err) {
-      setError(err.message || 'Opnieuw versturen mislukt.')
-    } finally {
-      setResending(null)
-    }
-  }
-
-  const visibleInvites = invites.filter(i => i.status !== 'revoked')
 
   return (
     <div className="invite-modal__content">
@@ -507,51 +484,6 @@ function PersonalInvite({ projectName, invites, onInvite, onRevoke, onResend }) 
           </button>
         </div>
       </form>
-
-      {visibleInvites.length > 0 && (
-        <div className="invite-list">
-          <h3 className="invite-list__title">Uitgenodigd</h3>
-          {visibleInvites.map(inv => (
-            <div key={inv.id} className="invite-row">
-              <div className="invite-row__avatar" style={{ background: 'var(--accent-blue)' }}>
-                {(inv.name || inv.email)[0].toUpperCase()}
-              </div>
-              <div className="invite-row__info">
-                <span className="invite-row__name">{inv.name || inv.email}</span>
-                {inv.name && <span className="invite-row__email">{inv.email}</span>}
-              </div>
-              {inv.assigned_role && inv.assigned_role !== 'guest' && (
-                <span className="invite-role-badge" style={tagStyle(ROLE_COLORS[inv.assigned_role])}>
-                  {ROLE_LABELS[inv.assigned_role]}
-                </span>
-              )}
-              {inv.status === 'accepted' ? (
-                <span className="invite-status invite-status--accepted">Aangemeld</span>
-              ) : (
-                <>
-                  <button
-                    className="btn-icon-sm"
-                    onClick={() => handleResend(inv)}
-                    disabled={resending === inv.id}
-                    title="Opnieuw versturen"
-                    aria-label="Opnieuw versturen"
-                  >
-                    <i className={`fa-solid ${resending === inv.id ? 'fa-spinner fa-spin' : 'fa-rotate-right'}`} />
-                  </button>
-                  <button
-                    className="btn-icon-sm"
-                    onClick={() => onRevoke(inv.id)}
-                    title="Intrekken"
-                    aria-label="Intrekken"
-                  >
-                    <i className="fa-solid fa-xmark" />
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
