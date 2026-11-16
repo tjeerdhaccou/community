@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useSupportConversation } from '../../hooks/useSupportConversation'
+import { useDemoSupportConversation } from '../../hooks/useDemoSupportConversation'
 import { useProject } from '../../contexts/ProjectContext'
 import { useToast } from '../Toast'
 import './SupportWidget.css'
@@ -45,13 +46,23 @@ function formatTime(iso) {
 }
 
 export default function SupportWidget() {
+  return <SupportWidgetView conversation={useSupportConversation()} />
+}
+
+// Klik-demo: dezelfde knop en hetzelfde paneel, maar met een voorbeeldgesprek
+// dat alleen lokaal draait (zie useDemoSupportConversation).
+export function DemoSupportWidget() {
+  return <SupportWidgetView conversation={useDemoSupportConversation()} demo />
+}
+
+function SupportWidgetView({ conversation, demo = false }) {
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState('')
   const [file, setFile] = useState(null)
   const [showEmoji, setShowEmoji] = useState(false)
   const [labelVisible, setLabelVisible] = useState(true)
   const { project } = useProject()
-  const { messages, loading, sending, sendMessage, markRead, unreadCount } = useSupportConversation()
+  const { messages, loading, sending, sendMessage, markRead, unreadCount, note } = conversation
   const toast = useToast()
   const location = useLocation()
   const bodyRef = useRef(null)
@@ -185,6 +196,7 @@ export default function SupportWidget() {
       </div>
 
       <div className="sc-body" ref={bodyRef}>
+        {demo && note && <div className="sc-demo-note">{note}</div>}
         {loading ? (
           <div className="sc-hint">Even laden…</div>
         ) : messages.length === 0 ? (
@@ -202,6 +214,11 @@ export default function SupportWidget() {
               <div key={m.id} className={`sc-msg ${mine ? 'sc-msg--out' : 'sc-msg--in'}`}>
                 <div className={`sc-bubble ${mine ? 'sc-bubble--out' : 'sc-bubble--in'}`}>
                   {m.attachment_path && <SupportAttachment message={m} />}
+                  {m.demo_attachment_name && (
+                    <div className="sc-att">
+                      <i className="fa-solid fa-paperclip" aria-hidden="true" /> {m.demo_attachment_name}
+                    </div>
+                  )}
                   {m.body && <div className="sc-bubble__text">{m.body}</div>}
                 </div>
                 <div className="sc-stamp">{mine ? '' : 'Support · '}{formatTime(m.created_at)}</div>

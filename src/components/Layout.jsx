@@ -4,7 +4,7 @@ import Sidebar from './Sidebar'
 import BottomNav from './BottomNav'
 import NotificationBell from './NotificationBell'
 import GlobalSearch from './GlobalSearch'
-import SupportWidget from './SupportChat/SupportWidget'
+import SupportWidget, { DemoSupportWidget } from './SupportChat/SupportWidget'
 import ModalScrollLock from './ModalScrollLock'
 import DemoBanner from './DemoBanner'
 import { useTheme } from '../contexts/ThemeContext'
@@ -49,8 +49,10 @@ export default function Layout() {
         </Suspense>
       </main>
       <BottomNav />
-      {/* Support-chat is niet zinvol in de demo (en zou tegen RLS aanlopen). */}
-      {!readOnly && featureEnabled('support') && <SupportWidget />}
+      {/* In de demo een voorbeeldgesprek dat lokaal blijft: zo zien bezoekers
+          dat de hulpknop er is, zonder dat er iets naar de database gaat.
+          In echte projecten alleen als de module Support aan staat. */}
+      {readOnly ? <DemoSupportWidget /> : featureEnabled('support') && <SupportWidget />}
       {readOnly && <Suspense fallback={null}><DemoTour /></Suspense>}
       <ModalScrollLock />
     </div>
