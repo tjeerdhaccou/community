@@ -9,6 +9,15 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  emailDetails,
+  emailLink,
+  emailParagraph,
+  escapeHtml,
+  renderEmailLayout,
+  resolveEmailTheme,
+  type EmailBrand,
+} from '../_shared/email-layout.ts'
 
 const SUPABASE_URL   = Deno.env.get('SUPABASE_URL') || ''
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
@@ -26,9 +35,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-}
 function formatEuro(cents: number): string {
   return (cents / 100).toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
 }
@@ -82,8 +88,9 @@ serve(async (req) => {
 
   const { data: pr } = await admin
     .from('payment_requests')
-    .select(`id, project_id, title, amount_cents, recipient_email, recipient_name, access_token, status,
-              project:projects(name, slug, organization:organizations(name, from_display_name, reply_to_email))`)
+    .select(`id, project_id, title, amount_cents, reference, recipient_email, recipient_name, access_token, status,
+              project:projects(name, slug, logo_url, app_accent_color, app_structure_color,
+                               organization:organizations(name, logo_url, from_display_name, reply_to_email))`)
     .eq('id', body.payment_request_id)
     .maybeSingle()
 
@@ -111,25 +118,38 @@ serve(async (req) => {
   }
 
   const subject = `Herinnering: ${pr.title}`
-  const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a;padding:24px;">
-      <h1 style="font-size:20px;margin:0 0 16px;">Herinnering: ${escapeHtml(pr.title)}</h1>
-      <p style="font-size:15px;line-height:1.55;margin:0 0 12px;">Hoi ${escapeHtml(pr.recipient_name)},</p>
-      <p style="font-size:15px;line-height:1.55;margin:0 0 12px;">
-        Er staat nog een openstaand betaalverzoek van ${escapeHtml(formatEuro(pr.amount_cents))}
-        van ${escapeHtml(org?.name || 'ons')} klaar. Rond 'm hieronder af:
-      </p>
-      <p style="margin:24px 0;">
-        <a href="${memberUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:500;">
-          Bekijk en betaal
-        </a>
-      </p>
-      <p style="font-size:13px;color:#666;line-height:1.5;margin:20px 0 0;">
-        Werkt de knop niet? Open dan deze link:<br/>
-        <a href="${memberUrl}" style="color:#666;word-break:break-all;">${memberUrl}</a>
-      </p>
-    </div>
-  `
+  const brand: EmailBrand | null = project
+    ? {
+        name: project.name || '',
+        logoUrl: project.logo_url,
+        accentColor: project.app_accent_color,
+        structureColor: project.app_structure_color,
+      }
+    : org?.name ? { name: org.name, logoUrl: org.logo_url } : null
+  const theme = resolveEmailTheme(brand)
+  const amountText = formatEuro(pr.amount_cents)
+  const detailRows = [{ label: 'Bedrag', value: amountText }]
+  if (pr.reference) detailRows.push({ label: 'Referentie', value: pr.reference })
+  const html = renderEmailLayout(
+    {
+      subject,
+      preheader: `Er staat nog een betaalverzoek van ${amountText} voor je klaar.`,
+      brand,
+      heading: `Herinnering: ${pr.title}`,
+      bodyHtml:
+        emailParagraph(`Hoi ${escapeHtml(pr.recipient_name)},`) +
+        emailParagraph(
+          `Er staat nog een openstaand betaalverzoek van ${escapeHtml(amountText)} van ${escapeHtml(org?.name || 'ons')} klaar. Rond 'm hieronder af:`,
+        ) +
+        emailDetails(detailRows),
+      button: { label: 'Bekijk en betaal', url: memberUrl },
+      afterButtonHtml: emailParagraph(
+        `Werkt de knop niet? Open dan deze link:<br/>${emailLink(theme, memberUrl)}`,
+        { muted: true, small: true },
+      ),
+    },
+    theme,
+  )
 
   const orgDisplay = (org?.from_display_name || '').trim() || org?.name || FROM_NAME
   const fromName = `${orgDisplay} via buuur`

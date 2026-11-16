@@ -19,6 +19,15 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
+import {
+  emailDetails,
+  emailLink,
+  emailParagraph,
+  escapeHtml,
+  renderEmailLayout,
+  resolveEmailTheme,
+  type EmailBrand,
+} from '../_shared/email-layout.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') || ''
 const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')     || 'noreply@buuur.nl'
@@ -269,7 +278,7 @@ serve(async (req) => {
     .select(`
       id, project_id, recipient_profile_id, recipient_email, recipient_name, title, description,
       amount_cents, currency, reference, status, agreement_template_id,
-      project:projects(id, name, slug, logo_url, organization_id,
+      project:projects(id, name, slug, logo_url, app_accent_color, app_structure_color, organization_id,
                         organization:organizations(id, name, slug, logo_url, reply_to_email, from_display_name)),
       template:agreement_templates(id, title, content_markdown, version)
     `)
@@ -359,32 +368,43 @@ serve(async (req) => {
 
   // Mail via Resend
   const subject = `Betaalverzoek: ${req0.title}`
-  const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a;padding:24px;">
-      <h1 style="font-size:20px;margin:0 0 16px;">${escapeHtml(req0.title)}</h1>
-      <p style="font-size:15px;line-height:1.55;margin:0 0 12px;">Beste ${escapeHtml(req0.recipient_name)},</p>
-      <p style="font-size:15px;line-height:1.55;margin:0 0 12px;">
-        ${escapeHtml(org?.name || 'Wij')} vraagt je om een betaalverzoek van
-        <strong>${escapeHtml(formatEuro(req0.amount_cents))}</strong> te bevestigen en te voldoen
-        ${projectSlug ? `voor het project <strong>${escapeHtml(project?.name || '')}</strong>` : ''}.
-      </p>
-      <p style="font-size:15px;line-height:1.55;margin:0 0 20px;">
-        In de bijlage vind je de overeenkomst. Bekijk 'm, ga akkoord en betaal via iDEAL:
-      </p>
-      <p style="margin:24px 0;">
-        <a href="${memberViewUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:500;">
-          Bekijk en betaal
-        </a>
-      </p>
-      <p style="font-size:13px;color:#666;line-height:1.5;margin:20px 0 0;">
-        Werkt de knop niet? Open dan deze link:<br/>
-        <a href="${memberViewUrl}" style="color:#666;word-break:break-all;">${memberViewUrl}</a>
-      </p>
-      <p style="font-size:12px;color:#999;margin:32px 0 0;">
-        Verzonden via buuur.nl — ${escapeHtml(org?.name || '')}
-      </p>
-    </div>
-  `
+  const brand: EmailBrand | null = project
+    ? {
+        name: project.name || '',
+        logoUrl: project.logo_url,
+        accentColor: project.app_accent_color,
+        structureColor: project.app_structure_color,
+      }
+    : org?.name ? { name: org.name, logoUrl: org.logo_url } : null
+  const theme = resolveEmailTheme(brand)
+  const amountText = formatEuro(req0.amount_cents)
+  const detailRows = [{ label: 'Bedrag', value: amountText }]
+  if (req0.reference) detailRows.push({ label: 'Referentie', value: req0.reference })
+  if (projectSlug && project?.name) detailRows.push({ label: 'Project', value: project.name })
+  const html = renderEmailLayout(
+    {
+      subject,
+      preheader: `${org?.name || 'Er'} vraagt je om ${amountText} te bevestigen en te betalen.`,
+      brand,
+      heading: req0.title,
+      bodyHtml:
+        emailParagraph(`Beste ${escapeHtml(req0.recipient_name)},`) +
+        emailParagraph(
+          `${escapeHtml(org?.name || 'Wij')} vraagt je om een betaalverzoek van <strong>${escapeHtml(amountText)}</strong> te bevestigen en te voldoen` +
+            (projectSlug ? ` voor het project <strong>${escapeHtml(project?.name || '')}</strong>` : '') +
+            '.',
+        ) +
+        emailDetails(detailRows) +
+        emailParagraph("In de bijlage vind je de overeenkomst. Bekijk 'm, ga akkoord en betaal via iDEAL:"),
+      button: { label: 'Bekijk en betaal', url: memberViewUrl },
+      afterButtonHtml: emailParagraph(
+        `Werkt de knop niet? Open dan deze link:<br/>${emailLink(theme, memberViewUrl)}`,
+        { muted: true, small: true },
+      ),
+      footerNote: org?.name ? `Verzonden namens ${org.name}` : undefined,
+    },
+    theme,
+  )
 
   const attachment = {
     filename: `${slugify(req0.title)}.pdf`,
@@ -458,14 +478,6 @@ serve(async (req) => {
     status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 })
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
 
 function slugify(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'overeenkomst'

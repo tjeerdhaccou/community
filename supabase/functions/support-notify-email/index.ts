@@ -7,6 +7,15 @@
 // Zelfstandig; raakt dispatch-notification niet.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  type EmailBrand,
+  emailParagraph,
+  emailQuote,
+  escapeHtml,
+  loadProjectEmailBrand,
+  renderEmailLayout,
+  resolveEmailTheme,
+} from '../_shared/email-layout.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
@@ -20,20 +29,21 @@ const MAIN_DOMAIN = Deno.env.get('MAIN_DOMAIN') || 'buuur.nl'
 const DELAY_MINUTES = Number(Deno.env.get('SUPPORT_EMAIL_DELAY_MIN') || '10')
 const DIGEST_WINDOW_MIN = 15 // slot is "due" tot 15 min erna; log voorkomt dubbel
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
-}
-function shell(inner: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#F3F1ED;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1A1A2E"><div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border-radius:16px;padding:28px 26px">${inner}</div></div></body></html>`
-}
-function button(link: string, label: string): string {
-  return `<a href="${link}" style="display:inline-block;background:#4A90D9;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:9999px">${label}</a>`
-}
-
-function memberEmail(name: string | null, body: string, link: string): string {
-  const hi = name ? `Hoi ${name},` : 'Hoi,'
+function memberEmail(name: string | null, body: string, link: string, brand: EmailBrand | null): string {
+  const theme = resolveEmailTheme(brand)
   const snippet = body.length > 300 ? body.slice(0, 300) + '…' : body
-  return shell(`<p style="font-size:16px;margin:0 0 12px">${hi}</p><p style="font-size:15px;color:#5A5F72;margin:0 0 16px">Je hebt een antwoord van support gekregen:</p><div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:0 0 22px">${escapeHtml(snippet)}</div>${button(link, 'Bekijk en reageer')}<p style="font-size:12px;color:#9BA1B0;margin:24px 0 0">Je krijgt deze mail omdat je een vraag hebt gesteld via de support-chat.</p>`)
+  const subject = 'Je hebt een antwoord van support'
+  return renderEmailLayout({
+    subject,
+    preheader: 'Er staat een antwoord voor je klaar in de support-chat.',
+    brand,
+    heading: name ? `Hoi ${name},` : 'Hoi,',
+    bodyHtml:
+      emailParagraph('Je hebt een antwoord van support gekregen:') +
+      emailQuote(theme, null, snippet),
+    button: { label: 'Bekijk en reageer', url: link },
+    footerNote: 'Je krijgt deze mail omdat je een vraag hebt gesteld via de support-chat.',
+  }, theme)
 }
 
 // Hoe lang wachten we voor de volgende herinnering over dezelfde vraag?
@@ -47,13 +57,23 @@ function isReminderDue(count: number, lastAt: string | null): boolean {
 }
 
 function digestEmail(items: { who: string; project: string | null; snippet: string; when: string }[], link: string, extraOpen = 0): string {
-  const rows = items.map((it) => `
-    <div style="border-top:1px solid #ECE8E1;padding:14px 0">
-      <div style="font-size:14px;font-weight:600">${escapeHtml(it.who)}${it.project ? ` <span style="color:#9BA1B0;font-weight:400">· ${escapeHtml(it.project)}</span>` : ''} <span style="color:#9BA1B0;font-weight:400;font-size:12px">· ${escapeHtml(it.when)}</span></div>
-      <div style="font-size:15px;color:#3A3656;margin-top:4px;line-height:1.5">${escapeHtml(it.snippet)}</div>
-    </div>`).join('')
+  const theme = resolveEmailTheme(null)
   const n = items.length
-  return shell(`<p style="font-size:16px;margin:0 0 4px;font-weight:600">Openstaande supportvragen</p><p style="font-size:14px;color:#5A5F72;margin:0 0 8px">${n} ${n === 1 ? 'vraag wacht' : 'vragen wachten'} op antwoord.</p>${rows}<div style="margin-top:22px">${button(link, 'Open de support-inbox')}</div>${extraOpen > 0 ? `<p style="font-size:13px;color:#9BA1B0;margin:14px 0 0">Er ${extraOpen === 1 ? 'staat nog 1 vraag' : `staan nog ${extraOpen} vragen`} open waarover je eerder bericht kreeg.</p>` : ''}<p style="font-size:12px;color:#9BA1B0;margin:22px 0 0">Je krijgt deze digest als beheerder van de organisatie. Herinneringen over dezelfde vraag worden steeds verder uit elkaar gezet. Instellen kan in de support-inbox onder Instellingen.</p>`)
+  const summary = `${n} ${n === 1 ? 'vraag wacht' : 'vragen wachten'} op antwoord.`
+  const rows = items
+    .map((it) => emailQuote(theme, [it.who, it.project, it.when].filter(Boolean).join(' · '), it.snippet))
+    .join('')
+  return renderEmailLayout({
+    subject: `Openstaande supportvragen (${n})`,
+    preheader: summary,
+    heading: 'Openstaande supportvragen',
+    bodyHtml: emailParagraph(escapeHtml(summary), { muted: true }) + rows,
+    button: { label: 'Open de support-inbox', url: link },
+    afterButtonHtml: extraOpen > 0
+      ? emailParagraph(`Er ${extraOpen === 1 ? 'staat nog 1 vraag' : `staan nog ${extraOpen} vragen`} open waarover je eerder bericht kreeg.`, { muted: true, small: true })
+      : undefined,
+    footerNote: 'Je krijgt deze digest als beheerder van de organisatie. Herinneringen over dezelfde vraag worden steeds verder uit elkaar gezet. Instellen kan in de support-inbox onder Instellingen.',
+  }, theme)
 }
 
 async function send(to: string[], subject: string, html: string): Promise<boolean> {
@@ -126,7 +146,8 @@ Deno.serve(async (req) => {
       ? `https://${proj.custom_domain}/?support=${conv.id}`
       : proj?.slug ? `https://${MAIN_DOMAIN}/p/${proj.slug}?support=${conv.id}`
       : `https://${MAIN_DOMAIN}/?support=${conv.id}`
-    const ok = await send([recip.email], 'Je hebt een antwoord van support', memberEmail(recip.full_name, m.body, link))
+    const brand = await loadProjectEmailBrand(admin, conv.project_id)
+    const ok = await send([recip.email], 'Je hebt een antwoord van support', memberEmail(recip.full_name, m.body || '', link, brand))
     if (ok) memberSent++
     await admin.from('notification_log').insert({
       user_id: conv.user_id, project_id: conv.project_id, notification_type: 'new_support_message',

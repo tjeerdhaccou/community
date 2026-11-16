@@ -7,6 +7,14 @@
 // Ontvangers: LEADS_NOTIFY_EMAILS (kommagescheiden), anders alle platformbeheerders.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  emailDetails,
+  emailParagraph,
+  emailQuote,
+  escapeHtml,
+  renderEmailLayout,
+  resolveEmailTheme,
+} from '../_shared/email-layout.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
@@ -24,18 +32,9 @@ const SEGMENT_LABEL: Record<string, string> = {
   bewoner: 'Bewoner of bewonersgroep',
 }
 
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
-}
-function shell(inner: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#F3F1ED;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1A1A2E"><div style="max-width:560px;margin:0 auto;padding:32px 20px"><div style="background:#fff;border-radius:16px;padding:28px 26px">${inner}</div></div></body></html>`
-}
-function button(link: string, label: string): string {
-  return `<a href="${link}" style="display:inline-block;background:#4A90D9;color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:9999px">${label}</a>`
-}
-
 // deno-lint-ignore no-explicit-any
-function leadEmail(lead: Record<string, any>): string {
+function leadEmail(lead: Record<string, any>, subject: string): string {
+  const theme = resolveEmailTheme(null)
   const rows: [string, string | null][] = [
     ['Naam', lead.name],
     ['E-mail', lead.email],
@@ -44,17 +43,18 @@ function leadEmail(lead: Record<string, any>): string {
     ['Situatie', lead.phase],
     ['Regio', lead.region],
   ]
-  const table = rows.filter(([, v]) => v).map(([k, v]) => `
-    <tr><td style="padding:6px 16px 6px 0;color:#9BA1B0;font-size:14px;vertical-align:top;white-space:nowrap">${k}</td>
-    <td style="padding:6px 0;font-size:15px">${escapeHtml(String(v))}</td></tr>`).join('')
-  const message = lead.message
-    ? `<div style="background:#F3F1ED;border-radius:10px;padding:14px 16px;font-size:15px;line-height:1.5;margin:18px 0 0;white-space:pre-wrap">${escapeHtml(lead.message)}</div>`
-    : ''
-  return shell(`<p style="font-size:16px;margin:0 0 4px;font-weight:600">Nieuwe aanvraag via buuur.nl</p>
-<p style="font-size:14px;color:#5A5F72;margin:0 0 14px">${escapeHtml(SEGMENT_LABEL[lead.segment] || lead.segment)}</p>
-<table style="border-collapse:collapse">${table}</table>${message}
-<div style="margin-top:24px">${button(`https://admin.${MAIN_DOMAIN}/platform/leads`, 'Alle aanvragen')}</div>
-<p style="font-size:12px;color:#9BA1B0;margin:22px 0 0">Beantwoord deze mail om direct te reageren aan ${escapeHtml(lead.name)}. Je krijgt deze mail als platformbeheerder van Buuur.</p>`)
+  const details = emailDetails(rows.filter(([, v]) => v).map(([label, v]) => ({ label, value: String(v) })))
+  const segment = SEGMENT_LABEL[lead.segment] || lead.segment
+  const message = lead.message ? emailQuote(theme, 'Bericht', String(lead.message)) : ''
+  return renderEmailLayout({
+    subject,
+    preheader: [lead.name, segment].filter(Boolean).join(' · '),
+    heading: 'Nieuwe aanvraag via buuur.nl',
+    bodyHtml: (segment ? emailParagraph(escapeHtml(String(segment)), { muted: true }) : '') + details + message,
+    button: { label: 'Alle aanvragen', url: `https://admin.${MAIN_DOMAIN}/platform/leads` },
+    afterButtonHtml: emailParagraph(`Beantwoord deze mail om direct te reageren aan ${escapeHtml(String(lead.name ?? ''))}.`, { muted: true, small: true }),
+    footerNote: 'Je krijgt deze mail als platformbeheerder van Buuur.',
+  }, theme)
 }
 
 Deno.serve(async (req) => {
@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
   if (to.length === 0) return new Response('no recipients', { status: 500 })
 
   const who = lead.organization ? `${lead.name} (${lead.organization})` : lead.name
+  const subject = `Nieuwe aanvraag: ${who}`
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -91,8 +92,8 @@ Deno.serve(async (req) => {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to,
       reply_to: lead.email,
-      subject: `Nieuwe aanvraag: ${who}`,
-      html: leadEmail(lead),
+      subject,
+      html: leadEmail(lead, subject),
     }),
   })
 

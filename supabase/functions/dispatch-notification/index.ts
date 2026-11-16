@@ -21,6 +21,16 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+  renderEmailLayout,
+  resolveEmailTheme,
+  emailParagraph,
+  emailQuote,
+  emailFooterLink,
+  escapeHtml,
+  type EmailBrand,
+  type EmailTheme,
+} from '../_shared/email-layout.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@buuur.nl'
@@ -239,6 +249,14 @@ serve(async (req) => {
     if (RESEND_API_KEY && emailRecipients.length > 0) {
       // Resend batch endpoint: max 100 emails per call
       const chunks = chunk(emailRecipients, 100)
+      // Huisstijl van het project: één keer per dispatch, niet per ontvanger.
+      const brand: EmailBrand = {
+        name: ctx.project.name,
+        logoUrl: ctx.project.logo_url,
+        accentColor: ctx.project.app_accent_color,
+        structureColor: ctx.project.app_structure_color,
+      }
+      const theme = resolveEmailTheme(brand)
       const prefCol = PREF_COLUMN[type as Type]
       for (const batch of chunks) {
         // Genereer per recipient een signed unsubscribe-token (async)
@@ -255,6 +273,8 @@ serve(async (req) => {
             recipientId: r.id,
             ctx,
             unsubToken: tokensPerRecipient[idx],
+            brand,
+            theme,
           }),
         }))
 
@@ -343,16 +363,6 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out
 }
 
-function esc(s: string | null | undefined): string {
-  if (!s) return ''
-  return String(s)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
-}
-
 function truncate(s: string, len: number): string {
   if (!s) return ''
   return s.length > len ? s.slice(0, len) + '…' : s
@@ -399,12 +409,20 @@ function b64url(bytes: Uint8Array): string {
 // ============================================================
 
 interface NotificationContext {
-  project: { id: string; name: string; slug: string; custom_domain: string | null; logo_url: string | null }
+  project: {
+    id: string
+    name: string
+    slug: string
+    custom_domain: string | null
+    logo_url: string | null
+    app_accent_color: string | null
+    app_structure_color: string | null
+  }
   actorName: string | null
   emailSubject: string
   emailIntro: string // korte intro-zin onder de begroeting, bv. "Er is een nieuwe update geplaatst in X."
   emailHeading: string
-  emailBody: string // korte preview, escaped
+  emailBody: string // korte preview, platte tekst (wordt bij renderen ge-escaped)
   emailLinkPath: string // bv. /updates#123
   inAppTitle: string
   inAppBody: string | null
@@ -421,7 +439,7 @@ async function loadContext(
   // Project + actor altijd nodig
   const { data: project } = await admin
     .from('projects')
-    .select('id, name, slug, custom_domain, logo_url')
+    .select('id, name, slug, custom_domain, logo_url, app_accent_color, app_structure_color')
     .eq('id', projectId)
     .single()
   if (!project) return null
@@ -775,12 +793,14 @@ function renderEmail(args: {
   recipientId: string
   ctx: NotificationContext
   unsubToken: string
+  brand: EmailBrand
+  theme: EmailTheme
 }): string {
-  const { ctx, recipientName, unsubToken } = args
+  const { ctx, recipientName, unsubToken, brand, theme } = args
   const baseUrl = projectBaseUrl(ctx.project)
   const linkUrl = `${baseUrl}${ctx.emailLinkPath}`
-  const projectColor = '#4A90D9'
-  const greeting = recipientName ? `Hoi ${esc(recipientName.split(' ')[0])}` : 'Hoi'
+  const firstName = recipientName?.trim().split(' ')[0]
+  const greeting = firstName ? `Hoi ${escapeHtml(firstName)},` : 'Hoi,'
   // Settings altijd op main domain: localStorage-sessie is per-subdomain,
   // dus de gebruiker is op het main domain vaker al ingelogd dan op een
   // project-subdomain. Voorkomt onnodige re-login flow vanuit mail-links.
@@ -789,57 +809,28 @@ function renderEmail(args: {
     ? `https://${MAIN_DOMAIN}/unsubscribe?token=${encodeURIComponent(unsubToken)}`
     : settingsUrl
 
-  return `<!DOCTYPE html>
-<html lang="nl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a2e;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f5f7;padding:32px 16px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-          <tr>
-            <td style="padding:24px 32px 16px;border-bottom:1px solid #f0f0f4;">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  ${ctx.project.logo_url ? `<td width="40" style="vertical-align:middle;"><img src="${esc(ctx.project.logo_url)}" alt="${esc(ctx.project.name)}" width="32" height="32" style="border-radius:8px;display:block;"></td>` : ''}
-                  <td style="vertical-align:middle;padding-left:${ctx.project.logo_url ? '12px' : '0'};">
-                    <span style="font-size:14px;color:#6b7280;font-weight:500;">${esc(ctx.project.name)}</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:32px;">
-              <p style="margin:0 0 8px;font-size:15px;color:#4a4a6a;">${greeting},</p>
-              ${ctx.emailIntro ? `<p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;">${esc(ctx.emailIntro)}</p>` : ''}
-              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;color:#1a1a2e;font-weight:600;">${esc(ctx.emailHeading)}</h1>
-              ${ctx.emailBody ? `<div style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4a4a6a;white-space:pre-wrap;">${esc(ctx.emailBody)}</div>` : ''}
-              <p style="margin:32px 0 0;">
-                <a href="${esc(linkUrl)}" style="display:inline-block;background:${projectColor};color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
-                  Bekijk in ${esc(ctx.project.name)}
-                </a>
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:20px 32px 28px;border-top:1px solid #f0f0f4;background:#fafafc;">
-              <p style="margin:0;font-size:12px;line-height:1.6;color:#9ba1b0;">
-                Je ontvangt deze mail omdat je lid bent van <strong>${esc(ctx.project.name)}</strong> op Buuur.<br>
-                <a href="${esc(settingsUrl)}" style="color:#9ba1b0;text-decoration:underline;">Beheer je notificaties</a> ·
-                <a href="${esc(unsubUrl)}" style="color:#9ba1b0;text-decoration:underline;">Uitschrijven van dit type</a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`
+  const bodyHtml = [
+    emailParagraph(greeting),
+    ctx.emailIntro ? emailParagraph(escapeHtml(ctx.emailIntro)) : '',
+    ctx.emailBody ? emailQuote(theme, null, ctx.emailBody) : '',
+  ].join('\n')
+
+  return renderEmailLayout(
+    {
+      subject: ctx.emailSubject,
+      preheader: ctx.emailIntro || ctx.emailHeading,
+      brand,
+      heading: ctx.emailHeading,
+      bodyHtml,
+      button: { label: `Bekijk in ${ctx.project.name}`, url: linkUrl },
+      footerNote: `Je ontvangt deze mail omdat je lid bent van ${ctx.project.name} op buuur.`,
+      footerHtml: [
+        emailFooterLink(settingsUrl, 'Beheer je notificaties'),
+        emailFooterLink(unsubUrl, 'Uitschrijven van dit type'),
+      ].join(' · '),
+    },
+    theme,
+  )
 }
 
 // ============================================================

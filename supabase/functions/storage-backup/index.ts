@@ -10,6 +10,7 @@
 // tijdslimiet blijft; de volgende cron-tick pakt de rest op.
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { emailDetails, emailParagraph, emailText, renderEmailLayout } from '../_shared/email-layout.ts'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
 const SERVICE_ROLE_KEY =
@@ -60,16 +61,32 @@ async function copyObject(sb: SupabaseClient, from: { bucket: string; name: stri
   if (upErr) throw new Error(`upload ${to.bucket}/${to.name}: ${upErr.message}`)
 }
 
+// Interne melding aan BACKUP_ALERT_EMAIL. Regels met "label: waarde" komen in
+// een rijtje, de rest (meldingen per bestand) als losse alinea's.
 async function sendAlert(subject: string, lines: string[]) {
   if (!RESEND_API_KEY || !ALERT_EMAIL) return
-  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:14px;color:#1A1A2E"><p><b>${subject}</b></p><pre style="background:#F3F1ED;padding:12px;border-radius:8px;white-space:pre-wrap">${lines.map((l) => l.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] as string))).join('\n')}</pre></div>`
+  const details: { label: string; value: string }[] = []
+  const notes: string[] = []
+  for (const line of lines) {
+    const m = /^([^:]+): (\d+)$/.exec(line)
+    if (m) details.push({ label: m[1], value: m[2] })
+    else if (line.trim()) notes.push(line)
+  }
+  const html = renderEmailLayout({
+    subject,
+    preheader: notes[0] ?? subject,
+    heading: subject,
+    bodyHtml:
+      (details.length ? emailDetails(details) : '') +
+      notes.map((n) => emailParagraph(emailText(n), { small: true })).join(''),
+    footerNote: 'Automatische melding van de bestandsback-up van buuur.',
+  })
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from: `${FROM_NAME} <${FROM_EMAIL}>`, to: [ALERT_EMAIL], subject, html }),
   }).catch((e) => console.error('[storage-backup] mail mislukt', e))
 }
-
 
 // Kaartje van de database. Deze functie wordt zonder JWT aangeroepen (pg_cron of
 // een trigger via pg_net). De database maakt per aanroep een eenmalig kaartje
