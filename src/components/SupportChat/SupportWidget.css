@@ -285,9 +285,26 @@
 }
 .sc-send:disabled { opacity: 0.45; cursor: default; }
 
+/* ── Klik-demo ────────────────────────────────────────────────────────────── */
+.sc-demo-note {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+/* De sleutelbos van de rondleiding staat rechtsonder; de chatknop gaat erboven. */
+.app-layout--demo .sc-fab-wrap { bottom: 80px; }
+/* Open paneel: de sleutelbos (z-index 9000) zou over de verstuurknop vallen. */
+body:has(.app-layout--demo .sc-panel) .tour-ring { display: none; }
+
 /* ── Mobiel: boven de bottom-nav, bijna volledige breedte ────────────────── */
 @media (max-width: 768px) {
   .sc-fab-wrap { bottom: 84px; }
+  .app-layout--demo .sc-fab-wrap { bottom: 140px; }
   .sc-fab-label { display: none; }
   .sc-panel {
     right: 12px;
