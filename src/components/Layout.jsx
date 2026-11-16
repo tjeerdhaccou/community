@@ -29,7 +29,7 @@ function ThemeToggle() {
 }
 
 export default function Layout() {
-  const { readOnly } = useProject()
+  const { readOnly, featureEnabled } = useProject()
   return (
     <div className={`app-layout ${readOnly ? 'app-layout--demo' : ''}`}>
       <a href="#main-content" className="skip-link">Ga naar inhoud</a>
@@ -50,7 +50,7 @@ export default function Layout() {
       </main>
       <BottomNav />
       {/* Support-chat is niet zinvol in de demo (en zou tegen RLS aanlopen). */}
-      {!readOnly && <SupportWidget />}
+      {!readOnly && featureEnabled('support') && <SupportWidget />}
       {readOnly && <Suspense fallback={null}><DemoTour /></Suspense>}
       <ModalScrollLock />
     </div>
