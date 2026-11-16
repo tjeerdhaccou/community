@@ -29,7 +29,7 @@ export default function InviteSheet({ invites, onInvite, onRevoke, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Professional uitnodigen</h2>
+          <h2>Adviseur uitnodigen</h2>
           <button className="modal-close" onClick={onClose} aria-label="Sluiten">
             <i className="fa-solid fa-xmark" />
           </button>

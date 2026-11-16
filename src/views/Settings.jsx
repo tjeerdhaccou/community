@@ -256,7 +256,7 @@ export default function Settings() {
 
           <div className="form-group">
             <label>Cover afbeelding</label>
-            <p className="form-hint">Wordt getoond op de aanmeldpagina en het intake formulier.</p>
+            <p className="form-hint">Wordt getoond op de aanmeldpagina en het aanmeldformulier.</p>
             {coverPreview ? (
               <div className="settings-cover-preview">
                 <img src={coverPreview} alt="Cover preview" />
@@ -306,8 +306,7 @@ export default function Settings() {
         <section className="settings-section">
           <h2>Publieke projectpagina</h2>
           <p className="form-hint" style={{ marginBottom: 16 }}>
-            Een openbare pagina voor omwonenden en geïnteresseerden. Toont projectinfo, tijdlijn, publieke updates en events.
-            De inhoud bouw je in de Pagina bouwer; hier zet je de pagina aan of uit.
+            Een openbare pagina voor omwonenden en geïnteresseerden. De inhoud bouw je in de Pagina bouwer; hier zet je de pagina aan of uit.
           </p>
 
           <label className="intake-toggle">

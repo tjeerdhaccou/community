@@ -31,7 +31,7 @@ function wgIcon(icon) {
  * Zichtbaar voor moderator+ (manage_workgroups).
  */
 export default function Groepen() {
-  const { role } = useProject()
+  const { role, featureEnabled } = useProject()
   const {
     allWorkgroups, workgroupIdsByProfile, loading,
     createWorkgroup, updateWorkgroup, deleteWorkgroup, addMember, removeMember,
@@ -45,6 +45,8 @@ export default function Groepen() {
   const [confirmDel, setConfirmDel] = useState(null)
 
   const canManage = canDo(role, 'manage_workgroups')
+  // Wat een commissie extra kan, hangt af van de module Besluiten.
+  const decisionsOn = featureEnabled('decisions')
 
   // Leden per werkgroep afleiden uit workgroupIdsByProfile + members
   const membersByWg = useMemo(() => {
@@ -124,7 +126,7 @@ export default function Groepen() {
           </button>
         </div>
         <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-          Maak commissies (met eigen documentbeheer) of doelgroepen om je community te organiseren.
+          Deel leden in groepen in: een commissie of een doelgroep. Elke groep krijgt in het Projectdossier een eigen tab met de documenten die met die groep gedeeld zijn.
         </p>
       </div>
 
@@ -137,14 +139,15 @@ export default function Groepen() {
         </div>
       ) : (
         <>
-          {renderSection('Commissies', commissies, 'leden kunnen documenten beheren')}
-          {renderSection('Doelgroepen', doelgroepen, 'segmenten voor zichtbaarheid')}
+          {renderSection('Commissies', commissies, decisionsOn ? 'kunnen voorstellen indienen bij Besluiten' : 'werken samen aan een onderdeel van het project')}
+          {renderSection('Doelgroepen', doelgroepen, 'om een deel van de leden apart te bereiken')}
         </>
       )}
 
       {modalOpen && (
         <WorkgroupModal
           workgroup={editing}
+          decisionsOn={decisionsOn}
           onClose={() => { setModalOpen(false); setEditing(null) }}
           onSave={async (data) => {
             try {
@@ -161,7 +164,7 @@ export default function Groepen() {
 
       {confirmDel && (
         <ConfirmModal
-          message={`Groep "${confirmDel.name}" verwijderen? Documenten blijven bestaan, maar de koppeling met deze groep verdwijnt.`}
+          message={`Groep "${confirmDel.name}" verwijderen? De documenten die met deze groep gedeeld zijn blijven bestaan, maar de leden van de groep zien ze daarna niet meer.`}
           confirmLabel="Verwijderen"
           danger
           onConfirm={handleDelete}
@@ -258,7 +261,7 @@ function WorkgroupCard({ wg, members, allMembers, expanded, onToggle, onEdit, on
 }
 
 // ===== Aanmaak/bewerk-modal =====
-function WorkgroupModal({ workgroup, onClose, onSave }) {
+function WorkgroupModal({ workgroup, decisionsOn, onClose, onSave }) {
   const isEdit = !!workgroup
   const [name, setName] = useState(workgroup?.name || '')
   const [description, setDescription] = useState(workgroup?.description || '')
@@ -287,14 +290,14 @@ function WorkgroupModal({ workgroup, onClose, onSave }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-group">
             <label>Naam *</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Bijv. Financiën-commissie" required autoFocus />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Bijv. Financiëncommissie" required autoFocus />
           </div>
 
           <div className="form-group">
             <label>Type</label>
             <select value={type} onChange={e => setType(e.target.value)}>
-              <option value="commissie">Commissie — leden mogen documenten beheren</option>
-              <option value="doelgroep">Doelgroep — segment zonder extra rechten</option>
+              <option value="commissie">{decisionsOn ? 'Commissie — kan voorstellen indienen bij Besluiten' : 'Commissie — werkt samen aan een onderdeel van het project'}</option>
+              <option value="doelgroep">Doelgroep — om een deel van de leden apart te bereiken</option>
             </select>
           </div>
 

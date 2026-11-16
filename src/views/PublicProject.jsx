@@ -98,7 +98,7 @@ function PublicEventModal({ event, project, onClose }) {
               </a>
             )}
           </div>
-          <p className="pub-event-modal__hint">Al lid? Meld je aan via het ledenportaal.</p>
+          <p className="pub-event-modal__hint">Al lid? Log dan in.</p>
         </div>
       </div>
     </div>

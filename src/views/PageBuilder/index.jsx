@@ -571,7 +571,7 @@ export default function PageBuilder() {
           )}
         </div>
         {!project?.intake_enabled && !ctaSection && (
-          <p className="form-hint" style={{ padding: '0 16px 12px' }}>Zet eerst het intake formulier aan in Instellingen.</p>
+          <p className="form-hint" style={{ padding: '0 16px 12px' }}>Zet eerst het aanmeldformulier aan in Instellingen.</p>
         )}
         {ctaSection && (
           <div className="pb-cta-editor__body">

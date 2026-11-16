@@ -117,7 +117,7 @@ export default function GlobalSearch() {
                     </SearchSection>
                   )}
                   {results.decisions.length > 0 && (
-                    <SearchSection title="Besluiten" icon="fa-solid fa-gavel">
+                    <SearchSection title="Vergaderbesluiten" icon="fa-solid fa-gavel">
                       {results.decisions.map(d => (
                         <SearchItem key={d.id} title={d.text} subtitle={d.meeting?.title ? `Vergadering: ${d.meeting.title}` : ''} time={d.created_at} onClick={() => goTo(`${basePath}/events`)} />
                       ))}
@@ -141,7 +141,7 @@ export default function GlobalSearch() {
                     </SearchSection>
                   )}
                   {results.proUpdates.length > 0 && (
-                    <SearchSection title="Adviseur updates" icon="fa-solid fa-hard-hat">
+                    <SearchSection title="Updates van adviseurs" icon="fa-solid fa-hard-hat">
                       {results.proUpdates.map(u => (
                         <SearchItem key={u.id} title={u.title} subtitle={u.body?.slice(0, 100)} time={u.created_at} onClick={() => goTo(`${basePath}/pro-updates`)} />
                       ))}

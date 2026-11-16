@@ -221,7 +221,7 @@ export default function Dashboard() {
       iconClass: 'fa-clipboard-list',
       iconStyle: null,
       title: `${feed.intakePending} nieuwe ${feed.intakePending === 1 ? 'aanmelding' : 'aanmeldingen'}`,
-      subtitle: 'via het intake formulier',
+      subtitle: 'via het aanmeldformulier',
       onClick: () => navigate(`${basePath}/members?tab=werving`),
     })
   }

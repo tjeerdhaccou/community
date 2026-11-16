@@ -69,7 +69,7 @@ export default function ProfessionalUpdates() {
       <div className="view-header">
         <div className="view-header__row">
           <div>
-            <h1>Documenten</h1>
+            <h1>Updates van adviseurs</h1>
           </div>
           <div className="view-header__actions">
             {isProfessional && (

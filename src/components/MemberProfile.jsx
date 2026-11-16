@@ -922,7 +922,7 @@ function DossierRemovalRequests({ profileId, onFileRemoved }) {
             </div>
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
-                Leg uit waarom je dit verwijderingsverzoek afwijst. De member ziet deze uitleg.
+                Leg uit waarom je dit verwijderingsverzoek afwijst. Het lid ziet deze uitleg.
               </p>
               <div className="form-group">
                 <label htmlFor="reject-note">Toelichting <span style={{ color: 'var(--accent-red)' }}>*</span></label>

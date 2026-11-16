@@ -453,7 +453,7 @@ export default function Tekenen() {
           <h3 className="empty-inline__title">Niet beschikbaar</h3>
           <p>{error || 'Dit verzoek bestaat niet.'}</p>
           <button className="btn-primary" onClick={() => navigate(`${basePath}/mijn-documenten`)}>
-            Terug naar Mijn documenten
+            Terug naar Mijn dossier
           </button>
         </div>
       </div>

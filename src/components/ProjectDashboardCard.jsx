@@ -73,7 +73,7 @@ export default function ProjectDashboardCard({ project, onSaved, isLight = false
           <div className="org-project-card__stats">
             <Stat icon="fa-solid fa-users" color="var(--accent-primary)" value={project.member_count} trend={project.new_members_week} label="Leden" />
             <Stat icon="fa-solid fa-bullhorn" color="var(--accent-yellow)" value={project.update_count} trend={project.new_updates_week} label="Nieuws" />
-            <Stat icon="fa-solid fa-comments" color="var(--accent-green)" value={project.post_count} trend={project.new_posts_week} label="Posts" />
+            <Stat icon="fa-solid fa-comments" color="var(--accent-green)" value={project.post_count} trend={project.new_posts_week} label="Berichten" />
             <Stat icon="fa-solid fa-helmet-safety" color="var(--accent-orange)" value={project.advisor_count} label="Adviseurs" />
           </div>
         </div>
@@ -425,10 +425,10 @@ function ProjectEditForm({ project, onClose, onSaved }) {
 
       {/* Intake */}
       <div className="org-edit__section">
-        <h4 className="org-edit__title"><i className="fa-solid fa-clipboard-list" style={{ color: 'var(--accent-orange)' }} /> Intake formulier</h4>
+        <h4 className="org-edit__title"><i className="fa-solid fa-clipboard-list" style={{ color: 'var(--accent-orange)' }} /> Aanmeldformulier</h4>
         <label className="intake-toggle">
           <input type="checkbox" checked={intakeEnabled} onChange={e => setIntakeEnabled(e.target.checked)} />
-          <span>Intake formulier actief</span>
+          <span>Aanmeldformulier actief</span>
         </label>
         {intakeEnabled && (
           <div className="org-edit__grid" style={{ marginTop: 16 }}>
