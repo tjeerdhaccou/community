@@ -14,6 +14,7 @@ import MemberProfile from '../components/MemberProfile'
 import RejectModal from '../components/RejectModal'
 import IntakeResponseDetail from '../components/IntakeResponseDetail'
 import { useUnreviewedMemberUploads } from '../hooks/useUnreviewedMemberUploads'
+import LightQuotaBanner from '../components/LightQuotaBanner'
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000
 
@@ -133,6 +134,11 @@ export default function Members() {
           </>
         )}
       </CollapsibleTagFilter>
+
+      {/* buuur light: stand van de gratis leden (toont niets als er geen grens geldt) */}
+      {canDo(role, 'invite_members') && (
+        <LightQuotaBanner projectId={project?.id} memberCount={active.length} canRequest={role === 'admin'} />
+      )}
 
       {/* Geïnteresseerden banner */}
       {filter !== 'pending' && guests.length > 0 && canDo(role, 'invite_members') && (

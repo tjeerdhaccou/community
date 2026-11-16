@@ -124,7 +124,7 @@ export const DOELGROEPEN = {
       ],
       cta: 'Start met buuur light',
       ctaTo: '/start-groep',
-      ctaNote: 'Gratis tot 10 leden. Je omgeving staat er binnen een middag.',
+      ctaNote: 'Gratis tot 10 leden, daarna € 29 per maand. Je omgeving staat er binnen een middag.',
       image: { src: `${IMG}/rol-initiatief.webp`, alt: 'Twee bewoners aan het werk in een plantenbak' },
     },
   ],
@@ -230,7 +230,7 @@ export const PLANS = {
       sub: 'Voor wooncoöperaties, bouwgroepen en bewonersgroepen',
       body:
         'Eén projectomgeving voor je groep, om te groeien van los idee naar hechte club. ' +
-        'Je start vandaag, zonder gedoe, en tot 10 leden kost het niets.',
+        'Je start vandaag, zonder gedoe. Tot 10 leden kost het niets, daarna € 29 per maand of € 290 per jaar (incl. btw).',
       points: [
         'Gratis tot 10 leden, zonder betaalgegevens',
         'Prikbord, events, documenten en roadmap',
@@ -380,6 +380,7 @@ export const START_GROEP = {
     'wat er speelt, in plaats van drie WhatsApp-groepen en een zoekgeraakte mail met notulen.',
   points: [
     'Gratis tot 10 leden, zonder betaalgegevens',
+    'Daarna € 29 per maand of € 290 per jaar, incl. btw',
     'Binnen een paar minuten live op je eigen adres',
     'Geen wachtwoorden: iedereen logt in met een code uit de mail',
   ],
@@ -414,7 +415,11 @@ export const START_GROEP = {
     items: [
       {
         q: 'Wat kost het?',
-        a: 'Tot 10 leden is buuur light gratis en vragen we geen betaalgegevens. Groeit je groep verder, dan gaat het over op een betaald abonnement. Dat laten we je ruim van tevoren weten.',
+        a: 'Tot 10 leden is buuur light gratis en vragen we geen betaalgegevens. Groeit je groep verder, dan kost het € 29 per maand of € 290 per jaar (incl. btw), één vast bedrag voor de hele groep. Je ziet in je ledenlijst hoeveel plekken je nog hebt en vraagt het abonnement daar zelf aan.',
+      },
+      {
+        q: 'Wat gebeurt er bij 10 leden?',
+        a: 'Er gaat niets verloren. Nieuwe aanmeldingen blijven als geïnteresseerde wachten tot je een abonnement hebt. Daarna laat je ze met één klik toe.',
       },
       {
         q: 'Wie kan er bij onze groep?',

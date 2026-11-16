@@ -309,6 +309,11 @@ export function onboardingEnabled(features, isLight) {
   return !!isLight
 }
 
+// buuur light: gratis tot freeMembers leden, daarna een abonnement (incl. btw).
+// De grens zelf staat in de database (organizations.member_limit, migratie 125);
+// de bedragen staan ook in content/landing.js en in request_light_upgrade.
+export const LIGHT_PLAN = { freeMembers: 10, monthly: 29, yearly: 290 }
+
 // Versie van privacyverklaring + algemene voorwaarden waarop leden akkoord geven (AVG).
 // Verhoog dit als de voorwaarden materieel wijzigen -> leden geven opnieuw akkoord.
 export const CONSENT_VERSION = '2026-06'

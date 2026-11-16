@@ -55,6 +55,9 @@ export default function OrgOnboarding() {
       return
     }
 
+    // Welkomstmail (hooguit één keer per groep); mag het starten niet ophouden.
+    supabase.functions.invoke('light-welcome-email', { body: { project_id: data.project_id } }).catch(() => {})
+
     // Nieuwe membership ophalen, daarna door naar het project.
     await reload()
     navigate(`/p/${data.slug}`, { replace: true })

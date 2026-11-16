@@ -76,6 +76,7 @@ export function friendlyError(err) {
   if (msg.includes('permission denied') || msg.includes('row-level security')) return 'Je hebt geen toegang tot deze actie'
   if (msg.includes('JWT expired')) return 'Je sessie is verlopen. Log opnieuw in.'
   if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) return 'Geen internetverbinding'
+  if (msg.includes('buuur light')) return msg // Ledengrens: melding uit de database (migratie 125)
   if (msg.includes('te groot')) return msg // Already friendly (file size)
   if (msg.includes('niet toegestaan')) return msg // Already friendly (file type)
 
