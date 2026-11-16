@@ -405,10 +405,10 @@ function NormalRoutes() {
         <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
         <Route path="documenten" element={<DocumentenHub />} />
         <Route path="chat" element={<Chat />} />
-        <Route path="mijn-documenten" element={<MyDocuments />} />
-        <Route path="mijn-dossier" element={<MyDocuments />} />
-        <Route path="tekenen/:id" element={<Tekenen />} />
-        <Route path="pro-updates" element={<ProfessionalUpdates />} />
+        <Route path="mijn-documenten" element={<FeatureRoute feature="dossier"><MyDocuments /></FeatureRoute>} />
+        <Route path="mijn-dossier" element={<FeatureRoute feature="dossier"><MyDocuments /></FeatureRoute>} />
+        <Route path="tekenen/:id" element={<FeatureRoute feature="dossier"><Tekenen /></FeatureRoute>} />
+        <Route path="pro-updates" element={<FeatureRoute feature="pro_updates"><ProfessionalUpdates /></FeatureRoute>} />
         <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
         <Route path="organisatie" element={<Organisatie />} />
         <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
@@ -511,10 +511,10 @@ function ProjectSubdomainApp({ slug, initialProject }) {
           <Route path="updates" element={<FeatureRoute feature="updates"><Updates /></FeatureRoute>} />
           <Route path="documenten" element={<DocumentenHub />} />
         <Route path="chat" element={<Chat />} />
-          <Route path="mijn-documenten" element={<MyDocuments />} />
-          <Route path="mijn-dossier" element={<MyDocuments />} />
-          <Route path="tekenen/:id" element={<Tekenen />} />
-          <Route path="pro-updates" element={<ProfessionalUpdates />} />
+          <Route path="mijn-documenten" element={<FeatureRoute feature="dossier"><MyDocuments /></FeatureRoute>} />
+          <Route path="mijn-dossier" element={<FeatureRoute feature="dossier"><MyDocuments /></FeatureRoute>} />
+          <Route path="tekenen/:id" element={<FeatureRoute feature="dossier"><Tekenen /></FeatureRoute>} />
+          <Route path="pro-updates" element={<FeatureRoute feature="pro_updates"><ProfessionalUpdates /></FeatureRoute>} />
           <Route path="adviseurs" element={<FeatureRoute feature="team"><AdviseurTeam /></FeatureRoute>} />
           <Route path="organisatie" element={<Organisatie />} />
           <Route path="community" element={<FeatureRoute feature="board"><Community /></FeatureRoute>} />
