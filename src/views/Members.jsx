@@ -276,12 +276,12 @@ export default function Members() {
           ))}
         </div>
       ) : (
-        /* Active members: card grid */
-        <div className="members-grid">
+        /* Leden: rijen, in dezelfde stijl als uitgenodigden en geïnteresseerden */
+        <div className="members-list">
           {filtered.map(m => {
             const canViewProfile = canDo(role, 'view_member_profiles') || m.role === 'admin' || m.role === 'moderator' || m.profile_id === user?.id
             return (
-              <MemberCard
+              <MemberRow
                 key={m.id}
                 membership={m}
                 isMe={m.profile_id === user?.id}
@@ -532,7 +532,7 @@ function OpenLinkInvite({ projectName, project }) {
   )
 }
 
-function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [], hasUnreviewedUploads }) {
+function MemberRow({ membership, isMe, onClick, showFunnel, commissies = [], hasUnreviewedUploads }) {
   const p = membership.profile
   const roleColor = ROLE_COLORS[membership.role] || '#9ba1b0'
   const proLabel = PROFESSIONAL_LABELS[p?.professional_type]
@@ -540,64 +540,45 @@ function MemberCard({ membership, isMe, onClick, showFunnel, commissies = [], ha
   const isNew = Date.now() - new Date(membership.joined_at).getTime() < FOURTEEN_DAYS
   const funnelColor = FUNNEL_COLORS[membership.funnel_stage]
   const funnelLabel = FUNNEL_LABELS[membership.funnel_stage]
+  // Tweede regel: bedrijf en commissies, gescheiden door een punt.
+  const meta = [p?.company, ...commissies.map(c => c.name)].filter(Boolean).join(' · ')
 
   return (
-    <div className={`member-card ${onClick ? '' : 'member-card--no-click'}`} onClick={onClick}>
-      <div className="member-card__top">
+    <div
+      className="member-row"
+      onClick={onClick}
+      onKeyDown={onClick ? e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } : undefined}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      style={onClick ? undefined : { cursor: 'default' }}
+    >
+      <div className="member-row__left">
         {p?.avatar_url ? (
-          <img src={p.avatar_url} alt={p.full_name || ''} className="member-card__avatar" />
+          <img src={p.avatar_url} alt="" className="member-row__avatar" />
         ) : (
-          <div className="member-card__avatar member-card__avatar--placeholder">
-            {(p?.full_name || 'U')[0]}
+          <div className="member-row__avatar member-row__avatar--placeholder">
+            {(p?.full_name || 'U')[0].toUpperCase()}
           </div>
         )}
-        {proLabel && p?.company_logo_url && (
-          <img src={p.company_logo_url} alt={p.company ? p.company + ' logo' : ''} className="member-card__company-logo" />
-        )}
-      </div>
-
-      <h3 className="member-card__name">
-        {p?.full_name || 'Onbekend'}
-        {isMe && <span className="member-card__you">jij</span>}
-        {hasUnreviewedUploads && (
-          <span
-            className="member-card__upload-dot"
-            title="Nieuwe uploads in dossier"
-            aria-label="Nieuwe uploads in dossier"
-          />
-        )}
-      </h3>
-
-      {p?.company && (
-        <p className="member-card__company">{p.company}</p>
-      )}
-
-      <div className="member-card__badges">
-        <span className="member-card__badge" style={tagStyle(roleColor)}>
-          {ROLE_LABELS[membership.role]}
-        </span>
-        {proLabel && (
-          <span className="member-card__badge" style={tagStyle(proColor)}>
-            {proLabel}
+        <div style={{ minWidth: 0 }}>
+          <span className="member-row__name">
+            {p?.full_name || 'Onbekend'}
+            {isMe && <span className="member-row__you">jij</span>}
+            {hasUnreviewedUploads && (
+              <span className="member-card__upload-dot" title="Nieuwe uploads in dossier" aria-label="Nieuwe uploads in dossier" />
+            )}
           </span>
-        )}
-        {showFunnel && funnelLabel && membership.funnel_stage !== 'nieuw' && (
-          <span className="member-card__badge" style={tagStyle(funnelColor)}>
-            {funnelLabel}
-          </span>
-        )}
-        {isNew && <span className="member-card__badge member-card__badge--new">Nieuw</span>}
-      </div>
-
-      {commissies.length > 0 && (
-        <div className="member-card__commissies">
-          {commissies.map(c => (
-            <span key={c.id} className="member-card__commissie">
-              <i className="fa-solid fa-users" /> {c.name}
-            </span>
-          ))}
+          {meta && <span className="member-row__meta">{meta}</span>}
         </div>
-      )}
+      </div>
+      <div className="member-row__right member-row__right--badges">
+        <span className="invite-role-badge" style={tagStyle(roleColor)}>{ROLE_LABELS[membership.role]}</span>
+        {proLabel && <span className="invite-role-badge" style={tagStyle(proColor)}>{proLabel}</span>}
+        {showFunnel && funnelLabel && membership.funnel_stage !== 'nieuw' && (
+          <span className="invite-role-badge" style={tagStyle(funnelColor)}>{funnelLabel}</span>
+        )}
+        {isNew && <span className="invite-role-badge member-card__badge--new">Nieuw</span>}
+      </div>
     </div>
   )
 }

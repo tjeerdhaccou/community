@@ -1349,13 +1349,16 @@ select.input {
 }
 
 .tag-filter-wrap .tag-filter {
-  margin-bottom: 0;
   flex-wrap: wrap;
   overflow: hidden;
+  /* Ruimte rondom voor de focusrand (2px + 2px offset), anders snijdt de
+     overflow hem af. De negatieve marge houdt de pills op hun plek. */
+  padding: 4px;
+  margin: -4px;
 }
 
 .tag-filter--collapsed {
-  max-height: 70px;
+  max-height: 78px;
 }
 
 .tag-filter--expanded {
@@ -3854,6 +3857,10 @@ select.input {
   align-items: center;
   gap: 10px;
 }
+/* Rol- en statuslabels in de ledenlijst: mogen onder elkaar vallen op smal scherm */
+.member-row__right--badges { flex-wrap: wrap; justify-content: flex-end; gap: 6px; flex-shrink: 0; max-width: 55%; }
+.member-row__left { min-width: 0; }
+.member-row__meta { overflow: hidden; text-overflow: ellipsis; }
 
 .member-role-badge {
   font-size: 13px;
@@ -12093,7 +12100,8 @@ html.more-open .sc-fab-wrap { display: none !important; }
   }
   .tag-filter-wrap--scroll .tag-filter--scroll {
     display: flex; flex-wrap: nowrap; gap: 8px; max-height: none; overflow-x: auto; overflow-y: hidden;
-    padding: 2px 44px 6px 16px; /* rechts extra ruimte zodat de laatste chip niet onder de vervaging blijft */
+    margin: 0; /* de desktop-compensatie voor de focusrand geldt hier niet */
+    padding: 4px 44px 6px 16px; /* boven ruimte voor de focusrand; rechts extra ruimte zodat de laatste chip niet onder de vervaging blijft */
     scrollbar-width: none; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain;
     scroll-snap-type: x proximity; scroll-padding: 0 16px;
   }
