@@ -108,20 +108,19 @@ export default function Roadmap() {
     <div className="view-roadmap">
       <div className="view-header">
         <div className="view-header__row">
-          <div>
-            <span className="view-header__eyebrow">Ontwikkeltraject</span>
-            <h1>Roadmap</h1>
-          </div>
+          <h1>Roadmap</h1>
         </div>
-        <p className="view-header__subtitle">
-          Van structuurontwerp tot oplevering — workshops, milestones en formele stappen in {phases.length} fasen.
-        </p>
+        {phases.length > 0 && (
+          <p className="view-header__subtitle">
+            Waar het project nu staat en wat er nog komt, in {phases.length} {phases.length === 1 ? 'fase' : 'fasen'}.
+          </p>
+        )}
       </div>
 
       {phases.length === 0 ? (
         <div className="empty-inline">
           <i className="fa-solid fa-route" />
-          <p>De beheerders hebben het stappenplan nog niet ingericht.</p>
+          <p>Er staat nog geen stappenplan.</p>
         </div>
       ) : (
         <div className="roadmap-phases">

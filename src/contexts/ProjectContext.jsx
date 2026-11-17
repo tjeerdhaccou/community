@@ -15,6 +15,10 @@ const OPT_IN_FEATURES = new Set(['decisions'])
 // support = supportchat met het team, dossier = mijn dossier + tekenen.
 const PRO_ONLY_FEATURES = new Set(['support', 'dossier', 'pro_updates', 'team', 'decisions'])
 
+// Een light-groep kan de roadmap niet zelf vullen (dat gebeurt aan de beheerkant),
+// dus daar staat hij pas aan als iemand hem bewust aanzet.
+const LIGHT_OPT_IN_FEATURES = new Set(['roadmap'])
+
 export function ProjectProvider({ children, slugOverride, initialProject }) {
   const params = useParams()
   const slug = slugOverride || params.slug
@@ -142,6 +146,7 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
     if (!project) return OPT_IN_FEATURES.has(key) ? false : true
     const features = project.features || {}
     if (OPT_IN_FEATURES.has(key)) return features[key] === true
+    if (isLightProject && LIGHT_OPT_IN_FEATURES.has(key)) return features[key] === true
     return features[key] !== false
   }
 

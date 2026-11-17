@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
-import { toStoragePath } from '../lib/storage'
+import { toStoragePath, uploadFile } from '../lib/storage'
+import { logger, friendlyError } from '../lib/logger'
+import { dispatchNotification } from '../lib/notifications'
 
 /**
  * Unified document hook that combines:
@@ -154,27 +156,44 @@ export function useAllDocuments() {
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
   }, [projectDocs, meetingFiles])
 
-  // Upload a new document (from frontend — moderators only)
+  // Bestand eerst door uploadFile: die bewaakt type en grootte en geeft een veilige naam.
   async function uploadDocument({ title, description, category, visibility, groupIds, file }) {
-    const path = `documents/${projectId}/${Date.now()}-${file.name}`
-    const { error: upErr } = await supabase.storage.from('project-files').upload(path, file)
-    if (upErr) throw upErr
+    let path
+    try {
+      ({ path } = await uploadFile(file, 'project-files', `documents/${projectId}`))
+    } catch (err) {
+      logger.error('useAllDocuments.upload', err)
+      throw new Error(err?.message?.startsWith('Bestand') ? err.message : friendlyError(err))
+    }
 
+    const vis = visibility || 'members'
     const { data: doc, error } = await supabase.from('documents').insert({
       project_id: projectId, title, description: description || null,
       category: category || 'overig',
-      visibility: visibility || 'members',
+      visibility: vis,
       file_name: file.name, file_path: path,
       file_size: file.size, file_type: file.type, uploaded_by: user?.id,
     }).select('id').single()
-    if (error) throw error
-
-    // Insert group links
-    if (visibility === 'groups' && groupIds?.length > 0) {
-      await supabase.from('document_groups')
-        .insert(groupIds.map(gid => ({ document_id: doc.id, workgroup_id: gid })))
+    if (error) {
+      logger.error('useAllDocuments.upload', error)
+      await supabase.storage.from('project-files').remove([path])
+      throw new Error(friendlyError(error))
     }
 
+    if (vis === 'groups' && groupIds?.length > 0) {
+      const { error: linkErr } = await supabase.from('document_groups')
+        .insert(groupIds.map(gid => ({ document_id: doc.id, workgroup_id: gid })))
+      if (linkErr) {
+        logger.error('useAllDocuments.upload', linkErr)
+        await supabase.from('documents').delete().eq('id', doc.id)
+        await supabase.storage.from('project-files').remove([path])
+        throw new Error(friendlyError(linkErr))
+      }
+    }
+
+    if (vis === 'members') {
+      dispatchNotification({ projectId, type: 'new_document', referenceId: doc.id, actorId: user?.id })
+    }
     fetchAll()
   }
 
@@ -199,17 +218,16 @@ export function useAllDocuments() {
   }
 
   async function removeDoc(id, source, filePath) {
+    const table = source === 'vergadering' ? 'meeting_files' : 'documents'
+    // select() erbij: RLS weigert een delete stil (0 rijen, geen fout), en dan
+    // mag het bestand zelf niet alsnog uit de opslag verdwijnen.
+    const { data, error } = await supabase.from(table).delete().eq('id', id).select('id')
+    if (error || !data?.length) {
+      logger.error('useAllDocuments.remove', error || new Error('geen rij verwijderd'))
+      throw new Error(error ? friendlyError(error) : 'Je mag dit document niet verwijderen.')
+    }
     const storagePath = toStoragePath(filePath)
-    if (storagePath) {
-      await supabase.storage.from('project-files').remove([storagePath])
-    }
-
-    if (source === 'document') {
-      await supabase.from('document_groups').delete().eq('document_id', id)
-      await supabase.from('documents').delete().eq('id', id)
-    } else if (source === 'vergadering') {
-      await supabase.from('meeting_files').delete().eq('id', id)
-    }
+    if (storagePath) await supabase.storage.from('project-files').remove([storagePath])
     fetchAll()
   }
 

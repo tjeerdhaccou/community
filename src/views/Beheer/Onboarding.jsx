@@ -97,7 +97,7 @@ export default function Onboarding() {
       icon: 'fa-solid fa-people-group',
       color: 'var(--accent-primary, #4A90D9)',
       title: 'Maak een groep',
-      desc: 'Verdeel het werk over commissies of werkgroepen, zoals Bouw of Financiën.',
+      desc: 'Verdeel het werk over commissies of werkgroepen, zoals Financiën of Communicatie.',
       done: counts.groups > 0,
       to: 'organisatie?tab=groepen',
       cta: 'Naar groepen',

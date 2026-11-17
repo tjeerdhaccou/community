@@ -21,7 +21,7 @@ import FrisGreeting from '../components/FrisGreeting'
 import FrisWeek from '../components/FrisWeek'
 
 export default function Dashboard() {
-  const { project, role, loading, basePath, onboardingActive, readOnly } = useProject()
+  const { project, role, loading, basePath, onboardingActive, readOnly, featureEnabled } = useProject()
   const { profile, isPlatformAdmin } = useAuth()
   const navigate = useNavigate()
 
@@ -278,11 +278,13 @@ export default function Dashboard() {
           <span className="dash-stat__value">{feed.stats.updates}</span>
           <span className="dash-stat__label">Nieuws</span>
         </div>
-        <div className="dash-stat" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
-          <i className="fa-solid fa-road dash-stat__icon" style={{ color: navColor('roadmap') }} />
-          <span className="dash-stat__value">{activePhase?.subtitle || activePhase?.name || '—'}</span>
-          <span className="dash-stat__label">Fase</span>
-        </div>
+        {featureEnabled('roadmap') && (
+          <div className="dash-stat" onClick={() => navigate(`${basePath}/roadmap`)} role="button" tabIndex={0}>
+            <i className="fa-solid fa-road dash-stat__icon" style={{ color: navColor('roadmap') }} />
+            <span className="dash-stat__value">{activePhase?.subtitle || activePhase?.name || '—'}</span>
+            <span className="dash-stat__label">Fase</span>
+          </div>
+        )}
       </div>
 
       {/* Guest/aspirant statusstrip — passieve info, compact zodat het niet
@@ -296,7 +298,7 @@ export default function Dashboard() {
       {role === 'aspirant' && (
         <div className="dash-status-strip">
           <i className="fa-solid fa-seedling dash-status-strip__icon" style={{ color: 'var(--accent-green)' }} />
-          <span>Welkom als aspirant-lid. Kijk rond; na de kennismakingsperiode word je volledig lid.</span>
+          <span>Welkom als aspirant-lid. Kijk gerust rond en maak kennis met de groep.</span>
         </div>
       )}
 
