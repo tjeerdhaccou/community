@@ -12,12 +12,9 @@ const OPT_IN_FEATURES = new Set(['decisions'])
 
 // Onderdelen die bij buuur pro horen (org met procesbegeleider). Voor een
 // light-groep staan ze altijd uit, wat er ook in projects.features staat:
-// support = supportchat met het team, dossier = mijn dossier + tekenen.
-const PRO_ONLY_FEATURES = new Set(['support', 'dossier', 'pro_updates', 'team', 'decisions'])
-
-// Een light-groep kan de roadmap niet zelf vullen (dat gebeurt aan de beheerkant),
-// dus daar staat hij pas aan als iemand hem bewust aanzet.
-const LIGHT_OPT_IN_FEATURES = new Set(['roadmap'])
+// support = supportchat met het team, dossier = mijn dossier + tekenen,
+// roadmap = alleen aan de beheerkant te vullen, dus voor light altijd leeg.
+const PRO_ONLY_FEATURES = new Set(['support', 'dossier', 'pro_updates', 'team', 'decisions', 'roadmap'])
 
 export function ProjectProvider({ children, slugOverride, initialProject }) {
   const params = useParams()
@@ -146,7 +143,6 @@ export function ProjectProvider({ children, slugOverride, initialProject }) {
     if (!project) return OPT_IN_FEATURES.has(key) ? false : true
     const features = project.features || {}
     if (OPT_IN_FEATURES.has(key)) return features[key] === true
-    if (isLightProject && LIGHT_OPT_IN_FEATURES.has(key)) return features[key] === true
     return features[key] !== false
   }
 
