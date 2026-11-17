@@ -173,7 +173,7 @@ function ProfileCompletionModal({ profile, onComplete }) {
             </span>
           </label>
 
-          {error && <p style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
+          {error && <p className="form-error" role="alert">{error}</p>}
 
           <div className="modal-actions">
             <button

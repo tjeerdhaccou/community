@@ -179,7 +179,7 @@ export default function ProfileIntake() {
             <p className="intake-fill__intro">Dit formulier bevat geen velden.</p>
           )}
 
-          {error && <p style={{ color: 'var(--accent-red)', fontSize: 14 }}>{error}</p>}
+          {error && <p className="form-error" role="alert">{error}</p>}
 
           <div className="intake-fill__actions">
             <button type="submit" className="btn-primary" disabled={saving || fields.length === 0}>

@@ -95,7 +95,7 @@ export default function IntakeResponseDetail({ response: initialResponse, questi
           {response.status === 'pending' && (
             <>
               {error && (
-                <p style={{ color: 'var(--accent-red)', fontSize: '14px', margin: '12px 0 0' }}>{error}</p>
+                <p className="form-error" role="alert" style={{ marginTop: 12 }}>{error}</p>
               )}
               <div className="intake-detail__actions">
                 <button className="btn-secondary" onClick={handleReject} disabled={loading}>

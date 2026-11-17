@@ -192,7 +192,7 @@ export default function PlatformAdmin() {
               <span className="form-hint">Moet een bestaand account zijn. Laat leeg om later toe te voegen.</span>
             </div>
           </div>
-          {createError && <p style={{ color: 'var(--accent-red)', fontSize: 13, marginTop: 8 }}>{createError}</p>}
+          {createError && <p className="form-error" role="alert" style={{ marginTop: 8 }}>{createError}</p>}
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button type="button" className="btn-secondary" onClick={() => setShowCreate(false)}>Annuleren</button>
             <button type="submit" className="btn-primary" disabled={creating || !newName.trim() || !newSlug.trim()}>

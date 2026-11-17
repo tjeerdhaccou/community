@@ -108,7 +108,7 @@ export default function OrgOnboarding() {
             )}
           </div>
 
-          {error && <p role="alert" style={{ color: 'var(--accent-red)', fontSize: 13 }}>{error}</p>}
+          {error && <p className="form-error" role="alert">{error}</p>}
 
           <button type="submit" className="btn-primary onboarding-card__next" disabled={!canSubmit}>
             {creating ? (
