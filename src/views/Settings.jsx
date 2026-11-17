@@ -129,9 +129,15 @@ export default function Settings() {
   }
 
   // Deeplink vanuit "Aan de slag" (settings#branding, settings#aanmeldformulier).
+  // Pas scrollen als de view staat: direct bij binnenkomst onderbreekt de
+  // inloopanimatie en het laden van de afbeeldingen de scroll, en bleef je op
+  // mobiel bovenaan de pagina hangen.
   useEffect(() => {
     if (!hash || projectLoading) return
-    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const timer = setTimeout(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 450)
+    return () => clearTimeout(timer)
   }, [hash, projectLoading])
 
   const accentInvalid = !!appAccent && !parseHex(appAccent)
@@ -574,8 +580,8 @@ function DataExportSection({ projectId, projectSlug }) {
         </p>
       )}
       {result === 'error' && (
-        <p style={{ marginTop: 12, fontSize: 14, color: 'var(--accent-red)' }}>
-          <i className="fa-solid fa-triangle-exclamation" /> Export mislukt. Probeer het opnieuw.
+        <p className="form-error" role="alert" style={{ marginTop: 12 }}>
+          Export mislukt. Probeer het opnieuw.
         </p>
       )}
     </section>

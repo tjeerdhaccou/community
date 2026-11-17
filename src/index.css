@@ -601,7 +601,8 @@ select.input {
   padding: 14px 24px;
 }
 
-.login-error {
+.login-error,
+.form-error {
   color: var(--accent-red);
   font-size: var(--text-small);
   text-align: left;
@@ -1057,6 +1058,72 @@ select.input {
   font-size: 14px;
   margin-top: 14px;
   flex-shrink: 0;
+}
+
+/* ===== Aan de slag (buuur light): stappen als dashboard-rijen ===== */
+.onboarding-progress { margin: 0 0 12px; }
+.onboarding-progress__meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+.onboarding-progress__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+.onboarding-progress__bar {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-green);
+  transition: width 300ms var(--ease-default);
+}
+.onboarding-steps { margin: 0; padding: 0; list-style: none; }
+.onboarding-steps[aria-busy="true"] { opacity: 0.6; }
+.onboarding-step {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.onboarding-step .dash-card__title,
+.onboarding-step .dash-card__meta { display: block; }
+.onboarding-step .dash-card__meta { line-height: 1.45; }
+.onboarding-step__status {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  font-size: 16px;
+}
+.onboarding-step--done .onboarding-step__status {
+  background: var(--accent-green);
+  color: var(--accent-on-fill, #fff);
+}
+.onboarding-step__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+.onboarding-step--done .onboarding-step__cta { color: var(--text-secondary); }
+.onboarding-step__cta i { font-size: 12px; }
+.onboarding-footer { margin-top: 24px; display: flex; justify-content: center; }
+@media (max-width: 768px) {
+  .onboarding-step { gap: 14px; }
+  .onboarding-step .dash-card__arrow { display: none; }
+  .onboarding-footer :is(.btn-primary, .btn-secondary) { width: 100%; justify-content: center; min-height: 48px; }
 }
 
 /* Prikbord mini list */
@@ -4364,6 +4431,8 @@ select.input {
   scrollbar-width: thin;
   scrollbar-color: var(--text-faint, #B0B5C3) transparent;
 }
+/* Het formulier staat al in de gevulde inhoud: geen tweede inspringing. */
+.invite-modal__content .modal-form { padding: 4px 0 0; }
 .invite-modal__desc {
   font-size: 14px;
   color: var(--text-secondary);
@@ -12090,12 +12159,15 @@ a.update-attachment-row__name:hover { text-decoration: underline; }
 html.more-open .sc-fab-wrap { display: none !important; }
 
 /* Werkgroep-kaarten (Organisatie › Groepen) op mobiel: tekst over de volle
-   breedte, type-tag en knoppen op een eigen regel eronder. */
+   breedte, knoppen op een eigen regel eronder. De type-tag valt weg: de kop
+   erboven (Commissies, Doelgroepen) zegt het al, en met de tag paste het
+   prullenbakje niet meer en viel het los op een derde regel. */
 @media (max-width: 768px) {
-  .wg-card__row { flex-wrap: wrap; gap: 10px 12px !important; padding: 14px !important; }
-  .wg-card__text { flex: 1 1 calc(100% - 50px) !important; }
-  .wg-card__type { margin-left: 50px; }
+  .wg-card__row { flex-wrap: wrap; gap: 10px 8px !important; padding: 14px !important; }
+  .wg-card__text { flex: 1 1 calc(100% - 52px) !important; }
+  .wg-card__type { display: none !important; }
   .wg-card__row > .btn-sm { margin-left: 0; }
+  .wg-card__type + .btn-sm { margin-left: 52px !important; }
 }
 
 /* ===== Mobiel: kaartkoppen die te veel op één regel willen ===== */

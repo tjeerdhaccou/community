@@ -232,6 +232,9 @@
 .bottom-nav__pill { display: none; }
 
 @media (max-width: 768px) {
+  /* Ruimte onder de laatste rij: de pil zweeft 12px boven de rand (of de
+     home-indicator), dus 80px vast was op een iPhone te krap. */
+  [data-look="fris"] .main-content { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
   [data-look="fris"] .bottom-nav {
     left: 50%;
     right: auto;
@@ -506,6 +509,10 @@
 [data-look="fris"][data-theme="dark"] {
   --fris-fill:           rgba(255, 255, 255, 0.06);
   --fris-fill-strong:    rgba(255, 255, 255, 0.10);
+  /* Het donkere thema had geen eigen rood: foutmeldingen waren donkerrood op
+     donkergrijs. Zelfde waarden als crowdbuilding-dark. */
+  --tag-red-bg:          rgba(255, 92, 84, 0.20);
+  --tag-red-text:        #FF9A93;
 }
 
 /* ── Lijsten als rijen ─────────────────────────────────────────────────────── */
@@ -568,6 +575,19 @@
 [data-look="fris"] .seg-tab:hover { background: transparent; }
 [data-look="fris"] .seg-tab--active { background: var(--bg-surface); color: var(--text-primary); box-shadow: 0 1px 3px rgba(26, 26, 46, 0.08); }
 [data-look="fris"] .seg-tab:active { transform: scale(0.95); }
+/* Mobiel: de pil blijft één regel en scrollt zijwaarts als hij te breed is.
+   Twee regels in een pilvorm (Projectdossier, Mijn dossier) braken de vorm. */
+@media (max-width: 768px) {
+  [data-look="fris"] .seg-tabs {
+    max-width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  [data-look="fris"] .seg-tabs::-webkit-scrollbar { display: none; }
+  [data-look="fris"] .seg-tab { flex-shrink: 0; white-space: nowrap; }
+}
 [data-look="fris"] :is(.seg-tab__count, .cluster-tab__count),
 [data-look="fris"] :is(.seg-tab--active .seg-tab__count, .cluster-tab--active .cluster-tab__count) {
   background: var(--fris-fill-strong);
@@ -1150,4 +1170,83 @@ html[data-look="fris"][data-theme="dark"] .tour-root {
 }
 @media (prefers-reduced-motion: reduce) {
   .cookie-consent { animation: none; }
+}
+
+/* ============================================================================
+   Invoervelden en foutmeldingen in de hele app
+   Dezelfde velden als het aanmeldformulier (intake.css): zacht grijs vlak
+   zonder rand, bij focus wit met een ring in de structuurkleur. Gold eerst
+   alleen voor inloggen en de intake; instellingen, profiel en modals hadden
+   nog de omrande Clean-velden. :where() houdt de specificiteit laag, zodat
+   eigen veldstijlen (login, intake, chat, zoeken) blijven winnen.
+   ============================================================================ */
+
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="color"], [type="range"], [type="hidden"]), select, textarea),
+[data-look="fris"] .input {
+  min-height: 48px;
+  padding: 12px 18px;
+  border: 0;
+  /* De helft van de hoogte: een pil bij één regel, nooit ronder dan dat. */
+  border-radius: 24px;
+  background-color: var(--fris-fill);
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.4;
+  box-shadow: none;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(textarea),
+[data-look="fris"] textarea.input {
+  min-height: 112px;
+  padding: 14px 18px;
+  border-radius: 18px;
+}
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(input, select, textarea)::placeholder,
+[data-look="fris"] .input::placeholder { color: var(--text-faint); }
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="color"], [type="range"]), select, textarea):hover,
+[data-look="fris"] .input:hover { background-color: var(--fris-fill-strong); }
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="color"], [type="range"]), select, textarea):focus,
+[data-look="fris"] .input:focus {
+  outline: none;
+  background-color: var(--bg-page);
+  box-shadow: 0 0 0 2px var(--border-focus);
+}
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(select),
+[data-look="fris"] select.input {
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 5.25 7 9.25l4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 18px center;
+}
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(input[type="date"], input[type="time"], input[type="datetime-local"]) { text-align: left; }
+[data-look="fris"] :is(.form-group, .notif-pref-row) :where(input:disabled, select:disabled, textarea:disabled) { opacity: 0.55; cursor: not-allowed; }
+
+/* Meldingsvoorkeuren op desktop: keuzelijst naast de uitleg, niet over de
+   volle breedte. Op mobiel staat hij eronder (index.css). */
+@media (min-width: 769px) {
+  [data-look="fris"] .notif-pref-row :where(select, input[type="date"]) { width: auto; min-width: 200px; flex-shrink: 0; }
+}
+
+/* De hogere velden hebben lucht nodig tot het volgende label. */
+[data-look="fris"] :is(.settings-section, .profile-section) > :is(.form-group, .form-row) + :is(.form-group, .form-row) { margin-top: 16px; }
+
+/* Op een grijs vlak (verzoeken) zou grijs op grijs wegvallen. */
+[data-look="fris"] .request-card :is(.form-group, .notif-pref-row) :where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="color"], [type="range"]), select, textarea) {
+  background-color: var(--bg-page);
+}
+
+[data-look="fris"] input:is([type="checkbox"], [type="radio"]) { accent-color: var(--accent-primary); }
+
+/* Foutmeldingen: zacht rood vlak met ronde hoeken, zoals bij inloggen. */
+[data-look="fris"] :is(.form-error, .join-card__error, .lp-form__error, .proposal-error, .light-quota__error, .org-invite-admin__error, .pr-error) {
+  margin: 0;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--tag-red-bg);
+  color: var(--tag-red-text);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  text-align: left;
 }

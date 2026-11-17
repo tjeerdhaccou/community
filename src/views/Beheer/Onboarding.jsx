@@ -129,104 +129,66 @@ export default function Onboarding() {
   return (
     <div className="view-onboarding">
       <div className="view-header">
-        <div className="view-header__row">
-          <h1>Aan de slag</h1>
-        </div>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
+        <h1>Aan de slag</h1>
+        <p className="view-header__subtitle">
           {allDone
-            ? 'Mooi werk — je community staat klaar! 🎉'
+            ? 'Mooi werk, je community staat klaar! 🎉'
             : 'In een paar stappen staat jullie community klaar. Je kunt later alles nog aanpassen.'}
         </p>
       </div>
 
       {/* Voortgang */}
-      <div style={{ margin: '4px 0 20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 'var(--text-caption)', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-            {completed} van {steps.length} klaar
-          </span>
-          <span style={{ fontSize: 'var(--text-caption)', color: 'var(--text-tertiary)', fontWeight: 600 }}>{pct}%</span>
+      <div className="onboarding-progress">
+        <div className="onboarding-progress__meta">
+          <span>{completed} van {steps.length} klaar</span>
+          <span>{pct}%</span>
         </div>
-        <div style={{ height: 8, borderRadius: 999, background: 'var(--bg-hover)', overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            width: `${pct}%`,
-            borderRadius: 999,
-            background: 'var(--accent-green, #3BD269)',
-            transition: 'width 300ms ease',
-          }} />
-        </div>
-      </div>
-
-      {/* Stappen */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {steps.map(step => (
-          <div
-            key={step.key}
-            onClick={() => navigate(`${basePath}/${step.to}`)}
-            role="button"
-            tabIndex={0}
-            className="onboarding-step"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: 16,
-              borderRadius: 'var(--radius-md, 12px)',
-              background: 'var(--bg-surface)',
-              boxShadow: 'var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08))',
-              cursor: 'pointer',
-              opacity: loading ? 0.6 : 1,
-            }}
-          >
-            {/* Status-bolletje */}
-            <div style={{
-              flexShrink: 0,
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: step.done ? 'var(--accent-green, #3BD269)' : 'var(--bg-hover)',
-              color: step.done ? 'var(--accent-on-fill, #fff)' : step.color,
-            }}>
-              <i className={step.done ? 'fa-solid fa-check' : step.icon} />
-            </div>
-
-            {/* Tekst */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                textDecoration: step.done ? 'none' : 'none',
-              }}>
-                {step.title}
-              </div>
-              <div style={{ fontSize: 'var(--text-caption)', color: 'var(--text-secondary)', marginTop: 2 }}>
-                {step.desc}
-              </div>
-            </div>
-
-            {/* CTA */}
-            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 'var(--text-caption)', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
-                {step.done ? 'Aanpassen' : step.cta}
-              </span>
-              <i className="fa-solid fa-chevron-right" style={{ color: 'var(--text-tertiary)', fontSize: 12 }} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Escape — naar dashboard, stopt de auto-redirect */}
-      <div style={{ marginTop: 20, textAlign: 'center' }}>
-        <button
-          className="btn-secondary"
-          onClick={dismissOnboarding}
-          style={{ fontSize: 'var(--text-caption)' }}
+        <div
+          className="onboarding-progress__track"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={steps.length}
+          aria-valuenow={completed}
+          aria-label="Voortgang"
         >
-          {allDone ? 'Naar mijn dashboard' : 'Later afmaken — naar dashboard'}
+          <div className="onboarding-progress__bar" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      {/* Stappen: rijen zoals op het dashboard. Op mobiel staat de knoptekst
+          onder de uitleg, zodat de tekst de volle breedte houdt. */}
+      <ol className="dash-feed onboarding-steps" aria-busy={loading}>
+        {steps.map((step, i) => (
+          <li key={step.key}>
+            <button
+              type="button"
+              className={`dash-card onboarding-step${step.done ? ' onboarding-step--done' : ''}`}
+              onClick={() => navigate(`${basePath}/${step.to}`)}
+            >
+              <span className="onboarding-step__status" style={step.done ? undefined : { color: step.color }} aria-hidden="true">
+                <i className={step.done ? 'fa-solid fa-check' : step.icon} />
+              </span>
+              <span className="dash-card__content">
+                <span className="dash-card__label">
+                  {step.done ? 'Klaar' : `Stap ${i + 1}`}
+                </span>
+                <span className="dash-card__title">{step.title}</span>
+                <span className="dash-card__meta">{step.desc}</span>
+                <span className="onboarding-step__cta">
+                  {step.done ? 'Aanpassen' : step.cta}
+                  <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+                </span>
+              </span>
+              <i className="fa-solid fa-chevron-right dash-card__arrow" aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      {/* Escape: naar dashboard, stopt de auto-redirect */}
+      <div className="onboarding-footer">
+        <button type="button" className={allDone ? "btn-primary" : "btn-secondary"} onClick={dismissOnboarding}>
+          {allDone ? 'Naar mijn dashboard' : 'Later afmaken, naar dashboard'}
         </button>
       </div>
     </div>

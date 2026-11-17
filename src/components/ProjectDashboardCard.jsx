@@ -594,7 +594,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
           </button>
         </div>
         {deleteError && (
-          <p style={{ marginTop: 8, marginBottom: 0, fontSize: 13, color: 'var(--accent-red)' }}>{deleteError}</p>
+          <p className="form-error" role="alert" style={{ marginTop: 8 }}>{deleteError}</p>
         )}
       </div>
 

@@ -475,7 +475,7 @@ function PersonalInvite({ projectName, onInvite }) {
           <span className="form-hint">De uitgenodigde kan deze rol zelf niet aanpassen.</span>
         </div>
 
-        {error && <p role="alert" style={{ color: 'var(--accent-red)', fontSize: '14px' }}>{error}</p>}
+        {error && <p className="form-error" role="alert">{error}</p>}
         {notice && !error && (
           <p role="status" style={{ color: 'var(--tag-green-text, #27A854)', fontSize: '14px', fontWeight: 500 }}>
             <i className="fa-solid fa-circle-check" aria-hidden="true" /> {notice}
