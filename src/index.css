@@ -10087,11 +10087,9 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   flex-shrink: 0;
 }
 @media (max-width: 600px) {
-  .cookie-consent__content {
-    flex-direction: column;
-    text-align: center;
-    gap: 12px;
-  }
+  .cookie-consent { padding: 8px 12px; }
+  .cookie-consent__content { gap: 10px; }
+  .cookie-consent__content p { font-size: 13px; line-height: 1.35; }
 }
 
 /* Session timeout warning */

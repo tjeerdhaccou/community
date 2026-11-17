@@ -111,7 +111,7 @@ export default function Login() {
           )}
           <h1 className="login-title">{projectInfo?.name || 'Inloggen'}</h1>
           <p className="login-subtitle">
-            Voer het e-mailadres in waarmee je bent uitgenodigd.
+            {projectInfo ? 'Vul het e-mailadres in waarmee je bent uitgenodigd.' : 'Vul je e-mailadres in. Je krijgt een inlogcode per mail.'}
           </p>
 
           <form onSubmit={handleEmailSubmit} className="login-form">

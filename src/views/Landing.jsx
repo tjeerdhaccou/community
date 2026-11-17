@@ -521,7 +521,7 @@ export default function Landing() {
               <Link to="/dashboard" className="lp-btn lp-btn--sm">Naar het platform</Link>
             ) : (
               <>
-                <Link to="/login">Inloggen</Link>
+                <Link to="/login" className="lp-nav__login">Inloggen</Link>
                 <Link to={primaryTo} className="lp-btn lp-btn--sm">{HERO.primary}</Link>
               </>
             )}
@@ -535,7 +535,8 @@ export default function Landing() {
             <div className="lp-hero__text" data-reveal>
               <Eyebrow>{HERO.eyebrow}</Eyebrow>
               <h1><InkTitle text={HERO.title} /></h1>
-              <p className="lp-lead">{HERO.lead}</p>
+              <p className="lp-lead lp-lead--long">{HERO.lead}</p>
+              <p className="lp-lead lp-lead--short">{HERO.leadShort}</p>
               <div className="lp-hero__cta">
                 <Link to={primaryTo} className="lp-btn">{primaryLabel} <i className="fa-solid fa-arrow-right" aria-hidden="true" /></Link>
                 <a href={DEMO_URL} className="lp-btn lp-btn--ghost" target="_blank" rel="noopener noreferrer">{HERO.secondary}</a>
