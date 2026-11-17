@@ -22,6 +22,9 @@ export const HERO = {
     'toekomstige bewoners vanaf de eerste schets samen, op één plek: nieuws, gesprekken, ' +
     'documenten en nieuwe leden. Geen appgroepen en mailketens meer, maar een thuisbasis ' +
     'die van je project is.',
+  leadShort:
+    'Buuur brengt je toekomstige bewoners vanaf de eerste schets samen op één plek: ' +
+    'nieuws, gesprekken, documenten en nieuwe leden.',
   primary: 'Plan een demo',
   secondary: 'Kijk rond in het demoproject',
   note: 'Inloggen zonder wachtwoord. Eigen adres per project, zoals projectnaam.buuur.nl.',
@@ -233,7 +236,7 @@ export const PLANS = {
         'Je start vandaag, zonder gedoe. Tot 10 leden kost het niets, daarna € 29 per maand of € 290 per jaar (incl. btw).',
       points: [
         'Gratis tot 10 leden, zonder betaalgegevens',
-        'Prikbord, events, documenten en roadmap',
+        'Prikbord, chat, events en documenten',
         'Eigen pagina met aanmeldformulier voor nieuwe leden',
         'Eigen adres op buuur.nl',
       ],

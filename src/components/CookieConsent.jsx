@@ -27,11 +27,10 @@ export default function CookieConsent() {
     <div className="cookie-consent" role="dialog" aria-label="Cookie melding">
       <div className="cookie-consent__content">
         <p>
-          Wij gebruiken functionele opslag (thema-voorkeur) en sessie-cookies voor authenticatie.
-          Lees onze <a href="/privacy">privacyverklaring</a> voor meer informatie.
+          Alleen functionele cookies: inloggen en je thema. <a href="/privacy">Privacy</a>
         </p>
         <button className="cl-btn cl-btn--primary cookie-consent__btn" onClick={accept}>
-          Akkoord
+          Oké
         </button>
       </div>
     </div>
