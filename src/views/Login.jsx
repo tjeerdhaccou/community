@@ -9,7 +9,7 @@ import { usePublicFris } from '../hooks/usePublicFris'
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  // AuthCallback stuurt na een verlopen link een verse code en zet door naar
+  // AuthCallback stuurt na een verlopen link (na de controle) een verse code en zet door naar
   // hier met de e-mail al ingevuld en direct op de code-invoerstap.
   const resend = location.state || {}
   // Projectnaam en -logo (op een projectsubdomein) plus de Fris-look met de
@@ -21,6 +21,10 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [inviteName, setInviteName] = useState('')
+  // Of het adres de controle heeft gehaald. Alleen dan versturen we (opnieuw)
+  // een code. De gebruiker ziet in beide gevallen dezelfde melding, zodat het
+  // formulier niet verraadt welke adressen toegang hebben.
+  const [allowed, setAllowed] = useState(resend.allowed === true)
 
   async function handleEmailSubmit(e) {
     e.preventDefault()
@@ -28,16 +32,11 @@ export default function Login() {
     setError(null)
 
     try {
-      // Check if email is invited — scoped op subdomain als we daar zijn
+      // Controle gescoped op het subdomein als we daar zijn
       const subdomainSlug = getProjectSlugFromSubdomain()
       const invite = await checkInvitedEmail(email, subdomainSlug)
-      if (!invite) {
-        setError('Dit e-mailadres heeft geen toegang. Neem contact op met de beheerder.')
-        setLoading(false)
-        return
-      }
-
-      await sendOtpCode(email)
+      setAllowed(!!invite)
+      if (invite) await sendOtpCode(email)
       setMode('otp')
     } catch (err) {
       console.error('Email submit error:', err)
@@ -94,7 +93,7 @@ export default function Login() {
   async function handleResend() {
     setError(null)
     try {
-      await sendOtpCode(email)
+      if (allowed) await sendOtpCode(email)
       setError(null)
     } catch (err) {
       console.error('Resend error:', err)
@@ -153,7 +152,7 @@ export default function Login() {
         </div>
         <h1 className="login-title">Controleer je e-mail</h1>
         <p className="login-subtitle">
-          We hebben een verificatiecode gestuurd naar <strong>{email}</strong>
+          Als <strong>{email}</strong> toegang heeft, hebben we een code gestuurd.
         </p>
 
         <form onSubmit={handleOtpSubmit} className="login-form">
@@ -183,7 +182,7 @@ export default function Login() {
           <button className="login-resend-btn" onClick={handleResend}>Opnieuw versturen</button>
         </p>
 
-        <button className="login-back-btn" onClick={() => { setMode('email'); setOtpCode(''); setError(null) }}>
+        <button className="login-back-btn" onClick={() => { setMode('email'); setOtpCode(''); setError(null); setAllowed(false) }}>
           <i className="fa-solid fa-arrow-left" /> Ander e-mailadres
         </button>
       </div>
