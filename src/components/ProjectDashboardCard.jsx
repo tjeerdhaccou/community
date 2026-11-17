@@ -360,7 +360,7 @@ function ProjectEditForm({ project, onClose, onSaved }) {
             <label key={f.key} className="modules-tile">
               <input
                 type="checkbox"
-                checked={f.key === 'onboarding' ? onboardingEnabled(features, isLight) : (isLight && f.key === 'roadmap') ? features.roadmap === true : features[f.key] !== false}
+                checked={f.key === 'onboarding' ? onboardingEnabled(features, isLight) : features[f.key] !== false}
                 onChange={e => setFeatures(prev => ({ ...prev, [f.key]: e.target.checked }))}
               />
               <i className={`modules-tile__icon ${f.icon}`} />
