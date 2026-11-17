@@ -14,7 +14,7 @@ import { getProfileCompleteness } from '../lib/profileCompleteness'
 // Admins/moderators krijgen hun eigen "Aan de slag"-flow en zien dit niet.
 export default function MemberWelcome() {
   const { profile } = useAuth()
-  const { project, role, basePath } = useProject()
+  const { project, role, basePath, featureEnabled } = useProject()
   const navigate = useNavigate()
 
   const dismissKey = project ? `buuur-member-welcome-dismissed-${project.id}` : null
@@ -53,14 +53,14 @@ export default function MemberWelcome() {
       desc: 'Een kort berichtje breekt het ijs.',
       path: `${basePath}/community`,
     },
-    {
+    ...(featureEnabled('roadmap') ? [{
       key: 'roadmap',
       done: !!stepDone.roadmap,
       icon: 'fa-solid fa-road',
       title: 'Bekijk de roadmap',
       desc: 'Zie waar het project staat en wat er komt.',
       path: `${basePath}/roadmap`,
-    },
+    }] : []),
     {
       key: 'notificaties',
       done: !!stepDone.notificaties,

@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useProject } from '../contexts/ProjectContext'
 import { useAuth } from '../contexts/AuthContext'
-import { canDo } from '../lib/permissions'
+import { canDo, canManageGroupDocs } from '../lib/permissions'
 import { useAllDocuments } from '../hooks/useAllDocuments'
 import { useWorkgroups } from '../hooks/useWorkgroups'
 import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
 import { openProjectFile } from '../lib/storage'
 import { getDocumentShareUrl } from '../lib/subdomain'
 import { useToast } from '../components/Toast'
+import ConfirmModal from '../components/ConfirmModal'
 import {
   PROJECT_PHASES, formatFileSize, fileIcon, fileIconColor, linkInfo, timeAgo,
 } from '../lib/constants'
@@ -31,39 +32,61 @@ const MEETING_FILE_CATS = [
 ]
 
 export default function Documents() {
-  const { role } = useProject()
-  const { profile } = useAuth()
+  const { role, isLightProject, readOnly } = useProject()
+  const { user } = useAuth()
+  const toast = useToast()
   const {
-    gebouwDocs, infoDocs, otherPublicDocs, memberDocs,
-    getDocsForWorkgroup, vergaderingDocs, loading,
+    allDocuments, gebouwDocs, infoDocs, otherPublicDocs, memberDocs,
+    getDocsForWorkgroup, vergaderingDocs, loading, uploadDocument, removeDoc,
   } = useAllDocuments()
-  const { myWorkgroups, loading: wgLoading } = useWorkgroups()
+  const { allWorkgroups, myWorkgroups, loading: wgLoading } = useWorkgroups()
 
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [meetingCat, setMeetingCat] = useState('all')
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [confirmDel, setConfirmDel] = useState(null)
 
-  const isProfessional = role === 'professional'
+  // Spiegelt de RLS van migratie 064: moderators+ delen met iedereen of met een
+  // groep, commissieleden alleen met hun eigen commissie.
+  const isModerator = canDo(role, 'manage_workgroups')
+  const myCommissies = useMemo(() => myWorkgroups.filter(wg => wg.type === 'commissie'), [myWorkgroups])
+  const canUpload = !readOnly && canManageGroupDocs(role, myCommissies.length > 0)
+  const shareGroups = isModerator ? allWorkgroups : myCommissies
 
-  // Build tabs dynamically based on role and workgroup membership
+  function canDelete(doc) {
+    if (readOnly || doc.source !== 'document') return false
+    return role === 'admin' || (doc.author?.id === user?.id && myCommissies.length > 0)
+  }
+
+  async function handleDelete() {
+    const doc = confirmDel
+    setConfirmDel(null)
+    try {
+      await removeDoc(doc.id, doc.source, doc.doc_type === 'link' ? null : doc.file_path)
+      toast.success('Document verwijderd')
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  // Een light-groep heeft één lijst: de indeling in tabs volgt categorieën die
+  // alleen aan de beheerkant te kiezen zijn.
   const tabs = useMemo(() => {
+    if (isLightProject) return []
     const t = []
 
-    // Public tabs — visible to everyone
-    t.push({ key: 'gebouw', label: 'Het gebouw', icon: 'fa-solid fa-building' })
+    t.push({ key: 'gebouw', label: 'Ontwerp', icon: 'fa-solid fa-building' })
     t.push({ key: 'info', label: 'Praktische info', icon: 'fa-solid fa-circle-info' })
 
-    // Vergaderingen — aspirant+
     if (canDo(role, 'view_meetings')) {
       t.push({ key: 'vergaderingen', label: 'Vergaderingen', icon: 'fa-solid fa-users' })
     }
 
-    // Projectdossier — aspirant+ (all member-visibility docs)
     if (canDo(role, 'view_all_docs')) {
       t.push({ key: 'dossier', label: 'Voor alle leden', icon: 'fa-solid fa-folder-open' })
     }
 
-    // Dynamic workgroup tabs — for groups the user belongs to
     if (canDo(role, 'join_workgroup')) {
       for (const wg of myWorkgroups) {
         t.push({
@@ -76,17 +99,19 @@ export default function Documents() {
     }
 
     return t
-  }, [role, myWorkgroups])
+  }, [role, myWorkgroups, isLightProject])
 
   // Default to first available tab
   const [tab, setTab] = useState(tabs[0]?.key || 'gebouw')
 
   // Ensure selected tab is valid
-  const activeTab = tabs.find(t => t.key === tab) ? tab : (tabs[0]?.key || 'gebouw')
+  const activeTab = isLightProject ? 'alles' : tabs.find(t => t.key === tab) ? tab : (tabs[0]?.key || 'gebouw')
 
   // Get docs for current tab
   const tabDocs = useMemo(() => {
     switch (activeTab) {
+      case 'alles':
+        return allDocuments
       case 'gebouw':
         return gebouwDocs
       case 'info':
@@ -102,7 +127,7 @@ export default function Documents() {
         }
         return []
     }
-  }, [activeTab, gebouwDocs, infoDocs, otherPublicDocs, vergaderingDocs, memberDocs, getDocsForWorkgroup])
+  }, [activeTab, allDocuments, gebouwDocs, infoDocs, otherPublicDocs, vergaderingDocs, memberDocs, getDocsForWorkgroup])
 
   // Apply filters
   const filtered = useMemo(() => {
@@ -152,11 +177,15 @@ export default function Documents() {
       <div className="view-header">
         <div className="view-header__row">
           <h1>Projectdossier</h1>
+          {canUpload && (
+            <button className="btn-primary" onClick={() => setUploadOpen(true)}>
+              <i className="fa-solid fa-plus" /> Document toevoegen
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="seg-tabs">
+      {tabs.length > 0 && <div className="seg-tabs">
         {tabs.map(t => (
           <button
             key={t.key}
@@ -168,7 +197,7 @@ export default function Documents() {
             {(counts[t.key] || 0) > 0 && <span className="seg-tab__count">{counts[t.key]}</span>}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Search */}
       <div className="search-bar">
@@ -231,17 +260,45 @@ export default function Documents() {
               key={`${doc.source}-${doc.id}`}
               doc={doc}
               showCategory={activeTab === 'dossier'}
+              groupNames={activeTab === 'alles' ? groupNamesFor(doc, allWorkgroups) : null}
+              onDelete={canDelete(doc) ? () => setConfirmDel(doc) : undefined}
             />
           ))}
         </div>
+      )}
+
+      {uploadOpen && (
+        <UploadModal
+          canShareWithAll={isModerator}
+          groups={shareGroups}
+          defaultGroupId={activeTab.startsWith('wg-') ? activeTab.replace('wg-', '') : null}
+          onSave={uploadDocument}
+          onClose={() => setUploadOpen(false)}
+        />
+      )}
+      {confirmDel && (
+        <ConfirmModal
+          message={`"${confirmDel.title || confirmDel.file_name}" verwijderen? Dit kan niet ongedaan worden gemaakt.`}
+          confirmLabel="Verwijderen"
+          danger
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDel(null)}
+        />
       )}
     </div>
   )
 }
 
+function groupNamesFor(doc, workgroups) {
+  if (doc.visibility !== 'groups') return null
+  const names = workgroups.filter(wg => doc.workgroup_ids?.includes(wg.id)).map(wg => wg.name)
+  return names.length > 0 ? names.join(', ') : null
+}
+
 function emptyMessage(tab) {
   switch (tab) {
-    case 'gebouw': return 'Nog geen gebouwtekeningen of visualisaties'
+    case 'alles': return 'Nog geen documenten'
+    case 'gebouw': return 'Nog geen ontwerpdocumenten'
     case 'info': return 'Nog geen praktische informatie'
     case 'vergaderingen': return 'Nog geen vergaderdocumenten'
     case 'dossier': return 'Nog geen projectdocumenten'
@@ -250,7 +307,7 @@ function emptyMessage(tab) {
 }
 
 // ===== Document Row =====
-function DocumentRow({ doc, showCategory }) {
+function DocumentRow({ doc, showCategory, groupNames, onDelete }) {
   const toast = useToast()
   const isLink = doc.doc_type === 'link'
   const link = isLink ? linkInfo(doc.url) : null
@@ -287,6 +344,7 @@ function DocumentRow({ doc, showCategory }) {
               {CATEGORY_LABELS[doc.category] || doc.category}
             </span>
           )}
+          {groupNames && <span className="doc-row__badge">{groupNames}</span>}
           {isLink && <span className="doc-row__badge">{link.label}</span>}
           {doc.phase && <span className="doc-row__badge">{doc.phase}</span>}
           {doc.subcategory && doc.source === 'vergadering' && (
@@ -313,6 +371,104 @@ function DocumentRow({ doc, showCategory }) {
             <i className="fa-solid fa-download" />
           </a>
         )}
+        {onDelete && (
+          <button type="button" onClick={onDelete} className="doc-row__btn doc-row__btn--danger" title="Verwijderen" aria-label="Verwijderen">
+            <i className="fa-solid fa-trash" />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function UploadModal({ canShareWithAll, groups, defaultGroupId, onSave, onClose }) {
+  const toast = useToast()
+  const fileRef = useRef(null)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [file, setFile] = useState(null)
+  const [audience, setAudience] = useState(
+    defaultGroupId && groups.some(g => g.id === defaultGroupId) ? defaultGroupId
+      : canShareWithAll ? 'members' : (groups[0]?.id || '')
+  )
+  const [saving, setSaving] = useState(false)
+
+  function pickFile(e) {
+    const f = e.target.files?.[0] || null
+    setFile(f)
+    if (f && !title.trim()) setTitle(f.name.replace(/\.[^.]+$/, ''))
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!title.trim() || !file || !audience) return
+    setSaving(true)
+    try {
+      await onSave({
+        title: title.trim(),
+        description: description.trim(),
+        visibility: audience === 'members' ? 'members' : 'groups',
+        groupIds: audience === 'members' ? [] : [audience],
+        file,
+      })
+      toast.success('Document toegevoegd')
+      onClose()
+    } catch (err) {
+      toast.error(err.message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 720 }}>
+        <div className="modal-header">
+          <h2>Document toevoegen</h2>
+          <button className="modal-close" onClick={onClose} aria-label="Sluiten">
+            <i className="fa-solid fa-xmark" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-group">
+            <label>Bestand *</label>
+            {file ? (
+              <div className="file-selected">
+                <i className={fileIcon(file.type)} style={{ color: fileIconColor(file.type) }} />
+                <span>{file.name}</span>
+                <span className="file-selected__size">{formatFileSize(file.size)}</span>
+                <button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = '' }} aria-label="Bestand weghalen">
+                  <i className="fa-solid fa-xmark" />
+                </button>
+              </div>
+            ) : (
+              <button type="button" className="btn-secondary" onClick={() => fileRef.current?.click()}>
+                <i className="fa-solid fa-cloud-arrow-up" /> Bestand kiezen
+              </button>
+            )}
+            <input ref={fileRef} type="file" onChange={pickFile} style={{ display: 'none' }} />
+          </div>
+          <div className="form-group">
+            <label>Titel *</label>
+            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het document" required />
+          </div>
+          <div className="form-group">
+            <label>Toelichting</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Optioneel" />
+          </div>
+          <div className="form-group">
+            <label>Zichtbaar voor</label>
+            <select value={audience} onChange={e => setAudience(e.target.value)}>
+              {canShareWithAll && <option value="members">Alle leden</option>}
+              {groups.map(g => <option key={g.id} value={g.id}>Alleen {g.name}</option>)}
+            </select>
+          </div>
+          <div className="modal-actions">
+            <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
+            <button type="submit" className="btn-primary" disabled={saving || !title.trim() || !file || !audience}>
+              {saving ? 'Uploaden...' : 'Toevoegen'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )
