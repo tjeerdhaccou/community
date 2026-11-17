@@ -221,7 +221,7 @@ function PlatformSubdomainApp() {
 function SubdomainLookup({ slug }) {
   const location = useLocation()
   const { user, loading: authLoading } = useAuth()
-  const [type, setType] = useState(null) // 'project' | 'org' | null
+  const [type, setType] = useState(null) // 'project' | 'org' | 'notfound' | null
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -240,7 +240,18 @@ function SubdomainLookup({ slug }) {
       if (cancelled) return
       if (org) { setType('org'); setLoading(false); return }
 
-      setType(null)
+      // Niks zichtbaar: bestaat het subdomein wel? RLS verbergt projecten en
+      // organisaties voor anonieme bezoekers en niet-leden, subdomain_exists
+      // niet. Faalt de aanroep, dan gedragen we ons als vroeger (inlogscherm
+      // of 'geen toegang').
+      let exists = null
+      try {
+        const { data, error } = await supabase.rpc('subdomain_exists', { p_slug: slug })
+        if (!error && typeof data === 'boolean') exists = data
+      } catch {}
+      if (cancelled) return
+
+      setType(exists === false ? 'notfound' : null)
       setLoading(false)
     }
     lookup()
@@ -302,6 +313,9 @@ function SubdomainLookup({ slug }) {
   }
   if (type === 'project') return <ProjectSubdomainApp slug={slug} initialProject={project} />
   if (type === 'org') return <OrgSubdomainApp orgSlug={slug} />
+  // Subdomein dat geen project of organisatie is: geen inlogscherm tonen,
+  // want daar wordt toch nooit een code voor verstuurd.
+  if (type === 'notfound') return <SubdomainNotFound slug={slug} />
   // Anonieme bezoekers kunnen de org niet zien door RLS — stuur naar login
   // ipv 404, zodat ze na inloggen op het juiste subdomain landen
   if (!user) return <Login />

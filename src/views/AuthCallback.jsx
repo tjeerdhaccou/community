@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { getReturnCookie, sendOtpCode } from '../lib/auth'
+import { checkInvitedEmail, getReturnCookie, sendOtpCode } from '../lib/auth'
 import { redirectByRole } from '../lib/loginRedirect'
-import { isTrustedSessionTarget } from '../lib/subdomain'
+import { getProjectSlugFromSubdomain, isTrustedSessionTarget } from '../lib/subdomain'
 import { usePublicFris } from '../hooks/usePublicFris'
 
 // Alleen een pad binnen deze site; geen '//host' of volledig adres.
@@ -137,7 +137,7 @@ export default function AuthCallback() {
 
 // Getoond wanneer een magic link verlopen of al gebruikt is. Magic links van
 // Supabase zijn eenmalig en een uur geldig — daarna landde de gebruiker
-// voorheen zonder uitleg op /login. Hier sturen we een verse inlogcode en
+// voorheen zonder uitleg op /login. Hier sturen we (na de toegangscontrole) een verse inlogcode en
 // zetten we door naar de code-invoer.
 function ExpiredLink({ navigate }) {
   const { pageProps } = usePublicFris()
@@ -151,8 +151,12 @@ function ExpiredLink({ navigate }) {
     setSending(true)
     setError(null)
     try {
-      await sendOtpCode(email)
-      navigate('/login', { replace: true, state: { email: email.trim(), step: 'otp' } })
+      // Zelfde controle als Login.jsx: alleen een code voor een adres dat bij
+      // deze pagina hoort. De gebruiker ziet in beide gevallen de code-stap
+      // met dezelfde neutrale melding.
+      const invite = await checkInvitedEmail(email, getProjectSlugFromSubdomain())
+      if (invite) await sendOtpCode(email)
+      navigate('/login', { replace: true, state: { email: email.trim(), step: 'otp', allowed: !!invite } })
     } catch (err) {
       console.error('Resend login code failed:', err)
       setError('Versturen mislukt. Controleer je e-mailadres en probeer het opnieuw.')
@@ -169,7 +173,7 @@ function ExpiredLink({ navigate }) {
         <h1>Deze inloglink werkt niet meer</h1>
         <p>
           De link is verlopen of al een keer gebruikt. Vul je e-mailadres in,
-          dan sturen we je meteen een nieuwe inlogcode.
+          dan sturen we een nieuwe inlogcode als dit adres toegang heeft.
         </p>
         <form onSubmit={handleResend} className="auth-expired__form">
           <input
