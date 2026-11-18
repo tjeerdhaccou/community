@@ -1,5 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation, useNavigationType } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProjectProvider } from './contexts/ProjectContext'
 import { ThemeProvider } from './contexts/ThemeContext'
@@ -572,10 +572,24 @@ function ProjectThemeWrapperSubdomain({ children }) {
 
 // ==================== Root ====================
 
+// Een nieuwe pagina begint bovenaan. Zonder dit houdt de browser bij een
+// klik op een link de scrollpositie van de vorige pagina vast. Terug/vooruit
+// (POP) en ankerlinks (#...) laten we met rust.
+function ScrollToTop() {
+  const { pathname, hash } = useLocation()
+  const navigationType = useNavigationType()
+  useEffect(() => {
+    if (navigationType === 'POP' || hash) return
+    window.scrollTo(0, 0)
+  }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+  return null
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <ThemeProvider>
           <ToastProvider>
