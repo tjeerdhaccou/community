@@ -4,8 +4,13 @@
 // met een eenmalig kaartje uit de database (migratie 122):
 //   { "mode": "sync" }    elk kwartier: nieuwe/gewijzigde objecten → backup-files
 //   { "mode": "verify" }  elke nacht: blob achter elke metadata-rij aanwezig?
-//                         nee → terugzetten uit back-up; verwijderde bronnen na
-//                         30 dagen uit de back-up opruimen; mail bij problemen.
+//                         nee → terugzetten uit back-up; mail bij problemen.
+// Beide modi ruimen de back-up op van bronbestanden die bewust zijn verwijderd
+// (de metadata-rij in storage.objects is weg): een verwijderd bestand hoort ook
+// niet in de back-up te blijven staan. Dat is iets anders dan een bron waarvan
+// alleen de blob ontbreekt; die wordt juist hersteld. Voor member-files gebeurt
+// het opruimen altijd direct, voor de andere buckets na BACKUP_RETENTION_DAYS
+// dagen (standaard 0). Verlopen stukken ruimt `retention-cleanup` zelf al op.
 // Verwerkt per aanroep maximaal MAX_OPS kopieën zodat een run binnen de
 // tijdslimiet blijft; de volgende cron-tick pakt de rest op.
 
@@ -24,7 +29,9 @@ const ALERT_EMAIL = Deno.env.get('BACKUP_ALERT_EMAIL') || ''
 const SOURCE_BUCKETS = (Deno.env.get('BACKUP_SOURCE_BUCKETS') || 'member-files,project-files,signatures,support-attachments,chat-attachments').split(',').map((s) => s.trim()).filter(Boolean)
 const BACKUP_BUCKET = 'backup-files'
 const MAX_OPS = Number(Deno.env.get('BACKUP_MAX_OPS') || '60')
-const RETENTION_DAYS = Number(Deno.env.get('BACKUP_RETENTION_DAYS') || '30')
+const RETENTION_DAYS = Number(Deno.env.get('BACKUP_RETENTION_DAYS') || '0')
+// Buckets met persoonlijke stukken: verwijderd is direct ook uit de back-up weg.
+const IMMEDIATE_PRUNE_BUCKETS = new Set(['member-files'])
 
 type Obj = { bucket: string; name: string; etag: string | null; size: number | null }
 // deno-lint-ignore no-explicit-any
@@ -121,10 +128,17 @@ Deno.serve(async (req) => {
     const { data: logRows } = await sb.from('storage_backup_log').select('source_bucket, name, etag, status, source_missing_since')
     const log = new Map<string, Row>((logRows ?? []).map((r: Row) => [`${r.source_bucket}/${r.name}`, r]))
     const seen = new Set<string>()
+    // Buckets waarvan de lijst niet (betrouwbaar) is opgehaald: daar ruimen we
+    // deze run niets op, anders zou een storing de hele back-up leegmaken.
+    const skipPrune = new Set<string>()
 
     for (const bucket of SOURCE_BUCKETS) {
       let objects: Obj[] = []
-      try { objects = await listAll(sb, bucket) } catch (e) { problems.push(`bucket ${bucket}: ${(e as Error).message}`); continue }
+      try { objects = await listAll(sb, bucket) } catch (e) { problems.push(`bucket ${bucket}: ${(e as Error).message}`); skipPrune.add(bucket); continue }
+      if (objects.length === 0) {
+        const known = [...log.values()].filter((r) => r.source_bucket === bucket).length
+        if (known > 5) { problems.push(`bucket ${bucket}: lege lijst terwijl de log ${known} bestanden kent; opruimen overgeslagen`); skipPrune.add(bucket) }
+      }
 
       for (const o of objects) {
         const key = `${o.bucket}/${o.name}`
@@ -179,20 +193,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (mode === 'verify') {
-      // Bronobjecten die verdwenen zijn (verwijderd door lid/beheerder): back-up 30 dagen bewaren, dan opruimen.
-      const now = Date.now()
-      for (const [key, entry] of log) {
-        if (seen.has(key)) continue
-        if (!entry.source_missing_since) {
-          await sb.from('storage_backup_log').update({ status: 'source_deleted', source_missing_since: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('source_bucket', entry.source_bucket).eq('name', entry.name)
-          continue
-        }
-        if (now - new Date(entry.source_missing_since).getTime() > RETENTION_DAYS * 86400_000) {
-          await sb.storage.from(BACKUP_BUCKET).remove([key])
-          await sb.from('storage_backup_log').delete().eq('source_bucket', entry.source_bucket).eq('name', entry.name)
-          stats.pruned++
-        }
+    // Bronobjecten waarvan ook de metadata weg is, zijn bewust verwijderd (door
+    // lid, beheerder of de bewaartermijn). De back-up gaat dan ook weg.
+    const now = Date.now()
+    for (const [key, entry] of log) {
+      if (seen.has(key)) continue
+      if (!SOURCE_BUCKETS.includes(entry.source_bucket) || skipPrune.has(entry.source_bucket)) continue
+      const since = entry.source_missing_since ? new Date(entry.source_missing_since).getTime() : now
+      const keepDays = IMMEDIATE_PRUNE_BUCKETS.has(entry.source_bucket) ? 0 : RETENTION_DAYS
+      if (now - since >= keepDays * 86400_000) {
+        const { error: rmErr } = await sb.storage.from(BACKUP_BUCKET).remove([key])
+        if (rmErr) { problems.push(`back-up opruimen ${key}: ${rmErr.message}`); continue }
+        await sb.from('storage_backup_log').delete().eq('source_bucket', entry.source_bucket).eq('name', entry.name)
+        stats.pruned++
+      } else if (!entry.source_missing_since) {
+        await sb.from('storage_backup_log').update({ status: 'source_deleted', source_missing_since: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('source_bucket', entry.source_bucket).eq('name', entry.name)
       }
     }
 
@@ -204,7 +219,7 @@ Deno.serve(async (req) => {
     if (mode === 'verify' && (problems.length > 0 || stats.restored > 0)) {
       await sendAlert(
         `Bestandscontrole buuur: ${stats.restored} hersteld, ${stats.unrecoverable} onherstelbaar`,
-        [`Gecontroleerd: ${stats.checked}`, `Ontbrekend: ${stats.missing}`, `Hersteld uit back-up: ${stats.restored}`, `Onherstelbaar: ${stats.unrecoverable}`, `Opgeruimd (30 dagen na verwijderen): ${stats.pruned}`, '', ...problems],
+        [`Gecontroleerd: ${stats.checked}`, `Ontbrekend: ${stats.missing}`, `Hersteld uit back-up: ${stats.restored}`, `Onherstelbaar: ${stats.unrecoverable}`, `Opgeruimd uit back-up (bron verwijderd): ${stats.pruned}`, '', ...problems],
       )
     }
     return new Response(JSON.stringify({ ok: true, mode, ...stats, problems: problems.length }), { headers: { 'Content-Type': 'application/json' } })

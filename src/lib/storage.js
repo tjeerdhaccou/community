@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { SENSITIVE_URL_SECONDS } from './sensitive'
 
 const MAX_IMAGE_SIZE = 1024 * 1024 // 1 MB
 const MAX_IMAGE_WIDTH = 1920
@@ -205,6 +206,26 @@ export function openProjectFile(pathOrUrl, bucket = 'project-files') {
       return downloadProjectFile(pathOrUrl, { bucket })
     }
     const url = await getSignedUrl(pathOrUrl, { bucket })
+    if (!url) { tab.close(); return false }
+    tab.location.href = url
+    return true
+  })()
+}
+
+/**
+ * Bekijk een gevoelig stuk (financieel) in een nieuw tabblad.
+ *
+ * De link is hooguit 60 seconden geldig en er is bewust geen download als
+ * terugvaloptie: blokkeert de browser het tabblad, dan gebeurt er niets en
+ * geeft de functie false terug zodat de aanroeper dat kan melden.
+ */
+export function viewSensitiveFile(pathOrUrl, bucket = 'member-files') {
+  const tab = window.open('about:blank', '_blank')
+  try { if (tab) tab.opener = null } catch { /* cross-origin, niet erg */ }
+
+  return (async () => {
+    if (!tab || tab.closed) return false
+    const url = await getSignedUrl(pathOrUrl, { bucket, expiresIn: SENSITIVE_URL_SECONDS })
     if (!url) { tab.close(); return false }
     tab.location.href = url
     return true

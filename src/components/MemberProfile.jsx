@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useProject } from '../contexts/ProjectContext'
 import { ROLES, ROLE_LABELS, ROLE_COLORS, PROFESSIONAL_LABELS, PROFESSIONAL_COLORS, FUNNEL_STAGES, FUNNEL_LABELS, FUNNEL_COLORS, FUNNEL_ICONS, formatFileSize, fileIcon, fileIconColor, tagStyle } from '../lib/constants'
-import { uploadFile, downloadProjectFile } from '../lib/storage'
+import { uploadFile, downloadProjectFile, viewSensitiveFile } from '../lib/storage'
+import { isSensitiveCategory, identityDocumentLabel, formatDateNl, IDENTITY_DOCUMENT_TYPES } from '../lib/sensitive'
+import { useIsProjectReviewer } from '../hooks/useIsProjectReviewer'
 import { labelForValue } from '../lib/intakeFields'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdminDocumentRequests } from '../hooks/useDocumentRequests'
@@ -461,8 +463,14 @@ function MemberDossier({ profileId, projectId }) {
     }
   }
 
-  async function handleDownload(filePath, fileName) {
-    await downloadProjectFile(filePath, { bucket: 'member-files', fileName })
+  // Gevoelige stukken alleen bekijken (link van 60 seconden), niet downloaden.
+  async function handleOpenFile(f) {
+    if (isSensitiveCategory(f.category)) {
+      const ok = await viewSensitiveFile(f.file_path, 'member-files')
+      if (!ok) alert('Het bestand kon niet worden geopend. Sta pop-ups toe voor deze site.')
+      return
+    }
+    await downloadProjectFile(f.file_path, { bucket: 'member-files', fileName: f.file_name })
   }
 
   async function handleToggleVisibility(fileId, currentVisibility) {
@@ -471,7 +479,11 @@ function MemberDossier({ profileId, projectId }) {
   }
 
   async function handleDeleteFile(fileId) {
-    await supabase.from('member_files').delete().eq('id', fileId)
+    // Eerst het bestand zelf, dan de rij: anders blijft het in de opslag staan.
+    const file = files.find(f => f.id === fileId)
+    if (file?.file_path) await supabase.storage.from('member-files').remove([file.file_path])
+    const { error } = await supabase.from('member_files').delete().eq('id', fileId)
+    if (error) { alert('Verwijderen mislukt.'); return }
     setFiles(prev => prev.filter(f => f.id !== fileId))
   }
 
@@ -549,6 +561,8 @@ function MemberDossier({ profileId, projectId }) {
                   <span className="member-dossier__file-meta">
                     {formatFileSize(f.file_size)} · {new Date(f.created_at).toLocaleDateString('nl-NL')}
                     {f.is_visible_to_member && <span className="member-dossier__visible-badge"> · Zichtbaar voor lid</span>}
+                    {isSensitiveCategory(f.category) && <span> · Alleen voor beoordelaars</span>}
+                    {isSensitiveCategory(f.category) && f.expires_at && <span> · Wordt verwijderd op {formatDateNl(f.expires_at)}</span>}
                   </span>
                 </div>
                 <div className="member-dossier__file-actions">
@@ -559,8 +573,8 @@ function MemberDossier({ profileId, projectId }) {
                   >
                     <i className={`fa-solid ${f.is_visible_to_member ? 'fa-eye' : 'fa-eye-slash'}`} />
                   </button>
-                  <button className="btn-icon-sm" onClick={() => handleDownload(f.file_path, f.file_name)} title="Downloaden">
-                    <i className="fa-solid fa-download" />
+                  <button className="btn-icon-sm" onClick={() => handleOpenFile(f)} title={isSensitiveCategory(f.category) ? 'Bekijken' : 'Downloaden'}>
+                    <i className={`fa-solid ${isSensitiveCategory(f.category) ? 'fa-eye' : 'fa-download'}`} />
                   </button>
                   <button className="btn-icon-sm" onClick={() => handleDeleteFile(f.id)} title="Verwijderen">
                     <i className="fa-solid fa-trash" />
@@ -640,11 +654,14 @@ const REQUEST_TYPE_OPTIONS = [
   { value: 'upload_request', label: 'Upload gevraagd' },
   { value: 'sign_request', label: 'Ter ondertekening' },
   { value: 'review_document', label: 'Ter inzage' },
+  { value: 'identity_check', label: 'Identiteitscontrole (zonder upload)', reviewerOnly: true },
 ]
 
+// 'identiteit' staat hier alleen nog voor het label van bestaande verzoeken;
+// kiezen kan niet meer. Een identiteitsbewijs wordt niet geüpload.
 const CATEGORY_OPTIONS = [
-  { value: 'identiteit', label: 'Identiteitsbewijs' },
-  { value: 'financieel', label: 'Financieel' },
+  { value: 'identiteit', label: 'Identiteitsbewijs', hidden: true },
+  { value: 'financieel', label: 'Financieel', reviewerOnly: true },
   { value: 'contract', label: 'Contract' },
   { value: 'formulier', label: 'Formulier' },
   { value: 'correspondentie', label: 'Correspondentie' },
@@ -652,7 +669,11 @@ const CATEGORY_OPTIONS = [
 ]
 
 function DossierRequests({ profileId, projectId }) {
-  const { requests, loading, createRequest, reviewRequest, deleteRequest } = useAdminDocumentRequests(profileId)
+  const { requests, loading, createRequest, reviewRequest, recordIdentityCheck, deleteRequest } = useAdminDocumentRequests(profileId)
+  const isReviewer = useIsProjectReviewer()
+  const typeOptions = REQUEST_TYPE_OPTIONS.filter(o => isReviewer || !o.reviewerOnly)
+  const categoryOptions = CATEGORY_OPTIONS.filter(o => !o.hidden && (isReviewer || !o.reviewerOnly))
+  const [idForm, setIdForm] = useState({ documentType: 'paspoort', validUntil: '', checkedOn: new Date().toISOString().slice(0, 10), note: '' })
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ type: 'upload_request', category: 'overig', title: '', description: '', deadline: '' })
   const [saving, setSaving] = useState(false)
@@ -690,8 +711,24 @@ function DossierRequests({ profileId, projectId }) {
     }
   }
 
-  async function handleDownloadResponse(filePath, fileName) {
-    await downloadProjectFile(filePath, { bucket: 'member-files', fileName })
+  async function handleOpenResponse(file) {
+    if (isSensitiveCategory(file.category)) {
+      const ok = await viewSensitiveFile(file.file_path, 'member-files')
+      if (!ok) alert('Het bestand kon niet worden geopend. Sta pop-ups toe voor deze site.')
+      return
+    }
+    await downloadProjectFile(file.file_path, { bucket: 'member-files', fileName: file.file_name })
+  }
+
+  async function handleIdentityCheck(requestId, approved) {
+    if (approved && !idForm.validUntil) { alert('Vul in tot wanneer het document geldig is.'); return }
+    try {
+      await recordIdentityCheck(requestId, { approved, ...idForm })
+      setReviewingId(null)
+      setIdForm(f => ({ ...f, validUntil: '', note: '' }))
+    } catch (err) {
+      alert(err.message)
+    }
   }
 
   return (
@@ -708,15 +745,27 @@ function DossierRequests({ profileId, projectId }) {
         <form className="doc-request-form" onSubmit={handleCreate}>
           <div className="doc-request-form__row">
             <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
-              {REQUEST_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              {typeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-              {CATEGORY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            {form.type !== 'identity_check' && (
+              <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            )}
           </div>
+          {form.type === 'identity_check' && (
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: 0 }}>
+              Het lid uploadt niets. Je laat het identiteitsbewijs tonen in een videogesprek of op locatie en legt daarna alleen de uitkomst vast.
+            </p>
+          )}
+          {!isReviewer && (
+            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0 }}>
+              Financiële verzoeken en identiteitscontroles kunnen alleen door beoordelaars van dit project worden aangemaakt.
+            </p>
+          )}
           <input
             type="text"
-            placeholder="Titel, bijv. 'Upload identiteitsbewijs'"
+            placeholder={form.type === 'identity_check' ? "Titel, bijv. 'Identiteitscontrole'" : "Titel, bijv. 'Upload jaaropgave'"}
             value={form.title}
             onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
             required
@@ -769,16 +818,62 @@ function DossierRequests({ profileId, projectId }) {
                     </div>
                   )}
 
+                  {/* Identiteitscontrole: uitkomst vastleggen, geen bestand */}
+                  {req.type === 'identity_check' && req.status === 'approved' && (
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                      Gecontroleerd op {formatDateNl(req.identity_checked_on)} door {req.reviewer?.full_name || 'een beoordelaar'}: {identityDocumentLabel(req.identity_document_type).toLowerCase()}, geldig tot {formatDateNl(req.identity_valid_until)}.
+                    </div>
+                  )}
+                  {req.type === 'identity_check' && req.status === 'pending' && (
+                    <div style={{ marginTop: 8 }}>
+                      {isReviewing ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div className="doc-request-form__row">
+                            <select value={idForm.documentType} onChange={e => setIdForm(f => ({ ...f, documentType: e.target.value }))} aria-label="Soort document">
+                              {IDENTITY_DOCUMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                            </select>
+                            <label style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              Geldig tot
+                              <input type="date" value={idForm.validUntil} onChange={e => setIdForm(f => ({ ...f, validUntil: e.target.value }))} />
+                            </label>
+                            <label style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              Gecontroleerd op
+                              <input type="date" value={idForm.checkedOn} max={new Date().toISOString().slice(0, 10)} onChange={e => setIdForm(f => ({ ...f, checkedOn: e.target.value }))} />
+                            </label>
+                          </div>
+                          <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0 }}>
+                            Leg geen BSN of documentnummer vast en bewaar geen kopie of schermafbeelding.
+                          </p>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <button className="btn-primary btn-sm" onClick={() => handleIdentityCheck(req.id, true)}>
+                              <i className="fa-solid fa-check" /> Controle vastleggen
+                            </button>
+                            <button className="btn-secondary btn-sm" onClick={() => handleIdentityCheck(req.id, false)} style={{ color: 'var(--accent-red)' }}>
+                              <i className="fa-solid fa-times" /> Niet akkoord
+                            </button>
+                            <button className="btn-icon-sm" onClick={() => setReviewingId(null)} aria-label="Annuleren">
+                              <i className="fa-solid fa-times" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button className="btn-primary btn-sm" onClick={() => setReviewingId(req.id)}>
+                          <i className="fa-solid fa-id-card" /> Uitkomst vastleggen
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {/* Review controls for submitted requests */}
                   {req.status === 'submitted' && (
                     <div style={{ marginTop: 8 }}>
                       {req.response_file && (
                         <button
                           className="btn-secondary btn-sm"
-                          onClick={() => handleDownloadResponse(req.response_file.file_path, req.response_file.file_name)}
+                          onClick={() => handleOpenResponse(req.response_file)}
                           style={{ marginRight: 8 }}
                         >
-                          <i className="fa-solid fa-download" /> {req.response_file.file_name}
+                          <i className={`fa-solid ${isSensitiveCategory(req.response_file.category) ? 'fa-eye' : 'fa-download'}`} /> {req.response_file.file_name}
                         </button>
                       )}
                       {isReviewing ? (

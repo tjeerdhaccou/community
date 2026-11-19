@@ -8896,6 +8896,47 @@ button.search-item { width: 100%; background: none; border: none; font: inherit;
   color: var(--accent-red);
   background: rgba(231, 76, 60, 0.08);
 }
+/* Privacy-uitleg bij uploaden en identiteitscontrole (migratie 128) */
+.my-docs__privacy {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: default;
+}
+.my-docs__privacy > i {
+  margin-top: 3px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.my-docs__privacy ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.my-docs__privacy strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+.my-docs__privacy--compact {
+  margin-top: 10px;
+  font-size: 12px;
+}
+.my-docs__privacy-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
 .my-docs__removal-status {
   display: flex;
   gap: 12px;

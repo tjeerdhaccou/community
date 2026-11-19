@@ -3,7 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useProject } from '../contexts/ProjectContext'
 import { logger, friendlyError } from '../lib/logger'
-import { uploadFile, downloadProjectFile } from '../lib/storage'
+import { uploadFile, downloadProjectFile, viewSensitiveFile } from '../lib/storage'
+import { isSensitiveCategory } from '../lib/sensitive'
 import { useToast } from '../components/Toast'
 
 export function useMyDocuments() {
@@ -53,7 +54,25 @@ export function useMyDocuments() {
     }
   }
 
-  async function upload(file, requestId = null) {
+  // Gevoelig stuk bekijken: link van hooguit 60 seconden, geen download.
+  async function view(fileId, filePath) {
+    supabase.from('file_download_log').insert({
+      file_id: fileId,
+      downloaded_by: user.id,
+      project_id: project.id,
+    }).then(({ error: logErr }) => {
+      if (logErr) logger.error('view audit log failed', logErr)
+    })
+
+    const ok = await viewSensitiveFile(filePath, 'member-files')
+    if (!ok) {
+      toast.error('Dit bestand kon niet worden geopend. Sta pop-ups toe voor deze site, of het bestand is al verwijderd.')
+    }
+  }
+
+  // `category` is de categorie van het verzoek waar dit een reactie op is. De
+  // database zet die ook zelf (migratie 128); hier alleen voor de volledigheid.
+  async function upload(file, requestId = null, category = null) {
     // Owner-scoped path: the storage RLS policy treats the last folder segment
     // (the profile id) as the file owner, so members may only read/write here.
     const { path } = await uploadFile(file, 'member-files', `${project.id}/${user.id}`)
@@ -67,12 +86,17 @@ export function useMyDocuments() {
       file_type: file.type,
       uploaded_by: user.id,
       is_visible_to_member: true,
-      category: 'overig',
+      category: isSensitiveCategory(category) && category !== 'identiteit' ? category : 'overig',
     }
     if (requestId) row.request_id = requestId
 
     const { data, error } = await supabase.from('member_files').insert(row).select('id').single()
-    if (error) { logger.error('useMyDocuments.upload', error); throw new Error(friendlyError(error)) }
+    if (error) {
+      logger.error('useMyDocuments.upload', error)
+      // De rij is geweigerd: het zojuist geüploade bestand hoort dan ook weg.
+      await supabase.storage.from('member-files').remove([path])
+      throw new Error(friendlyError(error))
+    }
     await fetchFiles()
     return data?.id
   }
@@ -83,5 +107,5 @@ export function useMyDocuments() {
     setFiles(prev => prev.filter(f => f.id !== fileId))
   }
 
-  return { files, loading, download, upload, remove, refetch: fetchFiles }
+  return { files, loading, download, view, upload, remove, refetch: fetchFiles }
 }

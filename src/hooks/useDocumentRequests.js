@@ -18,8 +18,8 @@ export function useDocumentRequests() {
       .from('document_requests')
       .select(`
         *,
-        attached_file:member_files!attached_file_id(id, title, file_name, file_path, file_size, file_type),
-        response_file:member_files!response_file_id(id, title, file_name, file_path, file_size, file_type)
+        attached_file:member_files!attached_file_id(id, title, file_name, file_path, file_size, file_type, category, expires_at),
+        response_file:member_files!response_file_id(id, title, file_name, file_path, file_size, file_type, category, expires_at)
       `)
       .eq('profile_id', user.id)
       .eq('project_id', project.id)
@@ -94,8 +94,8 @@ export function useAdminDocumentRequests(profileId) {
       .from('document_requests')
       .select(`
         *,
-        attached_file:member_files!attached_file_id(id, title, file_name, file_path, file_size, file_type),
-        response_file:member_files!response_file_id(id, title, file_name, file_path, file_size, file_type),
+        attached_file:member_files!attached_file_id(id, title, file_name, file_path, file_size, file_type, category, expires_at),
+        response_file:member_files!response_file_id(id, title, file_name, file_path, file_size, file_type, category, expires_at),
         reviewer:profiles!reviewer_id(full_name)
       `)
       .eq('profile_id', profileId)
@@ -118,7 +118,8 @@ export function useAdminDocumentRequests(profileId) {
       profile_id: profileId,
       created_by: user.id,
       type,
-      category,
+      // Een identiteitscontrole heeft altijd categorie identiteit en nooit een bestand.
+      category: type === 'identity_check' ? 'identiteit' : category,
       title,
       description,
       deadline: deadline || null,
@@ -146,6 +147,25 @@ export function useAdminDocumentRequests(profileId) {
     await fetchRequests()
   }
 
+  // Uitkomst van een identiteitscontrole vastleggen. Er wordt geen bestand
+  // opgeslagen: alleen soort document, geldig tot en de datum van de controle.
+  // "Gecontroleerd door" zet de database zelf op de ingelogde beoordelaar.
+  async function recordIdentityCheck(requestId, { approved, documentType, validUntil, checkedOn, note }) {
+    const patch = {
+      status: approved ? 'approved' : 'rejected',
+      review_note: note || null,
+      updated_at: new Date().toISOString(),
+    }
+    if (approved) {
+      patch.identity_document_type = documentType
+      patch.identity_valid_until = validUntil
+      patch.identity_checked_on = checkedOn || new Date().toISOString().slice(0, 10)
+    }
+    const { error } = await supabase.from('document_requests').update(patch).eq('id', requestId)
+    if (error) { logger.error('useAdminDocumentRequests.identity', error); throw new Error(friendlyError(error)) }
+    await fetchRequests()
+  }
+
   async function deleteRequest(requestId) {
     const { error } = await supabase
       .from('document_requests')
@@ -155,5 +175,5 @@ export function useAdminDocumentRequests(profileId) {
     setRequests(prev => prev.filter(r => r.id !== requestId))
   }
 
-  return { requests, loading, createRequest, reviewRequest, deleteRequest, refetch: fetchRequests }
+  return { requests, loading, createRequest, reviewRequest, recordIdentityCheck, deleteRequest, refetch: fetchRequests }
 }

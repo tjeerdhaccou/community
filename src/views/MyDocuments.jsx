@@ -10,7 +10,8 @@ import { useToast } from '../components/Toast'
 import ConfirmModal from '../components/ConfirmModal'
 import { supabase } from '../lib/supabase'
 import { isNarrowScreen } from '../lib/scrollLock'
-import { openProjectFile } from '../lib/storage'
+import { openProjectFile, viewSensitiveFile } from '../lib/storage'
+import { isSensitiveCategory, isIdentityRequest, identityDocumentLabel, formatDateNl, retentionDays, SENSITIVE_URL_SECONDS } from '../lib/sensitive'
 import { logger } from '../lib/logger'
 import { formatFileSize, fileIcon, fileIconColor, timeAgo } from '../lib/constants'
 
@@ -34,6 +35,7 @@ const TYPE_LABELS = {
   upload_request: 'Upload gevraagd',
   sign_request: 'Ter ondertekening',
   review_document: 'Ter inzage',
+  identity_check: 'Identiteitscontrole',
 }
 
 const STATUS_CONFIG = {
@@ -48,7 +50,7 @@ export default function MyDocuments() {
   const { basePath } = useProject()
   const navigate = useNavigate()
   const toast = useToast()
-  const { files, loading: filesLoading, download, upload, remove } = useMyDocuments()
+  const { files, loading: filesLoading, download, view, upload, remove } = useMyDocuments()
   const { requests, loading: requestsLoading, submitResponse, markReviewed } = useDocumentRequests()
   const { requests: signatures, loading: signaturesLoading } = useSignatureRequests()
   const { request: requestRemoval, pendingForFile: pendingRemovalFor, latestForFile: latestRemovalFor } = useFileRemovalRequests({ scope: 'own' })
@@ -85,7 +87,8 @@ export default function MyDocuments() {
     if (!file || !activeRequestId) return
     setUploading(activeRequestId)
     try {
-      const fileId = await upload(file, activeRequestId)
+      const request = requests.find(r => r.id === activeRequestId)
+      const fileId = await upload(file, activeRequestId, request?.category)
       await submitResponse(activeRequestId, fileId)
       toast.success('Document ingediend')
     } catch (err) {
@@ -100,6 +103,15 @@ export default function MyDocuments() {
   function triggerRequestUpload(requestId) {
     setActiveRequestId(requestId)
     setTimeout(() => requestFileRef.current?.click(), 0)
+  }
+
+  // Gevoelige stukken (financieel) alleen bekijken via een link van hooguit
+  // 60 seconden, niet downloaden. De categorie zoeken we op bij het bestand.
+  function openFile(fileId, filePath, fileName) {
+    const known = files.find(f => f.id === fileId)
+      || requests.flatMap(r => [r.attached_file, r.response_file]).find(f => f?.id === fileId)
+    if (isSensitiveCategory(known?.category)) return view(fileId, filePath)
+    return download(fileId, filePath, fileName)
   }
 
   function triggerOwnUpload() {
@@ -204,7 +216,7 @@ export default function MyDocuments() {
           uploading={uploading}
           onUpload={triggerRequestUpload}
           onMarkReviewed={handleMarkReviewed}
-          onDownload={download}
+          onDownload={openFile}
           onOpenDetail={setDetailRequest}
         />
       )}
@@ -234,7 +246,7 @@ export default function MyDocuments() {
           request={detailRequest}
           uploading={uploading}
           onClose={() => setDetailRequest(null)}
-          onDownload={download}
+          onDownload={openFile}
           onUpload={(id) => { setDetailRequest(null); triggerRequestUpload(id) }}
           onMarkReviewed={handleMarkReviewed}
         />
@@ -247,7 +259,7 @@ export default function MyDocuments() {
           removalRequest={latestRemovalFor(detailFile.id)}
           hasPendingRemoval={!!pendingRemovalFor(detailFile.id)}
           onClose={() => setDetailFile(null)}
-          onDownload={download}
+          onDownload={openFile}
           onDelete={() => setConfirmDelete({ id: detailFile.id, name: detailFile.title || detailFile.file_name })}
           onRequestRemoval={() => setRemovalTarget({ id: detailFile.id, name: detailFile.title || detailFile.file_name })}
         />
@@ -567,11 +579,13 @@ function DocumentsTab({ files, currentUserId, uploading, onUpload, onOpenDetail,
       {uploadButton}
     </div>
   )
+  const notice = <UploadNotice />
 
   if (files.length === 0) {
     return (
       <>
         {header}
+        {notice}
         <div className="empty-inline">
           <i className="fa-solid fa-folder-open" />
           <h3 className="empty-inline__title">Geen documenten</h3>
@@ -584,6 +598,7 @@ function DocumentsTab({ files, currentUserId, uploading, onUpload, onOpenDetail,
   return (
     <>
       {header}
+      {notice}
       <div className="my-docs__cards">
         {files.map(file => (
           <DocumentFileCard
@@ -686,8 +701,13 @@ function RequestCard({ request, uploading, onUpload, onMarkReviewed, onDownload,
         </div>
       )}
 
+      {isIdentityRequest(request) && <IdentityCheckInfo request={request} compact />}
+      {request.status === 'pending' && request.type === 'upload_request' && !isIdentityRequest(request) && (
+        <UploadNotice request={request} compact />
+      )}
+
       <div className="request-card__footer">
-        {request.status === 'pending' && (request.type === 'upload_request' || request.type === 'sign_request') && (
+        {request.status === 'pending' && !isIdentityRequest(request) && (request.type === 'upload_request' || request.type === 'sign_request') && (
           <button className="btn-primary btn-sm" onClick={e => { e.stopPropagation(); onUpload?.() }} disabled={uploading}>
             <i className={`fa-solid ${uploading ? 'fa-spinner fa-spin' : 'fa-upload'}`} />
             {uploading ? 'Uploaden...' : request.type === 'sign_request' ? 'Getekend uploaden' : 'Uploaden'}
@@ -709,6 +729,67 @@ function RequestCard({ request, uploading, onUpload, onMarkReviewed, onDownload,
           <span>{timeAgo(request.created_at)}</span>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Uitleg bij het uploaden: wie het ziet, wanneer het weggaat, BSN afschermen.
+function UploadNotice({ request, compact }) {
+  const { project } = useProject()
+  const team = project?.name ? `het team van ${project.name}` : 'het projectteam'
+
+  if (isSensitiveCategory(request?.category)) {
+    const days = retentionDays(project)
+    return (
+      <div className={`my-docs__privacy ${compact ? 'my-docs__privacy--compact' : ''}`} onClick={e => e.stopPropagation()}>
+        <i className="fa-solid fa-shield-halved" />
+        <ul>
+          <li><strong>Wie ziet dit:</strong> alleen de beoordelaars van je project. Andere teamleden en deelnemers zien het niet.</li>
+          <li><strong>Bewaartermijn:</strong> het bestand wordt automatisch verwijderd, uiterlijk {days} dagen na het uploaden en eerder zodra de beoordeling is vastgelegd. Alleen de uitkomst blijft bewaard.</li>
+          <li><strong>BSN:</strong> maak je burgerservicenummer onleesbaar voordat je uploadt.</li>
+        </ul>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`my-docs__privacy ${compact ? 'my-docs__privacy--compact' : ''}`} onClick={e => e.stopPropagation()}>
+      <i className="fa-solid fa-shield-halved" />
+      <ul>
+        <li><strong>Wie ziet dit:</strong> {team}.</li>
+        <li><strong>BSN:</strong> staat je burgerservicenummer op het document, maak het dan onleesbaar voordat je uploadt.</li>
+        <li><strong>Identiteitsbewijs:</strong> upload geen paspoort, identiteitskaart of rijbewijs. Het team controleert die in een gesprek.</li>
+      </ul>
+    </div>
+  )
+}
+
+// Identiteitscontrole: geen upload. De beoordelaar laat het bewijs tonen en
+// legt alleen de uitkomst vast.
+function IdentityCheckInfo({ request, compact }) {
+  const done = request.type === 'identity_check' && request.status === 'approved'
+  return (
+    <div className={`my-docs__privacy ${compact ? 'my-docs__privacy--compact' : ''}`} onClick={e => e.stopPropagation()}>
+      <i className="fa-solid fa-id-card" />
+      {done ? (
+        <ul>
+          <li>
+            <strong>Gecontroleerd{request.identity_checked_on ? ` op ${formatDateNl(request.identity_checked_on)}` : ''}:</strong>{' '}
+            {identityDocumentLabel(request.identity_document_type).toLowerCase()}
+            {request.identity_valid_until ? `, geldig tot ${formatDateNl(request.identity_valid_until)}` : ''}.
+          </li>
+          <li>Buuur bewaart alleen deze uitkomst. Er is geen kopie van je identiteitsbewijs opgeslagen.</li>
+        </ul>
+      ) : request.status === 'pending' ? (
+        <ul>
+          <li><strong>Je hoeft niets te uploaden.</strong> Een beoordelaar van je project maakt een afspraak met je, in een videogesprek of op locatie, en bekijkt daar je identiteitsbewijs.</li>
+          <li>Buuur bewaart alleen de uitkomst: soort document, geldig tot, wie het heeft gecontroleerd en wanneer. Geen kopie, geen BSN, geen documentnummer.</li>
+        </ul>
+      ) : (
+        <ul>
+          <li>Een identiteitsbewijs wordt niet in Buuur opgeslagen. Neem contact op met het projectteam als je hier vragen over hebt.</li>
+        </ul>
+      )}
     </div>
   )
 }
@@ -758,7 +839,7 @@ function RequestDetailModal({ request, uploading, onClose, onDownload, onUpload,
               <i className={fileIcon(request.attached_file.file_type || request.attached_file.file_name)} style={{ color: fileIconColor(request.attached_file.file_type || request.attached_file.file_name) }} />
               <span>{request.attached_file.file_name}</span>
               <span className="request-card__attachment-size">{formatFileSize(request.attached_file.file_size)}</span>
-              <i className="fa-solid fa-download" />
+              <i className={`fa-solid ${isSensitiveCategory(request.attached_file.category) ? 'fa-eye' : 'fa-download'}`} />
             </button>
           )}
 
@@ -771,8 +852,24 @@ function RequestDetailModal({ request, uploading, onClose, onDownload, onUpload,
               <i className="fa-solid fa-check" style={{ color: 'var(--accent-green, #3BD269)' }} />
               <span>Jouw inzending: {request.response_file.file_name}</span>
               <span className="request-card__attachment-size">{formatFileSize(request.response_file.file_size)}</span>
-              <i className="fa-solid fa-download" />
+              <i className={`fa-solid ${isSensitiveCategory(request.response_file.category) ? 'fa-eye' : 'fa-download'}`} />
             </button>
+          )}
+          {request.response_file && isSensitiveCategory(request.response_file.category) && request.response_file.expires_at && (
+            <p className="my-docs__privacy-note">
+              Dit bestand wordt automatisch verwijderd op {formatDateNl(request.response_file.expires_at)}. De uitkomst van de beoordeling blijft bewaard.
+            </p>
+          )}
+          {!request.response_file && request.type === 'upload_request' && isSensitiveCategory(request.category) && !isIdentityRequest(request)
+            && (request.status === 'approved' || request.status === 'rejected') && (
+            <p className="my-docs__privacy-note">
+              Het bestand bij dit verzoek is verwijderd. Alleen de uitkomst van de beoordeling is bewaard.
+            </p>
+          )}
+
+          {isIdentityRequest(request) && <IdentityCheckInfo request={request} />}
+          {request.status === 'pending' && request.type === 'upload_request' && !isIdentityRequest(request) && (
+            <UploadNotice request={request} />
           )}
 
           {request.status === 'submitted' && !request.response_file && request.type === 'review_document' && (
@@ -788,7 +885,7 @@ function RequestDetailModal({ request, uploading, onClose, onDownload, onUpload,
             </div>
           )}
 
-          {request.status === 'pending' && (request.type === 'upload_request' || request.type === 'sign_request') && (
+          {request.status === 'pending' && !isIdentityRequest(request) && (request.type === 'upload_request' || request.type === 'sign_request') && (
             <button
               className="btn-primary"
               onClick={() => onUpload(request.id)}
@@ -819,6 +916,7 @@ function FileDetailModal({ file, isOwn, removalRequest, hasPendingRemoval, onClo
   const iconColor = fileIconColor(file.file_type || file.file_name)
   const isImage = file.file_type?.startsWith('image/')
   const isPdf = file.file_type === 'application/pdf' || file.file_name?.toLowerCase().endsWith('.pdf')
+  const sensitive = isSensitiveCategory(file.category)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [previewError, setPreviewError] = useState(false)
 
@@ -829,14 +927,14 @@ function FileDetailModal({ file, isOwn, removalRequest, hasPendingRemoval, onClo
     let cancelled = false
     supabase.storage
       .from('member-files')
-      .createSignedUrl(file.file_path, 300)
+      .createSignedUrl(file.file_path, sensitive ? SENSITIVE_URL_SECONDS : 300)
       .then(({ data, error }) => {
         if (cancelled) return
         if (error || !data?.signedUrl) { setPreviewError(true); return }
         setPreviewUrl(data.signedUrl)
       })
     return () => { cancelled = true }
-  }, [file.file_path, isImage, isPdf])
+  }, [file.file_path, isImage, isPdf, sensitive])
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -888,7 +986,7 @@ function FileDetailModal({ file, isOwn, removalRequest, hasPendingRemoval, onClo
               type="button"
               className="btn-secondary"
               style={{ alignSelf: 'flex-start' }}
-              onClick={() => openProjectFile(file.file_path, 'member-files')}
+              onClick={() => (sensitive ? viewSensitiveFile(file.file_path, 'member-files') : openProjectFile(file.file_path, 'member-files'))}
             >
               <i className="fa-solid fa-file-pdf" /> Bekijk PDF
             </button>
@@ -906,8 +1004,14 @@ function FileDetailModal({ file, isOwn, removalRequest, hasPendingRemoval, onClo
             <i className={icon} style={{ color: iconColor }} />
             <span>{file.file_name}</span>
             {file.file_size > 0 && <span className="request-card__attachment-size">{formatFileSize(file.file_size)}</span>}
-            <i className="fa-solid fa-download" />
+            <i className={`fa-solid ${sensitive ? 'fa-eye' : 'fa-download'}`} />
           </button>
+          {sensitive && (
+            <p className="my-docs__privacy-note">
+              Alleen de beoordelaars van je project zien dit bestand.
+              {file.expires_at ? ` Het wordt automatisch verwijderd op ${formatDateNl(file.expires_at)}.` : ''}
+            </p>
+          )}
 
           {/* Verwijderingsverzoek-flow voor team-uploaded files (AVG art. 17).
               Zelf-uploads krijgen de directe delete-knop bovenin. */}
