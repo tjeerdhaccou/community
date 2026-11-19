@@ -594,6 +594,20 @@ async function loadContext(
       .single()
     if (!dr) return null
     const deadline = dr.deadline ? formatNlDate(dr.deadline) : null
+    // Identiteitscontrole: er wordt niets geüpload, dus ook niet om gevraagd.
+    if (dr.type === 'identity_check') {
+      return {
+        project, actorName,
+        emailSubject: `Identiteitscontrole voor ${project.name}`,
+        emailIntro: `Het team van ${project.name} wil je identiteitsbewijs controleren.`,
+        emailHeading: dr.title,
+        emailBody: 'Je hoeft niets te uploaden of op te sturen. Een beoordelaar van het project maakt een afspraak met je, in een videogesprek of op locatie, en bekijkt daar je identiteitsbewijs. Buuur bewaart alleen de uitkomst van de controle, geen kopie.' + (deadline ? `\n\nGraag voor: ${deadline}` : ''),
+        emailLinkPath: '/mijn-documenten',
+        inAppTitle: `Identiteitscontrole: ${dr.title}`,
+        inAppBody: 'Je hoeft niets te uploaden. Een beoordelaar neemt contact met je op.',
+        relatedType: 'document_request',
+      }
+    }
     return {
       project, actorName,
       emailSubject: `Documentverzoek in ${project.name}: ${dr.title}`,
@@ -745,7 +759,23 @@ async function resolveRecipients(
   }
 
   if (type === 'document_request_submitted') {
-    return await memberIds(admin, projectId, 'moderator')
+    const staff = await memberIds(admin, projectId, 'moderator')
+    // Gevoelige verzoeken (financieel, identiteit) zijn alleen zichtbaar voor
+    // de beoordelaars van het project; alleen zij krijgen dan de melding.
+    const { data: dr } = await admin
+      .from('document_requests')
+      .select('category, type')
+      .eq('id', refId)
+      .single()
+    if (dr && (dr.category === 'financieel' || dr.category === 'identiteit' || dr.type === 'identity_check')) {
+      const { data: reviewers } = await admin
+        .from('project_reviewers')
+        .select('profile_id')
+        .eq('project_id', projectId)
+      const allowed = new Set((reviewers || []).map((r: any) => r.profile_id))
+      return staff.filter((id) => allowed.has(id))
+    }
+    return staff
   }
 
   if (type === 'signature_request') {
