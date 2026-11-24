@@ -1,7 +1,7 @@
 # Verwerkingsregister CrowdBuilding B.V.
 
 **Op grond van artikel 30 AVG**
-Laatst bijgewerkt: 9 juni 2026
+Laatst bijgewerkt: 24 november 2026
 
 ---
 
@@ -147,7 +147,8 @@ Laatst bijgewerkt: 9 juni 2026
 | Vercel Inc. | Hosting | EU / VS | Ja | SCC's + DPF |
 | Google LLC | OAuth | VS | Ja | SCC's + DPF |
 | Functional Software (Sentry) | Foutmonitoring | VS | Ja | SCC's |
-| TransIP B.V. | DNS | NL | Ja | N.v.t. (EU) |
+| TransIP B.V. | DNS en opslag van versleutelde back-ups (Object Store) | NL | Ja | N.v.t. (EU) |
+| GitHub Inc. | Code en het maken van de nachtelijke back-up (de runner verwerkt de dump kort, vóór de versleuteling) | VS | Ja | SCC's + DPF |
 
 ---
 
@@ -160,7 +161,7 @@ Samenvatting:
 - Row-Level Security op alle tabellen
 - Rolgebaseerde toegangscontrole (7 niveaus)
 - Gegevensopslag primair in EU
-- Dagelijkse back-ups met point-in-time recovery
+- Back-ups: dagelijks door Supabase zelf, plus elke nacht een volledige kopie (database, bestanden, code) die met `age` wordt versleuteld en in de TransIP Object Store in Nederland komt te staan. De sleutel om te ontsleutelen staat alleen in de wachtwoordkluis. Bewaartermijn: 30 dagen voor de dagelijkse en 12 maanden voor de maandelijkse kopie, daarna automatisch weg. Financiële stukken uit ledendossiers (bewaartermijn hooguit 30 dagen) gaan bewust niet mee in deze kopie. Herstelprocedure en kwartaaltest: `docs/backup.md` in buuur-admin
 - Foutmonitoring met geminimaliseerde PII
 - Geheimhoudingsverplichtingen medewerkers
 
@@ -171,6 +172,7 @@ Samenvatting:
 | Datum | Versie | Wijziging |
 |-------|--------|-----------|
 | 9 juni 2026 | 1.0 | Initiële versie |
+| 24 november 2026 | 1.1 | Back-ups bij TransIP en GitHub als sub-verwerkers, bewaartermijnen van back-ups |
 
 ---
 
