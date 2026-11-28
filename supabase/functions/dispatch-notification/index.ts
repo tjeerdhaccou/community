@@ -691,7 +691,14 @@ async function resolveRecipients(
   }
 
   if (type === 'new_document') {
-    return await memberIds(admin, projectId, 'guest')
+    // Alleen wie het document mag lezen: de map (en een strengere submap)
+    // bepaalt dat, zie migratie 129 (document_reader_ids).
+    const { data, error } = await admin.rpc('document_reader_ids', { p_document_id: refId })
+    if (error) {
+      console.error('[dispatch] document_reader_ids error', error)
+      return []
+    }
+    return (data || []).map((r: any) => (typeof r === 'string' ? r : r.document_reader_ids))
   }
 
   if (type === 'new_post') {
