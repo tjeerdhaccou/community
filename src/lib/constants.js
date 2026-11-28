@@ -255,6 +255,26 @@ const LINK_SERVICES = [
   { pattern: 'sharepoint.com', icon: 'fa-brands fa-microsoft', color: '#0078D4', label: 'SharePoint' },
 ]
 
+// Een geplakte link opschonen: spaties weg, https:// ervoor als er geen
+// schema staat. Alleen http(s): een javascript:- of data:-link wordt null.
+export function normalizeDocUrl(input) {
+  let s = (input || '').trim()
+  if (!s) return null
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = `https://${s.replace(/^\/+/, '')}`
+  try {
+    const u = new URL(s)
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null
+    if (!u.hostname.includes('.')) return null
+    return u.toString()
+  } catch {
+    return null
+  }
+}
+
+export function isGoogleLink(url) {
+  return /(^|\.)(docs|drive)\.google\.com$/i.test((() => { try { return new URL(url).hostname } catch { return '' } })())
+}
+
 export function linkInfo(url) {
   if (!url) return { icon: 'fa-solid fa-link', color: '#4A90D9', label: 'Link' }
   const match = LINK_SERVICES.find(s => url.includes(s.pattern))

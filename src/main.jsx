@@ -7,6 +7,7 @@ import './styles/fonts/fontawesome.min.css'
 import './index.css'
 import './styles/fris.css'
 import './styles/decisions.css'
+import './styles/documents.css'
 import { registerServiceWorker } from './lib/push'
 
 // PWA: service worker voor Web Push (zie public/sw.js — géén asset-caching).

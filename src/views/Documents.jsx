@@ -1,322 +1,127 @@
-import { useState, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useProject } from '../contexts/ProjectContext'
-import { useAuth } from '../contexts/AuthContext'
-import { canDo, canManageGroupDocs } from '../lib/permissions'
-import { useAllDocuments } from '../hooks/useAllDocuments'
+import { canDo } from '../lib/permissions'
+import { useDocumentMaps } from '../hooks/useDocumentMaps'
 import { useWorkgroups } from '../hooks/useWorkgroups'
-import CollapsibleTagFilter from '../components/CollapsibleTagFilter'
-import { openProjectFile } from '../lib/storage'
+import { supabase } from '../lib/supabase'
+import { toStoragePath } from '../lib/storage'
 import { getDocumentShareUrl } from '../lib/subdomain'
+import { logger } from '../lib/logger'
 import { useToast } from '../components/Toast'
 import ConfirmModal from '../components/ConfirmModal'
+import { DocRow, DocTile, isImageDoc } from '../components/documents/DocRow'
 import {
-  PROJECT_PHASES, formatFileSize, fileIcon, fileIconColor, linkInfo, timeAgo,
-} from '../lib/constants'
+  AddDocumentModal, FolderModal, MapSettingsModal, MoveModal, audienceText,
+} from '../components/documents/DocumentModals'
 
-const CATEGORY_LABELS = {
-  ontwerp_visualisatie: 'Ontwerp & Visualisatie',
-  juridisch: 'Juridisch',
-  vergunning_technisch: 'Vergunning & Technisch',
-  financieel: 'Financieel',
-  verkoop_informatie: 'Verkoop & Informatie',
-  vergadering: 'Vergadering',
-  overig: 'Overig',
+const MAX_TILES = 4
+const MEETINGS = 'vergaderingen'
+
+const byPinnedThenNew = (a, b) =>
+  Number(!!b.pinned) - Number(!!a.pinned) || new Date(b.created_at) - new Date(a.created_at)
+
+// Ondertekende links voor voorbeelden van plaatjes (een uur geldig).
+function useThumbs(docs) {
+  const [urls, setUrls] = useState({})
+  const paths = useMemo(() => [...new Set(
+    docs.filter(isImageDoc).map(d => toStoragePath(d.file_path)).filter(Boolean)
+  )].slice(0, 100), [docs])
+  const key = paths.join('|')
+  useEffect(() => {
+    const missing = paths.filter(p => !urls[p])
+    if (!missing.length) return
+    let cancelled = false
+    supabase.storage.from('project-files').createSignedUrls(missing, 3600).then(({ data, error }) => {
+      if (error) { logger.error('Documents.thumbs', error); return }
+      if (cancelled) return
+      setUrls(prev => {
+        const next = { ...prev }
+        for (const r of data || []) if (r.signedUrl && r.path) next[r.path] = r.signedUrl
+        return next
+      })
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return (doc) => (isImageDoc(doc) ? urls[toStoragePath(doc.file_path)] || null : null)
 }
-
-const MEETING_FILE_CATS = [
-  { key: 'all', label: 'Alles' },
-  { key: 'agenda', label: 'Agenda' },
-  { key: 'minutes', label: 'Notulen' },
-  { key: 'presentation', label: 'Presentatie' },
-  { key: 'attachment', label: 'Bijlage' },
-]
 
 export default function Documents() {
-  const { role, isLightProject, readOnly } = useProject()
-  const { user } = useAuth()
+  const { role, readOnly } = useProject()
   const toast = useToast()
+  const [params, setParams] = useSearchParams()
   const {
-    allDocuments, gebouwDocs, infoDocs, otherPublicDocs, memberDocs,
-    getDocsForWorkgroup, vergaderingDocs, loading, uploadDocument, removeDoc,
-  } = useAllDocuments()
+    maps, folders, docs, meetingFiles, loading, mapById, folderById, membersMap,
+    docsInMap, placeOf, addFile, addLink, updateDoc, removeDoc,
+    saveMap, deleteMap, saveFolder, deleteFolder,
+  } = useDocumentMaps()
   const { allWorkgroups, myWorkgroups, loading: wgLoading } = useWorkgroups()
 
-  const [search, setSearch] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
-  const [meetingCat, setMeetingCat] = useState('all')
-  const [uploadOpen, setUploadOpen] = useState(false)
+  const mapId = params.get('map')
+  const subId = params.get('sub')
+  const query = params.get('q') || ''
+  const currentMap = mapId ? mapById[mapId] : null
+  const currentFolder = subId && subId !== MEETINGS ? folderById[subId] : null
+
+  const [showAllTiles, setShowAllTiles] = useState(false)
+  const [switchOpen, setSwitchOpen] = useState(false)
+  const [modal, setModal] = useState(null) // { type, ... }
   const [confirmDel, setConfirmDel] = useState(null)
+  const [layout, setLayout] = useState(null) // 'list' | 'grid' | null = vanzelf
 
-  // Spiegelt de RLS van migratie 064: moderators+ delen met iedereen of met een
-  // groep, commissieleden alleen met hun eigen commissie.
-  const isModerator = canDo(role, 'manage_workgroups')
-  const myCommissies = useMemo(() => myWorkgroups.filter(wg => wg.type === 'commissie'), [myWorkgroups])
-  const canUpload = !readOnly && canManageGroupDocs(role, myCommissies.length > 0)
-  const shareGroups = isModerator ? allWorkgroups : myCommissies
-
-  function canDelete(doc) {
-    if (readOnly || doc.source !== 'document') return false
-    return role === 'admin' || (doc.author?.id === user?.id && myCommissies.length > 0)
-  }
-
-  async function handleDelete() {
-    const doc = confirmDel
-    setConfirmDel(null)
-    try {
-      await removeDoc(doc.id, doc.source, doc.doc_type === 'link' ? null : doc.file_path)
-      toast.success('Document verwijderd')
-    } catch (err) {
-      toast.error(err.message)
-    }
-  }
-
-  // Een light-groep heeft één lijst: de indeling in tabs volgt categorieën die
-  // alleen aan de beheerkant te kiezen zijn.
-  const tabs = useMemo(() => {
-    if (isLightProject) return []
-    const t = []
-
-    t.push({ key: 'gebouw', label: 'Ontwerp', icon: 'fa-solid fa-building' })
-    t.push({ key: 'info', label: 'Praktische info', icon: 'fa-solid fa-circle-info' })
-
-    if (canDo(role, 'view_meetings')) {
-      t.push({ key: 'vergaderingen', label: 'Vergaderingen', icon: 'fa-solid fa-users' })
-    }
-
-    if (canDo(role, 'view_all_docs')) {
-      t.push({ key: 'dossier', label: 'Voor alle leden', icon: 'fa-solid fa-folder-open' })
-    }
-
-    if (canDo(role, 'join_workgroup')) {
-      for (const wg of myWorkgroups) {
-        t.push({
-          key: `wg-${wg.id}`,
-          label: wg.name,
-          icon: wg.type === 'commissie' ? 'fa-solid fa-people-group' : 'fa-solid fa-users-rectangle',
-          workgroupId: wg.id,
-        })
-      }
-    }
-
-    return t
-  }, [role, myWorkgroups, isLightProject])
-
-  // Default to first available tab
-  const [tab, setTab] = useState(tabs[0]?.key || 'gebouw')
-
-  // Ensure selected tab is valid
-  const activeTab = isLightProject ? 'alles' : tabs.find(t => t.key === tab) ? tab : (tabs[0]?.key || 'gebouw')
-
-  // Get docs for current tab
-  const tabDocs = useMemo(() => {
-    switch (activeTab) {
-      case 'alles':
-        return allDocuments
-      case 'gebouw':
-        return gebouwDocs
-      case 'info':
-        return [...infoDocs, ...otherPublicDocs]
-      case 'vergaderingen':
-        return vergaderingDocs
-      case 'dossier':
-        return memberDocs
-      default:
-        if (activeTab.startsWith('wg-')) {
-          const wgId = activeTab.replace('wg-', '')
-          return getDocsForWorkgroup(wgId)
-        }
-        return []
-    }
-  }, [activeTab, allDocuments, gebouwDocs, infoDocs, otherPublicDocs, vergaderingDocs, memberDocs, getDocsForWorkgroup])
-
-  // Apply filters
-  const filtered = useMemo(() => {
-    let result = tabDocs
-
-    // Category filter (dossier tab)
-    if (activeTab === 'dossier' && categoryFilter !== 'all') {
-      result = result.filter(d => d.category === categoryFilter)
-    }
-
-    // Meeting category filter
-    if (activeTab === 'vergaderingen' && meetingCat !== 'all') {
-      result = result.filter(d => d.subcategory === meetingCat)
-    }
-
-    // Search
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter(d =>
-        d.file_name?.toLowerCase().includes(q) ||
-        d.title?.toLowerCase().includes(q) ||
-        d.description?.toLowerCase().includes(q) ||
-        d.author?.full_name?.toLowerCase().includes(q) ||
-        d.meeting_title?.toLowerCase().includes(q)
-      )
-    }
-
-    return result
-  }, [tabDocs, activeTab, categoryFilter, meetingCat, search])
-
-  // Count per tab
-  const counts = useMemo(() => {
-    const c = {
-      gebouw: gebouwDocs.length,
-      info: infoDocs.length + otherPublicDocs.length,
-      vergaderingen: vergaderingDocs.length,
-      dossier: memberDocs.length,
-    }
-    for (const wg of myWorkgroups) {
-      c[`wg-${wg.id}`] = getDocsForWorkgroup(wg.id).length
-    }
-    return c
-  }, [gebouwDocs, infoDocs, otherPublicDocs, vergaderingDocs, memberDocs, myWorkgroups, getDocsForWorkgroup])
-
-  return (
-    <div className="view-documents-unified">
-      <div className="view-header">
-        <div className="view-header__row">
-          <h1>Projectdossier</h1>
-          {canUpload && (
-            <button className="btn-primary" onClick={() => setUploadOpen(true)}>
-              <i className="fa-solid fa-plus" /> Document toevoegen
-            </button>
-          )}
-        </div>
-      </div>
-
-      {tabs.length > 0 && <div className="seg-tabs">
-        {tabs.map(t => (
-          <button
-            key={t.key}
-            className={`seg-tab ${activeTab === t.key ? 'seg-tab--active' : ''}`}
-            data-tour={`doc-tab-${t.key}`}
-            onClick={() => { setTab(t.key); setCategoryFilter('all'); setMeetingCat('all') }}
-          >
-            {t.label}
-            {(counts[t.key] || 0) > 0 && <span className="seg-tab__count">{counts[t.key]}</span>}
-          </button>
-        ))}
-      </div>}
-
-      {/* Search */}
-      <div className="search-bar">
-        <i className="fa-solid fa-magnifying-glass search-bar__icon" />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Zoeken in documenten..."
-          className="search-bar__input"
-          aria-label="Zoeken"
-        />
-        {search && (
-          <button className="search-bar__clear" onClick={() => setSearch('')} aria-label="Wissen">
-            <i className="fa-solid fa-xmark" />
-          </button>
-        )}
-      </div>
-
-      {/* Filter pills */}
-      {activeTab === 'dossier' && (
-        <CollapsibleTagFilter>
-          {[{ key: 'all', label: 'Alle categorieën' }, ...Object.entries(CATEGORY_LABELS).map(([key, label]) => ({ key, label }))].map(c => (
-            <button
-              key={c.key}
-              className={`tag-filter__pill ${categoryFilter === c.key ? 'tag-filter__pill--active' : ''}`}
-              onClick={() => setCategoryFilter(c.key)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </CollapsibleTagFilter>
-      )}
-      {activeTab === 'vergaderingen' && (
-        <CollapsibleTagFilter>
-          {MEETING_FILE_CATS.map(c => (
-            <button
-              key={c.key}
-              className={`tag-filter__pill ${meetingCat === c.key ? 'tag-filter__pill--active' : ''}`}
-              onClick={() => setMeetingCat(c.key)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </CollapsibleTagFilter>
-      )}
-
-      {/* Document list */}
-      {loading || wgLoading ? (
-        <div className="loading-inline"><p>Documenten laden...</p></div>
-      ) : filtered.length === 0 ? (
-        <div className="empty-inline">
-          <i className="fa-solid fa-folder-open" />
-          <p>{search ? `Geen resultaten voor "${search}"` : emptyMessage(activeTab)}</p>
-        </div>
-      ) : (
-        <div className="doc-list">
-          {filtered.map(doc => (
-            <DocumentRow
-              key={`${doc.source}-${doc.id}`}
-              doc={doc}
-              showCategory={activeTab === 'dossier'}
-              groupNames={activeTab === 'alles' ? groupNamesFor(doc, allWorkgroups) : null}
-              onDelete={canDelete(doc) ? () => setConfirmDel(doc) : undefined}
-            />
-          ))}
-        </div>
-      )}
-
-      {uploadOpen && (
-        <UploadModal
-          canShareWithAll={isModerator}
-          groups={shareGroups}
-          defaultGroupId={activeTab.startsWith('wg-') ? activeTab.replace('wg-', '') : null}
-          onSave={uploadDocument}
-          onClose={() => setUploadOpen(false)}
-        />
-      )}
-      {confirmDel && (
-        <ConfirmModal
-          message={`"${confirmDel.title || confirmDel.file_name}" verwijderen? Dit kan niet ongedaan worden gemaakt.`}
-          confirmLabel="Verwijderen"
-          danger
-          onConfirm={handleDelete}
-          onCancel={() => setConfirmDel(null)}
-        />
-      )}
-    </div>
+  const isModerator = !readOnly && canDo(role, 'manage_workgroups')
+  const myGroupIds = useMemo(() => new Set(myWorkgroups.map(w => w.id)), [myWorkgroups])
+  const canView = (action) => canDo(role, action)
+  const canManage = (map) => !!map && !readOnly && (
+    isModerator || (!!map.owner_workgroup_id && myGroupIds.has(map.owner_workgroup_id) && canView('view_all_docs'))
   )
-}
+  const manageableMaps = maps.filter(canManage)
+  const canCreateMap = !readOnly && (isModerator || (myWorkgroups.length > 0 && canView('view_all_docs')))
+  const showMeetings = canView('view_meetings')
+  const getThumb = useThumbs(docs)
 
-function groupNamesFor(doc, workgroups) {
-  if (doc.visibility !== 'groups') return null
-  const names = workgroups.filter(wg => doc.workgroup_ids?.includes(wg.id)).map(wg => wg.name)
-  return names.length > 0 ? names.join(', ') : null
-}
+  // Een map uit de url die er niet (meer) is: terug naar het overzicht.
+  useEffect(() => {
+    if (!loading && mapId && !currentMap) setParams({}, { replace: true })
+  }, [loading, mapId, currentMap, setParams])
 
-function emptyMessage(tab) {
-  switch (tab) {
-    case 'alles': return 'Nog geen documenten'
-    case 'gebouw': return 'Nog geen ontwerpdocumenten'
-    case 'info': return 'Nog geen praktische informatie'
-    case 'vergaderingen': return 'Nog geen vergaderdocumenten'
-    case 'dossier': return 'Nog geen projectdocumenten'
-    default: return 'Nog geen documenten in deze groep'
+  function go(next) {
+    setSwitchOpen(false)
+    setLayout(null)
+    const p = {}
+    if (next.map) p.map = next.map
+    if (next.sub) p.sub = next.sub
+    if (next.q) p.q = next.q
+    setParams(p)
   }
-}
 
-// ===== Document Row =====
-function DocumentRow({ doc, showCategory, groupNames, onDelete }) {
-  const toast = useToast()
-  const isLink = doc.doc_type === 'link'
-  const link = isLink ? linkInfo(doc.url) : null
-  const href = isLink ? doc.url : doc.file_path
-  // External links open directly; stored files resolve a short-lived signed URL.
-  const openFile = isLink ? undefined : (e) => { e.preventDefault(); openProjectFile(doc.file_path) }
+  const countFor = (map) => docsInMap(map).length + (map.kind === 'members' && showMeetings ? meetingFiles.length : 0)
 
-  async function copyShareLink(e) {
-    e.preventDefault()
+  function subsOf(map) {
+    const list = folders.filter(f => f.map_id === map.id)
+      .map(f => ({ id: f.id, name: f.name, groupOnly: f.group_only }))
+    if (map.kind === 'members' && showMeetings) list.push({ id: MEETINGS, name: 'Uit vergaderingen', auto: true })
+    return list
+  }
+
+  function actionsFor(doc) {
+    const list = []
+    if (doc.source === 'document') {
+      const map = placeOf(doc)?.map
+      const may = canManage(map) || (!doc.map_id && !readOnly && isModerator)
+      if (may) {
+        list.push({ label: doc.pinned ? 'Losmaken' : 'Vastzetten', icon: 'fa-solid fa-thumbtack',
+          onClick: () => updateDoc(doc.id, { pinned: !doc.pinned }).catch(e => toast.error(e.message)) })
+        if (manageableMaps.length) list.push({ label: 'Verplaatsen', icon: 'fa-solid fa-folder-tree', onClick: () => setModal({ type: 'move', doc }) })
+      }
+      if (doc.share_code) list.push({ label: 'Kopieer deellink', icon: 'fa-solid fa-link', onClick: () => copyShare(doc) })
+      if (may) list.push({ label: 'Verwijderen', icon: 'fa-solid fa-trash', danger: true, onClick: () => setConfirmDel(doc) })
+    }
+    return list
+  }
+
+  async function copyShare(doc) {
     try {
       await navigator.clipboard.writeText(getDocumentShareUrl(doc.share_code))
       toast.success('Deellink gekopieerd')
@@ -325,151 +130,313 @@ function DocumentRow({ doc, showCategory, groupNames, onDelete }) {
     }
   }
 
-  return (
-    <div className="doc-row">
-      <div className="doc-row__icon">
-        {isLink
-          ? <i className={link.icon} style={{ color: link.color }} />
-          : <i className={fileIcon(doc.file_type)} style={{ color: fileIconColor(doc.file_type) }} />
-        }
+  async function handleDelete() {
+    const doc = confirmDel
+    setConfirmDel(null)
+    try {
+      await removeDoc(doc)
+      toast.success('Document verwijderd')
+    } catch (err) {
+      toast.error(err.message)
+    }
+  }
+
+  function rows(list, { withPlace = false } = {}) {
+    return (
+      <div className="doc-list docs-list">
+        {list.map(doc => {
+          const place = withPlace ? placeOf(doc) : null
+          return (
+            <DocRow key={`${doc.source}-${doc.id}`} doc={doc} thumb={getThumb(doc)}
+              place={place?.label}
+              onPlace={place ? () => go({ map: place.map.id, sub: place.folderId }) : undefined}
+              actions={actionsFor(doc)} />
+          )
+        })}
       </div>
-      <div className="doc-row__info">
-        <a href={href} onClick={openFile} target="_blank" rel="noopener noreferrer" className="doc-row__title">
-          {doc.title || doc.file_name}
-          {isLink && <i className="fa-solid fa-arrow-up-right-from-square doc-row__external" />}
-        </a>
-        <div className="doc-row__meta">
-          {showCategory && doc.category && (
-            <span className="doc-row__source" style={{ background: 'var(--surface-raised)', color: 'var(--text-secondary)' }}>
-              {CATEGORY_LABELS[doc.category] || doc.category}
-            </span>
+    )
+  }
+
+  // ===== Mappenmenu (links, en in het paneel op een smal scherm) =====
+  const tree = (
+    <div className="docs-tree__list">
+      <button type="button" className={`docs-tree__item ${!currentMap && !query ? 'is-active' : ''}`} onClick={() => go({})}>
+        <span className="docs-tree__name">Overzicht</span>
+      </button>
+      <div className="docs-label docs-tree__label">Mappen</div>
+      {maps.map(m => {
+        const open = currentMap?.id === m.id
+        return (
+          <div key={m.id}>
+            <button type="button" className={`docs-tree__item ${open && !subId ? 'is-active' : ''} ${open ? 'is-open' : ''}`}
+              onClick={() => go({ map: m.id })} aria-expanded={open}>
+              <i className={`fa-${open ? 'solid fa-folder-open' : 'regular fa-folder'}`} />
+              <span className="docs-tree__name">{m.name}</span>
+              {m.audience === 'group' && <i className="fa-solid fa-lock docs-tree__lock" aria-label="Alleen de beheergroep" />}
+              <span className="docs-tree__count">{countFor(m) || ''}</span>
+            </button>
+            {open && subsOf(m).length > 0 && (
+              <div className="docs-tree__subs">
+                {subsOf(m).map(s => (
+                  <button key={s.id} type="button" className={`docs-tree__sub ${subId === s.id ? 'is-active' : ''}`}
+                    onClick={() => go({ map: m.id, sub: s.id })}>
+                    {s.name}
+                    {s.groupOnly && <i className="fa-solid fa-lock docs-tree__lock" aria-label="Alleen de beheergroep" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+      {canCreateMap && (
+        <button type="button" className="docs-tree__item docs-tree__new" onClick={() => setModal({ type: 'map' })}>
+          <i className="fa-solid fa-plus" /> <span className="docs-tree__name">Nieuwe map</span>
+        </button>
+      )}
+    </div>
+  )
+
+  const whereLabel = query ? 'Zoeken'
+    : !currentMap ? 'Overzicht'
+    : subId ? `${currentMap.name} / ${subId === MEETINGS ? 'Uit vergaderingen' : currentFolder?.name || ''}`
+    : currentMap.name
+
+  // ===== Inhoud =====
+  let content
+  if (loading || wgLoading) {
+    content = <div className="loading-inline"><p>Documenten laden...</p></div>
+  } else if (query) {
+    const q = query.toLowerCase()
+    const found = [...docs, ...(showMeetings ? meetingFiles : [])].filter(d =>
+      [d.title, d.file_name, d.description, d.author?.full_name, d.meeting_title]
+        .some(v => v?.toLowerCase().includes(q))
+    ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    content = found.length
+      ? <>{<div className="docs-label">{found.length} {found.length === 1 ? 'resultaat' : 'resultaten'}</div>}{rows(found, { withPlace: true })}</>
+      : <Empty text={`Niets gevonden voor "${query}". Probeer een ander woord.`} />
+  } else if (!currentMap) {
+    const pinned = docs.filter(d => d.pinned).slice(0, 8)
+    const recent = [...docs, ...(showMeetings ? meetingFiles : [])]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8)
+    const tiles = showAllTiles ? maps : maps.slice(0, MAX_TILES)
+    content = (
+      <>
+        {pinned.length > 0 && (
+          <section className="docs-section">
+            <div className="docs-label">Vastgezet</div>
+            {rows(pinned, { withPlace: true })}
+          </section>
+        )}
+        <section className="docs-section">
+          <div className="docs-tiles" data-tour="docs-maps">
+            {tiles.map(m => (
+              <button key={m.id} type="button" className="docs-maptile" onClick={() => go({ map: m.id })}>
+                <span className="docs-maptile__name">{m.name}</span>
+                <span className="docs-maptile__who">{audienceText(m)}</span>
+                <span className="docs-maptile__meta">
+                  {countFor(m)} {countFor(m) === 1 ? 'document' : 'documenten'}
+                  {subsOf(m).length > 0 && ` · ${subsOf(m).map(s => s.name).join(', ')}`}
+                </span>
+              </button>
+            ))}
+          </div>
+          {maps.length > MAX_TILES && (
+            <button type="button" className="docs-more" onClick={() => setShowAllTiles(v => !v)} aria-expanded={showAllTiles}>
+              {showAllTiles ? 'Minder tonen' : `Nog ${maps.length - MAX_TILES} ${maps.length - MAX_TILES === 1 ? 'map' : 'mappen'}`}
+              <i className={`fa-solid fa-chevron-${showAllTiles ? 'up' : 'down'}`} />
+            </button>
           )}
-          {groupNames && <span className="doc-row__badge">{groupNames}</span>}
-          {isLink && <span className="doc-row__badge">{link.label}</span>}
-          {doc.phase && <span className="doc-row__badge">{doc.phase}</span>}
-          {doc.subcategory && doc.source === 'vergadering' && (
-            <span className="doc-row__badge">{doc.subcategory}</span>
+        </section>
+        <section className="docs-section">
+          <div className="docs-label">Recent toegevoegd</div>
+          {recent.length ? rows(recent, { withPlace: true }) : <Empty text="Nog geen documenten. Voeg een link of bestand toe om te beginnen." />}
+        </section>
+      </>
+    )
+  } else if (!subId) {
+    const inMap = docsInMap(currentMap)
+    const subs = subsOf(currentMap)
+    const loose = inMap.filter(d => !d.folder_id || !folderById[d.folder_id] || folderById[d.folder_id].map_id !== currentMap.id).sort(byPinnedThenNew)
+    content = (
+      <>
+        {subs.length > 0 && (
+          <div className="docs-folders">
+            {subs.map(s => {
+              const n = s.id === MEETINGS ? meetingFiles.length : inMap.filter(d => d.folder_id === s.id).length
+              return (
+                <button key={s.id} type="button" className={`docs-folder ${s.auto ? 'docs-folder--auto' : ''}`}
+                  onClick={() => go({ map: currentMap.id, sub: s.id })}>
+                  <span className="docs-folder__icon"><i className={s.auto ? 'fa-solid fa-people-group' : 'fa-regular fa-folder'} /></span>
+                  <span className="docs-folder__text">
+                    <span className="docs-folder__name">{s.name}</span>
+                    <span className="docs-folder__meta">{n} {n === 1 ? 'document' : 'documenten'}{s.auto ? ', vult zichzelf' : ''}</span>
+                    {s.groupOnly && <span className="docs-lock"><i className="fa-solid fa-lock" /> Alleen {currentMap.owner?.name || 'beheergroep'}</span>}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+        {loose.length > 0 && (
+          <section className="docs-section">
+            <div className="docs-label">{subs.length ? 'Los in deze map' : 'Documenten'}</div>
+            {rows(loose)}
+          </section>
+        )}
+        {!subs.length && !loose.length && (
+          <Empty text={canManage(currentMap) ? 'Deze map is nog leeg. Voeg een document toe of maak een submap.' : 'Deze map is nog leeg.'} />
+        )}
+      </>
+    )
+  } else {
+    const list = subId === MEETINGS ? meetingFiles : docsInMap(currentMap).filter(d => d.folder_id === subId).sort(byPinnedThenNew)
+    const auto = list.length > 0 && list.filter(isImageDoc).length * 2 >= list.length ? 'grid' : 'list'
+    const mode = layout || auto
+    content = list.length === 0 ? <Empty text="Deze submap is nog leeg." /> : mode === 'grid' ? (
+      <div className="docs-grid">
+        {list.map(doc => <DocTile key={`${doc.source}-${doc.id}`} doc={doc} thumb={getThumb(doc)} actions={actionsFor(doc)} />)}
+      </div>
+    ) : rows(list)
+    content = (
+      <>
+        <div className="docs-subbar">
+          <div className="seg-tabs docs-seg" role="tablist" aria-label="Weergave">
+            <button type="button" role="tab" aria-selected={mode === 'list'} className={`seg-tab ${mode === 'list' ? 'seg-tab--active' : ''}`} onClick={() => setLayout('list')}>Lijst</button>
+            <button type="button" role="tab" aria-selected={mode === 'grid'} className={`seg-tab ${mode === 'grid' ? 'seg-tab--active' : ''}`} onClick={() => setLayout('grid')}>Raster</button>
+          </div>
+        </div>
+        {content}
+      </>
+    )
+  }
+
+  const subTitle = subId === MEETINGS ? 'Uit vergaderingen' : currentFolder?.name
+
+  return (
+    <div className="view-documents-unified docs-view">
+      <div className="view-header">
+        <div className="view-header__row">
+          <h1>Documenten</h1>
+          {manageableMaps.length > 0 && (
+            <button className="btn-primary" onClick={() => setModal({ type: 'add' })}>
+              <i className="fa-solid fa-plus" /> Toevoegen
+            </button>
           )}
-          {doc.meeting_title && <span>{doc.meeting_title}</span>}
-          {doc.author?.full_name && <span>{doc.author.full_name}</span>}
-          {!isLink && doc.file_size > 0 && <span>{formatFileSize(doc.file_size)}</span>}
-          <span>{timeAgo(doc.created_at)}</span>
+        </div>
+        <p className="docs-intro">Elke map is gedeeld met een vaste groep. Plak een Google-link of upload een bestand, en zet het waar het hoort.</p>
+      </div>
+
+      <div className="docs-layout">
+        <div className="docs-layout__inner">
+        <nav className="docs-tree" aria-label="Mappen">{tree}</nav>
+
+        <div className="docs-main">
+          <div className="docs-switch">
+            <button type="button" className="docs-switch__btn" onClick={() => setSwitchOpen(o => !o)} aria-expanded={switchOpen}>
+              <i className="fa-regular fa-folder" /> <span>{whereLabel}</span>
+              <i className={`fa-solid fa-chevron-${switchOpen ? 'up' : 'down'}`} />
+            </button>
+            {switchOpen && <div className="docs-switch__panel">{tree}</div>}
+          </div>
+
+          <form className="search-bar docs-search" role="search" onSubmit={e => e.preventDefault()}>
+            <i className="fa-solid fa-magnifying-glass search-bar__icon" />
+            <input type="search" value={query} placeholder="Zoek in alle mappen" aria-label="Zoek in alle mappen"
+              className="search-bar__input"
+              onChange={e => setParams(e.target.value ? { q: e.target.value } : (currentMap ? { map: currentMap.id, ...(subId ? { sub: subId } : {}) } : {}), { replace: true })} />
+            {query && (
+              <button type="button" className="search-bar__clear" onClick={() => go({})} aria-label="Wissen">
+                <i className="fa-solid fa-xmark" />
+              </button>
+            )}
+          </form>
+
+          {currentMap && !query && (
+            <div className="docs-head">
+              <div className="docs-head__text">
+                <div className="docs-crumbs">
+                  <button type="button" onClick={() => go({})}>Documenten</button> /{' '}
+                  {subId
+                    ? <><button type="button" onClick={() => go({ map: currentMap.id })}>{currentMap.name}</button> /</>
+                    : null}
+                </div>
+                <h2>{subId ? subTitle : currentMap.name}</h2>
+                <div className="docs-who">
+                  <span className="docs-who__owner">
+                    <span className="docs-avatar">{initials(currentMap.owner?.name || 'Moderators')}</span>
+                    Beheerd door <strong>{currentMap.owner?.name || 'moderators en beheerders'}</strong>
+                  </span>
+                  <span><i className="fa-solid fa-lock" /> {currentFolder?.group_only ? `Alleen zichtbaar voor ${currentMap.owner?.name}` : audienceText(currentMap)}</span>
+                </div>
+              </div>
+              {canManage(currentMap) && (
+                <div className="docs-head__actions">
+                  {!subId && (
+                    <button type="button" className="btn-secondary" onClick={() => setModal({ type: 'folder' })}>Nieuwe submap</button>
+                  )}
+                  {currentFolder && (
+                    <button type="button" className="btn-secondary" onClick={() => setModal({ type: 'folder', folder: currentFolder })}>Submap aanpassen</button>
+                  )}
+                  {!subId && (
+                    <button type="button" className="btn-icon" aria-label="Instellingen van de map" title="Instellingen van de map"
+                      onClick={() => setModal({ type: 'map', map: currentMap })}>
+                      <i className="fa-solid fa-gear" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {content}
+        </div>
         </div>
       </div>
-      <div className="doc-row__actions">
-        {doc.share_code && (
-          <button type="button" onClick={copyShareLink} className="doc-row__btn" title="Kopieer deellink">
-            <i className="fa-solid fa-link" />
-          </button>
-        )}
-        {isLink ? (
-          <a href={href} target="_blank" rel="noopener noreferrer" className="doc-row__btn" title="Openen">
-            <i className="fa-solid fa-arrow-up-right-from-square" />
-          </a>
-        ) : (
-          <a href={href} onClick={openFile} className="doc-row__btn" title="Downloaden">
-            <i className="fa-solid fa-download" />
-          </a>
-        )}
-        {onDelete && (
-          <button type="button" onClick={onDelete} className="doc-row__btn doc-row__btn--danger" title="Verwijderen" aria-label="Verwijderen">
-            <i className="fa-solid fa-trash" />
-          </button>
-        )}
-      </div>
+
+      {modal?.type === 'add' && (
+        <AddDocumentModal maps={manageableMaps} folders={folders}
+          defaultMapId={currentMap?.id} defaultFolderId={currentFolder?.id}
+          onAddFile={addFile} onAddLink={addLink} onClose={() => setModal(null)} />
+      )}
+      {modal?.type === 'map' && (
+        <MapSettingsModal map={modal.map}
+          ownerOptions={isModerator ? allWorkgroups : myWorkgroups}
+          allowNoOwner={isModerator}
+          docCount={modal.map ? docsInMap(modal.map).length : 0}
+          onSave={async (v) => { const id = await saveMap(modal.map?.id, v); if (!modal.map) go({ map: id }) }}
+          onDelete={modal.map ? async () => { await deleteMap(modal.map.id); go({}) } : null}
+          onClose={() => setModal(null)} />
+      )}
+      {modal?.type === 'folder' && currentMap && (
+        <FolderModal folder={modal.folder} map={currentMap}
+          onSave={(v) => saveFolder(modal.folder?.id, { ...v, mapId: currentMap.id })}
+          onDelete={modal.folder ? async () => { await deleteFolder(modal.folder.id); go({ map: currentMap.id }) } : null}
+          onClose={() => setModal(null)} />
+      )}
+      {modal?.type === 'move' && (
+        <MoveModal doc={modal.doc} maps={manageableMaps} folders={folders}
+          onMove={(patch) => updateDoc(modal.doc.id, patch)} onClose={() => setModal(null)} />
+      )}
+      {confirmDel && (
+        <ConfirmModal
+          message={`"${confirmDel.title || confirmDel.file_name}" verwijderen? Dit kan niet ongedaan worden gemaakt.`}
+          confirmLabel="Verwijderen" danger
+          onConfirm={handleDelete} onCancel={() => setConfirmDel(null)} />
+      )}
     </div>
   )
 }
 
-function UploadModal({ canShareWithAll, groups, defaultGroupId, onSave, onClose }) {
-  const toast = useToast()
-  const fileRef = useRef(null)
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [file, setFile] = useState(null)
-  const [audience, setAudience] = useState(
-    defaultGroupId && groups.some(g => g.id === defaultGroupId) ? defaultGroupId
-      : canShareWithAll ? 'members' : (groups[0]?.id || '')
-  )
-  const [saving, setSaving] = useState(false)
+function initials(name) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase()
+}
 
-  function pickFile(e) {
-    const f = e.target.files?.[0] || null
-    setFile(f)
-    if (f && !title.trim()) setTitle(f.name.replace(/\.[^.]+$/, ''))
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!title.trim() || !file || !audience) return
-    setSaving(true)
-    try {
-      await onSave({
-        title: title.trim(),
-        description: description.trim(),
-        visibility: audience === 'members' ? 'members' : 'groups',
-        groupIds: audience === 'members' ? [] : [audience],
-        file,
-      })
-      toast.success('Document toegevoegd')
-      onClose()
-    } catch (err) {
-      toast.error(err.message)
-      setSaving(false)
-    }
-  }
-
+function Empty({ text }) {
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 720 }}>
-        <div className="modal-header">
-          <h2>Document toevoegen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Sluiten">
-            <i className="fa-solid fa-xmark" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-group">
-            <label>Bestand *</label>
-            {file ? (
-              <div className="file-selected">
-                <i className={fileIcon(file.type)} style={{ color: fileIconColor(file.type) }} />
-                <span>{file.name}</span>
-                <span className="file-selected__size">{formatFileSize(file.size)}</span>
-                <button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = '' }} aria-label="Bestand weghalen">
-                  <i className="fa-solid fa-xmark" />
-                </button>
-              </div>
-            ) : (
-              <button type="button" className="btn-secondary" onClick={() => fileRef.current?.click()}>
-                <i className="fa-solid fa-cloud-arrow-up" /> Bestand kiezen
-              </button>
-            )}
-            <input ref={fileRef} type="file" onChange={pickFile} style={{ display: 'none' }} />
-          </div>
-          <div className="form-group">
-            <label>Titel *</label>
-            <input type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Naam van het document" required />
-          </div>
-          <div className="form-group">
-            <label>Toelichting</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} placeholder="Optioneel" />
-          </div>
-          <div className="form-group">
-            <label>Zichtbaar voor</label>
-            <select value={audience} onChange={e => setAudience(e.target.value)}>
-              {canShareWithAll && <option value="members">Alle leden</option>}
-              {groups.map(g => <option key={g.id} value={g.id}>Alleen {g.name}</option>)}
-            </select>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Annuleren</button>
-            <button type="submit" className="btn-primary" disabled={saving || !title.trim() || !file || !audience}>
-              {saving ? 'Uploaden...' : 'Toevoegen'}
-            </button>
-          </div>
-        </form>
-      </div>
+    <div className="empty-inline">
+      <i className="fa-solid fa-folder-open" />
+      <p>{text}</p>
     </div>
   )
 }
